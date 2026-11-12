@@ -317,6 +317,8 @@ export class Engine {
       this.filmSets.prepareAmbush(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
     this.filmSets.prepareBasement(this.renderer, this.camera, this.lightCulling, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
+    this.filmSets.prepareTvExit(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
+      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareLobby(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareInterrogation(this.renderer, this.camera, liveMatrixJourney,

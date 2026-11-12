@@ -2328,8 +2328,9 @@ export class PlayerControls {
         const origin = new THREE.Vector3(center.x, center.y - 1, center.z); let ideal: THREE.Vector3; let focus: THREE.Vector3;
         if (gesture.phase === 'briefing') {
           const close = THREE.MathUtils.smoothstep(gesture.elapsed, 5.6, 7.9);
-          ideal = new THREE.Vector3(-12.8, 6.5, 9.8).lerp(new THREE.Vector3(9.5, 5.1, 5.8), close);
-          focus = new THREE.Vector3(0, 2.25, -.4).lerp(new THREE.Vector3(0, 2.65, -1.2), close);
+          ideal = new THREE.Vector3(-4.8, 6.2, -10.5).lerp(new THREE.Vector3(-3.1, 5.4, -8.8), close);
+          if (this.camera.aspect < .85) ideal.z -= 3.8;
+          focus = new THREE.Vector3(0, 2.35, .35).lerp(new THREE.Vector3(0, 2.65, -.3), close);
         } else if (gesture.phase === 'racks_arriving') {
           const approach = THREE.MathUtils.smoothstep(gesture.elapsed, .3, RESCUE.racksArrival);
           ideal = new THREE.Vector3(0, 8.2, 18).lerp(new THREE.Vector3(13.5, 5.6, 5), approach);

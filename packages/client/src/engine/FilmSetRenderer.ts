@@ -364,6 +364,7 @@ export class FilmSetRenderer {
   private basementFrame?: number;
   private basementColors?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties'] };
   private tvRepair?: TvRepairRenderer;
+  private preparedTvExit?: { renderer: TvRepairRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private crosscutTv?: TvRepairRenderer;
   private crosscutDeck?: { root: THREE.Group; renderer: NebDeckRenderer };
   private pillGlass?: THREE.Group;
@@ -606,6 +607,37 @@ export class FilmSetRenderer {
     }
     colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     if (!this.prepareColorTexture(renderer, colors.textures)) this.prepareColorFrame(renderer, camera, colors, lighting, 'isolated');
+  }
+  prepareTvExit(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
+    if (this.current?.id !== 'film_ambush_house' || this.currentScene !== 'm1_basement' || journey?.scene !== 'm1_basement' || journey.visiting
+      || !['tunnel', 'done'].includes(journey.basement?.phase ?? '')) {
+      this.cancelTvExitPreparation(); return;
+    }
+    if (!this.preparedTvExit) {
+      this.preparedTvExit = { renderer: new TvRepairRenderer(new THREE.Group()) };
+      return;
+    }
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    const prepared = this.preparedTvExit;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.lighting?.dispose();
+      prepared.colors = { ...this.colorPreparation(prepared.renderer.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
+      prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
+      prepared.gpu = renderer.properties;
+    }
+    const colors = prepared.colors, neo = actor('neo');
+    if (neo && !colors.actors.has(neo)) {
+      const meshes: ColorMesh[] = [];
+      // Neo is the first actor visible in the shaft.
+      neo.traverse(object => {
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
+      });
+      if (meshes.length) {
+        colors.actors.add(neo); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+      }
+    }
+    this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
   }
   prepareLobby(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
@@ -2331,6 +2363,8 @@ export class FilmSetRenderer {
       if (preparedPods) this.preparedPods = undefined;
       const preparedAmbush = set?.id === 'film_ambush_house' && sceneId === 'm1_dejavu' && !journey?.visiting ? this.preparedAmbush?.renderer : undefined;
       if (preparedAmbush) { this.preparedAmbush?.lighting?.dispose(); this.preparedAmbush = undefined; }
+      const preparedTvExit = set?.id === 'film_tv_repair' && sceneId === 'm1_tv_exit' && !journey?.visiting ? this.preparedTvExit : undefined;
+      if (preparedTvExit) { this.preparedTvExit = undefined; preparedTvExit.lighting?.dispose(); }
       const preparedLobby = set?.id === 'film_government_lobby' && sceneId === 'm1_lobby' && !journey?.visiting ? this.preparedLobby : undefined;
       if (preparedLobby) { this.preparedLobby = undefined; preparedLobby.lighting?.dispose(); preparedLobby.root.removeFromParent(); }
       const preparedGovernment = set?.id === this.preparedGovernment?.renderer.setId && sceneId === this.preparedGovernment?.scene && !journey?.visiting ? this.preparedGovernment : undefined;
@@ -2517,8 +2551,8 @@ export class FilmSetRenderer {
           this.ambush.attach(this.root);
         }
         else if (set.id === 'film_tv_repair') {
-          this.tvRepair = (keepCrosscut ? this.crosscutTv : undefined) ?? new TvRepairRenderer(this.root);
-          if (keepCrosscut) this.root.add(this.tvRepair.root);
+          this.tvRepair = (keepCrosscut ? this.crosscutTv : undefined) ?? preparedTvExit?.renderer ?? new TvRepairRenderer(this.root);
+          if (keepCrosscut || preparedTvExit) this.root.add(this.tvRepair.root);
         }
         else if (set.id === 'film_agent_interrogation') {
           this.interrogation = preparedInterrogation?.renderer ?? new InterrogationSetRenderer();
@@ -5369,6 +5403,10 @@ export class FilmSetRenderer {
     const prepared = this.preparedMeal; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.deck.dispose(); this.preparedMeal = undefined;
   }
+  private cancelTvExitPreparation(): void {
+    const prepared = this.preparedTvExit; if (!prepared) return;
+    prepared.lighting?.dispose(); prepared.renderer.dispose(); this.preparedTvExit = undefined;
+  }
   private cancelLobbyPreparation(): void {
     const prepared = this.preparedLobby; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedLobby = undefined;
@@ -5434,6 +5472,7 @@ export class FilmSetRenderer {
     this.cancelConsolePreparation();
     this.cancelRestaurantPreparation();
     this.cancelMealPreparation();
+    this.cancelTvExitPreparation();
     this.cancelLobbyPreparation();
     this.cancelGovernmentPreparation();
     this.cancelInterrogationPreparation();

@@ -3360,14 +3360,37 @@ test('Tank sees the short Cypher counter window from the deck and from his saved
 });
 
 test('the rescue briefing, arriving racks and selected weapon each own a readable camera while V remains playable', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const game = setup(t); const deck = FILM_SETS.film_neb_deck.center;
-  game.state.currentLocation = 'film_neb_deck';
+  const stage = new THREE.Group(); stage.position.set(deck.x, deck.y - 1, deck.z);
+  const renderer = new NebDeckRenderer(stage); t.after(() => renderer.dispose());
+  game.state.currentLocation = 'film_neb_deck'; game.state.isInMatrix = false;
   game.state.position = filmPosition('film_neb_deck', RESCUE.briefingRoots.neo.x, RESCUE.briefingRoots.neo.z);
   game.state.rotation = RESCUE.briefingRoots.neo.yaw;
-  game.state.currentAction = { type: 'idle', parameters: { rescue: { phase: 'briefing', elapsed: 2.2, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
-  game.controls.possess(game.state); game.step(.4);
-  assert.equal(game.controls.performing, true); assert.ok(game.camera.position.x < deck.x - 9 && game.camera.position.z > deck.z + 6,
-    'the briefing opens wide enough to read Neo, both partners and the central projection');
+  const briefing = { phase: 'briefing' as const, elapsed: 0, role: 'neo' };
+  game.state.currentAction = { type: 'idle', parameters: { rescue: briefing }, startedAt: 0, duration: 1, progress: 0 };
+  for (const aspect of [16 / 9, .72]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.controls.possess(game.state);
+    for (const elapsed of [.2, 3.5, 6.75, 8.35]) {
+      briefing.elapsed = elapsed; game.step(.6);
+      renderer.update({ scene: 'm1_rescue_decision', rescue: briefing } as FilmJourney, elapsed);
+      stage.updateMatrixWorld(true); game.camera.updateMatrixWorld(true);
+      const fixtures: THREE.Mesh[] = [];
+      stage.traverseVisible(object => {
+        if (object instanceof THREE.Mesh && !Array.isArray(object.material) && !object.material.transparent) fixtures.push(object);
+      });
+      for (const [x, y, z] of [[0, 1.3, -1.35], [.72, 2.72, -1.45], ...Object.values(RESCUE.briefingRoots).map(({ x, z }) => [x, 4, z])]) {
+        const target = new THREE.Vector3(x, y, z).add(stage.position), sight = target.clone().sub(game.camera.position);
+        const hit = new THREE.Raycaster(game.camera.position, sight.clone().normalize(), .01, sight.length() - .1).intersectObjects(fixtures, false)[0];
+        assert.ok(!hit, `briefing target ${[x, y, z]} at ${elapsed}s/${aspect} is blocked by ${hit?.object.name || hit?.object.parent?.name}`);
+        const screen = target.project(game.camera);
+        assert.ok(Math.abs(screen.x) < .94 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1,
+          `briefing target ${[x, y, z]} at ${elapsed}s/${aspect} falls outside the frame: ${screen.toArray()}`);
+      }
+    }
+  }
+  game.camera.aspect = 16 / 9; game.camera.updateProjectionMatrix();
+  assert.equal(game.controls.performing, true);
   const locked = game.group.position.clone(); game.key('KeyW'); game.step(.25); game.key('KeyW', false); assert.deepEqual(game.group.position, locked);
   game.key('KeyV'); game.key('KeyV', false); game.step(.1);
   assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06);
