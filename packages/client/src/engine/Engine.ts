@@ -247,6 +247,7 @@ export class Engine {
       && lift.passenger && player?.currentAction?.parameters.metacortexLift === true
       ? avatarPosition.y - METACORTEX.center.y : undefined;
     const reserveCommuteLights = liveMatrixJourney?.scene === 'm1_morning' || liveMatrixJourney?.scene === 'm1_commute';
+    const reserveStreetLights = reserveCommuteLights || officeCustodyActive(liveMatrixJourney);
     // Keep the prepared office lighting layout through the handoff and escape.
     const reserveLandingSlot = reserveCommuteLights || liveMatrixJourney?.scene === 'm1_boss'
       || liveMatrixJourney?.scene === 'm1_office_escape' || liveMatrixJourney?.scene === 'm1_ledge';
@@ -275,7 +276,7 @@ export class Engine {
       : filmSet?.id === 'film_subway_platform' ? SUBWAY_POINT_SLOTS
       : officeSet ? OFFICE_POINT_SLOTS
       : openingApartment || morningApartment || deferredContact ? APARTMENT_POINT_SLOTS
-      : this.filmSets.minimumPointSlots || (reserveCommuteLights && !cinematicSet ? POINT_SLOT_FLOOR : 0);
+      : this.filmSets.minimumPointSlots || (reserveStreetLights && !cinematicSet ? POINT_SLOT_FLOOR : 0);
     if (!cinematicSet && previousSet?.id !== filmSet?.id) this.updateAtmosphere();
     this.voxelRenderer.matrix.visible = this.matrix && !cinematicSet; this.voxelRenderer.real.visible = !this.matrix && !cinematicSet;
     measure?.('film');
