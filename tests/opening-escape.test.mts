@@ -147,12 +147,19 @@ test('the opening roof has a raycastable drop and the phone truck follows saved 
     renderer.update(player, sandbox, 0);
     renderer.root.updateMatrixWorld(true);
     const roofCenter = FILM_SETS[roof.set].center;
-    const surface = (z: number) => {
-      const ray = new THREE.Raycaster(new THREE.Vector3(roofCenter.x, roofCenter.y + 10, roofCenter.z + z), new THREE.Vector3(0, -1, 0));
+    const surface = (z: number, x = 0) => {
+      const ray = new THREE.Raycaster(new THREE.Vector3(roofCenter.x + x, roofCenter.y + 10, roofCenter.z + z), new THREE.Vector3(0, -1, 0));
       return ray.intersectObjects(renderer.root.children, true)[0]?.point.y;
     };
     assert.ok(Math.abs(surface(10)! - roofCenter.y) < 2, `roof surface: ${surface(10)}`);
     assert.ok(surface(-4)! < roofCenter.y - 20, `gap surface: ${surface(-4)}`);
+    const edge = FILM_SETS[roof.set].width / 2 - .5;
+    const gap = (OPENING_ESCAPE.roofGapNear + OPENING_ESCAPE.roofGapFar) / 2;
+    for (const x of [-edge, edge]) {
+      assert.ok(surface(10, x)! > roofCenter.y + 1, 'the near building needs its own parapet');
+      assert.ok(surface(gap, x)! < roofCenter.y - 20, 'a parapet must not bridge the drop');
+      assert.ok(surface(-14, x)! > roofCenter.y + 1, 'the landing building needs its own parapet');
+    }
 
     journey.scene = phone.id; journey.step = 0;
     journey.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: 0, attempts: 0 };

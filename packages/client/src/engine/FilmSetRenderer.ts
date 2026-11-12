@@ -2879,6 +2879,12 @@ export class FilmSetRenderer {
     (this.scene.background as THREE.Color).setHex(palette.sky);
     const fog = this.scene.fog as THREE.FogExp2; fog.color.setHex(palette.sky); fog.density = palette.fog;
     this.scene.environmentIntensity = outdoor.has(this.current.architecture) ? .8 : .6;
+    if (this.current.id === 'film_hotel_roofs') {
+      fog.color.setHex(0x182327); fog.density = .008;
+      (this.scene.background as THREE.Color).copy(fog.color);
+      this.scene.environmentIntensity = .44;
+      return { color: 0xb9c3bc, ambient: .42, sun: .18, fill: .36 };
+    }
     if (this.current.id === 'film_wells_phone') {
       fog.color.setHex(0x0d1813); fog.density = .011;
       (this.scene.background as THREE.Color).copy(fog.color);
@@ -3091,13 +3097,13 @@ export class FilmSetRenderer {
     const key = `${color}:${roughness}:${metalness}`; const cached = this.materialCache.get(key); if (cached) return cached;
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(material); this.materialCache.set(key, material); return material;
   }
-  private pbr(id: string, color = 0xffffff, repeat = 4, roughness = .85, metalness = 0): THREE.MeshStandardMaterial {
+  private pbr(id: string, color = 0xffffff, repeat = 4, roughness = .85, metalness = 0, directory = 'film-materials'): THREE.MeshStandardMaterial {
     const loader = new THREE.TextureLoader();
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness, normalScale: new THREE.Vector2(.4, .4) });
     const materials = this.materials; materials.add(material);
     const maps: Partial<Record<'color' | 'normal' | 'roughness', THREE.Texture>> = {};
     const texture = (kind: 'color' | 'normal' | 'roughness') => {
-      const map = loader.load(`/assets/film-materials/${id}-${kind}.jpg`, loaded => {
+      const map = loader.load(`/assets/${directory}/${id}-${kind}.jpg`, loaded => {
         if (!materials.has(material)) { loaded.dispose(); return; }
         maps[kind] = loaded;
         if (maps.color && maps.normal && maps.roughness) {
@@ -3438,16 +3444,26 @@ export class FilmSetRenderer {
     const { width: w, depth: d, height: h } = set; const exterior = outdoor.has(set.architecture);
     const lavish = ['chateau', 'lobby', 'restaurant', 'hel', 'architect'].includes(set.architecture);
     const industrial = ['ship', 'engineering', 'garage', 'power', 'zion', 'temple', 'pods', 'machine'].includes(set.architecture);
-    const floor = set.id === 'film_hotel_roofs' ? this.mat(0x485653, .92) : this.currentScene === 'm2_key_door' ? this.pbr('damaged_plaster', 0x798380, 8) : set.architecture === 'architect' ? this.mat(0xecece7, .28) : lavish ? this.marble : industrial ? this.metal : ['construct', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : exterior ? this.pbr('damaged_plaster', set.architecture === 'garden' ? 0x6f7851 : 0x6f7879, 14) : this.wood;
+    const floor = set.id === 'film_hotel_roofs' ? this.pbr('asphalt_02', 0x8b8e83, 6, .91, 0, 'surfaces') : this.currentScene === 'm2_key_door' ? this.pbr('damaged_plaster', 0x798380, 8) : set.architecture === 'architect' ? this.mat(0xecece7, .28) : lavish ? this.marble : industrial ? this.metal : ['construct', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : exterior ? this.pbr('damaged_plaster', set.architecture === 'garden' ? 0x6f7851 : 0x6f7879, 14) : this.wood;
     if (set.id === 'film_hotel_roofs') {
-      const near = OPENING_ESCAPE.roofGapNear; const far = OPENING_ESCAPE.roofGapFar;
+      const { roofGapNear: near, roofGapFar: far, roofDrop: drop } = OPENING_ESCAPE;
       this.box(floor, 0, -.3, (near + d / 2) / 2, w, .6, d / 2 - near);
       this.box(floor, 0, -.3, (far - d / 2) / 2, w, .6, far + d / 2);
-      this.box(this.black, 0, -OPENING_ESCAPE.roofDrop, (near + far) / 2, w + 24, .5, near - far);
+      this.box(floor, 0, -drop - .25, (near + far) / 2, w + 24, .5, near - far);
+      const glass = this.mat(0x26322c, .73), lit = this.mat(0x564933, .73);
+      lit.emissive.setHex(0x96744a); lit.emissiveIntensity = .55;
       for (const z of [near, far]) {
-        this.box(this.plaster, 0, -OPENING_ESCAPE.roofDrop / 2, z, w, OPENING_ESCAPE.roofDrop, .6);
-        this.box(this.metal, 0, .14, z, w, .28, .28);
+        const inside = z === near ? 1 : -1, face = z - inside * .04;
+        this.box(this.plaster, 0, -drop / 2, z + inside * .3, w, drop, .6);
+        this.box(this.metal, 0, .14, z + inside * .14, w, .28, .28);
+        for (let level = 1; level <= 4; level++) for (let bay = -3; bay <= 3; bay++) {
+          const x = bay * 7, y = -level * 7;
+          this.box((level * 5 + bay + inside) % 9 === 0 ? lit : glass, x, y, face, 2.7, 3.1, .08);
+          this.box(this.black, x, y - 1.58, face, 3.1, .15, .26);
+        }
       }
+      for (const [x, z, length] of [[-12, 24, 21], [11, 31, 19], [-10, -24, 19], [13, -32, 18]])
+        this.box(this.black, x, .009, z, .14, .018, length);
     } else if (set.id === 'film_jump_roofs') {
       this.box(floor, 0, -.3, (-13 + d / 2) / 2, w, .6, d / 2 + 13);
       this.box(floor, 0, -.3, (-30 - d / 2) / 2, w, .6, d / 2 - 30);
@@ -3513,7 +3529,7 @@ export class FilmSetRenderer {
     const lafayette = set.architecture === 'lafayette';
     this.metal = this.pbr('metal_plate', 0x9caaa9, 3, .7, .28);
     this.wood = this.pbr('old_wood_floor', lafayette ? 0x7d7968 : 0x96826b, lafayette ? 1 : 3, lafayette ? .88 : .85); this.marble = this.pbr('marble_01', 0xbdcbd1, 4, .25);
-    this.plaster = this.pbr(lafayette ? 'white_plaster_02' : 'damaged_plaster', lafayette ? 0x737b67 : 0xadae9c, lafayette ? 1 : 5, lafayette ? .95 : .85); this.leather = this.pbr('leather_red_03', lafayette ? 0xb48b79 : 0x71413a, 1, lafayette ? .74 : .48);
+    this.plaster = this.pbr(lafayette ? 'white_plaster_02' : 'damaged_plaster', lafayette ? 0x737b67 : set.id === 'film_hotel_roofs' ? 0x716c5e : 0xadae9c, lafayette ? 1 : 5, lafayette ? .95 : .85); this.leather = this.pbr('leather_red_03', lafayette ? 0xb48b79 : 0x71413a, 1, lafayette ? .74 : .48);
     if (lafayette) this.plaster.normalScale.set(.1, .1);
     this.white = this.pbr('white_plaster_02', 0xd8d9ce, 3); this.black = this.mat(0x161b1a, .44); this.brass = this.mat(0x8e7951, .32, .8);
     this.glass = new THREE.MeshPhysicalMaterial({ color: 0xb3c9c7, metalness: .12, roughness: .12, transparent: true, opacity: .3, side: THREE.DoubleSide, depthWrite: false }); this.materials.add(this.glass);
@@ -4767,20 +4783,26 @@ export class FilmSetRenderer {
   private transport(set: FilmSet): void {
     const { architecture: a, width: w, depth: d } = set;
     if (a === 'rooftop') {
-      for (const side of [-1, 1]) this.box(this.plaster, side * (w / 2 - .5), 1.7, 0, .7, 3.4, d);
+      const chase = set.id === 'film_hotel_roofs';
+      const spans = chase ? [[-d / 2, OPENING_ESCAPE.roofGapFar], [OPENING_ESCAPE.roofGapNear, d / 2]] : [[-d / 2, d / 2]];
+      for (const side of [-1, 1]) for (const [start, end] of spans) {
+        const x = side * (w / 2 - .5), z = (start + end) / 2;
+        this.box(this.plaster, x, 1.7, z, .7, 3.4, end - start);
+        if (chase) this.box(this.black, x, 3.47, z, .82, .14, end - start);
+      }
       for (const z of [-d / 2 + .5, d / 2 - .5]) {
-        if (set.id === 'film_hotel_roofs' && z < 0) for (const side of [-1, 1]) this.box(this.plaster, side * (w + 7.4) / 4, 1.7, z, (w - 7.4) / 2, 3.4, .7);
+        if (chase && z < 0) for (const side of [-1, 1]) this.box(this.plaster, side * (w + 7.4) / 4, 1.7, z, (w - 7.4) / 2, 3.4, .7);
         else this.box(this.plaster, 0, 1.7, z, w, 3.4, .7);
       }
       for (const x of [-w * .34, w * .34]) for (const z of [-d * .26, d * .23]) {
         this.box(this.metal, x, 2.2, z, 6, 4.4, 8, .1); for (let i = 0; i < 7; i++) this.box(this.black, x, 4.45, z - 2.7 + i * .8, 5, .06, .3);
         this.cylinder(this.metal, x, 5.4, z + 2, 1.1, 2); this.cylinder(this.metal, x, 6.4, z + 2, 1.5, .3);
       }
-      if (set.id === 'film_hotel_roofs') {
-        this.root.add(new THREE.HemisphereLight(0xc4d4c9, 0x31403b, .9));
-        for (const z of [11, -10, -35]) {
-          const flood = new THREE.PointLight(z === -35 ? 0xe6c597 : 0xaacbc0, 450, 34, 2);
-          flood.position.set(0, 8, z); this.root.add(flood);
+      if (chase) {
+        this.root.add(new THREE.HemisphereLight(0xc7d2c9, 0x36352e, .72));
+        for (const [x, z, color, intensity] of [[-7, 14, 0xb8c9bc, 305], [7, -10, 0xa6bab4, 320], [-3, -42, 0xdfb27d, 265]]) {
+          const flood = new THREE.PointLight(color, intensity, 34, 2);
+          flood.position.set(x, 8, z); this.root.add(flood);
         }
         for (const z of [OPENING_ESCAPE.roofGapNear + 1.5, OPENING_ESCAPE.roofGapFar - 1.5]) {
           this.box(this.black, 0, .11, z, 7, .04, .2);
@@ -4791,7 +4813,9 @@ export class FilmSetRenderer {
         for (const x of [-6.6, 6.6]) this.box(this.plaster, x, 7.5, -d / 2 + 1, 5.8, 15, 1);
         this.box(this.plaster, 0, .05, -d / 2 + 1, 7.4, .1, 1);
         this.box(this.plaster, 0, 11.55, -d / 2 + 1, 7.4, 6.9, 1);
-        const windowGlow = new THREE.MeshBasicMaterial({ color: 0x8a9a7c }); this.materials.add(windowGlow);
+        for (const x of [-9.25, 9.25]) this.box(this.plaster, x, 7.5, -d / 2 - 4.6, .55, 15, 10.2);
+        this.box(this.black, 0, 15.2, -d / 2 - 4.3, 19.3, .4, 11.3);
+        const windowGlow = new THREE.MeshBasicMaterial({ color: 0xa58d5c }); this.materials.add(windowGlow);
         this.openingRoofGlass = new THREE.Group(); this.openingRoofGlass.name = 'opening-roof-window-glass'; this.openingRoofGlass.userData.dynamic = true; this.root.add(this.openingRoofGlass);
         this.openingRoofGlass.add(this.box(windowGlow, 0, 4.1, -d / 2 + 1.6, 7.1, 8, .06));
         this.openingRoofGlass.add(this.box(this.glass, 0, 4.1, -d / 2 + 1.65, 7.1, 8, .08));
@@ -4999,6 +5023,7 @@ export class FilmSetRenderer {
     this.box(iron, 0, 4.1, set.depth / 2 - 1.93, 4.8, 7.2, .14);
   }
   private skyline(set: FilmSet): void {
+    if (set.id === 'film_hotel_roofs') { this.openingRoofSkyline(); return; }
     const windows = this.mat(set.light === 'night' || set.light === 'storm' ? 0x6f837a : 0x5a737a, .25, .3);
     for (const side of [-1, 1]) for (let i = 0; i < 10; i++) {
       const x = side * (set.width / 2 + 12 + i % 2 * 9); const z = -set.depth / 2 - 5 + i * (set.depth + 20) / 9; const height = 30 + (i * 17 + set.id.length * 3) % 50;
@@ -5008,6 +5033,33 @@ export class FilmSetRenderer {
       }
       this.box(this.white, x, height, z, 20, .5, 16); this.box(this.black, x - side * 9.6, 2.8, z, .1, 5.6, 4.8);
     }
+  }
+  private openingRoofSkyline(): void {
+    const first = this.root.children.length, street = -OPENING_ESCAPE.roofDrop;
+    const dark = this.mat(0x2f3732, .96), glass = this.mat(0x26322c, .73), lit = this.mat(0x564933, .73);
+    const buildings = [
+      [-43, 38, 18, 23, 8], [-48, 10, 22, 22, 18], [-43, -24, 18, 24, 10], [-54, -56, 25, 28, 28],
+      [45, 39, 22, 23, 18], [44, 9, 20, 24, 7], [52, -23, 24, 27, 23], [46, -55, 19, 22, 13],
+      [-29, -86, 23, 24, 23], [2, -111, 24, 24, 28], [29, -83, 20, 21, 18], [29, -131, 21, 19, 37],
+    ];
+    for (const [index, [x, z, width, depth, top]] of buildings.entries()) {
+      const side = Math.sign(x), face = x - side * (width / 2 + .04);
+      this.box(z < -68 ? dark : this.plaster, x, (street + top) / 2, z, width, top - street, depth);
+      this.box(dark, x, top + .45, z, width + .8, .9, depth + .8);
+      this.box(dark, x + side * 2.2, top + 1.7, z - 2.5, width * .42, 3.4, depth * .44);
+      for (let level = 0, y = top - 4.8; y > street + 3; level++, y -= 5.4) {
+        for (const bay of [-1, 0, 1]) {
+          const material = (index * 3 + level * 5 + bay + 1) % 11 === 0 ? lit : glass;
+          this.box(material, face, y, z + bay * depth * .28, .08, 2.5, 2.6);
+          this.box(material, x + bay * width * .28, y, z + depth / 2 + .04, 2.6, 2.5, .08);
+        }
+      }
+    }
+    const city = new THREE.Group(); city.name = 'opening-roof-skyline'; city.userData.dynamic = true;
+    for (const mesh of this.root.children.slice(first)) { mesh.castShadow = mesh.receiveShadow = false; city.add(mesh); }
+    batchStaticGeometry(city, new Set()).forEach(geometry => this.own(geometry));
+    city.traverse(object => { object.userData.distantBackdrop = true; });
+    this.root.add(city);
   }
   private batch(): void {
     for (const _ of this.batchSteps()) { /* Non-staged sets complete in the current frame. */ }
