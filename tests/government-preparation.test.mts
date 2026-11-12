@@ -6,7 +6,7 @@ import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.j
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-function fixture(t: TestContext) {
+function fixture(t: TestContext, roof = false) {
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({
     createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {},
@@ -15,15 +15,17 @@ function fixture(t: TestContext) {
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), camera = new THREE.PerspectiveCamera();
   scene.environment = new THREE.Texture(); scene.fog = new THREE.FogExp2();
   const sun = new THREE.DirectionalLight(); sun.castShadow = true; scene.add(sun, new THREE.DirectionalLight(), new THREE.HemisphereLight());
-  Object.assign(film, { current: FILM_SETS.film_government_lobby, currentScene: 'm1_lobby' });
-  const journey = { scene: 'm1_lobby', actor: 'neo', step: 2, lobby: { phase: 'cleared', elapsed: 0 } } as FilmJourney;
+  Object.assign(film, roof ? { current: FILM_SETS.film_government_office, currentScene: 'm1_smith_question' }
+    : { current: FILM_SETS.film_government_lobby, currentScene: 'm1_lobby' });
+  const journey = (roof ? { scene: 'm1_smith_question', actor: 'morpheus', step: 1, government: { kind: 'questioning', phase: 'alarm_ready', elapsed: 0, attempt: 0 } }
+    : { scene: 'm1_lobby', actor: 'neo', step: 2, lobby: { phase: 'cleared', elapsed: 0 } }) as FilmJourney;
   const parent = new THREE.Group(), hero = new THREE.Group(), body = new THREE.Group(), geometry = new THREE.BoxGeometry();
   parent.visible = false; parent.add(hero, body); scene.add(parent);
   const texture = new THREE.Texture({ width: 2048, height: 2048, complete: true }); texture.needsUpdate = true;
   const material = new THREE.MeshStandardMaterial({ map: texture }), skin = new THREE.SkinnedMesh(geometry, material); skin.visible = false; hero.add(skin);
   const later = new THREE.Mesh(geometry, material); later.userData.reloadedHidden = true; later.visible = false; hero.add(later);
   const coarse = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true })); body.add(coarse);
-  const heroes = new Map([['morpheus', hero]]), bodies = new Map([['smith', body]]), roots = new Set<THREE.Object3D>();
+  const heroes = new Map([[roof ? 'neo' : 'morpheus', hero]]), bodies = new Map([[roof ? 'citizen_11' : 'smith', body]]), roots = new Set<THREE.Object3D>();
   const work: string[] = [], batches: THREE.Object3D[][] = [], programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   let ready = false, target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
   const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
@@ -35,10 +37,10 @@ function fixture(t: TestContext) {
       colors.traverseVisible(object => {
         if (object instanceof THREE.PointLight) points++;
         if (object instanceof THREE.DirectionalLight && object.castShadow) shadows++;
-        if (object instanceof THREE.Group && object.parent instanceof THREE.Scene && object.getObjectByName('government-restraint-chair')) root = object;
+        if (object instanceof THREE.Group && object.parent instanceof THREE.Scene && object.getObjectByName(roof ? 'government-roof-deck' : 'government-restraint-chair')) root = object;
       });
-      assert.equal(points, 0); assert.equal(shadows, 1); assert.ok(root); roots.add(root);
-      assert.equal(scene.children.includes(root), false, 'the future interrogation office must stay offstage');
+      assert.equal(points, roof ? 1 : 0); assert.equal(shadows, roof ? 2 : 1); assert.ok(root); roots.add(root);
+      assert.equal(scene.children.includes(root), false, 'the future government set must stay offstage');
       const meshes: THREE.Object3D[] = []; subject.traverse(object => meshes.push(object)); assert.ok(meshes.length && meshes.length <= 4);
       if (meshes.includes(skin)) assert.match(material.customProgramCacheKey(), /actor-local-skin-v1$/);
       batches.push(meshes); work.push('compile'); programs.push({ program: {}, isReady: () => ready, getUniforms: () => { assert.equal(gpu.debug.checkShaderErrors, false); work.push('bindings'); } });
@@ -66,6 +68,23 @@ test('cleared lobby preparation queues the future interrogation office, hidden c
   const late = new THREE.Group(), guard = new THREE.Mesh(h.geometry, h.material); guard.visible = false; late.add(guard); h.heroes.set('agent_brown', late);
   const before = h.batches.length; h.drain(); assert.ok(h.batches.slice(before).flat().includes(guard), 'late delivered security cast must be accepted');
   const after = h.batches.length; h.newGpu(); h.drain(); assert.ok(h.batches.length > after); assert.equal(h.roots.size, 1, 'a new GPU reuses the same authored office');
+});
+
+test('the interruption prepares the gun-line roof with its entrance lights and adopts the same set', t => {
+  const h = fixture(t, true); h.journey.government!.phase = 'monologue'; h.prepare(); assert.equal(h.work.length, 0);
+  h.journey.government!.phase = 'alarm_ready'; h.ready(); h.drain();
+  assert.equal(h.roots.size, 1, 'prepare the gun-line roof while Morpheus can approach the window');
+  assert.ok(h.batches.flat().includes(h.skin)); assert.ok(h.batches.flat().includes(h.coarse)); assert.equal(h.batches.flat().includes(h.later), false);
+  const root = [...h.roots][0], deck = root.getObjectByName('government-roof-deck') as THREE.Mesh;
+  let disposed = 0; deck.geometry.addEventListener('dispose', () => disposed++);
+  h.journey.government!.phase = 'alarm'; h.prepare(); h.journey.government!.phase = 'done'; h.prepare();
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!;
+  neo.position = filmPosition('film_government_roof', 0, 2.5); neo.currentLocation = 'film_government_roof'; neo.isInMatrix = true;
+  const journey = { ...h.journey, scene: 'm1_bullet_dodge', actor: 'neo', step: 0, completed: ['m1_smith_question'],
+    government: { kind: 'rooftop', phase: 'ready', elapsed: 0, attempt: 0 } } as FilmJourney;
+  h.film.update(neo, { neoLife: { journey } } as SandboxState, 0);
+  assert.equal(h.film.root.getObjectByName(deck.name), deck); assert.equal(root.parent, h.film.root); assert.equal(disposed, 0);
+  h.film.update(undefined, undefined, 0); assert.equal(disposed, 1);
 });
 
 test('clearing the lobby stages the interrogation maps a few strips at a time and releases interrupted uploads', t => {

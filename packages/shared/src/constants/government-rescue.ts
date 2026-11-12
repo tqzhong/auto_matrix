@@ -149,10 +149,11 @@ export function governmentPose(gesture: GovernmentRescueGesture) {
   const jonesDodge = gesture.role === 'agent_jones' && opening ? Math.sin(clamp(gesture.elapsed / GOVERNMENT_RESCUE.rooftop.opening) * Math.PI * 3) ** 2 : 0;
   const fall = (gesture.role === 'agent_jones' || gesture.role === 'pilot') && gesture.phase === 'trinity'
     ? smooth((gesture.elapsed - 1.35) / 1.05) : 0;
+  const buckle = smooth(fall / .24), drop = smooth((fall - .24) / .76);
   const help = ['neo', 'trinity'].includes(gesture.role) && gesture.phase === 'trinity' ? smooth((gesture.elapsed - 3.35) / 1.25) : 0;
   const phone = gesture.role === 'trinity' && gesture.phase === 'downloading' ? smooth(gesture.elapsed / .8) : 0;
   const aim = gesture.role === 'trinity' && gesture.phase === 'trinity' ? pulse(gesture.elapsed, 1.4, 1.1) : 0;
   return { restrained: 0, strain: 0, removeEarpiece: 0, grip: 0, returning: 0, alarm: 0,
     armed: ['neo', 'agent_jones'].includes(gesture.role) && (opening || bullet) || aim ? 1 : 0,
-    bend, jonesDodge, fall, help, phone, aim };
+    bend, jonesDodge, fall, buckle, drop, help, phone, aim };
 }

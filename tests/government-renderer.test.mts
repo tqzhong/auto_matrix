@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { GOVERNMENT_RESCUE, type FilmJourney } from '@auto_matrix/shared';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FILM_SETS, GOVERNMENT_RESCUE, filmPosition, type FilmJourney } from '@auto_matrix/shared';
 import { GovernmentSetRenderer } from '../packages/client/src/engine/GovernmentSetRenderer.js';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
 
 const journey = (scene: 'm1_smith_question' | 'm1_bullet_dodge'): FilmJourney => ({
   version: 1, scene, actor: scene === 'm1_smith_question' ? 'morpheus' : 'neo', step: 0, completed: [], enteredAt: 0,
@@ -47,4 +51,54 @@ test('rooftop set exposes a complete B-212 silhouette and renders each bullet-ti
   assert.notEqual(rotor.rotation.y, before); assert.equal(lines.visible, false);
   assert.ok((root.getObjectByName('government-cockpit-glow') as THREE.PointLight).intensity > 0);
   renderer.dispose(); assert.equal(root.children.length, 0);
+});
+
+test('Jones falls onto the roof and the returned pilot remains on the deck when the pose is restored', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {},
+    fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
+  }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const scene = new THREE.Scene(), actors = new AgentRenderer(scene);
+  t.after(() => { actors.dispose(); globalThis.document = previous; });
+  const story = journey('m1_bullet_dodge'), set = FILM_SETS.film_government_roof, floor = set.center.y - 1;
+  function pose(id: 'agent_jones' | 'citizen_11', elapsed: number) {
+    const actor = world.agents.get(id)!, role = id === 'citizen_11' ? 'pilot' : 'agent_jones';
+    const root = GOVERNMENT_RESCUE.rooftop.roots[role];
+    actor.position = filmPosition(set.id, root.x, root.z); actor.rotation = root.yaw;
+    actor.currentLocation = set.id; actor.isInMatrix = true;
+    actor.currentAction = { type: 'idle', parameters: { government: { ...story.government!, phase: 'trinity', elapsed, role } },
+      startedAt: 0, duration: 1, progress: 0 };
+    actors.updateAgent(id, actor); actors.update(0, undefined, 0, 0, story); scene.updateMatrixWorld(true);
+    return actors.getAgentBody(id)!;
+  }
+  function bounds(body: THREE.Group) {
+    const box = new THREE.Box3(), vertex = new THREE.Vector3();
+    body.traverseVisible(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const indices = object.geometry.index?.array ?? Array.from({ length: object.geometry.attributes.position.count }, (_, i) => i);
+      for (const index of new Set<number>(indices)) box.expandByPoint(object.localToWorld(object.getVertexPosition(index, vertex)));
+    });
+    return box;
+  }
+  const pilot = pose('citizen_11', GOVERNMENT_RESCUE.rooftop.trinity);
+  assert.ok(pilot.rotation.x > 1.4, 'the returned pilot must lie flat on the roof');
+  const final = bounds(pilot);
+  assert.ok(final.min.y - floor > -.02 && final.min.y - floor < .035 && final.max.y - floor < 1.45,
+    `the pilot silhouette must lie on the deck: ${[final.min.y - floor, final.max.y - floor]}`);
+  for (let frame = 0; frame < 4; frame++) actors.update(.05, undefined, 0, 0, story);
+  scene.updateMatrixWorld(true); assert.ok(bounds(pilot).equals(final), 'rendering paused frames cannot change the support pose');
+
+  let lastAngle = 0;
+  for (const elapsed of [1.75, 1.96, 2.18, 2.39]) {
+    const jones = pose('agent_jones', elapsed), shape = bounds(jones);
+    assert.ok(jones.rotation.x > lastAngle, `Jones must continue falling at the saved ${elapsed}s`);
+    lastAngle = jones.rotation.x;
+    assert.ok(Math.abs(shape.min.y - floor - .005) < .025, `Jones leaves the deck at the saved ${elapsed}s: ${shape.min.y - floor}`);
+  }
+  const upright = pose('citizen_11', 1.1);
+  assert.ok(Math.abs(upright.rotation.x) < .01 && bounds(upright).max.y - floor > 3, 'a pre-impact pose cannot retain a previous fall');
 });

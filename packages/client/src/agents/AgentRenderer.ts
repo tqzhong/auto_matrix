@@ -19,7 +19,7 @@ import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import { newMotion, type MotionInput } from './CharacterMotion.js';
 import { poseBathroom } from './BathroomPerformance.js';
-import { officeCustodyActive, smithFinaleLocked, truckRescuePose } from '@auto_matrix/shared';
+import { governmentPose, officeCustodyActive, smithFinaleLocked, truckRescuePose } from '@auto_matrix/shared';
 import { OfficeCustodyPerformance } from './OfficeCustodyPerformance.js';
 import { poseClub } from './ClubPerformance.js';
 import { poseTruckRescue } from './TruckRescueContact.js';
@@ -73,7 +73,7 @@ interface Entry {
   hammerPilot?: boolean;
   logosPilot?: boolean;
   basementDropClock?: BasementDropPlayback;
-  mouseFloor?: { model: THREE.Object3D; roll: number; offset: number };
+  floorSupport?: { model: THREE.Object3D; pitch: number; roll: number; offset: number };
   combatBorrowed?: boolean;
 }
 
@@ -100,7 +100,7 @@ export class AgentRenderer {
   private preparedOpeningApartment = new WeakSet<THREE.Group>();
   private hotelCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; pursuit: boolean; heroes: THREE.Group[]; steps?: Generator<void> };
   private wellsCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; heroes: THREE.Group[]; steps?: Generator<void> };
-  private mouseFloorShapes = new WeakMap<THREE.Object3D, Float32Array>();
+  private fallenFloorShapes = new WeakMap<THREE.Object3D, Float32Array>();
   private custody = new OfficeCustodyPerformance();
   private preparedOfficeActors?: WeakMap<THREE.Group, {
     gpu: THREE.WebGLRenderer['properties'];
@@ -540,15 +540,16 @@ export class AgentRenderer {
     if (source && hit.shot) source.shot = performance.now();
   }
 
-  private supportMouseBody(entry: Entry): void {
-    const model = entry.rig.detail.visible ? entry.rig.hero?.root ?? entry.rig.detail : entry.rig.distant, roll = entry.body.rotation.z;
-    let support = entry.mouseFloor;
-    if (!support || support.model !== model || support.roll !== roll) {
-      let points = this.mouseFloorShapes.get(model);
+  private supportFallenBody(entry: Entry): void {
+    const model = entry.rig.detail.visible ? entry.rig.hero?.root ?? entry.rig.detail : entry.rig.distant;
+    const pitch = entry.body.rotation.x, roll = entry.body.rotation.z;
+    let support = entry.floorSupport;
+    if (!support || support.model !== model || support.pitch !== pitch || support.roll !== roll) {
+      let points = this.fallenFloorShapes.get(model);
       if (!points) {
         entry.group.updateWorldMatrix(true, false); entry.group.updateMatrixWorld(true);
         const point = new THREE.Vector3(), inverse = entry.body.matrixWorld.clone().invert(), posed: number[] = [];
-        // The death pose is fixed in body space; only its saved roll changes.
+        // The falling pose is fixed in body space as the root rotates.
         // Skin once per loaded model, retaining the actual indexed silhouette.
         model.traverseVisible(object => {
           if (!(object instanceof THREE.Mesh)) return;
@@ -559,15 +560,15 @@ export class AgentRenderer {
             posed.push(point.x, point.y, point.z);
           }
         });
-        points = Float32Array.from(posed); this.mouseFloorShapes.set(model, points);
+        points = Float32Array.from(posed); this.fallenFloorShapes.set(model, points);
       }
       entry.body.updateWorldMatrix(true, false);
       const matrix = entry.body.matrixWorld.elements;
       let lowest = Infinity;
       for (let i = 0; i < points.length; i += 3)
         lowest = Math.min(lowest, matrix[1] * points[i] + matrix[5] * points[i + 1] + matrix[9] * points[i + 2]);
-      support = { model, roll, offset: Number.isFinite(lowest) ? .005 - lowest : 0 };
-      entry.mouseFloor = support;
+      support = { model, pitch, roll, offset: Number.isFinite(lowest) ? .005 - lowest : 0 };
+      entry.floorSupport = support;
     }
     entry.body.position.y += support.offset;
   }
@@ -1244,11 +1245,16 @@ export class AgentRenderer {
         entry.body.rotation.set(-pose.pitch, pose.yaw + Math.PI, -pose.roll, 'YXZ');
         entry.body.position.set(0, -1, 0).applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(pose.pitch, pose.yaw, pose.roll, 'YXZ')));
       }
+      const roofDrop = input.government ? governmentPose(input.government).drop ?? 0 : 0;
+      if (roofDrop) {
+        entry.body.rotation.set(Math.PI / 2 * roofDrop, state.rotation, 0, 'YXZ');
+        entry.body.position.y = floor - entry.group.position.y - 1;
+      }
       const mouseHotel = id === 'mouse' && state.isInMatrix && state.currentLocation === 'film_ambush_house';
       const mouseEscape = mouseHotel && journey?.scene === 'm1_dejavu' && !journey.visiting ? journey.ambushEscape : undefined;
       const mouseAlarm = mouseEscape?.phase === 'alarm' && state.status === 'alive' && !state.controller && id !== this.playerId;
       const mouseDead = mouseHotel && state.status === 'dead';
-      if (!mouseDead && entry.mouseFloor) { entry.mouseFloor = undefined; entry.body.rotation.z = 0; }
+      if (!mouseDead && !roofDrop && entry.floorSupport) { entry.floorSupport = undefined; entry.body.rotation.z = 0; }
       if (mouseAlarm || mouseDead) {
         // Replay from the saved clock, including pause and late model arrival.
         // Match the authoritative room impacts rather than replaying local events.
@@ -1262,7 +1268,7 @@ export class AgentRenderer {
           ? THREE.MathUtils.smoothstep(elapsed, AMBUSH_ESCAPE.mouse, AMBUSH_ESCAPE.mouse + .72) : 1 : 0;
         entry.body.rotation.set(0, state.rotation, fall * Math.PI / 2);
         if (mouseDead) entry.body.position.y = floor - entry.group.position.y - 1;
-        else entry.mouseFloor = undefined;
+        else entry.floorSupport = undefined;
       }
       if (medicalPatient || podBody) { entry.rig.motion = newMotion(); input.speed = 0; input.turn = 0; }
       input.garageSeated = Boolean(garageSeat);
@@ -1275,7 +1281,7 @@ export class AgentRenderer {
       }
       if (phoneFailed) input.firstPerson = false;
       this.models.animate(entry.rig, medicalPatient || podBody || mouseAlarm || mouseDead ? 0 : delta * (id === this.playerId && speed > 0 ? 1 : speed), input, dist);
-      if (mouseDead) this.supportMouseBody(entry);
+      if (mouseDead || roofDrop) this.supportFallenBody(entry);
       if (input.maggieDiscovery?.role !== 'maggie') poseHammerPatient(entry.rig, medicalPatient);
       const evacuationHead = entry.rig.hero?.bones.get('head') ?? entry.rig.head;
       if (input.dockEvacuation || input.shaftSeal || input.templeDefense?.phase === 'mounting' || evacuationHead.userData.evacuationHidden) {

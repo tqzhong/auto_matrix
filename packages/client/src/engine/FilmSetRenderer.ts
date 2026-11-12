@@ -376,7 +376,7 @@ export class FilmSetRenderer {
   private sentinel?: SentinelSetRenderer;
   private restaurant?: CypherRestaurantRenderer;
   private government?: GovernmentSetRenderer;
-  private preparedGovernment?: { scene: 'm1_smith_question' | 'm1_helicopter' | 'm1_rooftop_rescue'; root: THREE.Group; renderer: GovernmentSetRenderer;
+  private preparedGovernment?: { scene: 'm1_smith_question' | 'm1_bullet_dodge' | 'm1_helicopter' | 'm1_rooftop_rescue'; root: THREE.Group; renderer: GovernmentSetRenderer;
     colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling; textureUpload?: Generator<void, boolean> };
   private matrixEscape?: MatrixEscapeRenderer;
   private preparedSubway?: { root: THREE.Group; renderer: MatrixEscapeRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
@@ -680,18 +680,21 @@ export class FilmSetRenderer {
   prepareGovernment(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
     const questioning = this.current?.id === 'film_government_lobby' && journey?.scene === 'm1_lobby' && journey.lobby?.phase === 'cleared';
+    const roofFight = this.current?.id === 'film_government_office' && journey?.scene === 'm1_smith_question'
+      && ['alarm_ready', 'alarm', 'done'].includes(journey.government?.phase ?? '');
     const helicopter = this.current?.id === 'film_government_roof' && journey?.scene === 'm1_bullet_dodge'
       && ['download_ready', 'downloading', 'done'].includes(journey.government?.phase ?? '');
     const rooftop = this.current?.id === 'film_government_office' && journey?.scene === 'm1_helicopter'
       && ['catching', 'done'].includes(journey.airRescue?.phase ?? '');
-    if (!journey || journey.visiting || !questioning && !helicopter && !rooftop) {
+    if (!journey || journey.visiting || !questioning && !roofFight && !helicopter && !rooftop) {
       this.cancelGovernmentPreparation(); return;
     }
-    const scene = rooftop ? 'm1_rooftop_rescue' : helicopter ? 'm1_helicopter' : 'm1_smith_question';
+    const scene = roofFight ? 'm1_bullet_dodge' : rooftop ? 'm1_rooftop_rescue' : helicopter ? 'm1_helicopter' : 'm1_smith_question';
     if (this.preparedGovernment?.scene !== scene) {
       this.cancelGovernmentPreparation();
       const root = new THREE.Group();
-      const office = new GovernmentSetRenderer(root, rooftop ? 'film_government_roof' : 'film_government_office');
+      const office = new GovernmentSetRenderer(root, roofFight || rooftop ? 'film_government_roof' : 'film_government_office');
+      if (roofFight) office.update({ ...journey, scene, government: { kind: 'rooftop', phase: 'ready', elapsed: 0, attempt: 0 }, airRescue: undefined }, 0);
       if (helicopter) office.update({ ...journey, scene, airRescue: { kind: 'office', phase: 'ready', elapsed: 0, attempt: 0, suppression: 0, bursts: 0 } }, 0);
       if (rooftop) office.update({ ...journey, scene, airRescue: { kind: 'roof', phase: 'ready', elapsed: 0, attempt: 0, grip: 1, braces: 0, misses: 0, resolved: [] } }, 0);
       this.preparedGovernment = { scene, root, renderer: office };
@@ -706,7 +709,7 @@ export class FilmSetRenderer {
       for (const light of prepared.colors.scene.children) if (light instanceof THREE.PointLight) light.intensity = 0;
       prepared.colors.meshes.push(this.marker);
       prepared.lighting = new LightCulling(prepared.colors.scene);
-      prepared.lighting.stablePointSlots = !questioning;
+      prepared.lighting.stablePointSlots = !questioning && !roofFight;
       prepared.gpu = renderer.properties;
     }
     const colors = prepared.colors, meshes = new Set<ColorMesh>();
@@ -722,7 +725,7 @@ export class FilmSetRenderer {
       }
     }
     colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
-    const preparingTexture = questioning ? this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)
+    const preparingTexture = questioning || roofFight ? this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)
       : this.prepareColorTexture(renderer, colors.textures);
     if (!preparingTexture) this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated');
   }

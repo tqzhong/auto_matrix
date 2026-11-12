@@ -657,6 +657,16 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     return { legs, arms, hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0,
       roll: 0, headTurn: 0, moving: 0, run: 0, airborne: air, coat: .22 * air, impact: 0, landing: 0 };
   }
+  const government = input.government && governmentPose(input.government);
+  if (government?.buckle) {
+    Object.assign(state, newMotion());
+    const buckle = government.buckle, hipHeight = 1.98 - .13 * buckle;
+    const legs = [solveLeg(-.14 * buckle, hipHeight - .15), solveLeg(.22 * buckle, hipHeight - .15)];
+    const arms = [0, 1].map(i => ({ shoulder: (i ? -.08 : -.26) * buckle, elbow: -.15 - (i ? .10 : .17) * buckle,
+      outward: (i ? 1 : -1) * (.09 + (i ? .42 : .23) * buckle), grip: 0 }));
+    return { legs, arms, hipHeight, lean: .07 * buckle, twist: 0, sway: 0, lunge: 0, roll: 0, headTurn: .12 * buckle,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
   const download = input.training?.kind === 'download' ? input.training : input.download?.phase !== 'walk' ? input.download : undefined;
   const meal = input.interlude?.kind === 'meal' ? crewMealPose(input.interlude) : undefined;
   if (input.interlude) {
@@ -788,7 +798,6 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const betrayal = input.betrayal && betrayalPose(input.betrayal);
   const rescue = input.rescue && rescuePose(input.rescue);
   const lobby = input.lobbyEntry && lobbyPose(input.lobbyEntry);
-  const government = input.government && governmentPose(input.government);
   const airRescue = input.airRescue && airRescuePose(input.airRescue);
   const matrixEscape = input.matrixEscape && matrixEscapePose(input.matrixEscape);
   const reloaded = input.reloaded && reloadedPose(input.reloaded);
@@ -1099,9 +1108,6 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     if (role === 'trinity' && government.phone) {
       arms[1].shoulder = mix(arms[1].shoulder, -1.38, government.phone); arms[1].elbow = mix(arms[1].elbow, -1.45, government.phone);
       arms[1].outward = mix(arms[1].outward, .42, government.phone); arms[1].grip = mix(arms[1].grip, .52, government.phone);
-    }
-    if (government.fall) for (let i = 0; i < 2; i++) {
-      arms[i].shoulder = mix(arms[i].shoulder, .15, government.fall); arms[i].elbow = mix(arms[i].elbow, -.12, government.fall); arms[i].grip = mix(arms[i].grip, 0, government.fall);
     }
   }
   if (airRescue && input.airRescue) {
@@ -1443,8 +1449,8 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const rescueLook = rescue?.briefingPoint ? (input.rescue?.role === 'trinity' ? -.16 : .13) * rescue.briefingPoint : 0;
   const lobbyLean = lobbyDown * 1.38;
   const lobbyRoll = -1.18 * lobbyDown;
-  const governmentLean = government ? government.strain * .42 - government.bend * 1.08 + government.fall * 1.25 - (government.jonesDodge ?? 0) * .24 : 0;
-  const governmentRoll = government ? government.bend * (Math.sin(input.government!.elapsed * 2.1) >= 0 ? .42 : -.42) + government.fall * .85 + (government.jonesDodge ?? 0) * .5 : 0;
+  const governmentLean = government ? government.strain * .42 - government.bend * 1.08 - (government.jonesDodge ?? 0) * .24 : 0;
+  const governmentRoll = government ? government.bend * (Math.sin(input.government!.elapsed * 2.1) >= 0 ? .42 : -.42) + (government.jonesDodge ?? 0) * .5 : 0;
   const airRescueLean = airRescue ? airRescue.strain * .72 + airRescue.fall * .45 - airRescue.land * .25 : 0;
   const airRescueRoll = airRescue ? airRescue.fall * .5 + airRescue.strain * Math.sin(input.airRescue!.elapsed * 4) * .18 : 0;
   const escapeLean = matrixEscape ? matrixEscape.wall * .75 + matrixEscape.grapple * (input.matrixEscape?.role === 'neo' ? -.82 : .24) - matrixEscape.strike * .32 - matrixEscape.leap * .24 + matrixEscape.brace * .74 : 0;
