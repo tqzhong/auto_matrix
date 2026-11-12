@@ -167,6 +167,30 @@ test('disk trade, rabbit investigation and following the invitation are separate
   assert.equal(h.sandbox.state.structures.some(s => s.id === 'film:apartment:door'), false);
 });
 
+test('temporary apartment guests leave the landing after accepting the invitation, including in old saves', () => {
+  const h = setup(); atInvitation(h); h.near(); h.command('act'); h.frames(4);
+  h.command('contact:follow');
+  const guests = ['choi', 'dujour'].map(id => h.world.agents.get(id)!);
+  const landing = guests.map(guest => ({ position: { ...guest.position }, currentLocation: guest.currentLocation }));
+  h.command('next'); assert.equal(h.state().scene, 'm1_club');
+  for (const guest of guests) {
+    assert.equal(guest.currentLocation, 'nightclub');
+    assert.equal(playerBlocked(guest.position, true, .7), false);
+    assert.equal(guest.currentAction, null);
+  }
+  assert.ok(Math.abs(guests[0].position.x - guests[1].position.x) >= 2);
+
+  const old = structuredClone(h.sandbox.state), journey = old.neoLife!.journey!;
+  journey.scene = 'm1_morning'; journey.completed.push('m1_club'); delete journey.club;
+  guests.forEach((guest, i) => Object.assign(guest, landing[i]));
+  h.players.possess('guest-player', 'choi', 1);
+  h.sandbox.restore(old);
+  assert.deepEqual(guests[0].position, landing[0].position, 'preserve the other player’s position');
+  assert.equal(guests[0].currentLocation, landing[0].currentLocation);
+  assert.equal(guests[1].currentLocation, 'nightclub', 'restore the other guest out of the doorway');
+  assert.ok(h.state().completed.includes('m1_club'));
+});
+
 test('the collected data disc stays attached to Neo while ordinary walking back to Choi remains available', () => {
   const h = setup(); atBook(h); h.near(); h.command('act'); h.frames(4);
   assert.equal(h.state().contact?.phase, 'disk');

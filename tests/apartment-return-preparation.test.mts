@@ -121,6 +121,28 @@ test('daylight changing during the drink prepares the new home light layout', t 
   assert.ok(h.batches.length > day); assert.ok(h.slots.slice(day).every(slots => slots === 6));
 });
 
+test('the nightclub return prepares the morning apartment, actual home clothes and street before the cut', t => {
+  const h = fixture(); t.after(h.dispose);
+  const marker = h.arms.clone();
+  h.journey.scene = 'm1_club'; delete h.journey.pills;
+  h.journey.club = { phase: 'crowd', elapsed: 0 };
+  h.prepare([marker]); assert.deepEqual(h.work, []);
+  h.journey.club.phase = 'whisper'; h.journey.visiting = 'm1_club';
+  h.prepare([marker]); assert.deepEqual(h.work, []);
+  delete h.journey.visiting;
+  h.ready();
+  for (let frame = 0; frame < 80; frame++) h.prepare([marker]);
+  const prepared = h.batches.flat();
+  for (const mesh of [h.arms, h.shirt, h.street, marker]) assert.ok(prepared.includes(mesh), mesh.name || mesh.type);
+  assert.ok(h.slots.every(slots => slots === 10)); assert.ok(h.views.every(z => z < 0));
+  assert.ok(h.apartment.returnNormalMeshes?.includes(h.arms));
+  assert.equal(h.work.filter(step => step === 'texture').length, 1);
+  const before = h.work.length;
+  h.journey.scene = 'm1_morning';
+  assert.equal(h.prepare([marker]), false); assert.equal(h.work.length, before);
+  assert.equal(h.apartment.returnNormalMeshes, undefined);
+});
+
 test('a successful Wells connection prepares the apartment and the guests before Neo takes over', t => {
   const h = fixture(); t.after(h.dispose);
   const choi = new THREE.Group(), dujour = new THREE.Group();

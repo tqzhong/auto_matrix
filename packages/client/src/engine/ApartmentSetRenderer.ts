@@ -10,7 +10,7 @@ import { cacheReadyProgramLocations, shadowCasterProxies } from './PrepareShader
 import { bitmapUploadImage, stageBitmapTexture } from './BitmapTextureRows.js';
 import { prepareMeshBuffers } from './PrepareMeshBuffers.js';
 
-export const APARTMENT_OPENING_POINT_SLOTS = 10;
+export const APARTMENT_POINT_SLOTS = 10;
 
 const { center: home, width: homeWidth, depth: homeDepth } = APARTMENT_ROOM;
 const workroom = new THREE.Box3(
@@ -33,6 +33,7 @@ export function closedApartmentFar(camera: THREE.PerspectiveCamera, journey?: Fi
 
 type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 type ReturnShadows = { lighting: LightCulling; materials: Set<THREE.MeshDepthMaterial>; entryFrames: number };
+type ApartmentReturn = 'm1_wake_up' | 'm1_morning' | 'neo_apartment';
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
 export class ApartmentSetRenderer {
@@ -63,7 +64,7 @@ export class ApartmentSetRenderer {
   private windowLights: THREE.PointLight[] = [];
   private roomLights: THREE.Light[] = [];
   private returnPreparation?: {
-    gpu: THREE.WebGLRenderer['properties']; subjects: (THREE.Group | THREE.Mesh)[]; points: number; opening: boolean;
+    gpu: THREE.WebGLRenderer['properties']; subjects: (THREE.Group | THREE.Mesh)[]; points: number; destination: ApartmentReturn;
     steps?: Generator<void>; normalMeshes?: THREE.Mesh[]; shadows?: ReturnShadows;
   };
   constructor(parent: THREE.Group, private cityLights?: THREE.Group) {
@@ -277,12 +278,14 @@ export class ApartmentSetRenderer {
     return this.returnPreparation?.steps ? undefined : this.returnPreparation?.normalMeshes;
   }
   prepareReturn(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, journey?: FilmJourney, actor?: THREE.Group,
-    openingObjects: readonly (THREE.Group | THREE.Mesh | undefined)[] = [], openingLights?: LightCulling): boolean {
+    entryObjects: readonly (THREE.Group | THREE.Mesh | undefined)[] = [], openingLights?: LightCulling): boolean {
     const phone = journey?.scene === 'm1_phone_escape' ? journey.openingPhone : undefined;
     const opening = phone?.phase === 'connected' || phone?.phase === 'done';
     const blue = journey?.scene === 'm1_pills' && journey.pills?.phase === 'taking' && journey.pills.choice === 'blue';
+    const club = journey?.scene === 'm1_club' && ['whisper', 'question', 'reply', 'departing', 'done'].includes(journey.club?.phase ?? '');
+    const destination = opening ? 'm1_wake_up' : club ? 'm1_morning' : blue ? 'neo_apartment' : undefined;
     const previous = this.returnPreparation;
-    if ((!opening && !blue) || journey?.visiting || !actor || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+    if (!destination || journey?.visiting || !actor || !renderer.extensions.has('KHR_parallel_shader_compile')) {
       const shadows = previous?.shadows;
       if (journey?.scene === 'm1_wake_up' && !journey.visiting && previous?.gpu === renderer.properties
         && shadows?.materials.size && shadows.entryFrames < 2) {
@@ -292,16 +295,16 @@ export class ApartmentSetRenderer {
       } else this.cancelReturnPreparation();
       return false;
     }
-    const subjects = opening ? [actor, ...openingObjects.filter((object): object is THREE.Group | THREE.Mesh => object !== undefined)] : [actor];
+    const subjects = destination === 'neo_apartment' ? [actor] : [actor, ...entryObjects.filter((object): object is THREE.Group | THREE.Mesh => object !== undefined)];
     const points = this.roomLights.reduce((count, light) => count + Number(light instanceof THREE.PointLight && light.intensity > 0), 0);
-    if (previous?.gpu !== renderer.properties || previous.points !== points || previous.opening !== opening || previous.subjects.length !== subjects.length
+    if (previous?.gpu !== renderer.properties || previous.points !== points || previous.destination !== destination || previous.subjects.length !== subjects.length
       || subjects.some((object, index) => previous.subjects[index] !== object)) {
       this.cancelReturnPreparation();
-      const normalMeshes: THREE.Mesh[] | undefined = opening ? [] : undefined;
+      const normalMeshes: THREE.Mesh[] | undefined = destination === 'neo_apartment' ? undefined : [];
       const shadows: ReturnShadows | undefined = opening && openingLights && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
         ? { lighting: openingLights, materials: new Set(), entryFrames: 0 } : undefined;
-      this.returnPreparation = { gpu: renderer.properties, subjects, points, opening, normalMeshes, shadows,
-        steps: this.prepareReturnSteps(renderer, camera, scene, subjects, opening, normalMeshes, shadows) };
+      this.returnPreparation = { gpu: renderer.properties, subjects, points, destination, normalMeshes, shadows,
+        steps: this.prepareReturnSteps(renderer, camera, scene, subjects, destination, normalMeshes, shadows) };
     }
     const prepared = this.returnPreparation!;
     if (prepared.steps?.next().done) prepared.steps = undefined;
@@ -314,7 +317,9 @@ export class ApartmentSetRenderer {
     preparation?.shadows?.materials.forEach(material => material.dispose());
   }
   private *prepareReturnSteps(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene,
-    subjects: (THREE.Group | THREE.Mesh)[], opening: boolean, normalMeshes?: THREE.Mesh[], shadows?: ReturnShadows): Generator<void> {
+    subjects: (THREE.Group | THREE.Mesh)[], destination: ApartmentReturn, normalMeshes?: THREE.Mesh[], shadows?: ReturnShadows): Generator<void> {
+    const opening = destination === 'm1_wake_up';
+    const entryScene = destination === 'neo_apartment' ? undefined : FILM_SCENE_BY_ID[destination];
     const lights = new THREE.Scene(); lights.environment = scene.environment; lights.fog = scene.fog;
     for (const light of scene.children) {
       if (light.visible && (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) lights.add(light.clone());
@@ -324,15 +329,14 @@ export class ApartmentSetRenderer {
     for (const source of fixtures) {
       const light = source.clone(); light.visible = true; source.getWorldPosition(light.position); lights.add(light);
     }
-    if (opening) {
-      const first = FILM_SCENE_BY_ID.m1_wake_up, goal = filmStepPosition(first, first.steps[0]);
+    if (entryScene) {
+      const goal = filmStepPosition(entryScene, entryScene.steps[0]);
       const objective = new THREE.PointLight(0xffffff, 1, 5);
       objective.position.set(goal.x, goal.y + .68, goal.z); lights.add(objective);
     }
     const eye = camera.clone();
-    if (opening) {
-      // Neo enters facing the desk. The view at the other side of the room selects different light counts.
-      const entry = filmEntry(FILM_SCENE_BY_ID.m1_wake_up), shoulder = eye.aspect < .8 ? .3 : .8;
+    if (entryScene) {
+      const entry = filmEntry(entryScene), shoulder = eye.aspect < .8 ? .3 : .8;
       eye.position.set(entry.x + shoulder, entry.y + 5.6, entry.z + 10.2);
       eye.lookAt(entry.x + shoulder, entry.y + 1.97, entry.z - 2);
     } else {
@@ -367,8 +371,8 @@ export class ApartmentSetRenderer {
       for (const map of maps) if (map) textures.add(map);
     }
     const queue = [...meshes], pending: ColorProgram[] = [], culling = new LightCulling(lights), target = new THREE.WebGLRenderTarget(1, 1);
+    if (entryScene) culling.minimumPointSlots = APARTMENT_POINT_SLOTS;
     if (opening) {
-      culling.minimumPointSlots = APARTMENT_OPENING_POINT_SLOTS;
       // The park blocks share a material. Link it even though the desk view faces away from them.
       const canopy = this.cityLights?.getObjectByName('central-park-canopy');
       if (canopy instanceof THREE.InstancedMesh && !meshes.has(canopy)) queue.push(canopy);
@@ -391,12 +395,12 @@ export class ApartmentSetRenderer {
         const programs = renderer.info.programs, ready = pending.findIndex(program => programs?.includes(program) && program.isReady());
         if (ready >= 0) {
           const [program] = pending.splice(ready, 1);
-          // Give the completed Wells handoff program a frame before reflecting its uniforms.
-          if (opening) yield;
+          // Give the completed handoff program a frame before reflecting its uniforms.
+          if (entryScene) yield;
           if (renderer.info.programs?.includes(program)) cacheReadyProgramLocations(renderer, program);
         } else if (queue.length) {
           const batch = queue.splice(0, 4);
-          if (opening) for (const mesh of batch) if (mesh instanceof THREE.SkinnedMesh) {
+          if (entryScene) for (const mesh of batch) if (mesh instanceof THREE.SkinnedMesh) {
             if (Array.isArray(mesh.material)) mesh.material.forEach(prepareSkinnedMaterial);
             else prepareSkinnedMaterial(mesh.material);
           }
@@ -413,7 +417,7 @@ export class ApartmentSetRenderer {
             textures.delete(texture);
             const uploaded = renderer.properties.get(texture) as { __version?: number; __webglTexture?: WebGLTexture };
             if ((image.width ?? 0) < 1024 || uploaded.__version === texture.version) continue;
-            const bitmap = opening && !uploaded.__webglTexture && bitmapUploadImage(renderer, texture);
+            const bitmap = entryScene && !uploaded.__webglTexture && bitmapUploadImage(renderer, texture);
             if (!bitmap || !(yield* stageBitmapTexture(renderer, texture, bitmap))) {
               const current = renderer.properties.get(texture) as { __version?: number };
               if (texture.image && current.__version !== texture.version) renderer.initTexture(texture);

@@ -20,7 +20,7 @@ import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pil
 import { FilmSetRenderer, openingVisitScene } from './FilmSetRenderer.js';
 import { filmEntry, FILM_SCENE_BY_ID } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS } from './LobbySetRenderer.js';
-import { APARTMENT_OPENING_POINT_SLOTS, closedApartmentFar } from './ApartmentSetRenderer.js';
+import { APARTMENT_POINT_SLOTS, closedApartmentFar } from './ApartmentSetRenderer.js';
 import { CombatEffects } from './CombatEffects.js';
 import { GameAudio } from './GameAudio.js';
 import { updateOpeningAudio, type OpeningAudioState } from './OpeningAudio.js';
@@ -267,10 +267,11 @@ export class Engine {
     this.voxelRenderer.showOfficeInterior(officeSet || Boolean(this.sandbox?.neoLife?.lift?.passenger));
     const cinematicSet = filmSet && !officeSet && filmSet.id !== 'film_anderson_flat' ? filmSet : undefined;
     const openingApartment = liveMatrixJourney?.scene === 'm1_wake_up' && liveMatrixJourney.contact?.chairMotion === 'seated';
+    const morningApartment = liveMatrixJourney?.scene === 'm1_morning' && filmSet?.id === 'film_anderson_flat';
     this.lightCulling.minimumPointSlots = filmSet?.id === 'film_government_lobby' ? LOBBY_POINT_SLOTS
       : filmSet?.id === 'film_subway_platform' ? SUBWAY_POINT_SLOTS
       : officeSet ? OFFICE_POINT_SLOTS
-      : openingApartment ? APARTMENT_OPENING_POINT_SLOTS
+      : openingApartment || morningApartment ? APARTMENT_POINT_SLOTS
       : this.filmSets.minimumPointSlots || (reserveCommuteLights && !cinematicSet ? POINT_SLOT_FLOOR : 0);
     if (!cinematicSet && previousSet?.id !== filmSet?.id) this.updateAtmosphere();
     this.voxelRenderer.matrix.visible = this.matrix && !cinematicSet; this.voxelRenderer.real.visible = !this.matrix && !cinematicSet;
@@ -297,12 +298,14 @@ export class Engine {
     this.filmSets.prepareDockEmp(this.renderer, this.camera, meeting);
     const openingPhone = liveMatrixJourney?.scene === 'm1_phone_escape' ? liveMatrixJourney.openingPhone : undefined;
     const openingHandoff = openingPhone?.phase === 'connected' || openingPhone?.phase === 'done';
+    const clubReturn = liveMatrixJourney?.scene === 'm1_club';
     const neoAtHome = player?.id === meeting?.actor ? this.agentRenderer.getAgentHero('neo') : undefined;
     const preparingApartment = this.agentRenderer.prepareWellsCast(this.renderer, this.camera, openingPhone)
       || openingHandoff && this.agentRenderer.prepareOpeningApartmentActor()
       || this.voxelRenderer.interiors.prepareApartmentReturn(this.renderer, this.camera, this.scene, this.sandbox?.neoLife, neoAtHome,
       openingHandoff ? [this.agentRenderer.getAgentHero('choi'), this.agentRenderer.getAgentHero('dujour'),
-        this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentDistant('neo')] : undefined,
+        this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentDistant('neo')]
+        : clubReturn ? [this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo')] : undefined,
       openingHandoff ? this.lightCulling : undefined);
     if (!this.playerControls?.firstPerson) this.filmSets.preparePodColors(this.renderer, this.camera, this.agentRenderer.getAgentHero('neo'));
     if (meeting?.scene === 'm1_oracle' && player?.id === meeting.actor)
@@ -392,10 +395,10 @@ export class Engine {
       this.agentRenderer.prepareSmithEntrance(this.renderer, this.camera);
     const preparingLafayetteNormals = liveMatrixJourney?.scene === 'm1_bug' && filmSet?.id === 'film_extraction_car'
       && ['parked', 'exiting', 'outside'].includes(liveMatrixJourney.meeting?.phase ?? '');
-    const neoNormals = preparingLafayetteNormals || openingHandoff && !preparingApartment ? neoAtHome : undefined;
     const hotelNormals = hotelPreparation && !preparingHotelTextures ? this.filmSets.openingHotelNormalMeshes : undefined;
     const openingNormals = this.filmSets.openingRoofRetryNormalMeshes ?? hotelNormals;
     const apartmentNormals = openingNormals ? undefined : this.voxelRenderer.interiors.apartmentReturnNormalMeshes;
+    const neoNormals = preparingLafayetteNormals || openingHandoff && !preparingApartment || apartmentNormals ? neoAtHome : undefined;
     this.postProcessing.prepareNormals(this.renderer, openingNormals ? this.filmSets.root : neoNormals,
       openingNormals ?? apartmentNormals, apartmentNormals !== undefined);
     this.particleSystem.update(delta);

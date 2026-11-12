@@ -20,8 +20,8 @@ export class LifeInteriors {
 
   get apartmentReturnNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.apartment.returnNormalMeshes; }
   prepareApartmentReturn(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, life?: NeoLifeState, actor?: THREE.Group,
-    openingObjects?: readonly (THREE.Group | THREE.Mesh | undefined)[], openingLights?: LightCulling): boolean {
-    return this.apartment.prepareReturn(renderer, camera, scene, life?.journey, actor, openingObjects, openingLights);
+    entryObjects?: readonly (THREE.Group | THREE.Mesh | undefined)[], openingLights?: LightCulling): boolean {
+    return this.apartment.prepareReturn(renderer, camera, scene, life?.journey, actor, entryObjects, openingLights);
   }
 
   constructor(parent: THREE.Group) {

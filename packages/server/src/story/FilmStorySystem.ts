@@ -6103,6 +6103,16 @@ export class FilmStorySystem {
   }
   reconcileCast(): void {
     if (!this.state) return;
+    if (!this.state.visiting && ['m1_club', 'm1_morning'].includes(this.state.scene) && this.state.completed.includes('m1_wake_up')) {
+      const exit = locationEntrance('nightclub');
+      for (const id of ['choi', 'dujour'] as const) {
+        const guest = this.world.agents.get(id), mark = APARTMENT[id];
+        if (guest?.status !== 'alive' || guest.controller || guest.currentLocation !== 'film_anderson_flat'
+          || distance(guest.position, filmPosition('film_anderson_flat', mark.x, mark.z)) > .35) continue;
+        guest.currentLocation = 'nightclub'; guest.position = { ...exit, x: exit.x + (id === 'choi' ? -1.5 : 1.5) };
+        guest.rotation = Math.PI; guest.currentAction = null; guest.targetPosition = null; guest.currentPath = []; guest.velocity = { x: 0, y: 0, z: 0 };
+      }
+    }
     const child = this.scene?.film === 3 ? this.world.agents.get('spoon_boy') : undefined;
     if (child?.currentLocation === 'film_oracle_home' && !child.controller) {
       const home = CHARACTERS.spoon_boy.initialLocation;
