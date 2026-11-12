@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APARTMENT, APARTMENT_BOOK, APARTMENT_CHAIR, APARTMENT_NETWORK, APARTMENT_ROOM, FILM_SCENE_BY_ID, MORNING, apartmentAfter, apartmentDoor, computerNetworkPull, filmEntry, filmStepPosition, lifeRoomCenter, wakeCallDoor, wakeCallHandsetHeld, type ComputerInvestigation, type FilmJourney, type NeoLifeState } from '@auto_matrix/shared';
+import { APARTMENT, APARTMENT_BOOK, APARTMENT_CHAIR, APARTMENT_NETWORK, APARTMENT_ROOM, FILM_SCENE_BY_ID, MORNING, apartmentAfter, apartmentAtComputer, apartmentDoor, computerNetworkPull, filmEntry, filmStepPosition, lifeRoomCenter, wakeCallDoor, wakeCallHandsetHeld, type ComputerInvestigation, type FilmJourney, type NeoLifeState } from '@auto_matrix/shared';
 import { apartmentDisc } from '../agents/ApartmentDisc.js';
 import { apartmentHandset, apartmentHandsetPose } from '../agents/ApartmentHandset.js';
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
@@ -11,6 +11,25 @@ import { bitmapUploadImage, stageBitmapTexture } from './BitmapTextureRows.js';
 import { prepareMeshBuffers } from './PrepareMeshBuffers.js';
 
 export const APARTMENT_OPENING_POINT_SLOTS = 10;
+
+const { center: home, width: homeWidth, depth: homeDepth } = APARTMENT_ROOM;
+const workroom = new THREE.Box3(
+  new THREE.Vector3(home.x - homeWidth / 2 + .2, home.y - 1, home.z - homeDepth / 2 + .2),
+  new THREE.Vector3(home.x + homeWidth / 2 - .2, home.y + 7.6, home.z + APARTMENT.doorZ - .2),
+);
+
+export function closedApartmentFar(camera: THREE.PerspectiveCamera, journey?: FilmJourney): number {
+  const contact = journey?.scene === 'm1_wake_up' && !journey.visiting ? journey.contact : undefined;
+  if (!contact || (!apartmentAtComputer(contact.phase) && contact.phase !== 'door')) return camera.far;
+  camera.updateWorldMatrix(true, false);
+  const point = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
+  if (!workroom.containsPoint(point)) return camera.far;
+  // A wide or near-wall view can see beyond the room if the near plane clips a wall.
+  for (const x of [-1, 1]) for (const y of [-1, 1]) {
+    if (!workroom.containsPoint(point.set(x, y, -1).unproject(camera))) return camera.far;
+  }
+  return Math.min(camera.far, 56);
+}
 
 type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 type ReturnShadows = { lighting: LightCulling; materials: Set<THREE.MeshDepthMaterial>; entryFrames: number };

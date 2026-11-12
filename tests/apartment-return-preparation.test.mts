@@ -2,9 +2,29 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { lifeRoomCenter, type FilmJourney } from '@auto_matrix/shared';
-import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
+import { ApartmentSetRenderer, closedApartmentFar } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { prepareOpaqueShadowDepth } from '../packages/client/src/engine/OpaqueShadowDepth.js';
+
+test('the workroom clips the distant street only while the camera and its near plane are enclosed', () => {
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  camera.position.set(1204.2, 3.95, 680.75);
+  camera.lookAt(1200.95, 2.95, 679.7);
+  const journey = { scene: 'm1_wake_up', contact: { phase: 'arrival', elapsed: 1.9, chairMotion: 'seated' } } as FilmJourney;
+  assert.equal(closedApartmentFar(camera, journey), 56);
+  assert.equal(camera.far, 5000);
+  journey.contact!.phase = 'door';
+  assert.equal(closedApartmentFar(camera, journey), 56);
+  journey.contact!.phase = 'opening';
+  assert.equal(closedApartmentFar(camera, journey), 5000);
+  journey.contact!.phase = 'arrival';
+  journey.visiting = 'm1_room303';
+  assert.equal(closedApartmentFar(camera, journey), 5000);
+  delete journey.visiting;
+  camera.position.set(1226.6, 3.95, 680.75);
+  camera.lookAt(1227.6, 3.95, 680.75);
+  assert.equal(closedApartmentFar(camera, journey), 5000, 'the near plane must not clip through the wall');
+});
 
 function fixture() {
   const scene = new THREE.Scene(), city = new THREE.Group(), home = new THREE.Group(), root = new THREE.Group(), actor = new THREE.Group();

@@ -20,7 +20,7 @@ import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pil
 import { FilmSetRenderer, openingVisitScene } from './FilmSetRenderer.js';
 import { filmEntry, FILM_SCENE_BY_ID } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS } from './LobbySetRenderer.js';
-import { APARTMENT_OPENING_POINT_SLOTS } from './ApartmentSetRenderer.js';
+import { APARTMENT_OPENING_POINT_SLOTS, closedApartmentFar } from './ApartmentSetRenderer.js';
 import { CombatEffects } from './CombatEffects.js';
 import { GameAudio } from './GameAudio.js';
 import { updateOpeningAudio, type OpeningAudioState } from './OpeningAudio.js';
@@ -417,6 +417,7 @@ export class Engine {
     (this.eventRing.material as THREE.MeshBasicMaterial).opacity = ringOpacity;
     measure?.('effects');
     this.pillReflection.update(meeting, this.agentRenderer.getAgentBody('morpheus'), this.agentRenderer.getAgentBody(meeting?.actor ?? 'neo'));
+    const cameraFar = this.camera.far, roomFar = closedApartmentFar(this.camera, liveMatrixJourney);
     // The cabin has its own lighting; GTAO redraws its actors and seats for little visible gain.
     try {
       const enclosedLiftFloor = liveMatrixJourney?.scene === 'm1_commute'
@@ -425,9 +426,11 @@ export class Engine {
       if (enclosedLiftFloor !== undefined || officeSet && (liveMatrixJourney?.scene === 'm1_boss' || liveMatrixJourney?.scene === 'm1_office_escape'
         || (liveMatrixJourney?.scene === 'm1_ledge' && liveMatrixJourney.office?.climbed === undefined)))
         this.agentRenderer.cullOfficeStreetShadows(this.camera, this.lightingSystem.directionalLight, enclosedLiftFloor);
+      if (roomFar < cameraFar) { this.camera.far = roomFar; this.camera.updateProjectionMatrix(); }
       this.postProcessing.render(filmSet?.id !== 'film_extraction_car');
       this.openingTrace.render(this.renderer, openingTrace);
     } finally {
+      if (roomFar < cameraFar) { this.camera.far = cameraFar; this.camera.updateProjectionMatrix(); }
       this.voxelRenderer.restoreLiftExterior();
       this.agentRenderer.restoreOfficeStreetShadows();
       this.lightCulling.restore();
