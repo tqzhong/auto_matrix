@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
-import { APARTMENT_NETWORK, filmPosition } from '@auto_matrix/shared';
+import { APARTMENT_NETWORK, filmPosition, newReloaded } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -130,4 +130,29 @@ test('a failed bridge keeps its retry button attached while background story clo
   sandbox.state.neoLife!.journey!.bridgeTail!.attempts = 2; ui.renderPanel();
   assert.equal(retry.connected, false, 'a changed attempt count must still update the visible menu');
   assert.match(body.innerHTML, /第 3 次尝试/);
+});
+
+test('the captains journal keeps both exit choices attached until evacuation begins', () => {
+  const { ui, body, sandbox, player } = fixture();
+  player.position = filmPosition('film_captains_meeting', 0, -14);
+  player.isInMatrix = true;
+  const meeting = newReloaded('meeting'); meeting.phase = 'evacuate_ready';
+  sandbox.state.neoLife!.journey = { version: 1, scene: 'm2_meeting', actor: 'neo', step: 3, completed: ['m2_dream'],
+    enteredAt: 0, reflections: {}, lastText: '', checkpoint: player.position, reloaded: meeting };
+  ui.renderPanel();
+  const east = body.action('film:exit:east'), west = body.action('film:exit:west');
+  assert.ok(east && !east.disabled && west && !west.disabled);
+  body.scrollTop = 85;
+  for (let frame = 0; frame < 20; frame++) {
+    meeting.shotAge += .05; meeting.punchAge += .05; meeting.dodgeAge += .05;
+    ui.renderPanel();
+  }
+  assert.equal(east.connected, true, 'background encounter clocks detached the east exit during a click');
+  assert.equal(body.action('film:exit:east'), east);
+  assert.equal(body.action('film:exit:west'), west);
+  assert.equal(body.scrollTop, 85);
+  meeting.exit = 'east'; meeting.phase = 'breach'; ui.renderPanel();
+  assert.equal(east.connected, false);
+  assert.equal(body.action('film:exit:west'), undefined);
+  assert.match(body.innerHTML, /铁门连续凹陷/);
 });
