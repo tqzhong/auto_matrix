@@ -172,6 +172,26 @@ test('Wells leaves a frame between shader completion and reading its bindings', 
   assert.deepEqual(h.work, ['compile', 'bindings']);
 });
 
+test('Wells links the street canopy before the apartment door reveals it', t => {
+  const h = fixture();
+  const geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial();
+  const park = new THREE.Group(), canopy = new THREE.InstancedMesh(geometry, material, 1);
+  canopy.name = 'central-park-canopy';
+  canopy.setColorAt(0, new THREE.Color(0x343d2f));
+  park.position.set(1650, 0, 900); park.add(canopy); h.city.add(park);
+  t.after(() => { h.dispose(); canopy.dispose(); geometry.dispose(); material.dispose(); });
+  h.ready(); h.drain();
+  assert.ok(!h.batches.flat().includes(canopy), 'the other home return uses its original room queue');
+
+  h.journey.scene = 'm1_phone_escape';
+  h.journey.openingPhone = { phase: 'connected', remaining: 7, lastTick: 0, attempts: 0 };
+  h.drain();
+  assert.equal(h.batches.flat().filter(mesh => mesh === canopy).length, 1, 'prepare the shared canopy color program once');
+  assert.ok(!h.apartment.returnNormalMeshes?.includes(canopy), 'the offscreen tree is only needed for its color program');
+  assert.equal(canopy.parent, park);
+  assert.equal(canopy.material, material);
+});
+
 test('Wells stages the original room, outfit and street buffers without drawing or changing the live scene', t => {
   const h = fixture(), { renderer, root, street, shirt, journey } = h;
   const shirtGeometry = shirt.geometry.clone(), shirtMaterial = shirt.material;

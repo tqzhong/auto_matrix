@@ -367,7 +367,12 @@ export class ApartmentSetRenderer {
       for (const map of maps) if (map) textures.add(map);
     }
     const queue = [...meshes], pending: ColorProgram[] = [], culling = new LightCulling(lights), target = new THREE.WebGLRenderTarget(1, 1);
-    if (opening) culling.minimumPointSlots = APARTMENT_OPENING_POINT_SLOTS;
+    if (opening) {
+      culling.minimumPointSlots = APARTMENT_OPENING_POINT_SLOTS;
+      // The park blocks share a material. Link it even though the desk view faces away from them.
+      const canopy = this.cityLights?.getObjectByName('central-park-canopy');
+      if (canopy instanceof THREE.InstancedMesh && !meshes.has(canopy)) queue.push(canopy);
+    }
     const casters = shadows ? shadowCasterProxies(meshes, shadows.materials) : [];
     const depthQueue = shadows && casters.length ? [
       { lights: shadows.lighting, eye: camera, meshes: casters.slice() }, { lights: culling, eye, meshes: casters },

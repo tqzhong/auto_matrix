@@ -302,7 +302,8 @@ export class Engine {
       || openingHandoff && this.agentRenderer.prepareOpeningApartmentActor()
       || this.voxelRenderer.interiors.prepareApartmentReturn(this.renderer, this.camera, this.scene, this.sandbox?.neoLife, neoAtHome,
       openingHandoff ? [this.agentRenderer.getAgentHero('choi'), this.agentRenderer.getAgentHero('dujour'),
-        this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo')] : undefined, openingHandoff ? this.lightCulling : undefined);
+        this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentDistant('neo')] : undefined,
+      openingHandoff ? this.lightCulling : undefined);
     if (!this.playerControls?.firstPerson) this.filmSets.preparePodColors(this.renderer, this.camera, this.agentRenderer.getAgentHero('neo'));
     if (meeting?.scene === 'm1_oracle' && player?.id === meeting.actor)
       this.filmSets.prepareAmbush(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
