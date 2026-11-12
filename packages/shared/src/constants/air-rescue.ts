@@ -24,6 +24,7 @@ export type AirRescueGesture = AirRescueEncounter & { role: AirRescueRole };
 
 export const AIR_RESCUE = {
   office: {
+    flightZ: -41.5,
     approach: 2.6,
     fire: 3.6,
     leapAt: .8,
@@ -51,15 +52,20 @@ export function airRescueLocked(journey: FilmJourney): boolean {
   return Boolean(encounter && !journey.visiting && encounter.phase !== 'failed');
 }
 
+export function airRescueOfficeFlight(encounter: AirRescueEncounter) {
+  const approach = encounter.phase === 'ready' ? 0 : encounter.phase === 'approach'
+    ? smooth(encounter.elapsed / AIR_RESCUE.office.approach) : 1;
+  const catchElapsed = encounter.phase === 'done' ? AIR_RESCUE.office.catching : encounter.phase === 'catching' ? encounter.elapsed : 0;
+  const catchProgress = smooth(catchElapsed / AIR_RESCUE.office.catching);
+  return { x: 19 - approach * 15 + catchProgress * 4.5, y: 1 + approach * .35 + catchProgress * 2.8,
+    z: AIR_RESCUE.office.flightZ - catchProgress * 2.2, catchElapsed, catchProgress };
+}
+
 export function airRescueRoot(encounter: AirRescueEncounter, role: AirRescueRole) {
   if (encounter.kind === 'office') {
-    const approach = encounter.phase === 'ready' ? 0 : encounter.phase === 'approach'
-      ? smooth(encounter.elapsed / AIR_RESCUE.office.approach) : 1;
-    const catchElapsed = encounter.phase === 'done' ? AIR_RESCUE.office.catching : encounter.phase === 'catching' ? encounter.elapsed : 0;
-    const catchProgress = smooth(catchElapsed / AIR_RESCUE.office.catching);
+    const helicopter = airRescueOfficeFlight(encounter), catchElapsed = helicopter.catchElapsed;
     const connect = smooth(catchElapsed / AIR_RESCUE.office.contact);
     const lift = smooth((catchElapsed - 1.1) / (AIR_RESCUE.office.catching - 1.1));
-    const helicopter = { x: 19 - approach * 15 + catchProgress * 4.5, y: 1 + approach * .35 + catchProgress * 2.8, z: -36 - catchProgress * 2.2 };
     const gunner = { x: helicopter.x - 4.9, y: helicopter.y + 1.15, z: helicopter.z + .4 };
     if (role === 'neo') {
       if (encounter.phase !== 'catching' && encounter.phase !== 'done') return { ...gunner, yaw: 0 };

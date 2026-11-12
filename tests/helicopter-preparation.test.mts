@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test, { type TestContext } from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SETS, airRescueRoot, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -80,8 +80,9 @@ test('entering the air rescue office adopts the prepared fixtures and releases t
   const h = fixture(t); h.ready(); h.drain(); const root = [...h.roots][0], console = root.getObjectByName('government-chair-back') as THREE.Mesh;
   let disposed = 0; console.geometry.addEventListener('dispose', () => disposed++);
   const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!, center = FILM_SETS.film_government_office.center;
-  neo.position = filmPosition('film_government_office', 14.1, -35.6); neo.position.y += 1.15; neo.currentLocation = 'film_government_office'; neo.isInMatrix = true;
   const journey = { ...h.journey, scene: 'm1_helicopter', actor: 'neo', step: 0, completed: [], government: undefined, airRescue: { kind: 'office', phase: 'ready', elapsed: 0, attempt: 0, suppression: 0, bursts: 0 } } as FilmJourney;
+  const gunner = airRescueRoot(journey.airRescue!, 'neo');
+  neo.position = filmPosition('film_government_office', gunner.x, gunner.z); neo.position.y += gunner.y; neo.currentLocation = 'film_government_office'; neo.isInMatrix = true;
   h.film.update(neo, { neoLife: { journey } } as SandboxState, 0); h.film.root.updateMatrixWorld(true);
   assert.equal(h.film.root.getObjectByName(console.name), console); assert.equal(root.parent, h.film.root); assert.equal(disposed, 0);
   assert.deepEqual(root.getWorldPosition(new THREE.Vector3()).toArray(), [center.x, center.y - 1, center.z]);

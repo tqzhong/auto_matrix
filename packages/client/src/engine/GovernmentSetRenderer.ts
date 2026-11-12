@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { AIR_RESCUE, GOVERNMENT_RESCUE, airRescueRoot, type FilmJourney } from '@auto_matrix/shared';
+import { AIR_RESCUE, GOVERNMENT_RESCUE, airRescueOfficeFlight, airRescueRoot, type FilmJourney } from '@auto_matrix/shared';
 
 /** Dedicated physical sets for Morpheus' executive-office interrogation and
  * the rooftop gun line. All coordinates match the server-authored encounter. */
@@ -164,7 +164,7 @@ export class GovernmentSetRenderer {
   }
 
   private buildHelicopter(office: boolean): void {
-    const helicopter = new THREE.Group(); helicopter.name = 'government-helicopter'; helicopter.position.set(office ? 19 : 7, office ? 1 : 0, office ? -36 : -20); helicopter.rotation.y = Math.PI; helicopter.visible = !office; this.group.add(helicopter); this.helicopter = helicopter;
+    const helicopter = new THREE.Group(); helicopter.name = 'government-helicopter'; helicopter.position.set(office ? 19 : 7, office ? 1 : 0, office ? AIR_RESCUE.office.flightZ : -20); helicopter.rotation.y = Math.PI; helicopter.visible = !office; this.group.add(helicopter); this.helicopter = helicopter;
     const hull = this.sphere(helicopter, this.helicopterPaint, 0, 4.4, 0, 3.6, 'government-helicopter-hull'); hull.scale.set(1.2, .85, 1.7);
     const belly = this.sphere(helicopter, this.metal, 0, 3.35, .3, 2.9); belly.scale.set(1.15, .52, 1.55);
     const cockpit = this.sphere(helicopter, this.glass, 0, 4.75, -3.25, 2.7, 'government-cockpit'); cockpit.scale.set(1.2, .82, .76);
@@ -181,7 +181,8 @@ export class GovernmentSetRenderer {
     const rotor = new THREE.Group(); rotor.name = 'government-main-rotor'; rotor.position.set(0, 7.25, -.2); helicopter.add(rotor); this.rotor = rotor;
     this.cylinder(rotor, this.metal, 0, 0, 0, .23, 1.3);
     for (let i = 0; i < 4; i++) {
-      const blade = this.box(rotor, this.black, 0, .15, -6.7, .36, .12, 13.4); blade.rotation.y = i * Math.PI / 2;
+      const blade = this.box(rotor, this.black, 0, .15, 0, .36, .12, 13.4);
+      blade.rotation.y = i * Math.PI / 2; blade.translateZ(-6.7);
     }
     const tailRotor = new THREE.Group(); tailRotor.name = 'government-tail-rotor'; tailRotor.position.set(.18, 5.4, 14.4); tailRotor.rotation.z = Math.PI / 2; helicopter.add(tailRotor); this.tailRotor = tailRotor;
     for (let i = 0; i < 5; i++) { const blade = this.box(tailRotor, this.black, 0, 0, 1.35, .22, .12, 2.7); blade.rotation.y = i * Math.PI * 2 / 5; }
@@ -208,10 +209,10 @@ export class GovernmentSetRenderer {
   private buildOfficeRescueEffects(): void {
     const fire = new THREE.Group(); fire.name = 'air-rescue-fire-lines'; fire.visible = false; this.group.add(fire); this.rescueFire = fire;
     const tracer = this.material(0xffd79a, .15, .25, 0xffa93f, 4.8);
+    const tracerGeometry = new THREE.CylinderGeometry(.022, .022, 1, 10);
     for (let i = 0; i < 12; i++) {
-      const from = new THREE.Vector3(-.15 + (i % 3) * .18, 5.6 + (i % 4) * .12, -31.6);
-      const to = new THREE.Vector3(-7 + i * 1.25, 1.5 + i % 5 * 1.15, -4 - i % 3 * 3.2);
-      const line = this.line(fire, tracer, from, to, .022); line.castShadow = false;
+      const line = this.mesh(tracerGeometry, tracer, fire); line.castShadow = false;
+      line.userData.target = new THREE.Vector3(-7 + i * 1.25, 1.5 + i % 5 * 1.15, -4 - i % 3 * 3.2);
     }
     const shards = new THREE.Group(); shards.name = 'air-rescue-glass-shards'; shards.visible = false; this.group.add(shards); this.glassShards = shards;
     for (let i = 0; i < 84; i++) {
@@ -258,10 +259,10 @@ export class GovernmentSetRenderer {
     }
   }
 
-  private positionRope(from: THREE.Vector3, to: THREE.Vector3, rope = this.rescueRope): void {
-    if (!rope) return; const delta = to.clone().sub(from);
-    rope.visible = true; rope.position.copy(from).add(to).multiplyScalar(.5);
-    rope.scale.set(1, delta.length(), 1); rope.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize());
+  private positionLine(from: THREE.Vector3, to: THREE.Vector3, line: THREE.Object3D | undefined = this.rescueRope): void {
+    if (!line) return; const delta = to.clone().sub(from);
+    line.visible = true; line.position.copy(from).add(to).multiplyScalar(.5);
+    line.scale.set(1, delta.length(), 1); line.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize());
   }
 
   private buildBulletLines(): void {
@@ -296,20 +297,27 @@ export class GovernmentSetRenderer {
       if (this.helicopter) {
         this.helicopter.visible = Boolean(rescue);
         if (rescue) {
-          const approach = rescue.phase === 'ready' ? 0 : rescue.phase === 'approach'
-            ? THREE.MathUtils.smoothstep(rescue.elapsed, 0, AIR_RESCUE.office.approach) : 1;
-          const catchProgress = rescue.phase === 'done' ? 1 : rescue.phase === 'catching'
-            ? THREE.MathUtils.smoothstep(rescue.elapsed, 0, AIR_RESCUE.office.catching) : 0;
-          this.helicopter.position.set(19 - approach * 15 + catchProgress * 4.5, 1 + approach * .35 + catchProgress * 2.8,
-            -36 + Math.sin(elapsed * 1.7) * .24 - catchProgress * 2.2);
-          this.helicopter.rotation.set(-.04 + Math.sin(elapsed * 1.3) * .025, Math.PI, -.08 + catchProgress * .14);
+          const flight = airRescueOfficeFlight(rescue);
+          this.helicopter.position.set(flight.x, flight.y, flight.z + Math.sin(elapsed * 1.7) * .24);
+          this.helicopter.rotation.set(-.04 + Math.sin(elapsed * 1.3) * .025, Math.PI, -.08 + flight.catchProgress * .14);
         }
       }
       const firing = rescue?.phase === 'firing'; const broken = rescue ? rescue.phase === 'firing' ? rescue.suppression ?? 0
         : ['leap_window', 'catching', 'done'].includes(rescue.phase) ? 1 : 0 : 0;
       const breakOrder = [8, 6, 4, 2, 0, 1, 3, 5, 7];
       this.officeGlass.forEach((pane, index) => { pane.visible = !rescue || breakOrder[index] / this.officeGlass.length >= broken; });
-      if (this.rescueFire) this.rescueFire.visible = Boolean(firing && broken > .01);
+      if (this.rescueFire) {
+        this.rescueFire.visible = Boolean(firing && broken > .01);
+        if (this.rescueFire.visible && this.minigunFlash && this.minigun && this.helicopter) {
+          const muzzle = this.minigunFlash.position.clone().applyEuler(this.minigun.rotation).add(this.minigun.position)
+            .applyEuler(this.helicopter.rotation).add(this.helicopter.position);
+          const start = muzzle.clone();
+          for (const [index, line] of this.rescueFire.children.entries()) {
+            start.set(muzzle.x + (index % 3 - 1) * .08, muzzle.y + (index % 4 - 1.5) * .08, muzzle.z);
+            this.positionLine(start, line.userData.target, line);
+          }
+        }
+      }
       if (this.glassShards) {
         this.glassShards.visible = broken > .04;
         this.glassShards.children.forEach((shard, index) => {
@@ -333,7 +341,7 @@ export class GovernmentSetRenderer {
       if (rescue && ['leap_window', 'catching', 'done'].includes(rescue.phase)) {
         const neo = airRescueRoot(rescue, 'neo'); const trinity = airRescueRoot(rescue, 'trinity');
         const anchor = new THREE.Vector3(trinity.x - 4.73, trinity.y + 3.1, trinity.z - 2.75);
-        this.positionRope(anchor, new THREE.Vector3(neo.x, neo.y + 2.7, neo.z));
+        this.positionLine(anchor, new THREE.Vector3(neo.x, neo.y + 2.7, neo.z));
       }
       return;
     }
@@ -386,10 +394,10 @@ export class GovernmentSetRenderer {
         if (ledge.y < parapet.height + .11) {
           ledge.y = parapet.height + .11;
           end = ledge;
-          this.positionRope(ledge, to, this.rescueRopeDrop);
+          this.positionLine(ledge, to, this.rescueRopeDrop);
         }
       }
-      this.positionRope(from, end);
+      this.positionLine(from, end);
     }
     const crashVisible = Boolean(roofRescue && (roofRescue.crash || roofRescue.phase === 'done' || roofRescue.phase === 'pulling' && roofRescue.elapsed >= 2.65));
     if (this.impactRipples) {

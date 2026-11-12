@@ -32,6 +32,12 @@ test('office air rescue renders the B-212, minigun fire, deterministic broken gl
   const muzzle = root.getObjectByName('air-rescue-minigun-flash')!.getWorldPosition(new THREE.Vector3());
   assert.ok(muzzle.z > gun.z + 3.5 && Math.abs(muzzle.x - gun.x) < .25,
     'the side-door minigun barrel and muzzle flash must point toward the office instead of across the helicopter');
+  const fire = root.getObjectByName('air-rescue-fire-lines')!;
+  for (const line of fire.children) {
+    const from = line.localToWorld(new THREE.Vector3(0, -.5, 0));
+    const to = line.localToWorld(new THREE.Vector3(0, .5, 0));
+    assert.ok(from.distanceTo(muzzle) < .18 && to.z > -15, 'the visible tracers must connect the moving muzzle to the room');
+  }
   const panes = Array.from({ length: 9 }, (_, index) => root.getObjectByName(`government-glass-pane-${index}`)).filter(Boolean);
   assert.equal(panes.length, 9); assert.ok(panes.some(pane => !pane!.visible) && panes.some(pane => pane!.visible));
   const shard = root.getObjectByName('air-rescue-glass-shards')!.children[17]; const first = shard.position.clone();
@@ -39,6 +45,33 @@ test('office air rescue renders the B-212, minigun fire, deterministic broken gl
   rescue.phase = 'catching'; rescue.elapsed = 2.3; renderer.update(state, 6);
   const rope = root.getObjectByName('air-rescue-rope')!; assert.equal(rope.visible, true); assert.ok(rope.scale.y > 4);
   renderer.dispose(); assert.equal(root.children.length, 0);
+});
+
+test('the B-212 rotor sweep clears the office facade through the approach, firing and lift', t => {
+  const root = new THREE.Group(), renderer = new GovernmentSetRenderer(root, 'film_government_office');
+  t.after(() => renderer.dispose());
+  const state = journey('m1_helicopter'), rescue = state.airRescue!;
+  const wall = root.getObjectByName('government-glass-wall')!, rotor = root.getObjectByName('government-main-rotor')!;
+  root.updateMatrixWorld(true);
+  const edge = new THREE.Box3().setFromObject(wall, true).min.z;
+  let minimum = Infinity, nearest = '';
+  const phases: [AirRescueEncounter['phase'], number][] = [['ready', 0], ['approach', 1.3], ['firing', 2],
+    ['leap_window', .8], ['catching', .5], ['catching', 2.3], ['done', AIR_RESCUE.office.catching]];
+  for (const [phase, elapsed] of phases) {
+    Object.assign(rescue, { phase, elapsed, suppression: .72 });
+    for (let frame = 0; frame < 96; frame++) {
+      renderer.update(state, frame / 9);
+      root.updateMatrixWorld(true);
+      const gap = edge - new THREE.Box3().setFromObject(rotor, true).max.z;
+      if (gap < minimum) { minimum = gap; nearest = phase; }
+    }
+  }
+  assert.ok(minimum > .5, `the rotating blades need clearance from the office facade (${nearest}: ${minimum.toFixed(2)} m)`);
+  for (const blade of rotor.children) {
+    if (!(blade instanceof THREE.Mesh) || !(blade.geometry instanceof THREE.BoxGeometry)) continue;
+    const innerTip = new THREE.Vector3(0, 0, blade.geometry.parameters.depth / 2).applyQuaternion(blade.quaternion).add(blade.position);
+    assert.ok(Math.hypot(innerTip.x, innerTip.z) < .001, 'each blade must attach to the spinning hub');
+  }
 });
 
 test('roof air rescue renders the suspended rope, facade ripple and burning helicopter impact', () => {

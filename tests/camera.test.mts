@@ -53,7 +53,7 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { OpeningHotelSystem } from '../packages/server/src/story/OpeningHotelSystem.js';
 import { DOCK_EVACUATION, SHAFT_SEAL, dockEvacuationRoot, shaftSealLever, type DockEvacuation } from '@auto_matrix/shared';
-import { APARTMENT, playerBlocked, apartmentComputerPose, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, subwayCrewRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
+import { AIR_RESCUE, APARTMENT, playerBlocked, apartmentComputerPose, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, subwayCrewRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -1466,12 +1466,12 @@ test('office air rescue keeps the B-212, broken-window target and both falling m
   };
   apply('firing', 2);
   assert.ok(game.camera.position.z < center.z - 30, 'the fire camera must stay outside the facade instead of filming into the opaque side wall');
-  for (const point of [new THREE.Vector3(center.x + 4, center.y + 5.8, center.z - 36), new THREE.Vector3(center.x, center.y + 4.8, center.z - 26.2),
+  for (const point of [new THREE.Vector3(center.x + 4, center.y + 5.8, center.z + AIR_RESCUE.office.flightZ), new THREE.Vector3(center.x, center.y + 4.8, center.z - 26.2),
     new THREE.Vector3(center.x, center.y + 2.8, center.z - 22.4)]) {
     const screen = point.project(game.camera); assert.ok(Math.abs(screen.x) < .86 && Math.abs(screen.y) < .88 && screen.z > -1 && screen.z < 1, `office approach crop: ${screen.toArray().join(',')}`);
   }
   game.key('KeyV'); game.key('KeyV', false); game.step(.2);
-  assert.ok(game.camera.position.x < center.x - 1.4 && game.camera.position.z > center.z - 35.2,
+  assert.ok(game.camera.position.x < center.x - 1.4 && game.camera.position.z > game.state.position.z + .55,
     'the minigun first-person camera must clear the cabin and rear gun housing');
   const officeTarget = new THREE.Vector3(center.x, center.y + 4.6, center.z - 7).project(game.camera);
   assert.ok(Math.abs(officeTarget.x) < .65 && Math.abs(officeTarget.y) < .72 && officeTarget.z > -1 && officeTarget.z < 1,
@@ -1492,6 +1492,24 @@ test('office air rescue keeps the B-212, broken-window target and both falling m
     'Neo first person must face the falling Morpheus instead of staring through the office');
   assert.ok(Math.abs(screen.x) < .55 && Math.abs(screen.y) < .7 && screen.z > -1 && screen.z < 1,
     `Morpheus must remain readable in Neo first person: ${screen.toArray().join(',')}`);
+});
+
+test('the office approach first-person camera stays on the moving side cabin', t => {
+  const game = setup(t, 0);
+  game.state.currentLocation = 'film_government_office';
+  for (const elapsed of [0, 1.3, 2.5]) {
+    const encounter = { kind: 'office', phase: 'approach', elapsed, attempt: 0, suppression: 0, bursts: 0 } as const;
+    const neo = airRescueRoot(encounter, 'neo');
+    game.state.position = filmPosition(game.state.currentLocation, neo.x, neo.z); game.state.position.y += neo.y;
+    game.state.rotation = neo.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { airRescue: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+    game.controls.possess(game.state); game.step(.5);
+    if (!game.controls.firstPerson) { game.key('KeyV'); game.key('KeyV', false); game.step(.2); }
+    const foot = new THREE.Vector3(game.state.position.x, game.state.position.y, game.state.position.z);
+    const offset = game.camera.position.clone().sub(foot);
+    assert.ok(Math.hypot(offset.x, offset.z) < 1.5 && offset.y > 2.5 && offset.y < 3.2,
+      `the first-person view must follow the airframe from ${elapsed}s: ${offset.toArray()}`);
+  }
 });
 
 test('roof rope camera holds Neo and dangling Trinity through shocks, impact and pull-up', t => {

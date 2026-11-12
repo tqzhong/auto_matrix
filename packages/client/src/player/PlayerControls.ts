@@ -1824,7 +1824,7 @@ export class PlayerControls {
         const pose = airRescuePose(gesture); const eyeHeight = 2.82 - pose.strain * .72 - pose.fall * .38;
         const eye = new THREE.Vector3(this.position.x, this.position.y + eyeHeight, this.position.z);
         if (gesture.kind === 'office' && ['ready', 'approach', 'firing'].includes(gesture.phase)) {
-          eye.set(center.x - 1.7, center.y + 5.45, center.z - 34.65);
+          eye.set(this.position.x - .8, this.position.y + 2.95, this.position.z + .95);
         }
         if (gesture.kind === 'roof') { eye.x = center.x - 31.45; eye.y = Math.max(eye.y, center.y + 3.15); }
         const partner = gesture.kind === 'office' && ['leap_window', 'catching', 'done'].includes(gesture.phase) ? 'morpheus'
@@ -1844,10 +1844,10 @@ export class PlayerControls {
           const catchProgress = gesture.phase === 'catching' || gesture.phase === 'done'
             ? THREE.MathUtils.smoothstep(gesture.elapsed, 0, 3.8) : 0;
           ideal = catching
-            ? (portrait ? new THREE.Vector3(-32, 11, -43) : new THREE.Vector3(-25, 9, -42)).lerp(portrait ? new THREE.Vector3(-28, 9, -39) : new THREE.Vector3(-22, 8, -39), catchProgress)
-            : (portrait ? new THREE.Vector3(-34, 12, -43) : new THREE.Vector3(-27, 10, -42));
-          focus = catching ? new THREE.Vector3(1.5, 4, -27).lerp(new THREE.Vector3(2.5, 4.5, -30.5), catchProgress)
-            : new THREE.Vector3(0, 4.6, -28);
+            ? (portrait ? new THREE.Vector3(-36, 12, -49) : new THREE.Vector3(-26, 10, -47)).lerp(portrait ? new THREE.Vector3(-28, 9, -39) : new THREE.Vector3(-22, 8, -39), catchProgress)
+            : (portrait ? new THREE.Vector3(-42, 14, -51) : new THREE.Vector3(-28, 11, -49));
+          focus = catching ? new THREE.Vector3(1.5, 4, -30).lerp(new THREE.Vector3(2.5, 4.5, -30.5), catchProgress)
+            : new THREE.Vector3(0, 4.6, -31);
         } else if (gesture.phase === 'impact') {
           ideal = portrait ? new THREE.Vector3(44, 17, 10) : new THREE.Vector3(34, 13, 5);
           focus = new THREE.Vector3(-1.5, 2.4, -28);

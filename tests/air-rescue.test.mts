@@ -164,9 +164,9 @@ test('air rescue poses preserve the mounted gun, falling catch and roof rope str
 test('office performers stay attached to the moving B-212 controls before the catch', () => {
   const firing: AirRescueEncounter = { kind: 'office', phase: 'firing', elapsed: 1.8, attempt: 0, suppression: .5 };
   const neo = airRescueRoot(firing, 'neo'); const trinity = airRescueRoot(firing, 'trinity');
-  assert.ok(Math.hypot(neo.x - -.9, neo.z - -35.6) < .8, 'Neo belongs in the open side doorway behind the minigun, not on top of the hull');
+  assert.ok(Math.hypot(neo.x - -.9, neo.z - AIR_RESCUE.office.flightZ - .4) < .8, 'Neo belongs in the open side doorway behind the minigun, not on top of the hull');
   assert.ok(neo.y > 2 && neo.y < 3, 'Neo feet stay on the cabin floor while his hands meet the gun controls');
-  assert.ok(Math.hypot(trinity.x - 5.25, trinity.z - -33.6) < .8, 'Trinity belongs in the cockpit seat');
+  assert.ok(Math.hypot(trinity.x - 5.25, trinity.z - AIR_RESCUE.office.flightZ - 2.4) < .8, 'Trinity belongs in the cockpit seat');
   const approach: AirRescueEncounter = { ...firing, phase: 'approach', elapsed: 1.3, suppression: 0 };
   assert.ok(airRescueRoot(approach, 'neo').x > airRescueRoot(firing, 'neo').x + 6, 'the gunner follows the aircraft through its approach');
 });
