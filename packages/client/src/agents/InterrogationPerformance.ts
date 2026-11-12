@@ -17,7 +17,12 @@ export class InterrogationPerformance {
   private pinchFingers: { digit: number; axes: THREE.Vector3[] }[];
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
-  constructor(private rig: HeroRig, private hands?: FightingHands) {
+  constructor(private rig: HeroRig, role: InterrogationGesture['role'], private hands?: FightingHands) {
+    this.face = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    if (role === 'neo') this.prepareNeo();
+    this.pinchFingers = role === 'smith' ? this.prepareTracker() : [];
+  }
+  private prepareTracker(): { digit: number; axes: THREE.Vector3[] }[] {
     const metal = new THREE.MeshStandardMaterial({ color: 0x728079, metalness: .86, roughness: .24 });
     const black = new THREE.MeshStandardMaterial({ color: 0x121a17, roughness: .52 });
     // This slender shell needs transparent highlights, not another full-room
@@ -38,14 +43,26 @@ export class InterrogationPerformance {
     this.mesh(this.case, new THREE.BoxGeometry(.28, .07, .46), black);
     const lid = this.mesh(this.case, new THREE.BoxGeometry(.28, .026, .44), metal, 0, .2, -.2); lid.rotation.x = -1.18;
     this.tracker.name = 'interrogation-tracker'; this.case.name = 'interrogation-device-case';
-    rig.root.add(this.tracker, this.case);
+    this.rig.root.add(this.tracker, this.case);
+    const skin = this.face, attributes = skin.geometry.attributes;
+    return [1, 2].map(digit => {
+      const distal = skin.skeleton.bones.indexOf(this.bone(`finger${digit}-3_R`));
+      const space = skin.skeleton.boneInverses[distal].clone().multiply(skin.bindMatrix), tip = new THREE.Vector3(); let count = 0;
+      for (let vertex = 0; vertex < attributes.position.count; vertex++) if ([0, 1, 2, 3].some(part =>
+        attributes.skinIndex.getComponent(vertex, part) === distal && attributes.skinWeight.getComponent(vertex, part) > .95)) {
+        tip.add(new THREE.Vector3().fromBufferAttribute(attributes.position, vertex).applyMatrix4(space)); count++;
+      }
+      return { digit, axes: [this.rig.rest.get(`finger${digit}-2_R`)!.clone(), this.rig.rest.get(`finger${digit}-3_R`)!.clone(), tip.divideScalar(count)] };
+    });
+  }
+  private prepareNeo(): void {
     const chest = this.bone('chest'); chest.add(this.tie); this.tie.name = 'office-tie';
     const cloth = new THREE.MeshStandardMaterial({ color: 0x131915, roughness: .89, side: THREE.DoubleSide });
     const shape = new THREE.Shape(); shape.moveTo(-.027, .38); shape.lineTo(.027, .38); shape.lineTo(.075, -.57); shape.lineTo(0, -.66); shape.lineTo(-.075, -.57); shape.closePath();
     const geometry = new THREE.ExtrudeGeometry(shape, { depth: .009, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: .008, bevelThickness: .005 });
     this.mesh(this.tie, geometry, cloth, 0, 0, .49);
     const knot = this.mesh(this.tie, new THREE.SphereGeometry(.056, 8, 6), cloth, 0, .41, .49); knot.scale.set(.72, 1, .4);
-    rig.root.traverse(object => {
+    this.rig.root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
       const material = object.material;
       if (material.name === 'Skin') {
@@ -100,18 +117,6 @@ export class InterrogationPerformance {
         };
         material.customProgramCacheKey = () => cache + '-interrogation-shirt'; material.needsUpdate = true;
       }
-    });
-    const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
-    this.face = skin;
-    const attributes = skin.geometry.attributes;
-    this.pinchFingers = [1, 2].map(digit => {
-      const distal = skin.skeleton.bones.indexOf(this.bone(`finger${digit}-3_R`));
-      const space = skin.skeleton.boneInverses[distal].clone().multiply(skin.bindMatrix), tip = new THREE.Vector3(); let count = 0;
-      for (let vertex = 0; vertex < attributes.position.count; vertex++) if ([0, 1, 2, 3].some(part =>
-        attributes.skinIndex.getComponent(vertex, part) === distal && attributes.skinWeight.getComponent(vertex, part) > .95)) {
-        tip.add(new THREE.Vector3().fromBufferAttribute(attributes.position, vertex).applyMatrix4(space)); count++;
-      }
-      return { digit, axes: [rig.rest.get(`finger${digit}-2_R`)!.clone(), rig.rest.get(`finger${digit}-3_R`)!.clone(), tip.divideScalar(count)] };
     });
   }
   private bone(name: string): THREE.Bone { return this.rig.bones.get(name)!; }

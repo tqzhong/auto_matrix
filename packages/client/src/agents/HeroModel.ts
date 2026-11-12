@@ -1825,7 +1825,8 @@ export class HeroModels {
     if (input.interlude?.kind === 'steak' && input.interlude.role === 'cypher' && !this.steaks.has(rig)) this.steaks.set(rig, new SteakPerformance(rig));
     this.steaks.get(rig)?.update(input.interlude);
     this.meals.get(rig)?.update(input.interlude);
-    if ((input.interrogation || input.officeShirt) && !this.interrogations.has(rig)) this.interrogations.set(rig, new InterrogationPerformance(rig, fightingHands));
+    if ((input.interrogation || input.officeShirt) && !this.interrogations.has(rig))
+      this.interrogations.set(rig, new InterrogationPerformance(rig, input.interrogation?.role ?? 'neo', fightingHands));
     this.interrogations.get(rig)?.update(input.interrogation, input.officeShirt);
     if (input.meeting && !this.meetings.has(rig)) this.meetings.set(rig, new MeetingPerformance(rig));
     this.meetings.get(rig)?.update(input.meeting);

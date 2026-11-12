@@ -5,14 +5,23 @@ import { INTERROGATION_ROOM, interrogationPose, type FilmJourney } from '@auto_m
 
 /** A compact, closed interview room. Collision dimensions come from the same table/chair layout. */
 export class InterrogationSetRenderer {
-  private root = new THREE.Group();
+  readonly root = new THREE.Group();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
   private folder = new THREE.Group();
   private chair = new THREE.Group();
-  constructor(parent: THREE.Group) {
+  private construction: Generator<void> | undefined = this.build();
+  prepareStep(): boolean {
+    if (this.construction && !this.construction.next().done) return false;
+    this.construction = undefined;
+    return true;
+  }
+  attach(parent: THREE.Group): void {
+    while (!this.prepareStep()) { /* Finish the room when entering from a cold save. */ }
     parent.add(this.root);
+  }
+  private *build(): Generator<void> {
     const { width: w, depth: d, height: h, table } = INTERROGATION_ROOM;
     const wall = this.mat(0xc2c4b8, .9); const floor = this.mat(0xaeb0a6, .76); const trim = this.mat(0x737c6e, .7); const mortar = this.mat(0x9ca293, .96);
     const metal = this.mat(0x86948b, .24, .82); const dark = this.mat(0x29332b, .54); const paint = this.mat(0xa4aea0, .68);
@@ -33,6 +42,7 @@ export class InterrogationSetRenderer {
       }
       this.box(trim, x - Math.sign(x) * .25, .16, 0, .09, .32, d);
     }
+    yield;
     for (const z of [-d / 2, d / 2]) {
       this.box(mortar, 0, h / 2, z, w, h, .3);
       for (let row = 0; row * .7 < h - .01; row++) for (let x = -w / 2 - (row % 2) * .7; x < w / 2; x += 1.4) {
@@ -42,6 +52,7 @@ export class InterrogationSetRenderer {
       this.box(trim, 0, .16, z - Math.sign(z) * .25, w, .32, .09);
     }
     this.box(wall, 0, h + .15, 0, w, .3, d);
+    yield;
     const lightPanel = new THREE.MeshBasicMaterial({ color: 0xe2e9d1, toneMapped: false }); this.materials.add(lightPanel);
     for (const z of [-4.2, 4.2]) {
       this.box(trim, 0, h - .06, z, 3.6, .17, 1.2);
@@ -66,6 +77,7 @@ export class InterrogationSetRenderer {
     for (const side of [-1, 1]) this.box(metal, 0, .5, side * (table.depth / 2 - .25), 5.8, .13, .11, .04);
     this.makeChair(-INTERROGATION_ROOM.seat, Math.PI / 2, metal, dark);
     this.chair = this.makeChair(INTERROGATION_ROOM.seat, -Math.PI / 2, metal, dark); this.chair.userData.dynamic = true;
+    yield;
     const paper = this.mat(0xd1d0b7, .96); const file = this.mat(0x46583b, .9);
     this.box(file, -2.2, table.height + .027, .1, .8, .034, 1.15);
     this.box(paper, -2.2, table.height + .073, .1, .75, .058, 1.09);
@@ -78,6 +90,7 @@ export class InterrogationSetRenderer {
     const sheet = this.mesh(new THREE.PlaneGeometry(.73, 1.07), page, -2.2, table.height + .105, .1); sheet.rotation.set(-Math.PI / 2, 0, -Math.PI / 2);
     this.folder.position.set(-2.6, table.height + .12, .1); this.folder.userData.dynamic = true; this.root.add(this.folder);
     this.mesh(new THREE.BoxGeometry(.8, .019, 1.15), file, .4, 0, 0, this.folder);
+    yield;
     this.batch();
   }
   private mat(color: number, roughness: number, metalness = 0): THREE.MeshStandardMaterial {
@@ -122,6 +135,7 @@ export class InterrogationSetRenderer {
     for (const geo of this.geometries) if (!live.has(geo)) { geo.dispose(); this.geometries.delete(geo); }
   }
   dispose(): void {
+    this.construction = undefined;
     this.root.traverse(object => { if (object instanceof THREE.SpotLight || object instanceof THREE.PointLight) object.dispose(); });
     this.geometries.forEach(geo => geo.dispose()); this.materials.forEach(mat => mat.dispose()); this.textures.forEach(tex => tex.dispose()); this.root.removeFromParent();
   }

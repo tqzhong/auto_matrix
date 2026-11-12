@@ -17,6 +17,15 @@ function draw(h: { models: HeroModels; rig: HeroRig }, elapsed: number) {
   h.models.animate(h.rig, advanceMotion(motion, input, 0), motion, input, 0); h.rig.root.updateMatrixWorld(true);
 }
 
+test('Smith retains his original skin geometry and color program when the interrogation begins', async t => {
+  const h = await actor('smith'); t.after(() => h.models.dispose());
+  const face = h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  const geometry = face.geometry, program = face.material.customProgramCacheKey();
+  draw(h, 0);
+  assert.equal(face.material.customProgramCacheKey(), program);
+  assert.equal(face.geometry, geometry);
+});
+
 test('Smith grips and releases the tracker without crossing his actual hand skin', async t => {
   const h = await actor('smith'); t.after(() => h.models.dispose());
   const surface = handSurface(h.rig, 'R');

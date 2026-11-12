@@ -351,6 +351,7 @@ export class FilmSetRenderer {
   private crosscutDeck?: { root: THREE.Group; renderer: NebDeckRenderer };
   private pillGlass?: THREE.Group;
   private interrogation?: InterrogationSetRenderer;
+  private preparedInterrogation?: { renderer: InterrogationSetRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private meeting?: MeetingSetRenderer;
   private hotel?: LafayetteApproachRenderer;
   private approach?: { root: THREE.Group; renderer: MeetingSetRenderer };
@@ -670,6 +671,31 @@ export class FilmSetRenderer {
     }
     colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     if (!this.prepareColorTexture(renderer, colors.textures)) this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+  }
+  prepareInterrogation(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
+    if (journey?.scene !== 'm1_office_escape' || journey.visiting || journey.office?.custody?.street?.phase !== 'departing') {
+      this.cancelInterrogationPreparation(); return;
+    }
+    const prepared = this.preparedInterrogation ??= { renderer: new InterrogationSetRenderer() };
+    if (!prepared.renderer.prepareStep() || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.lighting?.dispose();
+      prepared.colors = { ...this.colorPreparation(prepared.renderer.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
+      prepared.colors.meshes.push(this.marker);
+      // The room retains its two point-light slots, including the goal light.
+      prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
+      prepared.gpu = renderer.properties;
+    }
+    const colors = prepared.colors;
+    for (const id of [journey.actor, ...FILM_SCENE_BY_ID.m1_interrogation.cast]) {
+      const group = actor(id);
+      if (!group || colors.actors.has(group)) continue;
+      const meshes = this.colorMeshes([group], true);
+      if (!meshes.length) continue;
+      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    }
+    this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
   }
   prepareSubway(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
@@ -2245,6 +2271,9 @@ export class FilmSetRenderer {
       const enteringOffice = set?.id === 'film_metacortex_floor' || set?.id === 'film_office_ledge';
       const prepared = enteringOffice ? this.preparedOffice?.renderer : undefined;
       if (prepared) this.preparedOffice = undefined;
+      const preparedInterrogation = set?.id === 'film_agent_interrogation' && sceneId === 'm1_interrogation' && !journey?.visiting
+        ? this.preparedInterrogation : undefined;
+      if (preparedInterrogation) { this.preparedInterrogation = undefined; preparedInterrogation.lighting?.dispose(); }
       const lafayetteRoom = set?.id === 'film_lafayette' ? this.preparedLafayette : undefined;
       if (lafayetteRoom) this.preparedLafayette = undefined;
       const preparedPods = set?.architecture === 'pods' && sceneId === 'm1_pod' && !journey?.visiting ? this.preparedPods : undefined;
@@ -2431,7 +2460,10 @@ export class FilmSetRenderer {
           this.tvRepair = (keepCrosscut ? this.crosscutTv : undefined) ?? new TvRepairRenderer(this.root);
           if (keepCrosscut) this.root.add(this.tvRepair.root);
         }
-        else if (set.id === 'film_agent_interrogation') this.interrogation = new InterrogationSetRenderer(this.root);
+        else if (set.id === 'film_agent_interrogation') {
+          this.interrogation = preparedInterrogation?.renderer ?? new InterrogationSetRenderer();
+          this.interrogation.attach(this.root);
+        }
         else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') this.meeting = new MeetingSetRenderer(this.root);
         else if (sceneId === 'm2_stop_sentinels' && set.id === 'film_service_tunnels') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
         else if (sceneId === 'm2_medical' && set.id === 'film_hammer_deck') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
@@ -5283,6 +5315,10 @@ export class FilmSetRenderer {
     const prepared = this.preparedGovernment; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedGovernment = undefined;
   }
+  private cancelInterrogationPreparation(): void {
+    this.preparedInterrogation?.lighting?.dispose();
+    this.preparedInterrogation?.renderer.dispose(); this.preparedInterrogation = undefined;
+  }
   private cancelAmbushPreparation(): void {
     this.preparedAmbush?.lighting?.dispose(); this.preparedAmbush?.renderer.dispose(); this.preparedAmbush = undefined;
   }
@@ -5336,6 +5372,7 @@ export class FilmSetRenderer {
     this.cancelMealPreparation();
     this.cancelLobbyPreparation();
     this.cancelGovernmentPreparation();
+    this.cancelInterrogationPreparation();
     this.cancelZionPreparation();
     this.cancelBaneCopyPreparation();
     this.cancelSecondOraclePreparation();
