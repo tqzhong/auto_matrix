@@ -133,7 +133,7 @@ import { gardenPose, SUNRISE_GARDEN } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { APU_RIG, DOCK_GUNNERY, dockGunneryAngles, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TRUCKS, truckApproachPose, truckRescuePose } from '@auto_matrix/shared';
-import { OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, OPENING_ROOF_EXIT, PLAYER_GRAVITY, openingRoofLeapPose, openingRoofStairPose, openingAnswerPose, openingHotelTraceTime, openingPhoneContact, openingHitPose, openingTruckPose, wellsStreetStructures, wellsTruckContact, wellsHitRoute, wellsSidewalkHeight, type OpeningRoofEncounter, type OpeningRoofExit } from '@auto_matrix/shared';
+import { OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, OPENING_ROOF_EXIT, PLAYER_GRAVITY, openingRoofLeapPose, openingRoofStairPose, openingAnswerPose, openingHotelTraceTime, openingPhoneContact, openingHitPose, openingBoothCrush, openingTruckPose, wellsStreetStructures, wellsTruckContact, wellsHitRoute, wellsSidewalkHeight, type OpeningPhoneEncounter, type OpeningRoofEncounter, type OpeningRoofExit } from '@auto_matrix/shared';
 import { WELLS_AFTERMATH, wellsAftermathCaption, wellsAftermathPose, wellsAftermathReady, type WellsAftermathGesture, type WellsAgentPlacement } from '@auto_matrix/shared';
 import { OpeningHotelSystem } from './OpeningHotelSystem.js';
 import { NebEscapeSystem } from './NebEscapeSystem.js';
@@ -142,6 +142,12 @@ import { nebEscapeLocked } from '@auto_matrix/shared';
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
 const DOJO_COUNTER_TICKS = DOJO_COMBO_WINDOW * 2;
+
+function wellsConnectionCaption(phone: OpeningPhoneEncounter): string {
+  return openingBoothCrush(openingTruckPose(phone)) > 0
+    ? '卡车撞进已经空下来的电话亭。'
+    : 'Trinity 将听筒接到耳边，信号随即断开。';
+}
 
 export function savedWorkdayIdle(workday: OfficeWorkday | undefined, action: AgentState['currentAction']): boolean {
   if (!workday || action?.type !== 'idle') return false;
@@ -796,7 +802,7 @@ export class FilmStorySystem {
         if (!hit) state.lastText = '卡车已冲向电话亭，出口来不及接通。J 打开手记，从街口重试。';
       } else if (answer && answer.elapsed >= OPENING_PHONE.answerSeconds - 1e-9) {
         answer.elapsed = OPENING_PHONE.answerSeconds; phone.phase = 'connected'; phone.impactElapsed = 0; phone.impactFrom = phone.remaining;
-        this.advance('Trinity 将听筒接到耳边，信号随即断开。卡车撞进已经空下来的电话亭。', actor, tick);
+        this.advance(wellsConnectionCaption(phone), actor, tick);
       }
     }
     if (impactTime > 1e-9) this.openingPhoneImpact(impactTime);
@@ -819,6 +825,7 @@ export class FilmStorySystem {
     const state = this.state, phone = state?.openingPhone;
     if (!state || !phone || !(phone.phase === 'connected' || phone.phase === 'failed' && phone.impactElapsed !== undefined)) return;
     phone.impactElapsed = Math.min(OPENING_ESCAPE.truckImpactSeconds, (phone.impactElapsed ?? 0) + Math.max(0, dt));
+    if (phone.phase === 'connected') state.lastText = wellsConnectionCaption(phone);
     if (phone.impactElapsed >= OPENING_ESCAPE.truckImpactSeconds) {
       if (phone.phase === 'connected') phone.phase = 'done';
       else if (!phone.hit || phone.answer) state.lastText = '卡车撞进电话亭，线路被切断。J 打开手记，从街口重试。';
@@ -2849,9 +2856,12 @@ export class FilmStorySystem {
     return true;
   }
   restorePhoneFrame(agent: AgentState, tick: number): boolean {
-    if (this.state?.scene === 'm1_phone_escape' && this.state.actor === agent.id) this.restoreWellsSpace();
-    if (this.openingPhoneFrame(agent, 0, tick)) return true;
     const state = this.state;
+    if (state?.scene === 'm1_phone_escape' && state.actor === agent.id) {
+      this.restoreWellsSpace();
+      if (!state.visiting && state.openingPhone?.phase === 'connected') state.lastText = wellsConnectionCaption(state.openingPhone);
+    }
+    if (this.openingPhoneFrame(agent, 0, tick)) return true;
     const phone = state && heldPhone(state);
     if (!state || !phone || !this.controls(agent) || windowOpening(state) || windowCrossing(state)) return false;
     const saved = agent.currentAction?.parameters.phone as typeof phone | undefined;

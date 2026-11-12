@@ -774,7 +774,7 @@ export class SandboxUI {
       this.el('film-sequence-hint').textContent = phone.phase === 'running' ? `卡车撞击前 ${phone.remaining.toFixed(1)} 秒 · Shift 奔跑 · 到电话亭按 G`
         : phone.phase === 'answering' ? `取筒接听中 · 卡车撞击前 ${phone.remaining.toFixed(1)} 秒`
         : failed ? `${phone.hit && !phone.answer ? 'Trinity 遭卡车撞击' : '撤离失败'} · J 手记重试`
-          : phone.phase === 'connected' ? '连接成功 · 卡车正在撞击' : ready ? 'G 接管 Neo · J 手记' : 'Wells 街 · 特工调查 · 自动保存';
+          : phone.phase === 'connected' ? '连接成功 · 自动保存' : ready ? 'G 接管 Neo · J 手记' : 'Wells 街 · 特工调查 · 自动保存';
       document.getElementById('game-objective-copy')!.textContent = failed ? '撤离失败 · J 打开手记重试'
         : approaching ? `卡车将在 ${phone.remaining.toFixed(1)} 秒后撞击电话亭` : ready ? '按 G 切到 Neo 的公寓' : 'Trinity 已断开连接';
       if (!approaching && !failed) {

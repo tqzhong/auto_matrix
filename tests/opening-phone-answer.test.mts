@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, filmEntry, filmPosition, filmStepActionReady, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, filmEntry, filmPosition, filmStepActionReady, openingBoothCrush, openingTruckPose, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -71,6 +71,33 @@ test('opening answer: only completing the physical pickup connects and starts th
   assert.equal(h.state.completed.includes(scene.id), true); assert.equal(h.state.openingPhone!.impactElapsed, 0);
   assert.ok(Math.abs(h.state.openingPhone!.remaining - 6.4) < 1e-8);
   h.frame(); assert.ok(Math.abs(h.state.openingPhone!.impactElapsed! - .1) < 1e-8);
+});
+
+test('opening answer: the saved caption follows booth contact', () => {
+  const h = setup(), state = () => h.sandbox.life.film.state!;
+  const crush = () => openingBoothCrush(openingTruckPose(state().openingPhone!));
+  h.act();
+  for (let i = 0; i < 18; i++) h.frame();
+  assert.equal(state().openingPhone!.phase, 'connected');
+  assert.equal(crush(), 0);
+  assert.match(state().lastText, /信号随即断开/);
+  assert.doesNotMatch(state().lastText, /撞进/, 'the pre-impact caption cannot announce a crash');
+
+  const saved = structuredClone(h.sandbox.state), phone = structuredClone(state().openingPhone);
+  saved.neoLife!.journey!.lastText += '卡车撞进已经空下来的电话亭。';
+  h.sandbox.restore(saved);
+  h.frame(.1, false);
+  assert.deepEqual(state().openingPhone, phone);
+  assert.match(state().lastText, /信号随即断开/);
+  assert.doesNotMatch(state().lastText, /撞进/, 'a connected save uses the restored contact time');
+
+  for (let i = 0; i < 20 && crush() === 0; i++) {
+    assert.doesNotMatch(state().lastText, /撞进/);
+    h.frame(.05);
+  }
+  assert.equal(state().openingPhone!.phase, 'connected');
+  assert.ok(crush() > 0);
+  assert.match(state().lastText, /撞进.*电话亭/);
 });
 
 test('opening answer: a late pickup still fails and retry restores the booth approach', () => {

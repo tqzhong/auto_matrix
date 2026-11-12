@@ -609,7 +609,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
       : filmStepActionReady(scene, step, player.position, player.isInMatrix, journey)));
     const action = !current ? button('resume', '接回 Trinity 的视角') : failed ? button('retry', roof ? '从屋顶入口重试' : '从电话街口重试')
       : phone?.phase === 'answering' ? '<button disabled>正在取筒接听 · 卡车仍在逼近</button>'
-      : !step ? phone?.phase === 'connected' ? '<button disabled>线路已断开 · 卡车正在撞击</button>'
+      : !step ? phone?.phase === 'connected' ? '<button disabled>线路已断开 · 自动保存</button>'
         : phone?.phase === 'done' && !wellsAftermathReady(phone) ? '<button disabled>特工调查 · 自动保存</button>'
           : button('next', roof ? '继续下一段 →' : '切到 Neo →')
         : step.kind === 'reach' ? '<p>合上手记，亲自跑到目标。到达后自动记录。</p>' : button('act', `${step.label} · G`, !close);

@@ -18,7 +18,10 @@ test('the Wells journal requires a nearby caller and does not offer another G ac
   const calls: unknown[] = [], ui = Object.assign(Object.create(SandboxUI.prototype), { player, state, open: (panel: string) => calls.push(panel), send: (command: unknown) => calls.push(command) });
   ui.interact(); assert.deepEqual(calls, [], 'another G must not skip the pickup or obscure it with the journal');
   const journey = state.neoLife!.journey!, phone = journey.openingPhone!;
-  journey.step = 2; phone.phase = 'done';
+  journey.step = 2; phone.phase = 'connected'; phone.impactElapsed = .2;
+  assert.doesNotMatch(renderFilmJourney(player, state), /正在撞击/, 'the journal cannot announce a crash while the connection is quiet');
+  ui.interact(); assert.deepEqual(calls, [], 'G must not skip the crash');
+  phone.phase = 'done';
   ui.interact(); assert.deepEqual(calls, [], 'G cannot bypass the aftermath in an old crash save');
   assert.match(renderFilmJourney(player, state), /<button disabled>特工调查/);
   phone.aftermath = { elapsed: WELLS_AFTERMATH.seconds, cast: {} as NonNullable<typeof phone.aftermath>['cast'] };
