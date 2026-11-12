@@ -73,7 +73,7 @@ test('the rooftop prepares one detached subway and reuses it with the entry ligh
       assert.ok(count <= 4);
     } } as unknown as THREE.WebGLRenderer;
   const camera = new THREE.PerspectiveCamera();
-  const prepare = () => sets.prepareSubway(graphics, camera, roof, id => id === 'smith' ? smith : undefined, () => undefined, sun);
+  const prepare = () => sets.prepareMatrixEscape(graphics, camera, roof, id => id === 'smith' ? smith : undefined, () => undefined, sun);
   prepare(); assert.equal(preparedScene, undefined, 'keep shader preparation outside the playable brace windows');
   roof.airRescue!.phase = 'pulling';
   prepare();

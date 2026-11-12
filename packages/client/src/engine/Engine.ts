@@ -325,8 +325,8 @@ export class Engine {
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareGovernment(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
-    if (this.running && meeting?.scene === 'm1_rooftop_rescue' && player?.id === meeting.actor)
-      this.filmSets.prepareSubway(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
+    if (this.running && (meeting?.scene === 'm1_rooftop_rescue' || meeting?.scene === 'm1_subway') && player?.id === meeting.actor)
+      this.filmSets.prepareMatrixEscape(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
     if ((meeting?.scene === 'm1_death' || meeting?.scene === 'm1_return') && player?.id === meeting.actor)
       this.filmSets.prepareOneDeck(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), player.position);
     if (meeting?.scene === 'm2_meeting' && player?.id === meeting.actor)
