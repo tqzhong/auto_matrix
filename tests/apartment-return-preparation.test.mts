@@ -74,8 +74,8 @@ function fixture() {
     initTexture(map: THREE.Texture) { assert.equal(map, texture); work.push('texture'); uploaded.set(map, map.version); },
   } as unknown as THREE.WebGLRenderer;
   const journey = { scene: 'm1_pills', pills: { phase: 'taking', elapsed: 6, choice: 'blue' } } as FilmJourney;
-  const prepare = (objects?: readonly (THREE.Group | THREE.Mesh | undefined)[], openingLights?: LightCulling) => {
-    const before = work.length, pending = apartment.prepareReturn(renderer, camera, scene, journey, actor, objects, openingLights);
+  const prepare = (objects?: readonly (THREE.Group | THREE.Mesh | undefined)[], openingLights?: LightCulling, deferred = false) => {
+    const before = work.length, pending = apartment.prepareReturn(renderer, camera, scene, journey, actor, objects, openingLights, deferred);
     assert.ok(work.length - before <= 1, 'one compile, binding completion or texture upload per frame');
     assert.equal(renderer.getRenderTarget(), null); assert.equal(renderer.debug.checkShaderErrors, true);
     assert.equal(city.visible, false); assert.ok(roomLights.every(light => !light.visible));
@@ -140,6 +140,27 @@ test('the nightclub return prepares the morning apartment, actual home clothes a
   const before = h.work.length;
   h.journey.scene = 'm1_morning';
   assert.equal(h.prepare([marker]), false); assert.equal(h.work.length, before);
+  assert.equal(h.apartment.returnNormalMeshes, undefined);
+});
+
+test('a deferred invitation prepares the two visitors before their actual entrance', t => {
+  const h = fixture(); t.after(h.dispose);
+  const choi = new THREE.Group(), dujour = new THREE.Group();
+  const first = h.arms.clone(), second = h.shirt.clone();
+  first.visible = second.visible = true; choi.add(first); dujour.add(second);
+  h.journey.scene = 'm1_wake_up'; delete h.journey.pills;
+  h.journey.contact = { phase: 'noticed', elapsed: 0, paid: true };
+  assert.equal(h.prepare([choi, dujour]), false, 'an active invitation has no deferred arrival to prepare');
+  h.ready();
+  for (let frame = 0; frame < 60; frame++) h.prepare([choi, dujour], undefined, true);
+  const meshes = h.batches.flat();
+  assert.ok(meshes.includes(first) && meshes.includes(second));
+  assert.ok(!meshes.includes(h.street) && !meshes.includes(h.arms), 'the occupied apartment and Neo are already drawn');
+  assert.ok(h.slots.every(slots => slots === 10));
+  assert.equal(h.work.filter(step => step === 'texture').length, 1, 'the shared map uploads once');
+  assert.deepEqual(h.apartment.returnNormalMeshes, [first, second]);
+  const before = h.work.length;
+  assert.equal(h.prepare([choi, dujour]), false); assert.equal(h.work.length, before);
   assert.equal(h.apartment.returnNormalMeshes, undefined);
 });
 

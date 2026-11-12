@@ -233,6 +233,12 @@ export class AgentRenderer {
   getAgentShadow(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.shadow; }
   getAgentDetail(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.detail; }
   getAgentDistant(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.rig.distant; }
+  requestApartmentGuest(id: 'choi' | 'dujour'): THREE.Group | undefined {
+    const guest = this.agents.get(id);
+    if (!guest || guest.state.controller) return undefined;
+    this.models.requestHero(guest.rig);
+    return guest.rig.hero?.root;
+  }
   prepareStoryCast(journey: FilmJourney): void {
     const index = FILM_SCENES.findIndex(scene => scene.id === (journey.visiting ?? journey.scene));
     if (index < 0) return;

@@ -1,7 +1,7 @@
 import { METACORTEX, metacortexLiftPose, CITY_TRAFFIC_ROUTES, cityTrafficPose, cityTrafficSignal, type CityTrafficState, type MetacortexLift } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { FILM_SETS, LOCATIONS, LIFE_ROOMS, STREET_SPACING, locationEntrance, CITY_BUILDINGS, cityNoise as noise } from '@auto_matrix/shared';
+import { APARTMENT_ROOM, FILM_SETS, LOCATIONS, LIFE_ROOMS, STREET_SPACING, locationEntrance, CITY_BUILDINGS, cityNoise as noise } from '@auto_matrix/shared';
 import { UrbanMaterials } from './UrbanMaterials.js';
 import { LifeInteriors } from './LifeInteriors.js';
 import { VisibleGroup } from './VisibleGroup.js';
@@ -201,11 +201,16 @@ export class VoxelRenderer {
     const lens = new THREE.CircleGeometry(.16, 12); lens.rotateY(Math.PI);
     this.trafficSignals = new THREE.InstancedMesh(lens, new THREE.MeshBasicMaterial(), 4800);
     this.trafficSignals.name = 'city-traffic-signals';
+    const { center: home, depth, exitWidth } = APARTMENT_ROOM, doorwayZ = home.z + depth / 2;
     let index = 0;
     for (let x = 320; x <= 1840; x += 80) for (let z = 320; z <= 1840; z += 80) for (let side = 0; side < 4; side++) {
       const axis = side % 2, direction = side < 2 ? 1 : -1;
       this.transform.rotation.y = (axis ? 0 : Math.PI / 2) + (direction > 0 ? 0 : Math.PI);
       this.transform.position.set(x + (axis ? direction * 10 : -direction * 10), 2.2, z - direction * 10);
+      const position = this.transform.position;
+      if (Math.abs(position.x - home.x) < exitWidth / 2 + .35 && Math.abs(position.z - doorwayZ) < .4) {
+        position.x = home.x + exitWidth / 2 + 2; position.z = doorwayZ + .75;
+      }
       this.transform.scale.set(1, 1, 1); this.transform.updateMatrix(); pole.setMatrixAt(index, this.transform.matrix);
       this.transform.position.y = 4.1; this.transform.updateMatrix(); heads.setMatrixAt(index, this.transform.matrix);
       const front = new THREE.Vector3(0, 0, -.25).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.transform.rotation.y);

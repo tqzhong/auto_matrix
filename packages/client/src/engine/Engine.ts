@@ -265,13 +265,16 @@ export class Engine {
     this.agentRenderer.protectHelAttendant(this.filmSets.helAttendant, meeting?.scene === 'm3_hel_entry' && !meeting.visiting ? meeting.helCoatcheck : undefined);
     const officeSet = filmSet?.id === 'film_metacortex_floor' || filmSet?.id === 'film_office_ledge';
     this.voxelRenderer.showOfficeInterior(officeSet || Boolean(this.sandbox?.neoLife?.lift?.passenger));
-    const cinematicSet = filmSet && !officeSet && filmSet.id !== 'film_anderson_flat' ? filmSet : undefined;
-    const openingApartment = liveMatrixJourney?.scene === 'm1_wake_up' && liveMatrixJourney.contact?.chairMotion === 'seated';
-    const morningApartment = liveMatrixJourney?.scene === 'm1_morning' && filmSet?.id === 'film_anderson_flat';
+    const apartmentSet = filmSet?.id === 'film_anderson_flat';
+    const cinematicSet = filmSet && !officeSet && !apartmentSet ? filmSet : undefined;
+    const openingApartment = liveMatrixJourney?.scene === 'm1_wake_up' && (apartmentSet || liveMatrixJourney.contact?.chairMotion === 'seated');
+    const morningApartment = liveMatrixJourney?.scene === 'm1_morning' && apartmentSet;
+    const deferredContact = this.matrix && !meeting && player?.id === 'neo' && insideLifeRoom(player.position) === 'neo_apartment'
+      && this.sandbox?.neoLife?.deferredContact?.contact?.phase === 'noticed';
     this.lightCulling.minimumPointSlots = filmSet?.id === 'film_government_lobby' ? LOBBY_POINT_SLOTS
       : filmSet?.id === 'film_subway_platform' ? SUBWAY_POINT_SLOTS
       : officeSet ? OFFICE_POINT_SLOTS
-      : openingApartment || morningApartment ? APARTMENT_POINT_SLOTS
+      : openingApartment || morningApartment || deferredContact ? APARTMENT_POINT_SLOTS
       : this.filmSets.minimumPointSlots || (reserveCommuteLights && !cinematicSet ? POINT_SLOT_FLOOR : 0);
     if (!cinematicSet && previousSet?.id !== filmSet?.id) this.updateAtmosphere();
     this.voxelRenderer.matrix.visible = this.matrix && !cinematicSet; this.voxelRenderer.real.visible = !this.matrix && !cinematicSet;
@@ -299,14 +302,15 @@ export class Engine {
     const openingPhone = liveMatrixJourney?.scene === 'm1_phone_escape' ? liveMatrixJourney.openingPhone : undefined;
     const openingHandoff = openingPhone?.phase === 'connected' || openingPhone?.phase === 'done';
     const clubReturn = liveMatrixJourney?.scene === 'm1_club';
-    const neoAtHome = player?.id === meeting?.actor ? this.agentRenderer.getAgentHero('neo') : undefined;
+    const neoAtHome = player?.id === meeting?.actor || deferredContact ? this.agentRenderer.getAgentHero('neo') : undefined;
     const preparingApartment = this.agentRenderer.prepareWellsCast(this.renderer, this.camera, openingPhone)
       || openingHandoff && this.agentRenderer.prepareOpeningApartmentActor()
       || this.voxelRenderer.interiors.prepareApartmentReturn(this.renderer, this.camera, this.scene, this.sandbox?.neoLife, neoAtHome,
       openingHandoff ? [this.agentRenderer.getAgentHero('choi'), this.agentRenderer.getAgentHero('dujour'),
         this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentDistant('neo')]
+        : deferredContact ? [this.agentRenderer.requestApartmentGuest('choi'), this.agentRenderer.requestApartmentGuest('dujour'), this.filmSets.goalMarker]
         : clubReturn ? [this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo')] : undefined,
-      openingHandoff ? this.lightCulling : undefined);
+      openingHandoff ? this.lightCulling : undefined, deferredContact);
     if (!this.playerControls?.firstPerson) this.filmSets.preparePodColors(this.renderer, this.camera, this.agentRenderer.getAgentHero('neo'));
     if (meeting?.scene === 'm1_oracle' && player?.id === meeting.actor)
       this.filmSets.prepareAmbush(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));

@@ -21,7 +21,7 @@ import { WETWALL, WETWALL_SHAFT, WETWALL_ROLES, wetwallEntry, wetwallPose, type 
 import { truthRoot, TRUTH_BEDSIDE, type TruthGesture } from '@auto_matrix/shared';
 import { trainingRoot, redDressAttention } from '@auto_matrix/shared';
 import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose, mirrorEntryPose, mirrorTime } from '@auto_matrix/shared';
-import { APARTMENT_NETWORK, MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
+import { APARTMENT_NETWORK, APARTMENT_ROOM, MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition, OFFICE_CUSTODY } from '@auto_matrix/shared';
 import { SPOON_LESSON, spoonLessonSeat, type SpoonLesson } from '@auto_matrix/shared';
 import { gardenPose, newTrilogyEpilogue } from '@auto_matrix/shared';
@@ -2172,6 +2172,32 @@ test('the morning camera shows the bedside clock in portrait and landscape and V
   game.document.pointerLockElement = game.canvas; game.event(game.document, 'mousemove', { movementX: 120, movementY: -40 }); game.step(.1);
   assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .15, 'V retains mouse look');
   game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
+});
+
+test('the 101 street handoff keeps the third-person lens and Neo clear of the rendered lintels', t => {
+  const game = setup(t), { center, depth } = APARTMENT_ROOM;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const room = new THREE.Group(); room.position.set(center.x, center.y - 1, center.z);
+  const renderer = new ApartmentSetRenderer(room); room.updateWorldMatrix(true, true);
+  t.after(() => renderer.dispose());
+  game.state.currentLocation = 'neo_apartment';
+  for (const aspect of [16 / 9, 9 / 16]) for (const z of [depth / 2 + 2.67, depth / 2 - .3, depth / 2 + 7]) {
+    game.state.position = filmPosition('film_anderson_flat', 0, z);
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.3, 1 / 60, false);
+    game.camera.updateWorldMatrix(true, false);
+    const eye = game.camera.position;
+    const ends = [new THREE.Vector3(center.x, center.y + 3.05, center.z + z),
+      ...[-1, 1].flatMap(x => [-1, 1].map(y => new THREE.Vector3(x, y, -1).unproject(game.camera)))];
+    for (const end of ends) {
+      const direction = end.clone().sub(eye);
+      const hit = new THREE.Raycaster(eye, direction.clone().normalize(), .001, direction.length() - .005).intersectObject(room, true)[0];
+      assert.ok(!hit, `the aperture must clear the camera at ${aspect}/${z}, obstruction=${hit?.point.toArray()}`);
+    }
+    const head = ends[0].project(game.camera);
+    assert.ok(Math.abs(head.x) < .85 && Math.abs(head.y) < .85 && head.z < 1);
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(.2, 1 / 60, false);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06);
 });
 
 test('the apartment wake call frames the bed and the front of Neo at the physical telephone', t => {

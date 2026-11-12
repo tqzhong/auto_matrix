@@ -52,7 +52,7 @@ import { ambushCompanyStep } from '@auto_matrix/shared';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
 import { officeClipboardPoint } from '@auto_matrix/shared';
-import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentAtComputer, apartmentContactLocked, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
+import { APARTMENT, APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentAtComputer, apartmentContactLocked, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { OPENING_HOTEL, WELLS_AFTERMATH, openingHotelClimbed, openingHotelClimbPose, openingHotelDiveMotion, openingHotelHallTime, openingHotelTraceTime, openingHotelTraceTiming, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
@@ -3342,6 +3342,18 @@ export class PlayerControls {
           this.camera.position.y = Math.max(this.camera.position.y, this.position.y + 5.3);
       }
       this.camera.position.y = Math.min(this.camera.position.y, cameraCeiling(this.camera.position));
+      const { center: home, width, depth, exitHeight } = APARTMENT_ROOM;
+      if (state.isInMatrix && Math.abs(this.position.x - home.x) < width / 2 && this.position.y < home.y + 5
+        && Math.abs(this.position.z - home.z) < depth / 2 + followDistance + 1) {
+        // The walking collider leaves the doorway open at all heights. Keep the lens and its near plane below the lintel.
+        const tangent = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
+        const lens = this.camera.near * Math.hypot(1, tangent, tangent * this.camera.aspect);
+        const low = Math.min(this.position.z, this.camera.position.z) - home.z - lens - .33;
+        const high = Math.max(this.position.z, this.camera.position.z) - home.z + lens + .33;
+        const headroom = low < APARTMENT.doorZ && high > APARTMENT.doorZ ? APARTMENT.doorHeight
+          : low < depth / 2 && high > depth / 2 ? exitHeight : Infinity;
+        this.camera.position.y = Math.min(this.camera.position.y, home.y - 1 + headroom - lens - .05);
+      }
       const lookAhead = officeFollow ? 2 * THREE.MathUtils.smoothstep(Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z), 1.5, 4.5) : 2;
       this.camera.lookAt((wreckCabin || officeFollow ? this.cameraTarget.clone() : sixthBathroom || doorwayView ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * lookAhead, -.08, Math.cos(this.yaw) * lookAhead)));
     }

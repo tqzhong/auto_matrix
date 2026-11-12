@@ -33,7 +33,7 @@ export function closedApartmentFar(camera: THREE.PerspectiveCamera, journey?: Fi
 
 type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 type ReturnShadows = { lighting: LightCulling; materials: Set<THREE.MeshDepthMaterial>; entryFrames: number };
-type ApartmentReturn = 'm1_wake_up' | 'm1_morning' | 'neo_apartment';
+type ApartmentReturn = 'm1_wake_up' | 'm1_morning' | 'neo_apartment' | 'deferred_contact';
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
 export class ApartmentSetRenderer {
@@ -83,14 +83,15 @@ export class ApartmentSetRenderer {
     }
     const frontWidth = (APARTMENT_ROOM.width - APARTMENT_ROOM.exitWidth) / 2;
     for (const side of [-1, 1]) this.box(plaster, side * (APARTMENT_ROOM.exitWidth + frontWidth) / 2, 4.4, 20, frontWidth, 8.8, .3);
-    this.box(plaster, 0, 7.95, 20, APARTMENT_ROOM.exitWidth, 1.7, .3);
-    for (const side of [-1, 1]) this.box(trim, side * 5, 3.55, 20, .18, 7.1, .4);
+    const exitHeight = APARTMENT_ROOM.exitHeight;
+    this.box(plaster, 0, (8.8 + exitHeight) / 2, 20, APARTMENT_ROOM.exitWidth, 8.8 - exitHeight, .3);
+    for (const side of [-1, 1]) this.box(trim, side * 5, exitHeight / 2, 20, .18, exitHeight, .4);
     const exit = this.label('STREET', 2, .5, '#c6cebd', '#35413b', 256); exit.rotation.y = Math.PI; exit.position.set(0, 7.6, 19.8); this.root.add(exit);
     this.box(this.mat(0x5f6354, .94), 0, 8.8, 0, 34, .25, 40);
     for (const x of [-9.5, 9.5]) this.box(plaster, x, 4.4, APARTMENT.doorZ, 15, 8.8, .4);
     this.box(plaster, 0, 7.7, APARTMENT.doorZ, 4, 2.2, .4);
     for (const x of [-2, 2]) this.box(trim, x, 3.35, 12, .22, 6.7, .65);
-    this.box(trim, 0, 6.67, 12, 4.25, .24, .65);
+    this.box(trim, 0, APARTMENT.doorHeight + .12, APARTMENT.doorZ, 4.25, .24, .65);
     this.door.name = 'apartment-101-door'; this.door.position.set(-1.9, 0, 12); this.door.userData.dynamic = true; this.root.add(this.door);
     this.mesh(new RoundedBoxGeometry(3.8, 6.45, .21, 2, .025), walnut, 1.9, 3.25, 0, this.door);
     for (const z of [-.12, .12]) for (const y of [1.7, 4.6]) this.mesh(new THREE.BoxGeometry(3.18, 2.35, .035), trim, 1.9, y, z, this.door);
@@ -278,12 +279,13 @@ export class ApartmentSetRenderer {
     return this.returnPreparation?.steps ? undefined : this.returnPreparation?.normalMeshes;
   }
   prepareReturn(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, journey?: FilmJourney, actor?: THREE.Group,
-    entryObjects: readonly (THREE.Group | THREE.Mesh | undefined)[] = [], openingLights?: LightCulling): boolean {
+    entryObjects: readonly (THREE.Group | THREE.Mesh | undefined)[] = [], openingLights?: LightCulling, deferred = false): boolean {
     const phone = journey?.scene === 'm1_phone_escape' ? journey.openingPhone : undefined;
     const opening = phone?.phase === 'connected' || phone?.phase === 'done';
     const blue = journey?.scene === 'm1_pills' && journey.pills?.phase === 'taking' && journey.pills.choice === 'blue';
     const club = journey?.scene === 'm1_club' && ['whisper', 'question', 'reply', 'departing', 'done'].includes(journey.club?.phase ?? '');
-    const destination = opening ? 'm1_wake_up' : club ? 'm1_morning' : blue ? 'neo_apartment' : undefined;
+    const invitation = deferred && journey?.scene === 'm1_wake_up' && journey.contact?.phase === 'noticed';
+    const destination = opening ? 'm1_wake_up' : club ? 'm1_morning' : blue ? 'neo_apartment' : invitation ? 'deferred_contact' : undefined;
     const previous = this.returnPreparation;
     if (!destination || journey?.visiting || !actor || !renderer.extensions.has('KHR_parallel_shader_compile')) {
       const shadows = previous?.shadows;
@@ -295,7 +297,9 @@ export class ApartmentSetRenderer {
       } else this.cancelReturnPreparation();
       return false;
     }
-    const subjects = destination === 'neo_apartment' ? [actor] : [actor, ...entryObjects.filter((object): object is THREE.Group | THREE.Mesh => object !== undefined)];
+    const arriving = entryObjects.filter((object): object is THREE.Group | THREE.Mesh => object !== undefined);
+    const subjects = destination === 'neo_apartment' ? [actor] : invitation ? arriving : [actor, ...arriving];
+    if (!subjects.length) { this.cancelReturnPreparation(); return false; }
     const points = this.roomLights.reduce((count, light) => count + Number(light instanceof THREE.PointLight && light.intensity > 0), 0);
     if (previous?.gpu !== renderer.properties || previous.points !== points || previous.destination !== destination || previous.subjects.length !== subjects.length
       || subjects.some((object, index) => previous.subjects[index] !== object)) {
@@ -319,7 +323,8 @@ export class ApartmentSetRenderer {
   private *prepareReturnSteps(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene,
     subjects: (THREE.Group | THREE.Mesh)[], destination: ApartmentReturn, normalMeshes?: THREE.Mesh[], shadows?: ReturnShadows): Generator<void> {
     const opening = destination === 'm1_wake_up';
-    const entryScene = destination === 'neo_apartment' ? undefined : FILM_SCENE_BY_ID[destination];
+    const invitation = destination === 'deferred_contact';
+    const entryScene = destination === 'neo_apartment' ? undefined : FILM_SCENE_BY_ID[invitation ? 'm1_wake_up' : destination];
     const lights = new THREE.Scene(); lights.environment = scene.environment; lights.fog = scene.fog;
     for (const light of scene.children) {
       if (light.visible && (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) lights.add(light.clone());
@@ -347,17 +352,19 @@ export class ApartmentSetRenderer {
     const frustum = new THREE.Frustum().setFromProjectionMatrix(eye.projectionMatrix.clone().multiply(eye.matrixWorldInverse));
     const meshes = new Set<THREE.Mesh | THREE.Line>(), textures = new Set<THREE.Texture>();
     const collect = (object: THREE.Object3D) => { if (object instanceof THREE.Mesh || object instanceof THREE.Line) meshes.add(object); };
-    this.root.traverseVisible(collect);
+    if (!invitation) this.root.traverseVisible(collect);
     for (const subject of subjects) {
       if (subject instanceof THREE.Mesh) meshes.add(subject);
       else subject.traverseVisible(collect);
     }
-    // Neo can change to his home shirt and sleeves on the first frame in the room.
-    for (const name of ['Tracking_arms', 'Tracking_shirt']) { const part = subjects[0].getObjectByName(name); if (part) collect(part); }
-    for (const object of this.cityLights?.children ?? []) {
-      if (!object.visible || !(object instanceof THREE.Mesh || object instanceof THREE.Line)) continue;
-      object.updateWorldMatrix(true, false);
-      if (!object.frustumCulled || frustum.intersectsObject(object)) collect(object);
+    if (!invitation) {
+      // Neo can change to his home shirt and sleeves on the first frame in the room.
+      for (const name of ['Tracking_arms', 'Tracking_shirt']) { const part = subjects[0].getObjectByName(name); if (part) collect(part); }
+      for (const object of this.cityLights?.children ?? []) {
+        if (!object.visible || !(object instanceof THREE.Mesh || object instanceof THREE.Line)) continue;
+        object.updateWorldMatrix(true, false);
+        if (!object.frustumCulled || frustum.intersectsObject(object)) collect(object);
+      }
     }
     const buffers: (THREE.Mesh | THREE.Line)[] = [], geometries = new Set<THREE.BufferGeometry>();
     for (const mesh of meshes) {

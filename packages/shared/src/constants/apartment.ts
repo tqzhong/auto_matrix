@@ -22,7 +22,7 @@ export interface MorningRoutine {
 export const MORNING = { lying: 3.2, sleeping: 1.8, stopping: 1.1, bedX: 8.05,
   mattressY: 1.385, pelvisY: 1.7, edgeX: 7.6, floorFootX: 6.67,
   alarm: { x: 6.45, y: 1.85, z: -10.75 }, exit: { x: 0, z: 23 } } as const;
-export const APARTMENT_ROOM = { width: 34, depth: 40, exitWidth: 10, center: { x: 1210, y: 1, z: 690 } } as const;
+export const APARTMENT_ROOM = { width: 34, depth: 40, exitWidth: 10, exitHeight: 7.1, center: { x: 1210, y: 1, z: 690 } } as const;
 export const APARTMENT_CHAIR = { x: -9, z: -8.4, width: 2, depth: 1.84, height: 2.75, seatY: 1.1, seatDepth: 1.6, backZ: -7.6 } as const;
 export const APARTMENT_BOOK = { x: 6, y: .016, z: -5.3, scale: .4, pickup: 1.95, approach: { x: 5.9, z: -6.95, yaw: 0 } } as const;
 export const APARTMENT = {
@@ -35,7 +35,7 @@ export const APARTMENT = {
   book: APARTMENT_BOOK.approach,
   choi: { x: 0, z: 13, yaw: Math.PI },
   dujour: { x: -1.1, z: 14.5, yaw: Math.PI - .4 },
-  doorZ: 12, doorWidth: 3.8,
+  doorZ: 12, doorWidth: 3.8, doorHeight: 6.55,
   arrival: 2.8, signal: 8, knocking: 4, opening: 2.4, retrieving: 3.2, handover: 4.5,
 } as const;
 export const WAKE_CALL = { waking: 5.6, grasp: .85, pickup: 2.2, listening: 8.6, reply: 4.2, leaving: 4.4 } as const;
