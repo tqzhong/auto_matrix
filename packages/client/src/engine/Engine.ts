@@ -393,8 +393,9 @@ export class Engine {
     const neoNormals = preparingLafayetteNormals || openingHandoff && !preparingApartment ? neoAtHome : undefined;
     const hotelNormals = hotelPreparation && !preparingHotelTextures ? this.filmSets.openingHotelNormalMeshes : undefined;
     const openingNormals = this.filmSets.openingRoofRetryNormalMeshes ?? hotelNormals;
+    const apartmentNormals = openingNormals ? undefined : this.voxelRenderer.interiors.apartmentReturnNormalMeshes;
     this.postProcessing.prepareNormals(this.renderer, openingNormals ? this.filmSets.root : neoNormals,
-      openingNormals ?? this.voxelRenderer.interiors.apartmentReturnNormalMeshes);
+      openingNormals ?? apartmentNormals, apartmentNormals !== undefined);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0);
     this.filmSets.renderTelevisionPreview(this.renderer);

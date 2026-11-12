@@ -26,6 +26,7 @@ export class WorldOcclusionPass extends GTAOPass {
   private preparedNormals?: {
     actor: THREE.Group; gpu: THREE.WebGLRenderer['properties']; seen: WeakSet<THREE.Mesh>;
     meshes: THREE.Mesh[]; programs: NormalProgram[]; street: boolean; destination?: readonly THREE.Mesh[];
+    readyProgram?: NormalProgram;
   };
   constructor(...args: ConstructorParameters<typeof GTAOPass>) {
     super(...args);
@@ -127,15 +128,26 @@ export class WorldOcclusionPass extends GTAOPass {
       this.normalSource = undefined; shadows.autoUpdate = autoUpdate; shadows.needsUpdate = needsUpdate;
     }
   }
-  prepareNormals(renderer: THREE.WebGLRenderer, actor?: THREE.Group, destination?: readonly THREE.Mesh[]): void {
+  prepareNormals(renderer: THREE.WebGLRenderer, actor?: THREE.Group, destination?: readonly THREE.Mesh[], deferBindings = false): void {
     if (!actor || !destination && !actor.visible || !renderer.extensions.has('KHR_parallel_shader_compile')) { this.preparedNormals = undefined; return; }
     const previous = this.preparedNormals;
     const fresh = previous?.actor !== actor || previous.gpu !== renderer.properties || previous.destination !== destination;
     if (fresh) this.preparedNormals = { actor, gpu: renderer.properties, seen: new WeakSet(), meshes: [], programs: [], street: false, destination };
     const prepared = this.preparedNormals!, programs = renderer.info.programs ?? [];
+    if (prepared.readyProgram) {
+      const program = prepared.readyProgram;
+      prepared.readyProgram = undefined;
+      if (programs.includes(program)) { cacheReadyProgramLocations(renderer, program); return; }
+    }
     prepared.programs = prepared.programs.filter(program => programs.includes(program));
     const ready = prepared.programs.findIndex(program => program.isReady());
-    if (ready >= 0) { cacheReadyProgramLocations(renderer, prepared.programs.splice(ready, 1)[0]); return; }
+    if (ready >= 0) {
+      const program = prepared.programs.splice(ready, 1)[0];
+      // Use the handoff's lead time to give the driver another frame before reflection.
+      if (deferBindings) prepared.readyProgram = program;
+      else cacheReadyProgramLocations(renderer, program);
+      return;
+    }
     const include = (object: THREE.Object3D) => {
       if (!(object instanceof THREE.Mesh) || prepared.seen.has(object) || object.userData.distantBackdrop
         || !Array.isArray(object.material) && !object.material.depthWrite) return;
@@ -242,7 +254,9 @@ export class PostProcessing {
     this.composer.writeBuffer = this.composer.renderTarget1;
     this.composer.render();
   }
-  prepareNormals(renderer: THREE.WebGLRenderer, actor?: THREE.Group, destination?: readonly THREE.Mesh[]): void { this.occlusion.prepareNormals(renderer, actor, destination); }
+  prepareNormals(renderer: THREE.WebGLRenderer, actor?: THREE.Group, destination?: readonly THREE.Mesh[], deferBindings = false): void {
+    this.occlusion.prepareNormals(renderer, actor, destination, deferBindings);
+  }
   get occlusionInPlace(): boolean { return this.occlusion.compositeInPlace; }
   set occlusionInPlace(value: boolean) { this.occlusion.compositeInPlace = value; }
   get occlusionSingleChannel(): boolean { return this.occlusion.singleChannel; }

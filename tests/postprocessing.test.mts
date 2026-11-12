@@ -81,7 +81,7 @@ test('engine teardown releases the environment before retiring the renderer and 
     environment: { dispose: () => calls.push('environment') },
     renderer: { dispose: () => calls.push('renderer'), forceContextLoss: () => calls.push('context') },
   });
-  for (const name of ['pillReflection', 'filmSets', 'voxelRenderer', 'sandboxRenderer', 'agentRenderer', 'cameraController',
+  for (const name of ['pillReflection', 'openingTrace', 'filmSets', 'voxelRenderer', 'sandboxRenderer', 'agentRenderer', 'cameraController',
     'combatEffects', 'audio', 'lightCulling', 'lightingSystem', 'particleSystem', 'postProcessing']) engine[name] = resource;
   engine.dispose();
   assert.deepEqual(calls, ['cancel frame', 'environment', 'renderer', 'context']);
@@ -347,9 +347,16 @@ test('the Wells handoff prepares the apartment, cast and both instanced normal l
     },
   } as unknown as THREE.WebGLRenderer;
   t.after(() => { pass.dispose(); geometry.dispose(); surface.dispose(); overlay.dispose(); });
+  const prepare = () => pass.prepareNormals(renderer, actor, surfaces, true);
+  prepare();
+  assert.equal(steps, 1, 'compile the destination batch first');
+  prepare();
+  assert.equal(steps, 1, 'wait a frame after the driver reports the normal program ready');
+  prepare();
+  assert.equal(steps, 2, 'reflect the ready program on the following frame');
   for (let frame = 0; frame < 16; frame++) {
     const before = steps;
-    pass.prepareNormals(renderer, actor, surfaces);
+    prepare();
     assert.ok(steps - before <= 1);
     assert.equal(target, null); assert.equal(renderer.debug.checkShaderErrors, true);
     assert.equal(city.visible || actor.visible || shirt.visible, false);
