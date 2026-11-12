@@ -1331,6 +1331,7 @@ export class FilmSetRenderer {
     }
     if (journey.scene === 'm2_backup' && journey.step === 1 && journey.trinityTerminal?.phase === 'ready' && !this.preparedSecondOracle) return;
     const next = FILM_SCENE_BY_ID[cut.scene];
+    const teaEntry = next.id === 'm2_seraph', matrixEntry = firstOracle || teaEntry;
     if (!this.preparedSecondOracle) {
       const set = FILM_SETS[next.set], { x, y, z } = set.center;
       const room = new FilmSetRenderer(new THREE.Scene());
@@ -1343,7 +1344,7 @@ export class FilmSetRenderer {
       if (prepared.steps.next().done) prepared.steps = undefined;
       return;
     }
-    if (firstOracle && prepared.gpu !== renderer.properties) {
+    if (matrixEntry && prepared.gpu !== renderer.properties) {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose(); prepared.colors = undefined; prepared.gpu = renderer.properties;
     }
@@ -1352,26 +1353,32 @@ export class FilmSetRenderer {
       for (const texture of prepared.room.textures) if (!texture.image) return;
       const room = prepared.room;
       const colors = this.colorPreparation(room.root, [], {
-        includeBasic: Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
+        includeBasic: teaEntry || Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
       });
       for (const texture of room.architectRoom?.screenTextures ?? []) colors.textures.add(texture);
       prepared.colors = { ...colors, actors: new Set() };
-      if (firstOracle) {
+      if (matrixEntry) {
         colors.meshes.push(this.marker);
         prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
       }
     }
     if (prepared.colors) {
       const cast = [next.actor, ...next.cast];
-      if (firstOracle) {
+      if (matrixEntry) {
         const colors = prepared.colors;
         for (const id of cast) {
           const group = actor(id); if (!group || colors.actors.has(group)) continue;
-          const meshes: ColorMesh[] = [];
-          group.traverse(object => {
-            // The returning visitors still wear ship clothes in the current view.
-            if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
-          });
+          let meshes: ColorMesh[];
+          if (teaEntry && id === 'seraph') {
+            if (!group.getObjectByName('seraph-detailed-body') || !group.getObjectByName('seraph-detailed-head')) continue;
+            meshes = this.colorMeshes(group.children, true);
+          } else {
+            meshes = [];
+            group.traverse(object => {
+              // The returning visitors still wear ship clothes in the current view.
+              if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
+            });
+          }
           if (!meshes.length) continue;
           colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
         }

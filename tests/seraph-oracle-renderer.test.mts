@@ -27,13 +27,17 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   cast.add(body);
   t.after(() => { sets.dispose(); body.geometry.dispose(); body.material.dispose(); });
 
-  let preview: THREE.Scene | undefined, castCompiled = false;
+  let preview: THREE.Scene | undefined, castCompiled = false, offstageSeraph: THREE.Group | undefined;
   const compiled = new Set<THREE.Object3D>();
+  const compileCounts = new Map<THREE.Object3D, number>();
   const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
     setRenderTarget() {}, initTexture() {}, properties: { get: () => ({}) },
     compile(subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) {
-      preview = target;
-      subject.traverse(mesh => { compiled.add(mesh); if (mesh === body) castCompiled = true; });
+      target.traverseVisible(object => { if (object instanceof THREE.Scene) preview = object; });
+      subject.traverse(mesh => {
+        compiled.add(mesh); compileCounts.set(mesh, (compileCounts.get(mesh) ?? 0) + 1);
+        if (mesh === body) castCompiled = true;
+      });
     } } as unknown as THREE.WebGLRenderer;
   const enter = (id: string, step: number) => {
     const beat = FILM_SCENE_BY_ID[id];
@@ -41,7 +45,8 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     Object.assign(neo, { position: filmEntry(beat), isInMatrix: FILM_SETS[beat.set].world === 'matrix', currentLocation: beat.set });
     sets.update(neo, sandbox, 0);
   };
-  const prepare = () => sets.prepareSecondOracle(graphics, camera, journey, id => ['neo', 'smith', 'trinity', 'roland'].includes(id) ? cast : undefined);
+  const prepare = () => sets.prepareSecondOracle(graphics, camera, journey, id => id === 'seraph' ? offstageSeraph
+    : ['neo', 'smith', 'trinity', 'roland'].includes(id) ? cast : undefined);
   const warm = (name: string) => {
     preview = undefined; castCompiled = false; compiled.clear();
     for (let i = 0; i < 120; i++) prepare();
@@ -56,6 +61,29 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     root.traverseVisible(object => { if (object instanceof THREE.PointLight) count++; });
     return count;
   };
+
+  await t.test('the tea house warms the Matrix coat and the late detailed Seraph before the cut', t => {
+    const coat = new THREE.SkinnedMesh(body.geometry, body.material), shipClothes = new THREE.Mesh(body.geometry, body.material);
+    const seraph = new THREE.Group(); seraph.visible = false;
+    const standIn = new THREE.Mesh(body.geometry, body.material);
+    coat.visible = false; shipClothes.visible = false; shipClothes.userData.reloadedHidden = true;
+    cast.add(coat, shipClothes); seraph.add(standIn); offstageSeraph = seraph;
+    t.after(() => { cast.remove(coat, shipClothes); offstageSeraph = undefined; enter('m2_departure', 3); prepare(); preview = undefined; });
+    enter('m2_departure', 4);
+    warm('m2_seraph-keyed-door');
+    assert(compiled.has(coat), 'the Matrix coat must warm while it is hidden in Zion');
+    assert(!compiled.has(shipClothes));
+    assert(!compiled.has(standIn), 'leave the temporary Seraph model out of the tea house preparation');
+    standIn.visible = false;
+    const detailed = ['body', 'head'].map(part => {
+      const group = new THREE.Group(); group.name = 'seraph-detailed-' + part;
+      const mesh = new THREE.SkinnedMesh(body.geometry, body.material); group.add(mesh); seraph.add(group); return mesh;
+    });
+    for (let i = 0; i < 100; i++) prepare();
+    assert.deepEqual(detailed.map(mesh => compileCounts.get(mesh)), [1, 1]);
+    assert.equal(seraph.visible, false);
+    assert.equal(coat.visible, false);
+  });
 
   enter('m2_departure', 3); prepare(); assert.ok(!preview);
   enter('m2_departure', 4);
