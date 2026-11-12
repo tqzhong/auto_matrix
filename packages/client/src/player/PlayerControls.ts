@@ -150,6 +150,7 @@ export class PlayerControls {
   gunner = false;
   hammerPreparation?: HammerHandover;
   openingHotel?: OpeningHotelEncounter;
+  templeSpeech = false;
   private openingTracePlaying = false;
   hotelAlleyGuard?: Vector3;
   climbing = false;
@@ -1400,15 +1401,15 @@ export class PlayerControls {
     // Keep the requested heading, including while the released movement coasts.
     const walkingHeading = this.movementForward || this.movementRight ? this.movementYaw + Math.atan2(-this.movementRight, this.movementForward) : this.facing;
     const heading = dropRoot ? dropRoot.yaw : this.motion.bathroom ? bathroomFightRoot(this.motion.bathroom, this.motion.bathroom.role).yaw : this.motion.sixth ? sixthPose(this.motion.sixth).yaw : this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed, this.motion.wetwall.fallY, this.motion.wetwall.continued).yaw
-      : this.motion.dockGunnery ? Math.PI : this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? walkingHeading : this.facing;
+      : this.motion.dockGunnery ? Math.PI : this.ride || this.climbing || this.performing || this.templeSpeech ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? walkingHeading : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
-    this.facing += turn * (hotelBreach || hotelCall || this.motion.openingAnswer || this.motion.openingHit || this.motion.roofExit || this.motion.freewayPickup || this.motion.freewayRide || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || upperDiggerLocked(this.motion.upperDigger) || diggersLocked(this.motion.diggers) || this.motion.dockGate || dockLastStandLocked(this.motion.dockLastStand) || dockReloadLocked(this.motion.dockReload) || smithFinaleLocked(this.motion.smithFinale) || trilogyEpilogueLocked(this.motion.epilogue) || deusPactLocked(this.motion.deusPact) || this.motion.farewell || mirrorYaw !== undefined || chairYaw !== undefined || computerCheckLocked(computerCheck) || dropRoot || this.motion.officeCustody?.street || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
+    this.facing += turn * (this.templeSpeech || hotelBreach || hotelCall || this.motion.openingAnswer || this.motion.openingHit || this.motion.roofExit || this.motion.freewayPickup || this.motion.freewayRide || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || upperDiggerLocked(this.motion.upperDigger) || diggersLocked(this.motion.diggers) || this.motion.dockGate || dockLastStandLocked(this.motion.dockLastStand) || dockReloadLocked(this.motion.dockReload) || smithFinaleLocked(this.motion.smithFinale) || trilogyEpilogueLocked(this.motion.epilogue) || deusPactLocked(this.motion.deusPact) || this.motion.farewell || mirrorYaw !== undefined || chairYaw !== undefined || computerCheckLocked(computerCheck) || dropRoot || this.motion.officeCustody?.street || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
     if (running && this.enabled && !this.motion.wetwall && (this.motion.speed > .1 || this.ride || this.climbing) && !(this.firstPerson && this.climbing && (state.currentLocation === 'film_office_ledge' || hotelClimb !== undefined)) && !this.dragging && performance.now() - this.lastLook > 900) {
       const cameraTurn = Math.atan2(Math.sin(this.facing - this.yaw), Math.cos(this.facing - this.yaw));
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
     }
     const body = group.children[0];
-    if (body && !(state.currentLocation === 'film_power_plant_pods' && this.motion.performance !== undefined && ['pod', 'fall', 'float', 'lift'].includes(this.motion.performance))) body.rotation.y = this.motion.dockGunnery || this.motion.apuDriving ? Math.PI : this.firstPerson && !this.performing && hotelClimb === undefined ? this.yaw : this.facing;
+    if (body && !(state.currentLocation === 'film_power_plant_pods' && this.motion.performance !== undefined && ['pod', 'fall', 'float', 'lift'].includes(this.motion.performance))) body.rotation.y = this.motion.dockGunnery || this.motion.apuDriving ? Math.PI : this.firstPerson && !this.performing && !this.templeSpeech && hotelClimb === undefined ? this.yaw : this.facing;
     const sprint = this.motion.speed > PLAYER_WALK_SPEED * 1.6 || Boolean(this.ride && this.ride.speed > 20);
     const interviewWide = !this.firstPerson && this.motion.interrogation && (this.motion.interrogation.phase === 'file' || this.motion.interrogation.phase === 'coercion' && this.motion.interrogation.elapsed > 5.3 && this.motion.interrogation.elapsed < 14);
     const interviewApproach = !this.firstPerson && state.currentLocation === 'film_agent_interrogation' && !this.motion.interrogation;
@@ -3265,6 +3266,14 @@ export class PlayerControls {
       if (this.motion.grounded && this.motion.speed > .1) this.camera.position.y += Math.sin(this.cameraStep * 2) * .018;
       const pitch = interview?.pinned ? THREE.MathUtils.lerp(this.pitch, -Math.PI / 2 + this.pitch * .6, interview.pinned) : this.pitch;
       this.camera.lookAt(target.x + Math.sin(this.yaw) * Math.cos(pitch), target.y - Math.sin(pitch), target.z + Math.cos(this.yaw) * Math.cos(pitch));
+    } else if (this.templeSpeech && !this.dragging && now - this.lastLook > 700 && this.motion.speed < .1) {
+      // Look over the rostrum so the speaker and the listening rows share the shot.
+      const eye = new THREE.Vector3(this.position.x + 3.2, this.position.y + 9.3, this.position.z - 9);
+      const focus = new THREE.Vector3(this.position.x, this.position.y + 2.55, this.position.z + 9);
+      this.camera.position.copy(eye);
+      this.camera.lookAt(focus);
+      this.yaw = this.movementYaw = Math.atan2(focus.x - eye.x, focus.z - eye.z);
+      this.pitch = Math.atan2(eye.y - focus.y, Math.hypot(focus.x - eye.x, focus.z - eye.z));
     } else {
       const offset = new THREE.Vector3(-Math.sin(this.yaw) * Math.cos(this.pitch), Math.sin(this.pitch) + 0.1, -Math.cos(this.yaw) * Math.cos(this.pitch));
       const wreckCabin = state.currentLocation === 'film_logos_wreck';

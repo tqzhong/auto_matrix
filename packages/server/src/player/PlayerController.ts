@@ -16,6 +16,7 @@ import { INTERLUDE_CAST, interludeKind, interludeLocked } from '@auto_matrix/sha
 import { deusPactLocked, smithFinaleLocked } from '@auto_matrix/shared';
 import { wellsClearPosition } from '@auto_matrix/shared';
 import { CONSTRUCT, DESERT_REVEAL, filmPosition, mirrorTime, awakeningLocked, awakeningPose, type ConstructGesture, type FilmJourney, type OracleDepartureGesture } from '@auto_matrix/shared';
+import { zionTempleSpeechActive } from '@auto_matrix/shared';
 
 interface PlayerSession {
   agentId: string;
@@ -744,7 +745,13 @@ export class PlayerController {
       const movement = stepPlayer(previous, session.vy, { ...input, x: input.x * attackScale, z: input.z * attackScale,
         ...(custody || carrying ? { sprint: false, jump: false, crouch: false } : {}) }, Math.min(dt, 0.1), agent.isInMatrix, this.sandbox?.state.structures, stale ? undefined : session.planar, boost);
       agent.position = movement.position; session.vy = movement.verticalVelocity; session.planar = movement.horizontalVelocity; session.input.jump = false;
-      agent.rotation = input.yaw;
+      const speech = this.sandbox?.life.film.state;
+      if (speech?.actor === agent.id && agent.currentLocation === 'film_zion_temple' && zionTempleSpeechActive(speech) && Math.hypot(input.x, input.z) <= .05) {
+        const center = FILM_SETS.film_zion_temple.center;
+        const audienceYaw = Math.atan2(center.x - agent.position.x, center.z + 20 - agent.position.z);
+        const turn = Math.atan2(Math.sin(audienceYaw - agent.rotation), Math.cos(audienceYaw - agent.rotation));
+        agent.rotation += turn * (1 - Math.exp(-9 * dt));
+      } else agent.rotation = input.yaw;
       if (session.impulse) {
         const impulse = session.impulse;
         agent.position = combatDisplace(agent.position, impulse.direction, impulse.speed * Math.min(dt, impulse.remaining), agent.isInMatrix, this.sandbox?.state.structures);

@@ -8,7 +8,7 @@ import { officeCustodyActive, officeCustodyLocked } from '@auto_matrix/shared';
 import { arrestCarPose } from '@auto_matrix/shared';
 import { spoonLessonBend } from '@auto_matrix/shared';
 import { wetwallLocked, sixthLocked, SIXTH } from '@auto_matrix/shared';
-import { reloadedLocked } from '@auto_matrix/shared';
+import { reloadedLocked, zionTempleSpeechActive } from '@auto_matrix/shared';
 import { trainmanChaseActive, trainmanChaseLocked, helGarageActive, helGarageLocked } from '@auto_matrix/shared';
 import { morningLocked } from '@auto_matrix/shared';
 import { OPENING_HOTEL, openingHotelAlleyGuard, openingHotelHallTime, openingHotelTraceTime } from '@auto_matrix/shared';
@@ -185,6 +185,7 @@ export class Engine {
       if (state && group) {
         const phone = meeting?.scene === 'm1_phone_escape' && !meeting.visiting && meeting.actor === state.id ? meeting.openingPhone : undefined;
         this.playerControls.openingHotel = meeting?.scene === 'm1_room303' && !meeting.visiting && meeting.actor === state.id ? meeting.openingHotel : undefined;
+        this.playerControls.templeSpeech = meeting?.actor === state.id && state.currentLocation === 'film_zion_temple' && zionTempleSpeechActive(meeting);
         openingTrace = openingHotelTraceTime(this.playerControls.openingHotel, state);
         const guard = this.playerControls.openingHotel ? this.agentRenderer.getAgentState('smith') : undefined;
         this.playerControls.hotelAlleyGuard = openingHotelAlleyGuard(guard) ? guard.position : undefined;

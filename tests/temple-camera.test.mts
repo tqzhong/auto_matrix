@@ -9,7 +9,7 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 
-function fixture(t: TestContext, role: 'zee' | 'lock') {
+function fixture(t: TestContext, role: 'zee' | 'lock' | 'morpheus') {
   class InputTarget extends EventTarget { matches() { return false; } }
   const window = new InputTarget(), canvas = new InputTarget();
   const document = Object.assign(new InputTarget(), { pointerLockElement: null as unknown, hidden: false, exitPointerLock() {},
@@ -107,6 +107,30 @@ test('Lock’s saved city breach camera sees the exposed drill and both standing
         return !(hit.object.material as THREE.Material).transparent;
       });
       assert.equal(hits.length, 0, `${phase}: visible scenery blocks ${target.toArray()}: ${hits.map(hit => `${hit.object.name}/${hit.object.parent?.name} at ${hit.point.toArray()}`)}`);
+    }
+  }
+});
+
+test('the assembly speech frames Morpheus and the first audience row above the stone rostrum', t => {
+  const h = fixture(t, 'morpheus'), center = FILM_SETS.film_zion_temple.center;
+  const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z);
+  const renderer = new ZionHomecomingRenderer(root, 'film_zion_temple', 'm2_temple'); t.after(() => renderer.dispose());
+  root.updateMatrixWorld(true);
+  h.state.position = filmPosition('film_zion_temple', 0, -35);
+  h.state.currentAction = null;
+  Object.assign(h.controls, { templeSpeech: true });
+  for (const aspect of [16 / 9, .72]) {
+    h.camera.aspect = aspect; h.camera.updateProjectionMatrix();
+    h.state.rotation = Math.PI; h.controls.possess(h.state);
+    h.state.rotation = 0;
+    h.controls.update(.1, h.state, h.group, false); h.camera.updateMatrixWorld(true);
+    const targets = [[0, -35], [-10, 13], [10, 13]].map(([x, z]) => new THREE.Vector3(center.x + x, center.y + 2.7, center.z + z));
+    for (const target of targets) {
+      const point = target.clone().project(h.camera);
+      assert.ok(Math.abs(point.x) < .94 && Math.abs(point.y) < .9 && point.z > -1 && point.z < 1, `assembly outside ${aspect} frame: ${point.toArray()}`);
+      const ray = target.clone().sub(h.camera.position);
+      const hits = new THREE.Raycaster(h.camera.position, ray.clone().normalize(), .06, ray.length() - .2).intersectObject(root, true);
+      assert.equal(hits.some(hit => hit.object.name === 'zion-assembly-rostrum'), false, 'the rostrum must not cut through the speech shot');
     }
   }
 });

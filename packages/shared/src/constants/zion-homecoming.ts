@@ -1,7 +1,11 @@
 import { ZION_ENGINEERING } from './zion-engineering.js';
+import type { FilmJourney } from './film-story.js';
 
 // Physical anchors shared by the six homecoming sets, collision and cast staging.
 export const ZION_HOMECOMING = ['m2_dock', 'm2_lock', 'm2_residents', 'm2_temple', 'm2_room', 'm2_hamann'] as const;
+export function zionTempleSpeechActive(journey?: FilmJourney): boolean {
+  return journey?.scene === 'm2_temple' && !journey.visiting && journey.step === 1 && journey.started !== undefined;
+}
 export const ZION_BEDROOM_DOOR = { z: 17.6, hingeX: -2.5, width: 4.2, depth: .35, height: 8.8, openYaw: Math.PI / 2 };
 export const BANE_COPY_ESCORT = { x: -5, startZ: 30, phoneZ: -28, speed: 3.1, range: 8 };
 export const ZION_BOARDING = { x: 20, y: 11, z: 17, hatchX: 16.75, depth: 6.5, clearance: 5.3 };

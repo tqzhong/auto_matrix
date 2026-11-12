@@ -56,6 +56,27 @@ test('the temple walking floor has one stone surface instead of coincident dark 
   } finally { renderer.dispose(); }
 });
 
+test('Morpheus turns from the rostrum to the assembly while he speaks and can still leave the mark', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m2_temple;
+  assert.equal(h.players.possess('p', 'neo', 2).agentId, 'neo');
+  Object.assign(h.state(), { scene: 'm2_residents', actor: 'neo', step: FILM_SCENE_BY_ID.m2_residents.steps.length });
+  const entered = h.command('next'); assert.equal(h.state().scene, scene.id, entered);
+  const actor = h.actor(); assert.equal(actor.id, 'morpheus');
+  h.state().step = 1;
+  actor.position = filmStepPosition(scene, scene.steps[1]); actor.rotation = Math.PI;
+  h.command('act'); const started = h.state().started; assert.equal(typeof started, 'number');
+  const input = { x: 0, z: 0, yaw: Math.PI, sequence: 1, location: scene.set };
+  h.players.receiveInput('p', input); h.players.step(.05, true, started!);
+  assert.ok(Math.abs(actor.rotation) < Math.PI && Math.abs(actor.rotation) > 1, 'the start of the turn must move continuously from the approach heading');
+  for (let frame = 0; frame < 18; frame++) h.players.step(.05, true, started!);
+  assert.ok(Math.cos(actor.rotation) > .98, 'the speaker should face the residents instead of the stone rostrum');
+  assert.equal(h.state().step, 1);
+  h.players.receiveInput('p', { ...input, z: 1, yaw: 0, sequence: 2 });
+  for (let frame = 0; frame < 20; frame++) h.players.step(.1, true, started!);
+  h.advance(1); assert.equal(h.state().started, undefined);
+  assert.equal(h.sandbox.state.neoLife!.choices.zion_truth_spoken, undefined);
+});
+
 test('dock and resident actions save concrete supplies and both requests through reload', () => {
   const h = game(); const state = h.state();
   assert.equal(h.players.possess('p', 'neo', 2).agentId, 'neo');
