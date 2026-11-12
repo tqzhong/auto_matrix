@@ -161,6 +161,34 @@ test('303 prepares the pursuing officer uniform, normals and shadows before he e
   assert.equal(h.sets.openingHotelNormalMeshes, undefined);
 });
 
+test('303 gives pursuing police programs a frame before reading their bindings', t => {
+  const h = setup(t); h.pose('phone');
+  const officer = new THREE.Group();
+  const skin = new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+  officer.add(skin);
+  t.after(() => { skin.geometry.dispose(); skin.material.dispose(); });
+  const work: string[] = [];
+  const program = {
+    isReady() { work.push('ready'); return true; },
+    getUniforms() { work.push('bindings'); },
+  };
+  const programs: typeof program[] = [];
+  const gpu = { properties: {}, info: { programs }, extensions: { has: () => true }, debug: { checkShaderErrors: false },
+    shadowMap: { enabled: false }, getRenderTarget: () => null, setRenderTarget() {},
+    compile() { programs.push(program); work.push('compile'); },
+  } as unknown as THREE.WebGLRenderer;
+  const prepare = () => h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling, [officer], 'pursuit');
+
+  prepare();
+  assert.deepEqual(work, ['compile']);
+  prepare();
+  assert.deepEqual(work, ['compile', 'ready']);
+  assert.equal(h.sets.openingHotelNormalMeshes, undefined);
+  prepare();
+  assert.deepEqual(work, ['compile', 'ready', 'bindings']);
+  assert.deepEqual(h.sets.openingHotelNormalMeshes, [skin]);
+});
+
 test('the 303 exterior fixture clears the performer throughout the ladder route', t => {
   const h = setup(t), set = FILM_SETS.film_heart_hotel;
   h.pose('climbing');

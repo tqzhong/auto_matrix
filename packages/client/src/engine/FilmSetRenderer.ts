@@ -172,6 +172,7 @@ type ColorPreparation = {
   scene: THREE.Scene;
   meshes: ColorSubject[];
   programs: ColorProgram[];
+  readyProgram?: ColorProgram;
   textures: Set<THREE.Texture>;
 };
 type CastColorPreparation = ColorPreparation & { actors: Set<THREE.Group> };
@@ -472,7 +473,7 @@ export class FilmSetRenderer {
   get goalMarker(): THREE.Mesh { return this.marker; }
   get openingHotelNormalMeshes(): readonly THREE.Mesh[] | undefined {
     const prepared = this.preparedHotelPolice;
-    if (prepared && !prepared.meshes.length && !prepared.shadowMeshes.length && !prepared.programs.length) return prepared.normalMeshes;
+    if (prepared && !prepared.meshes.length && !prepared.shadowMeshes.length && !prepared.programs.length && !prepared.readyProgram) return prepared.normalMeshes;
   }
   get openingRoofRetryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedRoofRetry?.normalMeshes; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
@@ -1450,7 +1451,7 @@ export class FilmSetRenderer {
       }
       if (prepareShadows) prepared.shadowMeshes.push(...shadowCasterProxies(meshes, prepared.shadowMaterials));
     }
-    if (this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated')) return;
+    if (this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', stage === 'pursuit')) return;
     if (prepared.shadowMeshes.length) {
       this.linkColorBatch(renderer, camera, { ...prepared, meshes: prepared.shadowMeshes }, lighting, 'depth');
       return;
@@ -1769,16 +1770,26 @@ export class FilmSetRenderer {
     if (!this.prepareColorProgram(renderer, camera, prepared, lighting, colorState)) this.prepareColorTexture(renderer, prepared.textures);
   }
   private prepareColorProgram(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting: LightCulling | undefined,
-    colorState: 'live' | 'isolated'): boolean {
+    colorState: 'live' | 'isolated', deferBindings = false): boolean {
     const programs = renderer.info.programs;
-    const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
-    if (ready >= 0) {
-      const [program] = prepared.programs.splice(ready, 1);
-      if (lighting) cacheReadyProgramLocations(renderer, program);
-      else program.getUniforms();
-      return true;
+    let program = prepared.readyProgram;
+    if (program) {
+      prepared.readyProgram = undefined;
+      if (!programs?.includes(program)) program = undefined;
     }
-    return this.linkColorBatch(renderer, camera, prepared, lighting, colorState);
+    if (!program) {
+      const ready = prepared.programs.findIndex(candidate => programs?.includes(candidate) && candidate.isReady());
+      if (ready < 0) return this.linkColorBatch(renderer, camera, prepared, lighting, colorState);
+      [program] = prepared.programs.splice(ready, 1);
+      // Give the driver a frame between completion and reflecting uniforms.
+      if (deferBindings) {
+        prepared.readyProgram = program;
+        return true;
+      }
+    }
+    if (lighting) cacheReadyProgramLocations(renderer, program);
+    else program.getUniforms();
+    return true;
   }
   private linkColorBatch(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting: LightCulling | undefined,
     colorState: 'live' | 'isolated' | 'depth'): boolean {
