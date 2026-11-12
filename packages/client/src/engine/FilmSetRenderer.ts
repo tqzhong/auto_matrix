@@ -266,6 +266,7 @@ export class FilmSetRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
+  private roofSurfaceSources?: ReadonlyMap<string, THREE.MeshStandardMaterial>;
   private materialCache = new Map<string, THREE.MeshStandardMaterial>();
   private marker: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   private markerLight: THREE.PointLight;
@@ -1474,6 +1475,10 @@ export class FilmSetRenderer {
     const next = FILM_SCENE_BY_ID[scene], set = FILM_SETS[next.set], { x, y, z } = set.center;
     const room = new FilmSetRenderer(new THREE.Scene()), eye = camera.clone(), entry = filmEntry(next);
     room.current = set; room.currentScene = scene; room.root.position.set(x, y - 1, z);
+    if (scene === 'm1_roofs' && this.currentScene === 'm1_room303' && this.current?.id === 'film_heart_hotel'
+      && this.materials.has(this.metal) && this.materials.has(this.wood) && this.materials.has(this.plaster)) {
+      room.roofSurfaceSources = new Map([['metal_plate', this.metal], ['old_wood_floor', this.wood], ['damaged_plaster', this.plaster]]);
+    }
     eye.position.set(entry.x, entry.y + 6, entry.z + 11); eye.lookAt(entry.x, entry.y + 2, entry.z - 2);
     return { room, eye, steps: room.prepareRoomSteps(set) };
   }
@@ -3373,19 +3378,27 @@ export class FilmSetRenderer {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness, normalScale: new THREE.Vector2(.4, .4) });
     const materials = this.materials; materials.add(material);
     const maps: Partial<Record<'color' | 'normal' | 'roughness', THREE.Texture>> = {};
-    const texture = (kind: 'color' | 'normal' | 'roughness') => {
-      const map = loader.load(`/assets/${directory}/${id}-${kind}.jpg`, loaded => {
+    const texture = (kind: 'color' | 'normal' | 'roughness', source?: THREE.Texture | null) => {
+      const loadedMap = (loaded: THREE.Texture) => {
         if (!materials.has(material)) { loaded.dispose(); return; }
         maps[kind] = loaded;
         if (maps.color && maps.normal && maps.roughness) {
           material.map = maps.color; material.normalMap = maps.normal; material.roughnessMap = maps.roughness;
           material.needsUpdate = true;
         }
-      });
+      };
+      const map = source ? new THREE.Texture() : loader.load(`/assets/${directory}/${id}-${kind}.jpg`, loadedMap);
       map.wrapS = map.wrapT = THREE.RepeatWrapping; map.repeat.set(repeat, repeat); map.anisotropy = 8;
       if (kind === 'color') map.colorSpace = THREE.SRGBColorSpace; this.textures.add(map);
+      if (source) {
+        // Mark the new texture before sharing the hotel's already uploaded source.
+        map.needsUpdate = true;
+        map.source = source.source;
+        loadedMap(map);
+      }
     };
-    texture('color'); texture('normal'); texture('roughness');
+    const shared = directory === 'film-materials' ? this.roofSurfaceSources?.get(id) : undefined;
+    texture('color', shared?.map); texture('normal', shared?.normalMap); texture('roughness', shared?.roughnessMap);
     return material;
   }
   private imageMaterial(id: string, fallback: number, repeat = false, tint = 0xffffff): THREE.MeshStandardMaterial {
@@ -3814,6 +3827,7 @@ export class FilmSetRenderer {
     this.metal = this.pbr('metal_plate', 0x9caaa9, 3, .7, .28);
     this.wood = this.pbr('old_wood_floor', lafayette ? 0x7d7968 : 0x96826b, lafayette ? 1 : 3, lafayette ? .88 : .85); this.marble = this.pbr('marble_01', 0xbdcbd1, 4, .25);
     this.plaster = this.pbr(lafayette ? 'white_plaster_02' : 'damaged_plaster', lafayette ? 0x737b67 : set.id === 'film_hotel_roofs' ? 0x716c5e : 0xadae9c, lafayette ? 1 : 5, lafayette ? .95 : .85); this.leather = this.pbr('leather_red_03', lafayette ? 0xb48b79 : 0x71413a, 1, lafayette ? .74 : .48);
+    this.roofSurfaceSources = undefined;
     if (lafayette) this.plaster.normalScale.set(.1, .1);
     this.white = this.pbr('white_plaster_02', 0xd8d9ce, 3); this.black = this.mat(0x161b1a, .44); this.brass = this.mat(0x8e7951, .32, .8);
     this.glass = new THREE.MeshPhysicalMaterial({ color: 0xb3c9c7, metalness: .12, roughness: .12, transparent: true, opacity: .3, side: THREE.DoubleSide, depthWrite: false }); this.materials.add(this.glass);

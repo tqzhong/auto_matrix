@@ -15,9 +15,9 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
   let defer = false;
   const pendingImages: (() => void)[] = [];
-  t.mock.method(THREE.TextureLoader.prototype, 'load', (_url: string, load?: (texture: THREE.Texture) => void) => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string, load?: (texture: THREE.Texture) => void) => {
     const texture = new THREE.Texture();
-    const ready = () => { texture.image = { width: 256, height: 256, complete: true }; texture.needsUpdate = true; load?.(texture); };
+    const ready = () => { texture.image = { width: 256, height: 256, complete: true, currentSrc: url }; texture.needsUpdate = true; load?.(texture); };
     if (defer) pendingImages.push(ready);
     else ready();
     return texture;
@@ -210,8 +210,62 @@ test('the 303 cut waits a frame before reflecting the linked roof program', t =>
   assert.ok(readyAt >= 0 && reflectedAt > readyAt, 'read bindings on a later frame than the completion check');
 });
 
+test('the 303 cut shares loaded surface sources while keeping each room responsible for its textures', t => {
+  const h = fixture(t, 'm1_roofs');
+  const sharedMaps = (meshes: Iterable<THREE.Object3D>) => {
+    const textures = new Set<THREE.Texture>();
+    for (const mesh of meshes) {
+      if (!(mesh instanceof THREE.Mesh) || !(mesh.material instanceof THREE.MeshStandardMaterial)) continue;
+      for (const map of [mesh.material.map, mesh.material.normalMap, mesh.material.roughnessMap]) {
+        if (map && /\/film-materials\/(metal_plate|old_wood_floor|damaged_plaster)-/.test(map.image.currentSrc)) textures.add(map);
+      }
+    }
+    return [...textures];
+  };
+  const hotelMeshes: THREE.Object3D[] = [];
+  h.film.root.traverse(object => hotelMeshes.push(object));
+  const hotel = sharedMaps(hotelMeshes);
+  const versions = new Map(hotel.map(map => [map.source, map.source.version]));
+  let hotelDisposals = 0;
+  hotel.forEach(map => map.addEventListener('dispose', () => hotelDisposals++));
+
+  h.drain();
+  const cancelled = sharedMaps(h.mapped);
+  assert.equal(cancelled.length, 9);
+  for (const map of cancelled) {
+    const original = hotel.find(candidate => candidate.source === map.source);
+    assert.ok(original, `${map.image.currentSrc} should reuse the hotel source`);
+    assert.notEqual(map, original);
+    assert.notEqual(map.repeat, original.repeat);
+    assert.deepEqual(map.repeat.toArray(), original.repeat.toArray());
+    assert.equal(map.source.version, versions.get(map.source));
+    assert.ok(map.version > 0);
+  }
+  let cancelledDisposals = 0;
+  cancelled.forEach(map => map.addEventListener('dispose', () => cancelledDisposals++));
+  h.journey.visiting = 'm1_roofs'; h.prepare();
+  assert.equal(cancelledDisposals, 9);
+  assert.equal(hotelDisposals, 0);
+
+  delete h.journey.visiting; h.mapped.clear(); h.drain();
+  const staged = sharedMaps(h.mapped);
+  assert.equal(staged.length, 9);
+  let roofDisposals = 0;
+  staged.forEach(map => map.addEventListener('dispose', () => roofDisposals++));
+  h.enter();
+  assert.equal(hotelDisposals, hotel.length);
+  assert.equal(roofDisposals, 0);
+  const roofMeshes: THREE.Object3D[] = [];
+  h.film.root.traverse(object => roofMeshes.push(object));
+  assert.deepEqual(new Set(sharedMaps(roofMeshes)), new Set(staged));
+  h.film.update(undefined, undefined, 0);
+  assert.equal(roofDisposals, 9);
+});
+
 test('the 303 cut prepares both shadow layouts while the roof images decode', t => {
   const h = fixture(t, 'm1_roofs', true); h.drain();
+  const asphalt = (mesh: THREE.Mesh) => mesh.material instanceof THREE.MeshStandardMaterial
+    && mesh.material.map?.image.currentSrc === '/assets/surfaces/asphalt_02-color.jpg';
   assert.deepEqual([...h.depths.keys()].sort((a, b) => a - b), [4, 13]);
   const cast = new Set<THREE.Material>();
   for (const proxies of h.depths.values()) {
@@ -220,9 +274,9 @@ test('the 303 cut prepares both shadow layouts while the roof images decode', t 
     assert.ok(skin?.material instanceof THREE.MeshDepthMaterial);
     assert.equal(skin.material.depthPacking, THREE.RGBADepthPacking); cast.add(skin.material);
   }
-  assert.equal(h.mapped.size, 0);
+  assert.ok(![...h.mapped].some(asphalt), 'the new asphalt maps are still decoding');
   h.decodeRoofMaps(); h.drain();
-  assert.ok(h.mapped.size > 0, 'prepare the actual roof surfaces after their maps attach');
+  assert.ok([...h.mapped].some(asphalt), 'prepare the asphalt after its maps attach');
   let released = 0;
   for (const material of cast) material.addEventListener('dispose', () => released++);
   h.enter(); assert.equal(released, 0, 'keep the linked variants through the cut');
