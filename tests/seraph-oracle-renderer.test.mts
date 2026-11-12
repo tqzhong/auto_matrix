@@ -27,7 +27,7 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   cast.add(body);
   t.after(() => { sets.dispose(); body.geometry.dispose(); body.material.dispose(); });
 
-  let preview: THREE.Scene | undefined, castCompiled = false, offstageSeraph: THREE.Group | undefined;
+  let preview: THREE.Scene | undefined, castCompiled = false, offstageSeraph: THREE.Group | undefined, offstageHost: THREE.Group | undefined;
   const compiled = new Set<THREE.Object3D>();
   const compileCounts = new Map<THREE.Object3D, number>();
   const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
@@ -45,7 +45,7 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     Object.assign(neo, { position: filmEntry(beat), isInMatrix: FILM_SETS[beat.set].world === 'matrix', currentLocation: beat.set });
     sets.update(neo, sandbox, 0);
   };
-  const prepare = () => sets.prepareSecondOracle(graphics, camera, journey, id => id === 'seraph' ? offstageSeraph
+  const prepare = () => sets.prepareSecondOracle(graphics, camera, journey, id => id === 'seraph' ? offstageSeraph : id === 'merovingian' ? offstageHost
     : ['neo', 'smith', 'trinity', 'roland'].includes(id) ? cast : undefined);
   const warm = (name: string) => {
     preview = undefined; castCompiled = false; compiled.clear();
@@ -119,6 +119,16 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   assert.equal(lead.visible, false);
 
   preview = undefined; prepare(); assert.ok(!preview, 'the restaurant waits until the flight exit opens');
+  await t.test('Le Vrai prepares the offstage host and the objective ring before the cut', t => {
+    const host = new THREE.Group(), coat = new THREE.Mesh(body.geometry, body.material);
+    host.visible = false; host.add(coat); offstageHost = host;
+    t.after(() => { offstageHost = undefined; enter('m2_burly', 0); prepare(); preview = undefined; });
+    enter('m2_burly', 1);
+    warm('causality-dessert');
+    assert(compiled.has(coat), 'prepare the detailed host while the courtyard is active');
+    assert(compiled.has(sets.goalMarker), 'prepare the first restaurant objective ring');
+    assert.equal(host.visible, false);
+  });
   enter('m2_burly', 1);
   const dessert = warm('causality-dessert');
   const restaurantSlots = pointSlots(preview!);

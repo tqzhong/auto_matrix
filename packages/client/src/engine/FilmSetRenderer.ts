@@ -1331,7 +1331,8 @@ export class FilmSetRenderer {
     }
     if (journey.scene === 'm2_backup' && journey.step === 1 && journey.trinityTerminal?.phase === 'ready' && !this.preparedSecondOracle) return;
     const next = FILM_SCENE_BY_ID[cut.scene];
-    const teaEntry = next.id === 'm2_seraph', matrixEntry = firstOracle || teaEntry;
+    const teaEntry = next.id === 'm2_seraph', leVraiEntry = next.id === 'm2_merovingian';
+    const matrixEntry = firstOracle || teaEntry || leVraiEntry;
     if (!this.preparedSecondOracle) {
       const set = FILM_SETS[next.set], { x, y, z } = set.center;
       const room = new FilmSetRenderer(new THREE.Scene());
@@ -1353,7 +1354,7 @@ export class FilmSetRenderer {
       for (const texture of prepared.room.textures) if (!texture.image) return;
       const room = prepared.room;
       const colors = this.colorPreparation(room.root, [], {
-        includeBasic: teaEntry || Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
+        includeBasic: teaEntry || leVraiEntry || Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
       });
       for (const texture of room.architectRoom?.screenTextures ?? []) colors.textures.add(texture);
       prepared.colors = { ...colors, actors: new Set() };
