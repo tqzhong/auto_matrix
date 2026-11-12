@@ -189,6 +189,65 @@ test('303 gives pursuing police programs a frame before reading their bindings',
   assert.deepEqual(h.sets.openingHotelNormalMeshes, [skin]);
 });
 
+test('303 prepares the real phone cord before the caller approaches the desk', t => {
+  const h = setup(t); h.pose('combat');
+  const cord = h.sets.root.getObjectByName('hotel-303-phone-cord');
+  assert.ok(cord instanceof THREE.Line);
+  const parent = cord.parent, material = cord.material, work: string[] = [];
+  const program = {
+    isReady() { work.push('ready'); return true; },
+    getUniforms() { work.push('bindings'); },
+  };
+  const programs: typeof program[] = [];
+  const gpu = { properties: {}, info: { programs }, extensions: { has: () => true }, debug: { checkShaderErrors: false },
+    getRenderTarget: () => null, setRenderTarget() {},
+    compile(subject: THREE.Object3D) {
+      const subjects: THREE.Object3D[] = [];
+      subject.traverse(object => subjects.push(object));
+      assert.deepEqual(subjects, [cord]);
+      programs.push(program); work.push('compile');
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const prepare = () => h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling, undefined, undefined, true);
+  prepare();
+  assert.deepEqual(work, ['compile']);
+  prepare();
+  assert.deepEqual(work, ['compile', 'ready']);
+  prepare(); prepare();
+  assert.deepEqual(work, ['compile', 'ready', 'bindings']);
+  assert.ok(cord.parent === parent && cord.material === material && cord.visible);
+});
+
+test('303 keeps the docked phone cord buffer unchanged between frames', t => {
+  const h = setup(t); h.pose('combat');
+  const cord = h.sets.root.getObjectByName('hotel-303-phone-cord');
+  assert.ok(cord instanceof THREE.Line);
+  const points = cord.geometry.getAttribute('position') as THREE.BufferAttribute;
+  const version = points.version, coordinates = points.array.slice();
+  assert.ok(coordinates.some(value => value !== 0));
+  h.pose('combat', .3, true, Math.PI);
+  h.pose('phone', .5);
+  assert.deepEqual(points.array, coordinates);
+  assert.equal(points.version, version, 'static geometry does not trigger a new vertex upload');
+
+  const body = new THREE.Group(), hand = new THREE.Group();
+  const { center } = FILM_SETS.film_heart_hotel;
+  body.position.set(center.x - 8, center.y + 3.5, center.z + 18);
+  hand.name = 'hardline-handset'; body.add(hand);
+  h.sets.setCrosscutSubjects(() => undefined, id => id === 'trinity' ? body : undefined);
+  h.pose('answering', OPENING_HOTEL.phone.lift);
+  assert.notDeepEqual(points.array, coordinates);
+  const held = points.array.slice();
+  hand.position.y += .3;
+  h.pose('answering', OPENING_HOTEL.phone.lift + .1);
+  assert.notDeepEqual(points.array, held, 'the curve follows the handset in the actor’s hand');
+  h.pose('answering', OPENING_HOTEL.phone.release);
+  assert.deepEqual(points.array, coordinates);
+  const redocked = points.version;
+  h.pose('corridor');
+  assert.equal(points.version, redocked, 'the returned receiver stays at the original cradle');
+});
+
 test('the 303 exterior fixture clears the performer throughout the ladder route', t => {
   const h = setup(t), set = FILM_SETS.film_heart_hotel;
   h.pose('climbing');

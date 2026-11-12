@@ -291,9 +291,10 @@ export class Engine {
     const hotelPreparation = pursuit ? 'pursuit' : openingHotel?.traceHall ? 'hall' : undefined;
     const hotelPolice = pursuit ? [this.agentRenderer.getAgentHero('agent_brown'), ...OPENING_HOTEL.officers.map(({ id }) => this.agentRenderer.getAgentHero(id))]
       .filter((group): group is THREE.Group => group !== undefined) : openingHotel ? this.sandboxRenderer.prepareOpeningHotelPolice() : undefined;
+    const prepareHotelCord = openingHotel?.phase === 'trace' || openingHotel?.phase === 'breach' || openingHotel?.phase === 'combat';
     const preparingHotelTextures = this.agentRenderer.prepareOpeningHotelTextures(this.renderer, openingHotel);
     if (!preparingHotelTextures)
-      this.filmSets.prepareOpeningHotelPolice(this.renderer, this.camera, this.lightCulling, hotelPolice, hotelPreparation);
+      this.filmSets.prepareOpeningHotelPolice(this.renderer, this.camera, this.lightCulling, hotelPolice, hotelPreparation, prepareHotelCord);
     this.sandboxRenderer.showOpeningHotelHall(openingHotelHallTime(openingHotel, openingTrace));
     const resumeRoof = this.matrix && !this.playerControls?.id && meeting?.scene === 'm1_roofs'
       && !meeting.visiting && document.body.classList.contains('landing');

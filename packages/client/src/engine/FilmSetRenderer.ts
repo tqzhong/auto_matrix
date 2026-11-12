@@ -428,7 +428,7 @@ export class FilmSetRenderer {
     gpu: THREE.WebGLRenderer['properties']; surfacesReady: boolean; textureUpload?: Generator<void, boolean>; normalMeshes?: THREE.Mesh[];
   };
   private preparedHotelPolice?: CastColorPreparation & {
-    gpu: THREE.WebGLRenderer['properties']; beam?: THREE.Mesh; normalMeshes?: THREE.Mesh[];
+    gpu: THREE.WebGLRenderer['properties']; beam?: THREE.Mesh; cord?: THREE.Line; normalMeshes?: THREE.Mesh[];
     shadowMeshes: THREE.Mesh[]; shadowMaterials: Set<THREE.MeshDepthMaterial>;
     buffers: ColorMesh[]; bufferGeometries: WeakSet<THREE.BufferGeometry>; bufferUpload?: Generator<void>;
   };
@@ -1412,9 +1412,11 @@ export class FilmSetRenderer {
     }
     this.prepareColorFrame(renderer, camera, colors);
   }
-  prepareOpeningHotelPolice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, groups?: THREE.Group[], stage?: 'hall' | 'pursuit'): void {
+  prepareOpeningHotelPolice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
+    groups?: THREE.Group[], stage?: 'hall' | 'pursuit', prepareCord = false): void {
     const beam = stage === 'hall' ? this.hotel303Beam : undefined;
-    if (this.currentScene !== 'm1_room303' || (!groups?.length && !beam) || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+    const cord = prepareCord ? this.hotel303Cord : undefined;
+    if (this.currentScene !== 'm1_room303' || (!groups?.length && !beam && !cord) || !renderer.extensions.has('KHR_parallel_shader_compile')) {
       this.cancelOpeningHotelPolice();
       return;
     }
@@ -1428,6 +1430,10 @@ export class FilmSetRenderer {
       // Link the real material before the hallway comes into view under the trace overlay.
       prepared.beam = beam;
       prepared.meshes.unshift(beam);
+    }
+    if (cord && prepared.cord !== cord) {
+      prepared.cord = cord;
+      prepared.meshes.push(cord);
     }
     const prepareShadows = stage === 'pursuit' && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap;
     for (const group of groups ?? []) {
@@ -1451,7 +1457,7 @@ export class FilmSetRenderer {
       }
       if (prepareShadows) prepared.shadowMeshes.push(...shadowCasterProxies(meshes, prepared.shadowMaterials));
     }
-    if (this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', stage === 'pursuit')) return;
+    if (this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', stage === 'pursuit' || Boolean(cord))) return;
     if (prepared.shadowMeshes.length) {
       this.linkColorBatch(renderer, camera, { ...prepared, meshes: prepared.shadowMeshes }, lighting, 'depth');
       return;
@@ -4118,6 +4124,8 @@ export class FilmSetRenderer {
     const phone = OPENING_HOTEL.phone;
     const hand = openingHotelPhoneHeld(elapsed)
       ? this.phoneBodies?.('trinity')?.getObjectByName('hardline-handset') : undefined;
+    // The docked curve is constant after initialization and after the receiver returns.
+    if (!hand?.visible && receiver.visible && cord.geometry.boundingSphere) return;
     receiver.visible = !hand?.visible;
     const from = new THREE.Vector3(phone.x + .68, 3.08, phone.z - .38);
     const to = hand?.visible ? this.root.worldToLocal(hand.localToWorld(new THREE.Vector3(0, -.31, .07)))
