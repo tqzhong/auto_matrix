@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, ZION_MESSAGE, ZION_MESSAGE_ROLES, newZionMessage, zionMessageTrinity, filmPosition, type ZionMessageEncounter, type ZionMessageGesture } from '@auto_matrix/shared';
+import { FILM_SETS, ZION_CAST, ZION_MESSAGE, ZION_MESSAGE_ROLES, newZionMessage, zionMessageTrinity, filmPosition, type FilmJourney, type ZionMessageEncounter, type ZionMessageGesture } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { ZionHomecomingRenderer } from '../packages/client/src/engine/ZionHomecomingRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -18,8 +18,8 @@ async function geometry(id: string) {
   buffer.writeUInt32LE(0x46546c67, 0); buffer.writeUInt32LE(2, 4); buffer.writeUInt32LE(buffer.length, 8); buffer.writeUInt32LE(padded.length, 12); buffer.writeUInt32LE(0x4e4f534a, 16); padded.copy(buffer, 20); binary.copy(buffer, 20 + padded.length);
   return new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
 }
-async function setup(t: test.TestContext) {
-  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking', 'trinity', 'trinity-club', 'morpheus'].map(async id => [id, await geometry(id)] as const)));
+async function setup(t: test.TestContext, extraAssets: string[] = []) {
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking', 'trinity', 'trinity-club', 'morpheus', ...extraAssets].map(async id => [id, await geometry(id)] as const)));
   t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => assets.has(url.split('/').at(-1)!.slice(0, -4)) ? Promise.resolve(assets.get(url.split('/').at(-1)!.slice(0, -4))) : new Promise(() => {}));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const old = ['window', 'document'].map(key => Object.getOwnPropertyDescriptor(globalThis, key));
@@ -41,7 +41,7 @@ async function setup(t: test.TestContext) {
   for (const id of ['neo', 'trinity', 'ballard']) assert.ok(renderer.getAgentHero(id), id + ': retain the delivered full character');
   t.after(() => { renderer.dispose(); room.dispose(); ['window', 'document'].forEach((key, i) => { if (old[i]) Object.defineProperty(globalThis, key, old[i]!); else Reflect.deleteProperty(globalThis, key); }); });
   const palm = (id: string) => renderer.getAgentHero(id)!.getObjectByName('wrist_R')!.localToWorld(new THREE.Vector3(0, -.19, .035));
-  return { root, room, renderer, pose, palm };
+  return { scene, root, room, renderer, pose, palm };
 }
 
 test('Trinity reaches the physical door handle throughout its real swing in either camera view', async t => {
@@ -82,4 +82,50 @@ test('the single disk stays under the actual holder palm while offered, received
   }
   const done = newZionMessage(2); h.pose(done); assert.equal(h.root.getObjectByName('oracle-message-disk')!.visible, false);
   assert.equal(misses.length, 0, JSON.stringify(misses.slice(0, 8)));
+});
+
+test('Zee and Link hand over one visible charm using their delivered wrists', async t => {
+  const h = await setup(t, ['zee-body']);
+  const set = 'film_zion_hangar', center = FILM_SETS[set].center, root = new THREE.Group();
+  root.position.set(center.x, center.y - 1, center.z); h.scene.add(root);
+  const hangar = new ZionHomecomingRenderer(root, set, 'm2_departure');
+  t.after(() => hangar.dispose());
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const journey = { scene: 'm2_departure', step: 0, actor: 'neo', completed: [] } as unknown as FilmJourney;
+  for (const id of ['neo', 'link', 'zee'] as const) {
+    const agent = world.agents.get(id)!, mark = id === 'neo' ? { x: 0, z: 32, yaw: Math.PI } : ZION_CAST.m2_departure[id];
+    Object.assign(agent, { currentLocation: set, isInMatrix: false, position: filmPosition(set, mark.x, mark.z), rotation: mark.yaw });
+    h.renderer.updateAgent(id, agent, journey);
+    h.renderer.getAgent(id)!.position.copy(agent.position);
+    h.renderer.getAgentBody(id)!.rotation.y = agent.rotation;
+  }
+  for (let frame = 0; frame < 12; frame++) {
+    h.renderer.update(.05, undefined, 0, 100, journey);
+    await new Promise(resolve => setImmediate(resolve));
+  }
+  const charm = root.getObjectByName('zee-farewell-charm')!;
+  assert.equal(root.getObjectsByProperty('name', charm.name).length, 1);
+  const palm = (id: string) => {
+    const hero = h.renderer.getAgentHero(id);
+    const body = hero ?? h.renderer.getAgentDetail(id)!.getObjectByName(id + '-detailed-body');
+    assert.ok(body?.visible, `${id} uses their delivered body`);
+    return body.getObjectByName('wrist_R')!.localToWorld(hero ? new THREE.Vector3(0, -.19, .035) : new THREE.Vector3(0, -.14, .05));
+  };
+  const render = (tick: number) => {
+    h.renderer.update(.05, undefined, 0, tick, journey);
+    hangar.update(journey, 300, undefined, undefined, h.renderer.departureCharm);
+    h.scene.updateMatrixWorld(true);
+    return charm.localToWorld(new THREE.Vector3(0, .21, 0));
+  };
+  let loop = render(100);
+  assert.equal(charm.visible, true);
+  assert(loop.distanceTo(palm('zee')) < .11, 'the waiting charm hangs from Zee’s hand');
+  journey.started = 100;
+  loop = render(104);
+  assert(loop.distanceTo(palm('zee')) < .18 && loop.distanceTo(palm('link')) < .18, 'both hands meet at the same charm');
+  loop = render(107);
+  assert(loop.distanceTo(palm('link')) < .11, 'Link takes the charm before the farewell ends');
+  assert(loop.distanceTo(palm('zee')) > .35);
+  journey.step = 1; delete journey.started; render(108);
+  assert.equal(charm.visible, false);
 });

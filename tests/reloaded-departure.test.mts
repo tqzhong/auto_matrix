@@ -242,6 +242,36 @@ test('the departure hangar keeps the gangway and gifts without allocating hidden
     assert.ok(!root.getObjectByName(name), name);
 });
 
+test('Link and Zee can face and reach each other, including in an older unfinished farewell', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m2_departure, state = h.state();
+  h.players.possess('p', 'neo', 2);
+  state.scene = 'm2_oracle_message'; state.actor = 'neo'; state.step = FILM_SCENE_BY_ID.m2_oracle_message.steps.length;
+  h.command('next'); assert.equal(state.scene, scene.id);
+  const link = h.world.agents.get('link')!, zee = h.world.agents.get('zee')!;
+  assert(Math.hypot(link.position.x - zee.position.x, link.position.z - zee.position.z) < 2.6, 'the pair must stand within handing distance');
+  for (const [from, to] of [[link, zee], [zee, link]]) {
+    const facing = Math.atan2(to.position.x - from.position.x, to.position.z - from.position.z);
+    assert(Math.cos(from.rotation - facing) > .95, `${from.id} faces the other person`);
+  }
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.command('act'); h.advance(2);
+  const started = state.started, current = structuredClone(h.sandbox.state), neo = structuredClone(h.actor());
+  assert.equal(typeof started, 'number');
+  link.position = filmPosition(scene.set, 3, 32); link.rotation = 1;
+  zee.position = filmPosition(scene.set, -3, 32); zee.rotation = -1;
+  h.sandbox.restore(current);
+  for (const [id, actor] of [['link', link], ['zee', zee]] as const) {
+    const mark = ZION_CAST.m2_departure[id];
+    assert.deepEqual(actor.position, filmPosition(scene.set, mark.x, mark.z));
+    assert.equal(actor.rotation, mark.yaw);
+  }
+  assert.deepEqual(h.actor(), neo);
+  assert.equal(h.state().started, started);
+  assert.equal(h.sandbox.state.neoLife!.choices.zee_charm_given, undefined);
+  h.advance(6);
+  assert.equal(h.state().step, 1);
+  assert.equal(h.sandbox.state.neoLife!.choices.zee_charm_given, 'link');
+});
+
 test('departure completes inside the ship bay after crossing the gangway', () => {
   const h = game(), scene = FILM_SCENE_BY_ID.m2_departure, state = h.state();
   h.players.possess('p', 'neo', 2);

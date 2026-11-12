@@ -2,6 +2,35 @@ import * as THREE from 'three';
 import { FILM_SETS, dockArrivalPoint, dockDepartureFoot, dockReunionFoot, dockReunionPose, dockReunionRail, type DockDepartureGesture, type DockReunionGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
+import { crosscutPalm } from './CrosscutPerformance.js';
+
+function departureCharmHand(rig: CharacterRig, exchange: THREE.Vector3, age: number, giver: boolean): THREE.Vector3 {
+  const wrist = rig.hero?.bones.get('wrist_R'), elbow = rig.elbows[0];
+  const palm = wrist ? new THREE.Vector3(0, -.19, .035) : new THREE.Vector3(0, -.79, .055);
+  const joint = wrist ?? elbow, rest = joint.localToWorld(palm.clone());
+  const smooth = THREE.MathUtils.smoothstep, withdraw = smooth(age, 2.15, 3.65);
+  if (giver ? withdraw === 1 : age <= .55) return rest;
+  const held = rig.root.localToWorld(new THREE.Vector3(-.27, 2.42, .44));
+  const target = giver ? held.lerp(exchange, smooth(age, .3, 1.65)).lerp(rest, withdraw)
+    : rest.lerp(exchange, smooth(age, .55, 1.75)).lerp(held, withdraw);
+  if (wrist) crosscutPalm(rig, 'R', target);
+  else {
+    const pole = new THREE.Vector3(-1, -.42, .35).applyQuaternion(rig.root.getWorldQuaternion(new THREE.Quaternion()));
+    reach(rig.shoulders[0], elbow, palm, target, pole);
+    for (const finger of rig.fingers[0]) finger.rotation.x = -.25;
+  }
+  return joint.localToWorld(palm);
+}
+
+/** Zee offers the loop, Link grips the opposite edge, then draws it to his chest. */
+export function poseZionDepartureCharm(zee: CharacterRig, link: CharacterRig, age: number): THREE.Vector3 {
+  const source = zee.root.getWorldPosition(new THREE.Vector3()), target = link.root.getWorldPosition(new THREE.Vector3());
+  const direction = target.clone().sub(source).normalize(), middle = source.lerp(target, .5);
+  middle.y += 2.36;
+  const offered = departureCharmHand(zee, middle.clone().addScaledVector(direction, -.11), age, true);
+  const received = departureCharmHand(link, middle.addScaledVector(direction, .11), age, false);
+  return offered.lerp(received, THREE.MathUtils.smoothstep(age, 1.75, 2.25));
+}
 
 const departureRayMeshes = new WeakMap<THREE.SkinnedMesh, { mesh: THREE.SkinnedMesh; sampled: Uint8Array }>();
 

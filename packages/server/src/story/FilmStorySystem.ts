@@ -6131,6 +6131,15 @@ export class FilmStorySystem {
     this.seraphDoor.seal(); this.bookDoor.stage();
     this.sealAmbush(); this.wetwall.seal(); this.sixth.seal(); this.sealZionMessageDoor(); this.sealArchitectDoors(); this.sealHelElevator(); this.sealHelDanceDoor();
     this.sealZionBoarding();
+    if (this.state.scene === 'm2_departure' && !this.state.visiting && this.state.step === 0) {
+      for (const [id, x] of [['link', 3], ['zee', -3]] as const) {
+        const actor = this.world.agents.get(id);
+        if (actor?.status !== 'alive' || actor.controller || actor.currentAction || actor.isInMatrix || actor.currentLocation !== 'film_zion_hangar'
+          || distance(actor.position, filmPosition('film_zion_hangar', x, 32)) > .01) continue;
+        const mark = ZION_CAST.m2_departure[id];
+        actor.position = filmPosition('film_zion_hangar', mark.x, mark.z); actor.rotation = mark.yaw;
+      }
+    }
     if (!this.state.visiting && ['m2_room', 'm2_oracle_message'].includes(this.state.scene)) {
       const neo = this.world.agents.get('neo');
       const door = filmPosition('film_zion_bedroom', 0, ZION_BEDROOM_DOOR.z);

@@ -206,7 +206,7 @@ export class ZionHomecomingRenderer {
     }
     this.box(metal, 11.5, -.04, 17, 8, .18, 3.2, this.static, 'zion-ship-gangway');
     if (!civilian) this.dockBattle(metal, iron, lit);
-    const charm = new THREE.Group(); charm.name = 'zee-farewell-charm'; charm.position.set(0, 2.4, 32); this.moving.add(charm);
+    const charm = new THREE.Group(); charm.name = 'zee-farewell-charm'; charm.visible = false; this.moving.add(charm);
     this.mesh(new THREE.TorusGeometry(.24, .055, 8, 20), this.material(0xbca77b, .42, .6), charm);
     this.mesh(new THREE.CylinderGeometry(.08, .09, .5, 8), metal, charm).position.y = -.18;
     const spoon = new THREE.Group(); spoon.name = 'kid-spoon-gift'; spoon.position.set(-4.2, 2.3, 10); this.moving.add(spoon);
@@ -444,7 +444,7 @@ export class ZionHomecomingRenderer {
     const live = new Set<THREE.BufferGeometry>(); this.group.traverse(object => { if (object instanceof THREE.Mesh) live.add(object.geometry); });
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
   }
-  update(journey: FilmJourney | undefined, elapsed: number, cameraPosition?: Vector3, camera?: THREE.Camera): void {
+  update(journey: FilmJourney | undefined, elapsed: number, cameraPosition?: Vector3, camera?: THREE.Camera, departureCharm?: THREE.Vector3): void {
     for (const light of this.culledLights) light.visible = true;
     this.culledLights.length = 0;
     const departure = journey?.scene === 'm2_departure' && !journey.visiting;
@@ -551,7 +551,12 @@ export class ZionHomecomingRenderer {
       const point = zionMessageDisk(message); this.messageDisk.position.set(point.x, point.y, point.z);
     }
     if (this.departureGifts) {
-      this.departureGifts.charm.visible = departure && journey.step < 1;
+      const { charm } = this.departureGifts;
+      charm.visible = departure && journey.step === 0 && departureCharm !== undefined;
+      if (charm.visible && departureCharm) {
+        this.moving.worldToLocal(charm.position.copy(departureCharm));
+        charm.position.y -= .21;
+      }
       this.departureGifts.spoon.visible = departure && journey.step >= 2 && journey.step < 3;
       this.departureGifts.engines.emissiveIntensity = departure && journey.step >= 4 ? 4 : 1.2;
     }

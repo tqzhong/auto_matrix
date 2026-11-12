@@ -26,7 +26,7 @@ import { poseTruckRescue } from './TruckRescueContact.js';
 import { poseSmithFinaleContact } from './SmithFinaleContact.js';
 import { SmithEndingAppearance } from './SmithEndingAppearance.js';
 import { poseUpperDigger } from './UpperDiggerPerformance.js';
-import { poseDockDeparture, poseDockReunion } from './DockReunionPerformance.js';
+import { poseDockDeparture, poseDockReunion, poseZionDepartureCharm } from './DockReunionPerformance.js';
 import { poseTempleDefense } from './TempleDefensePerformance.js';
 import { ceasefireReunionPose, gardenPose, gardenGroundHeight, type CeasefireReunionRole, type TrilogyEpilogueGesture } from '@auto_matrix/shared';
 import { poseCeasefireReunionPair } from './CeasefireReunionPerformance.js';
@@ -95,6 +95,8 @@ export class AgentRenderer {
   private firstPerson = false;
   private matrix = true;
   private playerMotion?: MotionInput;
+  departureCharm?: THREE.Vector3;
+  private departureCharmClock?: { started: number; tick: number; fraction: number };
   private openingRoofAttempt?: number;
   private models = new CharacterModels();
   private preparedOpeningApartment = new WeakSet<THREE.Group>();
@@ -1327,6 +1329,18 @@ export class AgentRenderer {
       }
     }
     const reunionLink = this.agents.get('link'), reunionZee = this.agents.get('zee');
+    if (journey?.scene === 'm2_departure' && journey.step === 0 && !journey.visiting && !this.matrix
+      && reunionLink?.state.status === 'alive' && reunionZee?.state.status === 'alive'
+      && !reunionLink.state.controller && !reunionZee.state.controller
+      && reunionLink.state.currentLocation === 'film_zion_hangar' && reunionZee.state.currentLocation === 'film_zion_hangar') {
+      const started = journey.started, clock = this.departureCharmClock;
+      const fraction = speed > 0 && started !== undefined && clock?.started === started && clock.tick === tick
+        ? Math.min(.5, clock.fraction + delta * speed) : 0;
+      this.departureCharmClock = started === undefined ? undefined : { started, tick, fraction };
+      this.departureCharm = poseZionDepartureCharm(reunionZee.rig, reunionLink.rig, started === undefined ? 0 : Math.max(0, (tick - started) / 2 + fraction));
+    } else {
+      this.departureCharm = undefined; this.departureCharmClock = undefined;
+    }
     for (const roles of [['morpheus', 'niobe'], ['link', 'zee']] as const) {
       const a = this.agents.get(roles[0]), b = this.agents.get(roles[1]);
       const clock = reunionClock ?? a?.state.currentAction?.parameters.epilogue as MotionInput['epilogue'];

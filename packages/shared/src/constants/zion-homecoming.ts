@@ -38,5 +38,5 @@ export const ZION_CAST: Record<string, Record<string, { x: number; z: number; ya
   m2_bane_copy: { malachi: { x: BANE_COPY_ESCORT.x, z: BANE_COPY_ESCORT.startZ, yaw: Math.PI }, smith: { x: 33, z: -38, yaw: -1 } },
   m2_hamann: { hamann: { x: -3, z: -26, yaw: 1 } },
   m2_oracle_message: { trinity: { x: 2, z: 12, yaw: 0 }, ballard: { x: 1.1, z: 19, yaw: Math.PI }, malachi: { x: -1.1, z: 19.2, yaw: Math.PI } },
-  m2_departure: { morpheus: { x: -4, z: -13, yaw: .5 }, trinity: { x: 5, z: -14, yaw: -.5 }, link: { x: 3, z: 32, yaw: 1 }, zee: { x: -3, z: 32, yaw: -1 }, bane: { x: 5, z: 20, yaw: -.6 }, kid: { x: -5, z: 10, yaw: .7 } },
+  m2_departure: { morpheus: { x: -4, z: -13, yaw: .5 }, trinity: { x: 5, z: -14, yaw: -.5 }, link: { x: -2.42, z: 28.6, yaw: -Math.PI / 2 }, zee: { x: -4.58, z: 28.6, yaw: Math.PI / 2 }, bane: { x: 5, z: 20, yaw: -.6 }, kid: { x: -5, z: 10, yaw: .7 } },
 };

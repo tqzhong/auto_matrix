@@ -2310,7 +2310,7 @@ export class FilmSetRenderer {
       target.dispose();
     }
   }
-  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000, camera?: THREE.Camera, tick = 0, garageCar?: GarageCarPose): FilmSet | undefined {
+  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000, camera?: THREE.Camera, tick = 0, garageCar?: GarageCarPose, departureCharm?: THREE.Vector3): FilmSet | undefined {
     this.resetMirrorFrame?.();
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;
     if (set?.id === 'film_extraction_car' && player?.currentLocation === 'film_adams_bridge') set = FILM_SETS.film_adams_bridge;
@@ -2870,7 +2870,7 @@ export class FilmSetRenderer {
     this.catchSet?.update(journey, this.phoneBodies?.('trinity'));
     // For fixed slots, the render pass mutes off-view lights without changing the shader layout.
     this.zion?.update(epilogue && journey?.scene === 'm3_ceasefire' && !journey.visiting ? { ...journey, epilogue } : journey,
-      elapsed, cameraPosition, this.stablePointSlots ? undefined : camera);
+      elapsed, cameraPosition, this.stablePointSlots ? undefined : camera, departureCharm);
     this.baneCopy?.update(journey, elapsed, player && journey?.actor === player.id ? player.position : undefined, set?.center);
     if (this.logosBane) {
       const encounter = journey?.scene === 'm3_bane' && !journey.visiting ? journey.bane : undefined;
