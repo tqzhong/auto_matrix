@@ -200,6 +200,10 @@ export interface MotionInput {
   mobilReunion?: import('@auto_matrix/shared').MobilReunionGesture;
 }
 
+export function burlyStaffHeld(burly: MotionInput['burly']): boolean {
+  return burly?.role === 'neo' && (burly.phase === 'staff' || burly.phase === 'flight_ready');
+}
+
 export interface MotionState {
   time: number;
   phase: number;

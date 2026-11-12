@@ -73,10 +73,10 @@ import { poseBasement, poseBasementLauncher, poseHardline } from './BasementPerf
 import { poseHotelPhone, poseOpeningPhone } from './OpeningPhonePerformance.js';
 import { poseOpeningRoofExit, poseOpeningRoofLanding } from './OpeningRoofPerformance.js';
 import { poseWellsAftermath } from './WellsAftermathPerformance.js';
-import { poseCrosscut, poseCrosscutContact } from './CrosscutPerformance.js';
+import { crosscutPalm, poseCrosscut, poseCrosscutContact } from './CrosscutPerformance.js';
 import { poseTheOneBody } from './TheOnePerformance.js';
 import { HardlineHandset } from './HardlineHandset.js';
-import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
+import { advanceMotion, burlyStaffHeld, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
 import { PhoneModel, PHONE_HAND } from './PhoneModel.js';
@@ -1177,7 +1177,7 @@ export class CharacterModels {
       const bitten = departure?.role === 'neo' && (['leaving', 'done'].includes(departure.phase) || departure.phase === 'biting' && departure.elapsed >= 1.35);
       rig.cookie.getObjectByName('cookie-whole')!.visible = !bitten; rig.cookie.getObjectByName('cookie-bitten')!.visible = Boolean(bitten);
     }
-    const holdsStaff = input.burly?.role === 'neo' && ['staff', 'flight_ready'].includes(input.burly.phase);
+    const holdsStaff = burlyStaffHeld(input.burly);
     if (holdsStaff && !rig.staff) {
       const steel = this.material(new THREE.MeshStandardMaterial({ color: 0x555b59, metalness: .78, roughness: .36 }));
       const grip = this.material(new THREE.MeshStandardMaterial({ color: 0x202b29, metalness: .4, roughness: .63 }));
@@ -1327,10 +1327,18 @@ export class CharacterModels {
       poseOpeningRoofExit(rig.hero, input.roofExit);
       poseOpeningRoofLanding(rig.hero, input.openingRoofRoll);
       poseWellsAftermath(rig, input.wellsAftermath);
-      if (holdsStaff) {
-        rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
-        rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
+      if (holdsStaff && rig.staff) {
         rig.hero.bones.get('chest')!.rotation.y += staffSweep * .42;
+        if (input.firstPerson) {
+          const wrist = rig.root.getWorldQuaternion(new THREE.Quaternion())
+            .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2));
+          const grip = rig.root.localToWorld(new THREE.Vector3(-.48 + staffSweep * .42, 3.35, 1.18));
+          crosscutPalm(rig, 'R', grip, wrist);
+          crosscutPalm(rig, 'L', rig.staff.localToWorld(new THREE.Vector3(0, -.96, 0)), wrist);
+        } else {
+          rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
+          rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
+        }
       }
       if (input.chateauWeapon) rig.hero.bones.get('shoulder_R')!.rotation.x -= .55;
       if (input.burly?.phase === 'flight' && input.burly.role === 'neo') {
