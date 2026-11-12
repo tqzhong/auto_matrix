@@ -221,7 +221,8 @@ export class PlayerController {
       const clear = wells ? wellsClearPosition(agent.position, this.sandbox?.state.structures) : undefined;
       agent.position = clear ?? locationEntrance(agent.currentLocation);
     }
-    const restoredPose = restoredWells || interlude?.actor === id && savedSeatedApartmentAction(interlude.contact, agent.currentAction, id)
+    const restoredPose = restoredWells || this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick)
+      || interlude?.actor === id && savedSeatedApartmentAction(interlude.contact, agent.currentAction, id)
       || !this.running && (savedOfficeCustodyAction(this.sandbox?.life.film.state, agent) || savedOfficeCrouchAction(this.sandbox?.life.film.state, agent))
       || this.sandbox?.life.film.workdayFrame(agent, 0, tick)
       || this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
@@ -230,7 +231,8 @@ export class PlayerController {
       || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
       || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick)
       || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.mountainFrame(agent, idleInput(), 0, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick, !this.running) || this.sandbox?.life.film.engineering.frame(agent, 0, tick) || this.sandbox?.life.film.zionMessage.frame(agent, 0, tick) || this.sandbox?.life.film.bookDoor.frame(agent, 0, tick) || this.sandbox?.life.film.seraphDoor.frame(agent, 0, tick) || this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
-    if (!restoredPose && !savedMetacortexLiftIdle(this.sandbox?.life.state, agent)
+    const restoredGaragePose = this.sandbox?.life.film.restoreGaragePose(agent, tick);
+    if (!restoredPose && !restoredGaragePose && !savedMetacortexLiftIdle(this.sandbox?.life.state, agent)
       && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
       || lafayetteKnocking(interlude) && agent.currentAction?.parameters.knock !== undefined
       || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome
@@ -244,7 +246,6 @@ export class PlayerController {
     this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: airborne ? agent.velocity.y : 0,
       planar: airborne ? { x: agent.velocity.x, z: agent.velocity.z } : { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
     this.owners.set(id, socketId);
-    this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick);
     this.sandbox?.life.film.architectFrame(agent, 0, tick);
     this.sandbox?.life.film.mobilFrame(agent, 0, tick);
     this.sandbox?.life.film.freewayHandoff.frame(agent, {}, 0, tick);
@@ -314,7 +315,6 @@ export class PlayerController {
     this.sandbox?.life.film.seraphDoor.frame(agent, 0, tick);
     this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
     this.sandbox?.life.film.templeDefense.frame(agent, 0, tick);
-    this.sandbox?.life.film.restoreGaragePose(agent, tick);
     if (['m3_gate', 'm2_freeway'].includes(this.sandbox?.life.film.state?.scene ?? '')) this.sandbox?.life.film.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
     this.sandbox?.life.film.diggers.frame(agent, 0, tick);
     this.sandbox?.life.film.upperDigger.frame(agent, 0, tick);
@@ -331,7 +331,8 @@ export class PlayerController {
       this.conversations.interrupt(agent.id, this.world.agents, tick);
       delete agent.controller;
       const journey = this.sandbox?.life.film.state;
-      const restoredPose = journey?.actor === agent.id && savedSeatedApartmentAction(journey.contact, agent.currentAction, agent.id)
+      const restoredPose = this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick)
+        || journey?.actor === agent.id && savedSeatedApartmentAction(journey.contact, agent.currentAction, agent.id)
         || !this.running && (savedOfficeCustodyAction(journey, agent) || savedOfficeCrouchAction(journey, agent))
         || this.sandbox?.life.film.workdayFrame(agent, 0, tick)
         || this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
@@ -340,7 +341,8 @@ export class PlayerController {
         || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
         || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick)
         || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.mountainFrame(agent, idleInput(), 0, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick, !this.running) || this.sandbox?.life.film.engineering.frame(agent, 0, tick) || this.sandbox?.life.film.zionMessage.frame(agent, 0, tick) || this.sandbox?.life.film.bookDoor.frame(agent, 0, tick) || this.sandbox?.life.film.seraphDoor.frame(agent, 0, tick) || this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
-      if (!restoredPose && !savedMetacortexLiftIdle(this.sandbox?.life.state, agent)
+      const restoredGaragePose = this.sandbox?.life.film.restoreGaragePose(agent, tick);
+      if (!restoredPose && !restoredGaragePose && !savedMetacortexLiftIdle(this.sandbox?.life.state, agent)
         && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
         || lafayetteKnocking(journey) && agent.currentAction?.parameters.knock !== undefined
         || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome
@@ -350,7 +352,6 @@ export class PlayerController {
         || savedFilmCombatAction(journey, agent.currentAction, !this.running)))) agent.currentAction = null;
       if (!restoredPose && !airbornePlayer(agent, this.sandbox?.state.structures)) agent.velocity = { x: 0, y: 0, z: 0 };
       this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
-      this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick);
     this.sandbox?.life.film.freewayHandoff.frame(agent, {}, 0, tick);
     this.sandbox?.life.film.truckRoad.frame(agent, 0, tick);
     this.sandbox?.life.film.windowFrame(agent, 0, tick);

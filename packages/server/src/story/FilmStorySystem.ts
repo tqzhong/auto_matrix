@@ -155,6 +155,11 @@ export function savedWorkdayIdle(workday: OfficeWorkday | undefined, action: Age
   return saved?.role === 'neo' && saved.phase === workday.phase && saved.elapsed === workday.elapsed;
 }
 
+export function savedGarageDriveTick(action: AgentState['currentAction']): number | undefined {
+  if (action?.type === 'move_to' && action.parameters.riding === true && action.parameters.seated === true
+    && action.parameters.resolved === true && Number.isFinite(action.startedAt)) return action.startedAt;
+}
+
 export class FilmStorySystem {
   private openingRoofFrames?: OpeningRoofEncounter;
   private helElevatorFrames = false;
@@ -5722,9 +5727,11 @@ export class FilmStorySystem {
     agent.currentAction = { type: 'move_to', parameters: { player: Boolean(agent.controller), resolved: true, riding: true, seated: true },
       startedAt: tick, duration: 1, progress: 0 };
   }
-  restoreGaragePose(agent: AgentState, tick: number): void {
+  restoreGaragePose(agent: AgentState, tick: number): boolean {
     const state = this.state;
-    if (state?.scene === 'm2_garage' && state.garage && agent.status === 'alive' && this.driving(agent)) this.placeGarageDriver(agent, garageCarPose(state.garage), tick);
+    if (state?.scene !== 'm2_garage' || !state.garage || agent.status !== 'alive' || !this.driving(agent)) return false;
+    this.placeGarageDriver(agent, garageCarPose(state.garage), savedGarageDriveTick(agent.currentAction) ?? tick);
+    return true;
   }
 
   hammerFrame(agent: AgentState, tick: number): void {

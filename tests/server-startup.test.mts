@@ -15,9 +15,33 @@ import { metacortexLiftPose, metacortexPosition, type MetacortexLift } from '@au
 import { MIRROR_TRINITY, MIRROR_TIMING, mirrorTime, mirrorSilver } from '@auto_matrix/shared';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
 import { openingPhoneContact, openingHitPose } from '@auto_matrix/shared';
+import { garageCarPose, garageRiderPose, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fingerprint = (data: string) => createHash('sha256').update(data).digest('hex');
+
+test('a paused moving garage checkpoint keeps Trinity’s driving action tick on startup', { timeout: 30000 }, async t => {
+  const f = await fixture(t, 'm2_garage'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.trinity;
+  let escape = newGarageEscape();
+  for (let frame = 0; frame < 50 && escape.twins === 0; frame++) escape = stepGarageEscape(escape, { throttle: 1, steer: 0, brake: false }, .05);
+  assert.equal(escape.phase, 'riding'); assert.equal(escape.twins, 1);
+  journey.step = 1; journey.garage = escape;
+  const seat = garageRiderPose(garageCarPose(escape), 'trinity');
+  actor.position = filmPosition(FILM_SCENE_BY_ID.m2_garage.set, seat.x, seat.z); actor.rotation = seat.yaw;
+  f.checkpoint.tick = 100; f.checkpoint.simulation = { running: false, speed: 1 };
+  const action = actor.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, riding: true, seated: true },
+    startedAt: f.checkpoint.tick - 1, duration: 1, progress: 0 };
+  await writeFile(f.file, JSON.stringify(f.checkpoint));
+
+  const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+  const released = await client.world();
+  assert.deepEqual(released.sandbox!.neoLife!.journey!.garage, escape);
+  assert.deepEqual(released.agents.trinity.currentAction, { ...action, parameters: { ...action.parameters, player: false } });
+  const attached = await client.command('play_as', { agentId: 'trinity' }, state => Boolean(state.agents.trinity.controller));
+  assert.deepEqual(attached.agents.trinity.currentAction, action);
+  assert.deepEqual(attached.agents.trinity.position, actor.position);
+  await server.stop();
+});
 
 test('303 publishes the handset release with Trinity’s pose before finishing the call', { timeout: 30000 }, async t => {
   const f = await fixture(t, 'm1_room303'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.trinity;

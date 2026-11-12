@@ -29,11 +29,11 @@ import { PlayerController, airbornePlayer, savedFilmCombatAction, savedAwakening
 import { CheckpointStore } from './world/CheckpointStore.js';
 import { SupabaseCheckpointStore, CloudCheckpointConflictError } from './world/SupabaseCheckpointStore.js';
 import { SandboxSystem } from './player/SandboxSystem.js';
-import { savedWorkdayIdle } from './story/FilmStorySystem.js';
+import { savedGarageDriveTick, savedWorkdayIdle } from './story/FilmStorySystem.js';
 import { savedMetacortexLiftIdle } from './story/NeoLifeSystem.js';
 import { savedEngineeringAction } from './story/ZionEngineeringSystem.js';
 import { savedZionMessageAction } from './story/ZionMessageSystem.js';
-import { ZION_MESSAGE_ROLES, zionMessageActive } from '@auto_matrix/shared';
+import { freewayPickupActive, ZION_MESSAGE_ROLES, zionMessageActive } from '@auto_matrix/shared';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const eventBus = new EventBus();
@@ -429,6 +429,9 @@ async function main(): Promise<void> {
         || windowCrossing(journey) && agent.state.currentAction?.parameters.crossing !== undefined
         || checkpoint.simulation?.running === false && savedOfficeCustodyAction(journey, agent.state)
         || savedFilmCombatAction(journey, agent.state.currentAction, checkpoint.simulation?.running === false)
+        || journey.scene === 'm2_garage' && !journey.visiting && journey.garage?.phase === 'riding'
+          && savedGarageDriveTick(agent.state.currentAction) !== undefined
+        || freewayPickupActive(journey) && agent.state.currentAction?.type === 'idle' && agent.state.currentAction.parameters.freewayPickup
         || savedBurlyFailedIdle(journey, agent.state.currentAction)
         || checkpoint.simulation?.running === false && savedBurlyReadyIdle(journey, agent.state.currentAction)
         || journey.scene === 'm1_ledge' && !journey.visiting && journey.step === 1 && journey.office?.climbed !== undefined && agent.state.currentAction?.parameters.climbing

@@ -3437,6 +3437,14 @@ test('Trinity drives the garage escape with companions, saved progress, retry an
   assert.deepEqual(h.sandbox.life.film.state?.garage, saved.neoLife.journey.garage);
   h.players.possess('film-player', 'trinity', h.tick()); assert.deepEqual(h.actor().position, at);
   assert.deepEqual(driver.currentAction, pose);
+  const pausedTick = h.tick() + 1;
+  h.world.simulationTick = pausedTick;
+  h.players.setRunning(false);
+  h.players.release('film-player', pausedTick);
+  assert.deepEqual(driver.currentAction, { ...pose, parameters: { ...pose.parameters, player: false } });
+  h.sandbox.restore(saved); state = h.sandbox.life.film.state!;
+  h.players.possess('film-player', 'trinity', pausedTick);
+  assert.deepEqual(driver.currentAction, pose, 'the seated action keeps its original tick after a later paused reconnect');
   for (let frame = 0; frame < 160 && h.sandbox.life.film.state?.garage?.phase === 'riding'; frame++)
     h.sandbox.life.film.driveFrame(h.actor(), { throttle: 1, steer: 0, brake: false }, .05, h.tick());
   h.advance(); assert.equal(state.step, 2); assert.equal(h.world.agents.get('keymaker')!.status, 'alive');

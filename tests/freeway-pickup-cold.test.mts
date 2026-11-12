@@ -33,7 +33,8 @@ async function server(t: test.TestContext, phase: FreewayPickup['phase'] | 'ridi
     const pose = driver ? freewayDriverRoot(pickup) : ride ? freewayRideRoot(ride, role as 'trinity' | 'keymaker') : freewayPickupRoot(pickup, role as 'trinity' | 'keymaker');
     Object.assign(actor, { position: { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z }, rotation: pose.yaw,
       currentLocation: 'film_freeway_101', isInMatrix: true, status: 'alive', health: role === 'trinity' ? 73 : 55,
-      velocity: role === 'trinity' ? { x: 0, y: 0, z: 0 } : { x: .3, y: phase === 'failed' ? -24.2 : 0, z: 14 }, targetPosition: null, currentPath: [],
+      velocity: role === 'trinity' && phase !== 'failed' ? { x: 0, y: 0, z: 0 }
+        : { x: role === 'trinity' ? 0 : .3, y: phase === 'failed' ? -24.2 : 0, z: 14 }, targetPosition: null, currentPath: [],
       currentAction: { type: 'idle', parameters: driver
         ? { resolved: true, seated: true, riding: true, freewayDriver: { ...pickup, role } }
         : ride ? { resolved: true, player: false, riding: true, seated: true, passenger: role !== 'trinity', freewayRide: { ...ride, role } }
