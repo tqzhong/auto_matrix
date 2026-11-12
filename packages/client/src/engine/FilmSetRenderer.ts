@@ -325,7 +325,10 @@ export class FilmSetRenderer {
   private training?: TrainingSetRenderer;
   private preparedDojo?: { root: THREE.Group; renderer: TrainingSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedJump?: { root: THREE.Group; renderer: TrainingSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
-  private preparedRedDress?: { root: THREE.Group; renderer: TrainingSetRenderer; assetsReady: boolean; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
+  private preparedRedDress?: {
+    root: THREE.Group; renderer: TrainingSetRenderer; assetsReady: boolean; gpu?: THREE.WebGLRenderer['properties'];
+    colors?: CastColorPreparation; lighting?: LightCulling; textureUpload?: Generator<void, boolean>;
+  };
   private preparedSentinel?: { root: THREE.Group; renderer: SentinelSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedConsole?: { root: THREE.Group; deck: NebDeckRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedRestaurant?: { root: THREE.Group; renderer: CypherRestaurantRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
@@ -969,6 +972,7 @@ export class FilmSetRenderer {
     const prepared = this.preparedRedDress;
     if (!prepared.assetsReady || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose();
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true }), actors: new Set() };
       for (const light of prepared.colors.scene.children) if (light instanceof THREE.DirectionalLight) light.castShadow = false;
@@ -983,9 +987,13 @@ export class FilmSetRenderer {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
       });
       if (!meshes.length) continue;
-      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+      // Give Neo and the plaza priority when the player enters before preparation finishes.
+      if (id === 'neo') colors.meshes.unshift(...meshes); else colors.meshes.push(...meshes);
+      colors.actors.add(group); this.queueColorTextures(colors.textures, meshes);
     }
-    this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+    // Start transferring the decoded cast and crowd maps while their programs are linking.
+    this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated');
+    this.prepareStagedColorTexture(renderer, prepared, colors.textures, 4);
   }
   prepareSentinel(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
     if (this.current?.id !== 'film_red_dress_plaza' || this.currentScene !== 'm1_red_dress' || journey?.scene !== 'm1_red_dress' || journey.visiting
@@ -1601,7 +1609,8 @@ export class FilmSetRenderer {
       this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated');
     this.prepareStagedColorTexture(renderer, prepared, prepared.textures);
   }
-  private prepareStagedColorTexture(renderer: THREE.WebGLRenderer, prepared: { textureUpload?: Generator<void, boolean> }, textures: Set<THREE.Texture>): boolean {
+  private prepareStagedColorTexture(renderer: THREE.WebGLRenderer, prepared: { textureUpload?: Generator<void, boolean> },
+    textures: Set<THREE.Texture>, stripsPerFrame = 1): boolean {
     if (!prepared.textureUpload) {
       for (const texture of textures) {
         const image = texture.image as { width?: number; complete?: boolean } | null;
@@ -1616,7 +1625,9 @@ export class FilmSetRenderer {
       }
     }
     if (!prepared.textureUpload) return false;
-    if (prepared.textureUpload.next().done) prepared.textureUpload = undefined;
+    for (let strip = 0; strip < stripsPerFrame; strip++) if (prepared.textureUpload.next().done) {
+      prepared.textureUpload = undefined; break;
+    }
     return true;
   }
   private prepareOpeningRoofShadows(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: OpeningPreparation,
@@ -2329,7 +2340,10 @@ export class FilmSetRenderer {
       const preparedJump = set?.id === 'film_jump_roofs' && sceneId === 'm1_jump' && !journey?.visiting ? this.preparedJump : undefined;
       if (preparedJump) { this.preparedJump = undefined; preparedJump.lighting?.dispose(); preparedJump.root.removeFromParent(); }
       const preparedRedDress = set?.id === 'film_red_dress_plaza' && sceneId === 'm1_red_dress' && !journey?.visiting ? this.preparedRedDress : undefined;
-      if (preparedRedDress) { this.preparedRedDress = undefined; preparedRedDress.lighting?.dispose(); preparedRedDress.root.removeFromParent(); }
+      if (preparedRedDress) {
+        this.preparedRedDress = undefined; preparedRedDress.textureUpload?.return(false);
+        preparedRedDress.lighting?.dispose(); preparedRedDress.root.removeFromParent();
+      }
       const preparedSentinel = set?.id === 'film_service_tunnels' && sceneId === 'm1_sentinels' && !journey?.visiting ? this.preparedSentinel : undefined;
       if (preparedSentinel) { this.preparedSentinel = undefined; preparedSentinel.lighting?.dispose(); preparedSentinel.root.removeFromParent(); }
       const preparedConsole = set?.id === 'film_neb_deck' && sceneId === 'm1_cypher_console' && !journey?.visiting ? this.preparedConsole : undefined;
@@ -5318,6 +5332,7 @@ export class FilmSetRenderer {
   }
   private cancelRedDressPreparation(): void {
     const prepared = this.preparedRedDress; if (!prepared) return;
+    prepared.textureUpload?.return(false);
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedRedDress = undefined;
   }
   private cancelSentinelPreparation(): void {

@@ -50,12 +50,14 @@ function fixture(t: TestContext) {
   } as unknown as THREE.WebGLRenderer;
   const prepare = () => {
     const count = work.length; film.prepareRedDress(gpu, camera, journey, id => actors.get(id));
-    assert.ok(work.length - count <= 1, 'prepare one batch, completed binding or texture per frame');
+    const frame = work.slice(count);
+    assert.ok(frame.filter(item => item === 'compile' || item === 'bindings').length <= 1);
+    assert.ok(frame.filter(item => item === 'texture').length <= 1 && frame.filter(item => item === 'strip').length <= 4);
     assert.equal(target, null); assert.equal(parent.visible, false); assert.equal(actor.parent, parent); assert.equal(skin.parent, actor); assert.equal(coat.visible, false); assert.equal(sun.castShadow, false); assert.equal(gpu.debug.checkShaderErrors, true);
   };
   const drain = () => { for (let i = 0; i < 450; i++) prepare(); };
   t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previousDocument; });
-  return { film, gpu, scene, journey, actor, actors, geometry, material, skin, coat, costume, work, batches, decks, prepare, drain,
+  return { film, gpu, scene, journey, actor, actors, geometry, material, texture, skin, coat, costume, work, batches, decks, prepare, drain,
     assets: async () => { finishAssets(); await new Promise(resolve=>setImmediate(resolve)); }, ready: () => { ready = true; }, replaceGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
 
@@ -65,6 +67,58 @@ test('the real ship explanation prepares the plaza only after its crowd loads an
   const late = new THREE.Group(), face = new THREE.Mesh(h.geometry, h.material); late.add(face); h.actors.set('morpheus', late);
   const before = h.batches.length; h.drain(); assert.ok(h.batches.slice(before).flat().includes(face)); assert.equal(h.decks.size, 1);
   const count = h.work.length; h.drain(); assert.equal(h.work.length, count, 'completed preparation stops compiling and uploading');
+});
+
+test('plaza texture preparation starts while the program queue still has meshes and bindings', async t => {
+  const h = fixture(t); h.prepare(); await h.assets(); h.prepare();
+  assert.deepEqual(h.work, ['compile', 'texture'], 'the first decoded map must upload while the program queue is still pending');
+  const count = h.batches.length; h.ready(); h.drain();
+  assert.ok(h.batches.length > count, 'later batches and their bindings still complete');
+  assert.equal(h.work.filter(item => item === 'texture').length, 1);
+});
+
+test('a short return-to-plaza window links Neo and the plaza before the later cast', async t => {
+  const h = fixture(t), smith = new THREE.Group(), face = new THREE.Mesh(h.geometry, h.material);
+  smith.add(face); h.actors.set('smith', smith);
+  h.prepare(); await h.assets(); h.prepare();
+  assert.equal(h.batches[0][0], h.skin, 'link the player before the other cast on a cold cut');
+  h.ready(); h.drain();
+  const linked = h.batches.flat(), crowd = linked.findIndex(mesh => mesh instanceof THREE.InstancedMesh && mesh.name.includes('future-crowd'));
+  assert.ok(crowd >= 0 && linked.indexOf(face) > crowd, 'the first plaza view needs its crowd before the rest of the cast');
+});
+
+test('a partially staged plaza map is released when the player enters before it is ready', async t => {
+  const h = fixture(t);
+  class Bitmap { width = 2048; height = 2048; }
+  const previous = globalThis.ImageBitmap, bitmap = new Bitmap();
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  t.after(() => { if (previous) globalThis.ImageBitmap = previous; else Reflect.deleteProperty(globalThis, 'ImageBitmap'); });
+  h.texture.image = bitmap; h.texture.flipY = false;
+  const source = h.texture.source, rows: number[] = [], released: THREE.Texture[] = [];
+  const residency = new WeakMap<THREE.Texture, { __webglTexture: object; __version: number }>();
+  Object.assign(h.gpu, {
+    capabilities: { maxTextureSize: 4096 }, properties: { get: (map: THREE.Texture) => residency.get(map) ?? {} },
+    state: { bindTexture() {}, unbindTexture() {} },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true, pixelStorei() {},
+      texSubImage2D(_target: number, _level: number, _x: number, row: number, width: number, height: number,
+        _format: number, _type: number, image: Bitmap) {
+        assert.equal(image, bitmap); assert.deepEqual([width, height], [2048, 256]); rows.push(row); h.work.push('strip');
+      } }),
+    initTexture(map: THREE.Texture) {
+      residency.set(map, { __webglTexture: {}, __version: map.version });
+      map.addEventListener('dispose', () => released.push(map));
+      if (map.source.dataReady) h.work.push('texture');
+    },
+  });
+  h.prepare(); await h.assets(); h.prepare();
+  assert.deepEqual(rows, [0, 256, 512, 768], 'stage a bounded batch of plaza rows before first draw');
+  assert.equal(h.texture.source, source); assert.equal(residency.has(h.texture), false);
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!;
+  neo.position = { ...FILM_SETS.film_red_dress_plaza.center }; neo.currentLocation = 'film_red_dress_plaza'; neo.isInMatrix = true;
+  const journey = { ...h.journey, scene: 'm1_red_dress', actor: 'neo', step: 0, training: undefined } as FilmJourney;
+  h.film.update(neo, { structures: [], neoLife: { journey } } as unknown as SandboxState, 0);
+  assert.equal(released.length, 1); assert.notEqual(released[0], h.texture); assert.equal(h.texture.source, source);
+  assert.ok(h.film.root.getObjectByName('training-red-dress-set'));
 });
 
 test('plaza preparation follows the real return explanation, rebuilds for a new GPU and releases cancellation resources', async t => {
