@@ -5,6 +5,7 @@ import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_HOTEL, filmEntry, filmPosition, op
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { GunfireEffects } from '../packages/client/src/engine/GunfireEffects.js';
+import { CombatEffects } from '../packages/client/src/engine/CombatEffects.js';
 import type { GameAudio } from '../packages/client/src/engine/GameAudio.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -63,7 +64,7 @@ function setup(t: test.TestContext) {
     gunfire.shot({ source: 'trinity', target: 'hotel-wall', position: { ...from, y: from.y + 8 },
       direction: { x: 0, y: 1, z: 0 }, damage: 0, combo: 0, matrix: true, downed: false, shot: { from, surface: 'body' } });
   };
-  return { sets, culling, camera, gunfire, journey, pose, sample, shot };
+  return { scene, sets, culling, camera, gunfire, journey, pose, sample, shot };
 }
 
 test('303 keeps its lighting layout across the room, corridor, camera and saved phases', t => {
@@ -181,6 +182,41 @@ test('303 reserves the player and four real police muzzle flashes without losing
   for(let i=0;i<5;i++){h.shot();assert.equal(h.sample(),13,'a normal overlapping shot must not compile another room layout');}
   for(const delta of [.035,.035,.02,.03]){h.gunfire.update(delta);assert.equal(h.sample(),13);}
   assert.equal(h.journey.openingHotel!.elapsed,0,'lighting cannot advance the encounter');
+});
+
+test('303 reuses the transient impact flash with independent fades and releases it on exit', t => {
+  const h = setup(t);
+  const effects = new CombatEffects(h.scene, { effects: () => undefined } as unknown as GameAudio);
+  t.after(() => effects.dispose());
+  const position = { x: 0, y: 2, z: 1 };
+  const hit = () => {
+    effects.impact({ source: 'citizen_4', target: 'trinity', position, direction: { x: 0, y: 0, z: 1 },
+      damage: 12, combo: 0, matrix: true, downed: false, shot: { from: { ...position, z: -2 }, surface: 'body' } }, true);
+    const flash = h.scene.children.at(-1)?.children.find(child => child instanceof THREE.Sprite);
+    assert.ok(flash instanceof THREE.Sprite);
+    return flash;
+  };
+  const first = hit();
+  let disposals = 0;
+  first.material.addEventListener('dispose', () => disposals++);
+  effects.update(.12, true);
+  assert.equal(first.material.opacity, 0);
+  effects.update(.54, true);
+  assert.equal(first.parent?.parent, null, 'an expired flash leaves the scene');
+  assert.equal(disposals, 0, 'keep one idle material available for the next 303 hit');
+  const next = hit();
+  assert.equal(next.material, first.material);
+  assert.equal(next.material.opacity, 1);
+  effects.update(.04, true);
+  const overlap = hit();
+  overlap.material.addEventListener('dispose', () => disposals++);
+  assert.notEqual(overlap.material, next.material);
+  assert.equal(overlap.material.opacity, 1);
+  assert.ok(next.material.opacity > 0 && next.material.opacity < 1);
+  effects.update(.66, true);
+  assert.equal(disposals, 1, 'only one unused material stays resident');
+  effects.update(0);
+  assert.equal(disposals, 2, 'leaving 303 releases the idle material');
 });
 
 test('an additional real flash keeps its energy, and leaving 303 releases the reservation', t => {

@@ -415,7 +415,7 @@ export class Engine {
     this.postProcessing.prepareNormals(this.renderer, openingNormals ? this.filmSets.root : neoNormals,
       openingNormals ?? apartmentNormals, apartmentNormals !== undefined);
     this.particleSystem.update(delta);
-    this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0);
+    this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0, openingHotel !== undefined);
     this.filmSets.renderTelevisionPreview(this.renderer);
     if (this.filmSets.televisionPreviewImage) this.lastTelevisionPreviewImage = this.filmSets.televisionPreviewImage;
     for (let i = 0; i < this.rainPositions.length; i += 6) {

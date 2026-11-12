@@ -18,6 +18,7 @@ export class CombatEffects {
   private pulses: { group: THREE.Group; material: THREE.MeshBasicMaterial; age: number; radius: number; duration: number; direction: THREE.Vector3 }[] = [];
   private ring = new THREE.RingGeometry(.94, 1, 64);
   private flashTexture: THREE.CanvasTexture;
+  private spareImpactFlash?: THREE.SpriteMaterial;
   private gunfire: GunfireEffects;
 
   constructor(private scene: THREE.Scene, private audio: GameAudio) {
@@ -81,7 +82,10 @@ export class CombatEffects {
     const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     const streaks = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: hurtPlayer ? '#e7a18a' : heavy ? '#d7efb1' : '#e8e8d9', transparent: true, depthWrite: false, toneMapped: false }));
     group.add(streaks);
-    const flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.flashTexture, color: '#eff3d8', transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    const flashMaterial = this.spareImpactFlash ?? new THREE.SpriteMaterial({ map: this.flashTexture, color: '#eff3d8', transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+    this.spareImpactFlash = undefined;
+    flashMaterial.opacity = 1;
+    const flash = new THREE.Sprite(flashMaterial);
     group.add(flash);
     const canvas = document.createElement('canvas'); canvas.width = 192; canvas.height = 80;
     const ctx = canvas.getContext('2d')!; ctx.font = '600 34px "PingFang SC", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -93,7 +97,7 @@ export class CombatEffects {
     this.scene.add(group); this.bursts.push({ group, streaks, velocities, flash, label, age: 0, heavy });
   }
 
-  update(delta: number): void {
+  update(delta: number, retainImpactFlash = false): void {
     this.gunfire.update(delta);
     for (let i = this.pulses.length - 1; i >= 0; i--) {
       const pulse = this.pulses[i]; pulse.age += delta;
@@ -105,7 +109,7 @@ export class CombatEffects {
     }
     for (let i = this.bursts.length - 1; i >= 0; i--) {
       const burst = this.bursts[i]; burst.age += delta;
-      if (burst.age > .65) { this.remove(burst); this.bursts.splice(i, 1); continue; }
+      if (burst.age > .65) { this.remove(burst, retainImpactFlash); this.bursts.splice(i, 1); continue; }
       const t = burst.age;
       const positions = burst.streaks.geometry.attributes.position;
       burst.velocities.forEach((velocity, n) => {
@@ -120,16 +124,24 @@ export class CombatEffects {
       burst.label.position.y = .65 + t * 1.25;
       burst.label.material.opacity = Math.min(1, Math.max(0, (.65 - t) / .2));
     }
+    if (!retainImpactFlash) this.disposeSpareImpactFlash();
   }
 
-  private remove(burst: Burst): void {
+  private remove(burst: Burst, retainImpactFlash = false): void {
     this.scene.remove(burst.group); burst.streaks.geometry.dispose(); burst.streaks.material.dispose();
-    burst.flash.material.dispose(); burst.label.material.map?.dispose(); burst.label.material.dispose();
+    if (retainImpactFlash && !this.spareImpactFlash) this.spareImpactFlash = burst.flash.material;
+    else burst.flash.material.dispose();
+    burst.label.material.map?.dispose(); burst.label.material.dispose();
+  }
+  private disposeSpareImpactFlash(): void {
+    this.spareImpactFlash?.dispose();
+    this.spareImpactFlash = undefined;
   }
   private removePulse(pulse: typeof this.pulses[number]): void { this.scene.remove(pulse.group); pulse.material.dispose(); }
   dispose(): void {
     this.gunfire.dispose();
     this.bursts.forEach(burst => this.remove(burst)); this.bursts = []; this.flashTexture.dispose();
+    this.disposeSpareImpactFlash();
     this.pulses.forEach(pulse => this.removePulse(pulse)); this.pulses = []; this.ring.dispose();
   }
 }
