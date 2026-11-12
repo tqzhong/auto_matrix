@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { APARTMENT, FILM_SCENE_BY_ID, WAKE_CALL, filmPosition, filmStepPosition, playerBlocked, wakeCallDoor, type WorldEvent } from '@auto_matrix/shared';
+import { APARTMENT, FILM_SCENE_BY_ID, MORNING, WAKE_CALL, filmEntry, filmPosition, filmStepPosition, morningRoot, playerBlocked, wakeCallDoor, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -68,6 +68,27 @@ test('the successful office escape reaches the same call without inventing an in
   h.neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_wake_again, FILM_SCENE_BY_ID.m1_wake_again.steps[1]); h.frames(.2);
   h.command('act'); h.frames(WAKE_CALL.leaving + .2);
   assert.equal(h.sandbox.state.neoLife!.journal[0].title, '第二次来电');
+});
+
+test('a saved second awakening resumes at the bed edge pose without changing its clock or branch', () => {
+  const h = setup('escaped'), scene = FILM_SCENE_BY_ID.m1_wake_again;
+  assert.deepEqual(filmEntry(scene), filmPosition(scene.set, MORNING.bedX, APARTMENT.bed.z));
+  assert.deepEqual(h.neo.position, filmEntry(scene));
+  h.frames(1.7); h.players.release('player', h.tick());
+  const before = structuredClone(h.state().wakeCall!);
+  const completed = [...h.state().completed];
+  const legacy = filmPosition(scene.set, APARTMENT.bed.x, APARTMENT.bed.z);
+  h.state().checkpoint = { ...legacy }; h.neo.position = { ...legacy }; h.neo.rotation = APARTMENT.bed.yaw;
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('player', 'neo', h.tick());
+  const pose = morningRoot({ phase: 'rising', elapsed: before.elapsed });
+  assert.deepEqual(h.neo.position, filmPosition(scene.set, pose.x, pose.z));
+  assert.equal(h.neo.rotation, pose.yaw);
+  assert.deepEqual(h.state().wakeCall, before); assert.deepEqual(h.state().completed, completed);
+  assert.deepEqual(h.neo.currentAction?.parameters.wakeCall, before);
+  assert.equal(h.state().office?.outcome, 'escaped'); assert.equal(h.state().office?.bugged, false);
+  h.frames(WAKE_CALL.waking - before.elapsed + .2);
+  assert.equal(h.state().wakeCall?.phase, 'ringing');
+  assert.deepEqual(h.neo.position, filmPosition(scene.set, APARTMENT.bedside.x, APARTMENT.bedside.z));
 });
 
 test('Neo opens 101 himself and physically leaves before the story cuts to Adams Street', () => {

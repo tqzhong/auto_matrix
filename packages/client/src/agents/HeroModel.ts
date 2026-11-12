@@ -1564,24 +1564,6 @@ export class HeroModels {
       const reach = THREE.MathUtils.smoothstep(input.cabin.elapsed, 2, 3) * (1 - THREE.MathUtils.smoothstep(input.cabin.elapsed, 5.8, 6.8));
       bone('spine').rotation.x += .29 * reach; bone('chest').rotation.x += .34 * reach; bone('head').rotation.x -= .32 * reach;
     }
-    if (input.wakeCall?.phase === 'waking') {
-      const t = input.wakeCall.elapsed; const smooth = THREE.MathUtils.smoothstep;
-      const lie = 1 - smooth(t, 1.3, 2.75); const sit = smooth(t, 1.15, 2.05) * (1 - smooth(t, 2.7, 3.45));
-      pelvis.position.y = THREE.MathUtils.lerp(pelvis.position.y, .62, lie);
-      pelvis.rotation.x = THREE.MathUtils.lerp(pelvis.rotation.x, -Math.PI / 2, lie);
-      bone('spine').rotation.x += .18 * sit; bone('chest').rotation.x += .28 * sit;
-      bone('head').rotation.x += (input.wakeCall.nightmare ? -.18 * Math.sin(Math.min(1, t / .55) * Math.PI) : .08) * lie - .16 * sit;
-      for (const side of ['R', 'L']) {
-        bone('hip_' + side).rotation.x = THREE.MathUtils.lerp(bone('hip_' + side).rotation.x, -1.28, sit);
-        bone('knee_' + side).rotation.x = THREE.MathUtils.lerp(bone('knee_' + side).rotation.x, 1.42, sit);
-      }
-      if (input.wakeCall.nightmare) {
-        const inspect = smooth(t, 1.45, 1.9) * (1 - smooth(t, 2.75, 3.25));
-        bone('shoulder_R').rotation.x -= .9 * inspect; bone('elbow_R').rotation.x -= 1.05 * inspect;
-        bone('shoulder_L').rotation.x -= .52 * inspect; bone('elbow_L').rotation.x -= .72 * inspect;
-        bone('head').rotation.y += .2 * inspect;
-      }
-    }
     if (input.wakeCall?.phase === 'leaving') {
       const t = input.wakeCall.elapsed;
       const reach = THREE.MathUtils.smoothstep(t, .12, .58) * (1 - THREE.MathUtils.smoothstep(t, 1.08, 1.48));
@@ -1801,7 +1783,16 @@ export class HeroModels {
     if (input.phone) {
       this.holdPhone(rig, input.phone);
     }
-    poseMorningBody(rig, input.morning);
+    const wakingAgain = !input.morning && input.wakeCall?.phase === 'waking' ? input.wakeCall : undefined;
+    poseMorningBody(rig, input.morning ?? (wakingAgain && { phase: 'rising', elapsed: wakingAgain.elapsed }));
+    if (wakingAgain?.nightmare) {
+      const t = wakingAgain.elapsed, smooth = THREE.MathUtils.smoothstep;
+      const inspect = smooth(t, 1.45, 1.9) * (1 - smooth(t, 2.75, 3.25));
+      bone('head').rotation.x -= .18 * Math.sin(Math.min(1, t / .55) * Math.PI);
+      bone('head').rotation.y += .2 * inspect;
+      bone('shoulder_R').rotation.x -= .55 * inspect; bone('elbow_R').rotation.x -= .2 * inspect;
+      bone('shoulder_L').rotation.x -= .28 * inspect; bone('elbow_L').rotation.x -= .08 * inspect;
+    }
     if (input.morning?.phase === 'stopping') this.stopAlarm(rig, input.morning.elapsed);
     if (input.window !== undefined) this.openWindow(rig, input.window);
     if (input.crossing !== undefined) this.crossWindow(rig, input.crossing);

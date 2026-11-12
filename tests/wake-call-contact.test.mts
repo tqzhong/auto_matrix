@@ -3,7 +3,7 @@ import test, { type TestContext } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, WAKE_CALL, wakeCallRoot, type WakeCall } from '@auto_matrix/shared';
+import { FILM_SETS, MORNING, WAKE_CALL, wakeCallRoot, type WakeCall } from '@auto_matrix/shared';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
@@ -27,8 +27,8 @@ async function fixture(t: TestContext) {
   const set = new THREE.Group(), room = new ApartmentSetRenderer(set), center = FILM_SETS.film_anderson_flat.center;
   set.position.set(center.x, center.y - 1, center.z);
   const rig = (await models.create('neo'))!, motion = newMotion();
-  const draw = (phase: WakeCall['phase'], elapsed: number, body = rig) => {
-    const call = { phase, elapsed, nightmare: true }, at = wakeCallRoot(call);
+  const draw = (phase: WakeCall['phase'], elapsed: number, body = rig, nightmare = true) => {
+    const call = { phase, elapsed, nightmare }, at = wakeCallRoot(call);
     body.root.position.set(center.x + at.x, center.y - 1, center.z + at.z); body.root.rotation.y = at.yaw;
     const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, homeClothes: true, glasses: false, wakeCall: call };
     models.animate(body, advanceMotion(motion, input, 0), motion, input, 0); body.root.updateMatrixWorld(true);
@@ -41,6 +41,29 @@ async function fixture(t: TestContext) {
   t.after(() => { models.dispose(); room.dispose(); globalThis.document = document; });
   return { rig, draw, models, set };
 }
+
+test('Neo rises from the mattress and plants his shoes outside the bed in both second-call branches', async t => {
+  const h = await fixture(t), point = new THREE.Vector3();
+  const frames = [0, .4, .8, 1.2, 1.6, 1.706, 1.9, 2.2, 2.4, 2.6, 2.8, 3.2, 3.7, 4.4, 5.2, WAKE_CALL.waking];
+  for (const nightmare of [false, true]) for (const elapsed of frames) {
+    h.draw('waking', elapsed, h.rig, nightmare);
+    let sole = Infinity;
+    for (const { mesh } of h.rig.wardrobe) {
+      if (!(mesh instanceof THREE.SkinnedMesh) || !mesh.visible) continue;
+      mesh.skeleton.update();
+      const used = mesh.geometry.index ? new Set(mesh.geometry.index.array)
+        : Array.from({ length: mesh.geometry.attributes.position.count }, (_, i) => i);
+      for (const index of used) {
+        mesh.localToWorld(mesh.getVertexPosition(index, point)).sub(h.set.position);
+        const insideBed = point.x > 7.23 && point.x < 13.16 && point.z > -13.8 && point.z < -4.2;
+        const height = insideBed ? MORNING.mattressY - .015 : -.015;
+        assert.ok(point.y > height, `${nightmare ? 'nightmare' : 'escape'} at ${elapsed}: ${mesh.name} sinks into the ${insideBed ? 'mattress' : 'floor'} at ${point.toArray()}`);
+        if (mesh.name === 'shoes01') sole = Math.min(sole, point.y);
+      }
+    }
+    if (elapsed >= 2.6) assert.ok(sole < .05, `at least one shoe must be planted at ${elapsed}, sole ${sole}`);
+  }
+});
 
 test('Neo wraps his left fingers across the apartment receiver without floating or penetrating its handle', async t => {
   const h = await fixture(t), phone = h.draw('listening', 2), wrist = h.rig.bones.get('wrist_L')!;

@@ -836,7 +836,7 @@ export function filmEntry(scene: FilmScene): Vector3 {
   if (scene.id === 'm1_wake_up') return filmPosition(scene.set, 0, 1);
   if (scene.id === 'm1_commute') return metacortexPosition(0, 40);
   if (scene.id === 'm1_morning') return filmPosition(scene.set, 0, 6);
-  if (scene.id === 'm1_wake_again') return filmPosition(scene.set, APARTMENT.bed.x, APARTMENT.bed.z);
+  if (scene.id === 'm1_wake_again') return filmPosition(scene.set, MORNING.bedX, APARTMENT.bed.z);
   if (scene.id === 'm1_ledge') return filmPosition(scene.set, 0, OFFICE_WINDOW.z);
   if (scene.id === 'm1_pod') return filmPosition(scene.set, 0, -12);
   if (scene.id === 'm1_recovery') return filmPosition(scene.set, RECOVERY_BED.standingX, RECOVERY_BED.z);

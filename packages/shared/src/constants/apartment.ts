@@ -183,12 +183,7 @@ export function wakeCallRoot(call: WakeCall): { x: number; z: number; yaw: numbe
     return { x: 1.22 + (0 - 1.22) * crossing, z: 10.15 + (14.35 - 10.15) * crossing, yaw: Math.PI * turnBack };
   }
   if (call.phase !== 'waking') return { x: APARTMENT.phone.approachX, z: APARTMENT.phone.approachZ, yaw: APARTMENT.phone.yaw };
-  const t = smooth(Math.max(0, Math.min(1, (call.elapsed - 2.7) / (WAKE_CALL.waking - 2.7))));
-  return {
-    x: APARTMENT.bed.x + (APARTMENT.bedside.x - APARTMENT.bed.x) * t,
-    z: APARTMENT.bed.z + (APARTMENT.bedside.z - APARTMENT.bed.z) * t,
-    yaw: APARTMENT.bed.yaw + (APARTMENT.bedside.yaw - APARTMENT.bed.yaw) * t,
-  };
+  return morningRoot({ phase: 'rising', elapsed: call.elapsed });
 }
 const smooth = (t: number) => t * t * (3 - 2 * t);
 export function wakeCallDoor(call?: WakeCall): number {
