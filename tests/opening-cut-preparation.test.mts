@@ -177,6 +177,26 @@ for (const next of ['m1_roofs', 'm1_phone_escape'] as const) {
   });
 }
 
+test('the prepared 303 rooftop keeps only the final skyline buffers', t => {
+  const h = fixture(t, 'm1_roofs');
+  type SkylineRoom = { root: THREE.Group; geometries: Set<THREE.BufferGeometry>; openingRoofSkyline(): void };
+  const prototype = Object.getPrototypeOf(h.film) as SkylineRoom, build = prototype.openingRoofSkyline;
+  let built = false;
+  t.mock.method(prototype, 'openingRoofSkyline', function (this: SkylineRoom) {
+    const previous = new Set(this.geometries);
+    build.call(this);
+    const skyline = this.root.getObjectByName('opening-roof-skyline');
+    assert.ok(skyline && skyline.children.length > 0);
+    const owned = [...this.geometries].filter(geometry => !previous.has(geometry));
+    assert.equal(owned.length, skyline.children.length);
+    assert.ok(skyline.children.every(mesh => mesh instanceof THREE.Mesh && owned.includes(mesh.geometry)
+      && !mesh.castShadow && !mesh.receiveShadow && mesh.userData.distantBackdrop));
+    built = true;
+  });
+  h.drain();
+  assert.equal(built, true);
+});
+
 test('the 303 cut waits a frame before reflecting the linked roof program', t => {
   const h = fixture(t, 'm1_roofs');
   for (let frame = 0; !h.programs.length && frame < 250; frame++) h.prepare();

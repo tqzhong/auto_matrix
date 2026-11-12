@@ -5349,8 +5349,15 @@ export class FilmSetRenderer {
     }
   }
   private openingRoofSkyline(): void {
-    const first = this.root.children.length, street = -OPENING_ESCAPE.roofDrop;
+    const street = -OPENING_ESCAPE.roofDrop;
     const dark = this.mat(0x2f3732, .96), glass = this.mat(0x26322c, .73), lit = this.mat(0x564933, .73);
+    const batches = new Map<THREE.Material, THREE.BoxGeometry[]>();
+    const addBox = (material: THREE.Material, x: number, y: number, z: number, width: number, height: number, depth: number) => {
+      const geometry = new THREE.BoxGeometry(width, height, depth);
+      geometry.translate(x, y, z);
+      const batch = batches.get(material);
+      if (batch) batch.push(geometry); else batches.set(material, [geometry]);
+    };
     const buildings = [
       [-43, 38, 18, 23, 8], [-48, 10, 22, 22, 18], [-43, -24, 18, 24, 10], [-54, -56, 25, 28, 28],
       [45, 39, 22, 23, 18], [44, 9, 20, 24, 7], [52, -23, 24, 27, 23], [46, -55, 19, 22, 13],
@@ -5358,20 +5365,25 @@ export class FilmSetRenderer {
     ];
     for (const [index, [x, z, width, depth, top]] of buildings.entries()) {
       const side = Math.sign(x), face = x - side * (width / 2 + .04);
-      this.box(z < -68 ? dark : this.plaster, x, (street + top) / 2, z, width, top - street, depth);
-      this.box(dark, x, top + .45, z, width + .8, .9, depth + .8);
-      this.box(dark, x + side * 2.2, top + 1.7, z - 2.5, width * .42, 3.4, depth * .44);
+      addBox(z < -68 ? dark : this.plaster, x, (street + top) / 2, z, width, top - street, depth);
+      addBox(dark, x, top + .45, z, width + .8, .9, depth + .8);
+      addBox(dark, x + side * 2.2, top + 1.7, z - 2.5, width * .42, 3.4, depth * .44);
       for (let level = 0, y = top - 4.8; y > street + 3; level++, y -= 5.4) {
         for (const bay of [-1, 0, 1]) {
           const material = (index * 3 + level * 5 + bay + 1) % 11 === 0 ? lit : glass;
-          this.box(material, face, y, z + bay * depth * .28, .08, 2.5, 2.6);
-          this.box(material, x + bay * width * .28, y, z + depth / 2 + .04, 2.6, 2.5, .08);
+          addBox(material, face, y, z + bay * depth * .28, .08, 2.5, 2.6);
+          addBox(material, x + bay * width * .28, y, z + depth / 2 + .04, 2.6, 2.5, .08);
         }
       }
     }
     const city = new THREE.Group(); city.name = 'opening-roof-skyline'; city.userData.dynamic = true;
-    for (const mesh of this.root.children.slice(first)) { mesh.castShadow = mesh.receiveShadow = false; city.add(mesh); }
-    batchStaticGeometry(city, new Set()).forEach(geometry => this.own(geometry));
+    for (const [material, parts] of batches) {
+      const geometry = mergeGeometries(parts);
+      parts.forEach(part => part.dispose());
+      if (!geometry) throw new Error('Opening rooftop skyline geometry could not be merged');
+      const mesh = this.mesh(geometry, material, 0, 0, 0, city);
+      mesh.castShadow = mesh.receiveShadow = false;
+    }
     city.traverse(object => { object.userData.distantBackdrop = true; });
     this.root.add(city);
   }
