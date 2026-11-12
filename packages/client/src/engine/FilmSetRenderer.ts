@@ -59,6 +59,7 @@ import { LOBBY_POINT_SLOTS, LobbySetRenderer } from './LobbySetRenderer.js';
 import { OFFICE_POINT_SLOTS, OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { LightCulling } from './LightCulling.js';
 import { cacheReadyProgramLocations, shadowCasterProxies } from './PrepareShaderProgram.js';
+import { prepareMeshBuffers } from './PrepareMeshBuffers.js';
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
 import { newFreewayPickup } from '@auto_matrix/shared';
@@ -428,6 +429,7 @@ export class FilmSetRenderer {
   private preparedHotelPolice?: CastColorPreparation & {
     gpu: THREE.WebGLRenderer['properties']; beam?: THREE.Mesh; normalMeshes?: THREE.Mesh[];
     shadowMeshes: THREE.Mesh[]; shadowMaterials: Set<THREE.MeshDepthMaterial>;
+    buffers: ColorMesh[]; bufferGeometries: WeakSet<THREE.BufferGeometry>; bufferUpload?: Generator<void>;
   };
   private wellsStreet?: WellsStreetRenderer;
   private openingBooth?: THREE.Group;
@@ -1419,7 +1421,7 @@ export class FilmSetRenderer {
     if (!prepared || prepared.gpu !== renderer.properties) {
       this.cancelOpeningHotelPolice();
       this.preparedHotelPolice = prepared = { gpu: renderer.properties, scene: this.scene, actors: new Set(), meshes: [], programs: [], textures: new Set(),
-        shadowMeshes: [], shadowMaterials: new Set() };
+        shadowMeshes: [], shadowMaterials: new Set(), buffers: [], bufferGeometries: new WeakSet() };
     }
     if (beam && prepared.beam !== beam) {
       // Link the real material before the hallway comes into view under the trace overlay.
@@ -1441,12 +1443,23 @@ export class FilmSetRenderer {
         const skinned = meshes.filter(mesh => mesh instanceof THREE.SkinnedMesh);
         if (skinned.length) prepared.normalMeshes = [...(prepared.normalMeshes ?? []), ...skinned];
       }
+      if (stage === 'pursuit') for (const mesh of meshes) {
+        if (prepared.bufferGeometries.has(mesh.geometry)) continue;
+        prepared.bufferGeometries.add(mesh.geometry);
+        prepared.buffers.push(mesh);
+      }
       if (prepareShadows) prepared.shadowMeshes.push(...shadowCasterProxies(meshes, prepared.shadowMaterials));
     }
     if (this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated')) return;
-    if (prepared.shadowMeshes.length) this.linkColorBatch(renderer, camera, { ...prepared, meshes: prepared.shadowMeshes }, lighting, 'depth');
+    if (prepared.shadowMeshes.length) {
+      this.linkColorBatch(renderer, camera, { ...prepared, meshes: prepared.shadowMeshes }, lighting, 'depth');
+      return;
+    }
+    if (prepared.buffers.length) prepared.bufferUpload ??= prepareMeshBuffers(renderer, camera, prepared.buffers);
+    if (prepared.bufferUpload?.next().done) prepared.bufferUpload = undefined;
   }
   private cancelOpeningHotelPolice(): void {
+    this.preparedHotelPolice?.bufferUpload?.return(undefined);
     this.preparedHotelPolice?.shadowMaterials.forEach(material => material.dispose());
     this.preparedHotelPolice = undefined;
   }

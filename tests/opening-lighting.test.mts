@@ -120,12 +120,23 @@ test('303 prepares the pursuing officer uniform, normals and shadows before he e
   const uniform = new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ side: THREE.DoubleSide }));
   skin.castShadow = uniform.castShadow = true;
   uniform.userData.office = true; uniform.visible = false;
-  officer.add(skin, uniform);
+  officer.add(skin, uniform, new THREE.Mesh(skin.geometry, skin.material));
   t.after(() => { for (const mesh of [skin, uniform]) { mesh.geometry.dispose(); mesh.material.dispose(); } });
-  const compiled: THREE.Mesh[] = [];
-  const gpu = { properties: {}, info: { programs: [] }, extensions: { has: () => true }, getRenderTarget: () => null,
-    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }, setRenderTarget() {},
+  const compiled: THREE.Mesh[] = [], uploaded: THREE.BufferGeometry[] = [];
+  let target: THREE.WebGLRenderTarget | null = null, releasedTarget = 0;
+  const gpu = { properties: {}, info: { programs: [] }, extensions: { has: () => true }, getRenderTarget: () => target,
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
+    autoClear: true, sortObjects: true, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
+    setRenderTarget: (next: typeof target) => { target = next; },
     compile: (subject: THREE.Object3D) => subject.traverse(object => { if (object instanceof THREE.Mesh) compiled.push(object); }),
+    render(view: THREE.Scene) {
+      assert.equal(target?.width, 1);
+      target?.addEventListener('dispose', () => releasedTarget++);
+      for (const mesh of view.children) {
+        assert.ok(mesh instanceof THREE.Mesh && !mesh.material.visible);
+        uploaded.push(mesh.geometry);
+      }
+    },
   } as unknown as THREE.WebGLRenderer;
 
   for (let frame = 0; frame < 6; frame++) h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling, [officer], 'pursuit');
@@ -136,6 +147,11 @@ test('303 prepares the pursuing officer uniform, normals and shadows before he e
   assert.ok(depths.every(mesh => (mesh.material as THREE.MeshDepthMaterial).depthPacking === THREE.RGBADepthPacking));
   const normals = h.sets.openingHotelNormalMeshes;
   assert.ok(normals?.includes(skin) && normals.includes(uniform));
+  assert.deepEqual(uploaded, [skin.geometry, uniform.geometry], 'stage each pursuing officer geometry before its first draw');
+  assert.equal(releasedTarget, 1);
+  assert.equal(target, null);
+  assert.equal(uniform.parent, officer);
+  assert.ok(uniform.material.visible);
   assert.equal(uniform.visible, false);
   let released = 0;
   for (const depth of depths) (depth.material as THREE.MeshDepthMaterial).addEventListener('dispose', () => released++);
