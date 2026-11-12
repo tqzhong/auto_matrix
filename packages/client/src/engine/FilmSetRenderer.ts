@@ -242,6 +242,7 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m2_backdoors: { scene: 'm2_bench', step: 1 },
   m2_burly: { scene: 'm2_merovingian', step: 1 },
   m2_persephone: { scene: 'm2_library', step: 3 },
+  m2_library: { scene: 'm2_chateau', step: 4 },
   m2_mountain: { scene: 'm2_garage', step: 2 },
   m2_backup: { scene: 'm2_key_door', step: 1 },
   m2_key_door: { scene: 'm2_architect', step: 4 },
@@ -1332,7 +1333,8 @@ export class FilmSetRenderer {
     if (journey.scene === 'm2_backup' && journey.step === 1 && journey.trinityTerminal?.phase === 'ready' && !this.preparedSecondOracle) return;
     const next = FILM_SCENE_BY_ID[cut.scene];
     const teaEntry = next.id === 'm2_seraph', leVraiEntry = next.id === 'm2_merovingian';
-    const matrixEntry = firstOracle || teaEntry || leVraiEntry;
+    const chateauEntry = next.id === 'm2_chateau';
+    const matrixEntry = firstOracle || teaEntry || leVraiEntry || chateauEntry;
     if (!this.preparedSecondOracle) {
       const set = FILM_SETS[next.set], { x, y, z } = set.center;
       const room = new FilmSetRenderer(new THREE.Scene());
@@ -1354,12 +1356,14 @@ export class FilmSetRenderer {
       for (const texture of prepared.room.textures) if (!texture.image) return;
       const room = prepared.room;
       const colors = this.colorPreparation(room.root, [], {
-        includeBasic: teaEntry || leVraiEntry || Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
+        includeBasic: teaEntry || leVraiEntry || chateauEntry
+          || Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
       });
       for (const texture of room.architectRoom?.screenTextures ?? []) colors.textures.add(texture);
       prepared.colors = { ...colors, actors: new Set() };
       if (matrixEntry) {
         colors.meshes.push(this.marker);
+        if (room.chateauVolley) colors.meshes.push(...this.colorMeshes(room.chateauVolley.children));
         prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
       }
     }
@@ -2145,6 +2149,7 @@ export class FilmSetRenderer {
     }
     yield* this.buildSteps(set, lights, true);
     yield* this.batchSteps(true);
+    if (set.id === 'film_chateau_hall') this.buildChateauProps();
   }
   private adoptRoomGeometry(room: FilmSetRenderer): void {
     this.root.add(...room.root.children.slice());
@@ -2183,6 +2188,8 @@ export class FilmSetRenderer {
     this.courtyardBirds = room.courtyardBirds;
     this.exileDessert = room.exileDessert;
     this.bookDoor = room.bookDoor;
+    this.chateauVolley = room.chateauVolley;
+    this.chateauDoor = room.chateauDoor;
     this.garageCar = room.garageCar;
     this.garageGhosts = room.garageGhosts;
     this.sourceDoor = room.sourceDoor; room.sourceDoor = undefined;
@@ -2625,15 +2632,7 @@ export class FilmSetRenderer {
             void this.helPerformers.ready.catch(error => console.error('Club Hel 演员加载失败', error));
           }
           if (set.architecture === 'power') this.createPowerStatus(set);
-          if (set.id === 'film_chateau_hall') {
-            this.chateauVolley = new THREE.Group(); this.chateauVolley.visible = false; this.root.add(this.chateauVolley);
-            const bullet = this.mat(0xc5b49a, .2, .85);
-            for (let i = 0; i < 8; i++) {
-              const round = this.mesh(new THREE.CylinderGeometry(.035, .035, .34, 8), bullet, -2.6 + i * .72, 3.05 + Math.sin(i * 2.4) * .26, 2.4 + i % 3 * .4, this.chateauVolley);
-              round.rotation.x = Math.PI / 2;
-            }
-            this.chateauDoor = this.mesh(new THREE.BoxGeometry(5, 7, .38), this.wood, 0, 14.5, -40.7);
-          }
+          if (set.id === 'film_chateau_hall' && !this.chateauDoor) this.buildChateauProps();
           if (set.id === 'film_lafayette') {
             if (this.mirror) this.resetMirrorFrame = showMirrorSubject(this.mirror, () => this.mirrorSubject,
               () => [this.trackingElectrode!, this.trackingLead!].filter(object => object.userData.active));
@@ -3756,6 +3755,18 @@ export class FilmSetRenderer {
   }
   private build(set: FilmSet, preparedLights?: LafayetteRoomLights): void {
     for (const _ of this.buildSteps(set, preparedLights)) { /* Build immediately for direct entry and restore. */ }
+  }
+  private buildChateauProps(): void {
+    const volley = new THREE.Group();
+    volley.name = 'chateau-stopped-rounds'; volley.visible = false;
+    this.root.add(volley); this.chateauVolley = volley;
+    const bullet = this.mat(0xc5b49a, .2, .85);
+    for (let i = 0; i < 8; i++) {
+      const round = this.mesh(new THREE.CylinderGeometry(.035, .035, .34, 8), bullet, -2.6 + i * .72, 3.05 + Math.sin(i * 2.4) * .26, 2.4 + i % 3 * .4, volley);
+      round.rotation.x = Math.PI / 2;
+    }
+    this.chateauDoor = this.mesh(new THREE.BoxGeometry(5, 7, .38), this.wood, 0, 14.5, -40.7);
+    this.chateauDoor.name = 'chateau-upper-door';
   }
   private *buildSteps(set: FilmSet, preparedLights?: LafayetteRoomLights, staged = false): Generator<void> {
     if (set.id === 'film_wells_phone') {

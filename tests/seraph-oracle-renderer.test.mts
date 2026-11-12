@@ -149,6 +149,28 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   assert.equal(bookshelf.position.x, -10.5); assert.equal(bookshelf.rotation.y, 0);
   enter('m2_library', 3); assert.equal(bookshelf.rotation.y, Math.PI/2);
 
+  await t.test('the Keymaker escort prepares and adopts the château door and stopped rounds', () => {
+    preview = undefined; prepare(); assert.ok(!preview);
+    enter('m2_library', 4);
+    const abandoned = warm('chateau-upper-door') as THREE.Mesh;
+    let disposals = 0; abandoned.geometry.addEventListener('dispose', () => disposals++);
+    enter('m2_library', 3); prepare();
+    assert.equal(disposals, 1, 'returning for the Keymaker releases the unused hall');
+
+    enter('m2_library', 4);
+    const door = warm('chateau-upper-door'), rounds = preview!.getObjectByName('chateau-stopped-rounds')!;
+    assert.ok(rounds.children.length && rounds.children.every(round => compiled.has(round)));
+    assert.equal(rounds.visible, false);
+    assert(compiled.has(sets.goalMarker));
+    enter('m2_chateau', 0);
+    assert.equal(scene.getObjectByName(door.name), door);
+    assert.equal(scene.getObjectByName(rounds.name), rounds);
+    journey.chateau = { phase: 'duel', wave: 1, volleyAt: 0, attempts: 0, parries: 0, disarms: 0, wounded: false };
+    enter('m2_chateau', 0); assert.equal(rounds.visible, true);
+    delete journey.chateau;
+    enter('m2_chateau', 2); assert.equal(door.position.x, 5); assert.equal(rounds.visible, false);
+  });
+
   await t.test('the château keeps one light per chandelier', () => {
     enter('m2_chateau', 0);
     assert.equal(pointSlots(scene), 11);
