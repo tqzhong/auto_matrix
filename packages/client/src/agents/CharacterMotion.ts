@@ -3,6 +3,7 @@ import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloade
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
 import { OPENING_HOTEL, openingAnswerPose, openingHotelClimbPose, openingHotelDiveMotion, openingHotelPhonePose, wellsAftermathPose, type OpeningHotelEncounter, type OpeningPursuitGesture } from '@auto_matrix/shared';
+import { OPENING_ROOF_EXIT, openingRoofStairPose, type OpeningRoofExit } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
 import { hammerHandoverPose } from '@auto_matrix/shared';
 import { interludeAge, interludeSeated, crewMealSeat, crewMealPose, CREW_MEAL } from '@auto_matrix/shared';
@@ -124,7 +125,7 @@ export interface MotionInput {
   hotelPursuit?: OpeningPursuitGesture;
   hotelBreach?: { travel: number; speed: number; impact: number };
   hotelLookPitch?: number;
-  roofExit?: { elapsed: number; origin: { x: number; y: number; z: number } };
+  roofExit?: OpeningRoofExit;
   openingRoofLeap?: number;
   burly?: import('@auto_matrix/shared').BurlyEncounter & { role: 'neo' | 'smith' };
   chateauWeapon?: import('@auto_matrix/shared').ChateauWeapon;
@@ -697,8 +698,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     dt = 0;
   }
   if (input.roofExit) {
-    const elapsed = input.roofExit.elapsed, speed = input.hotel303 ? 0 : input.speed;
-    Object.assign(state, newMotion(), { time: elapsed, speed, phase: elapsed * speed / 2.8, skill: undefined });
+    const { elapsed, stairwell } = input.roofExit;
+    const onStairs = stairwell && elapsed >= OPENING_ROOF_EXIT.land;
+    const stairs = onStairs ? openingRoofStairPose(elapsed) : undefined;
+    const speed = stairs ? elapsed >= OPENING_ROOF_EXIT.walk ? -stairs.vz : 0 : input.hotel303 ? 0 : input.speed;
+    const travel = stairs ? Math.max(0, OPENING_ROOF_EXIT.restZ - stairs.z) : elapsed * speed;
+    Object.assign(state, newMotion(), { time: elapsed, speed, phase: travel / 2.8, skill: undefined });
     input = { ...input, speed, turn: 0, grounded: !input.hotel303, verticalVelocity: 0, armed: false, seated: false };
     dt = 0;
   }

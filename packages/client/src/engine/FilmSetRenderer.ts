@@ -52,6 +52,7 @@ import { ORACLE_REQUEST, oracleRequestLocked, ORACLE_WAITING_FURNITURE, ORACLE_K
 import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, OFFICE_RETREAT_WINDOW, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { OPENING_HOTEL, openingHotelBreachTime, openingHotelDoorAngle, openingHotelGlassBroken, openingHotelGlassTime, openingHotelHallOfficer, openingHotelHallTime, openingHotelLanded, openingHotelPhoneHeld, openingHotelTraceTime, openingRoofGlassBroken, type OpeningPursuitCast } from '@auto_matrix/shared';
+import { OPENING_ROOF_EXIT, OPENING_ROOF_STAIRS, openingRoofStairHeight } from '@auto_matrix/shared';
 import { RELOADED } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS, LobbySetRenderer } from './LobbySetRenderer.js';
@@ -2786,6 +2787,7 @@ export class FilmSetRenderer {
     const scene = journey && filmSceneForJourney(journey)!; const step = scene?.steps[journey!.step] ?? (!journey?.visiting && journey && ['m2_seraph','m2_backdoors'].includes(journey.scene) && journey.step >= 2 ? scene?.steps[1] : undefined);
     this.marker.visible = Boolean((set && scene?.set === set.id || scene?.id === 'm1_commute' && player?.isInMatrix) && step && !journey?.visiting && journey?.actor === player?.id);
     if (scene?.id === 'm1_room303' && (openingHotelTraceTime(journey?.openingHotel) !== undefined || ['breach', 'dive', 'answering'].includes(journey?.openingHotel?.phase ?? ''))) this.marker.visible = false;
+    if (scene?.id === 'm1_roofs' && player?.currentAction?.parameters.roofExit) this.marker.visible = false;
     if (scene?.id === 'm1_commute' && sandbox?.neoLife?.lift?.passenger) this.marker.visible = false;
     if (oracleRequestLocked(journey?.scene === 'm3_oracle_request' ? journey.oracleRequest : undefined)) this.marker.visible = false;
     if (journey?.scene === 'm3_bane_questions' && baneInquiryLocked(journey.baneInquiry)) this.marker.visible = false;
@@ -4800,9 +4802,9 @@ export class FilmSetRenderer {
       }
       if (chase) {
         this.root.add(new THREE.HemisphereLight(0xc7d2c9, 0x36352e, .72));
-        for (const [x, z, color, intensity] of [[-7, 14, 0xb8c9bc, 305], [7, -10, 0xa6bab4, 320], [-3, -42, 0xdfb27d, 265]]) {
+        for (const [x, y, z, color, intensity] of [[-7, 8, 14, 0xb8c9bc, 305], [7, 8, -10, 0xa6bab4, 320], [-2.8, 5.2, -55, 0xdfb27d, 325]]) {
           const flood = new THREE.PointLight(color, intensity, 34, 2);
-          flood.position.set(x, 8, z); this.root.add(flood);
+          flood.position.set(x, y, z); this.root.add(flood);
         }
         for (const z of [OPENING_ESCAPE.roofGapNear + 1.5, OPENING_ESCAPE.roofGapFar - 1.5]) {
           this.box(this.black, 0, .11, z, 7, .04, .2);
@@ -4823,17 +4825,13 @@ export class FilmSetRenderer {
         this.openingRoofGlass.add(this.box(this.wood, 0, 4.1, -d / 2 + 1.7, 7.4, .16, .3));
         for (const x of [-3.7, 3.7]) this.box(this.wood, x, 4.1, -d / 2 + 1.7, .16, 8.4, .4);
         for (const y of [.1, 8.1]) this.box(this.wood, 0, y, -d / 2 + 1.7, 7.8, .16, .4);
-        this.box(this.metal, 0, -.45, -d / 2 - 2, 8, .2, 6);
-        for (const x of [-4, 4]) this.box(this.metal, x, .8, -d / 2 - 2, .12, 2.4, 6);
+        this.openingRoofStairwell();
         this.openingRoofShards = new THREE.Group(); this.openingRoofShards.name = 'opening-roof-window-shards'; this.openingRoofShards.userData.dynamic = true; this.openingRoofShards.visible = false; this.root.add(this.openingRoofShards);
         for (let i = 0; i < 16; i++) {
-          const shard = this.box(i % 4 === 0 ? this.wood : this.glass, (i % 2 ? 1 : -1) * (1.4 + i % 4 * .4), -.33, -d / 2 - .4 - i % 6 * .5, .15 + i % 3 * .12, .04, .3 + i % 4 * .15);
+          const x = (i % 2 ? 1 : -1) * (1.4 + i % 4 * .4), z = -d / 2 - .4 - i % 6 * .38;
+          const y = (openingRoofStairHeight(x, z) ?? -.35) + .025;
+          const shard = this.box(i % 4 === 0 ? this.wood : this.glass, x, y, z, .15 + i % 3 * .12, .04, .3 + i % 4 * .15);
           shard.rotation.y = i * 2.4; this.openingRoofShards.add(shard);
-        }
-        for (let i = 0; i < 5; i++) {
-          const z = -d / 2 + 3 + i * 2.2;
-          this.box(this.metal, 12, -i * 1.2, z, 6, .18, 2.5);
-          this.box(this.metal, 15, 1.1 - i * 1.2, z, .12, 2.4, 2.4);
         }
       }
       if (set.id.includes('government_roof')) {
@@ -5032,6 +5030,39 @@ export class FilmSetRenderer {
         this.box(windows, x - side * 9.56, y, z + dz, .08, 3.2, 2.8); this.box(this.white, x - side * 9.66, y - 1.8, z + dz, .35, .2, 3.3);
       }
       this.box(this.white, x, height, z, 20, .5, 16); this.box(this.black, x - side * 9.6, 2.8, z, .1, 5.6, 4.8);
+    }
+  }
+  private openingRoofStairwell(): void {
+    const { width, doorZ } = OPENING_ROOF_EXIT, half = width / 2;
+    const [upper, middle, lower] = OPENING_ROOF_STAIRS.filter(tread => !tread.rise);
+    const concrete = this.mat(0x484f48, .93), paint = this.mat(0x515747, .9), alley = -71.3;
+    const base = lower.y - .46, ceiling = 8.55, length = upper.from - doorZ;
+    for (const { from, to, y, rise } of OPENING_ROOF_STAIRS) {
+      this.box(concrete, 0, (y + base) / 2, (from + to) / 2, width, y - base, from - to);
+      if (rise) this.box(this.black, 0, y + .006, to + .045, width - .16, .024, .09);
+      for (const side of [-1, 1])
+        this.box(paint, side * (half - .035), y + .48, (from + to) / 2, .07, .96, from - to);
+    }
+    for (const side of [-1, 1]) {
+      this.box(this.plaster, side * (half + .18), (ceiling + base) / 2, (upper.from + doorZ) / 2, .36, ceiling - base, length);
+      this.box(this.plaster, side * (half + .18), (lower.y + 2.45) / 2, (doorZ + alley) / 2, .36, 2.45 - lower.y, doorZ - alley);
+      this.box(this.plaster, side * (half + 2.45) / 2, lower.y + 3.4, doorZ, half - 2.45, 6.8, .38);
+      this.box(this.wood, side * 2.44, lower.y + 2.65, doorZ + .14, .18, 5.3, .45);
+      for (const z of [-51.7, -54.1, -56.25, -58.7, -60.8, -63.1]) {
+        const y = openingRoofStairHeight(0, z, true)!;
+        this.box(this.black, side * 3.85, y + .66, z, .12, 1.32, .12);
+      }
+      const rail = [[-51.7, upper.y], [upper.to, upper.y], [middle.from, middle.y], [middle.to, middle.y], [lower.from, lower.y]];
+      this.pipe(rail.map(([z, y]) => [side * 3.85, y + 1.34, z]), .08, this.metal);
+    }
+    this.box(this.plaster, 0, (ceiling + lower.y + 5.25) / 2, doorZ, width, ceiling - lower.y - 5.25, .38);
+    this.box(this.wood, 0, lower.y + 5.25, doorZ + .14, 5.05, .18, .45);
+    this.box(this.plaster, 0, ceiling + .18, (upper.from + doorZ) / 2, width + .65, .36, length);
+    this.box(this.plaster, 1.62, lower.y + 4.75, lower.to + .75, 5.55, 9.5, .52);
+    this.box(this.metal, -2.4, lower.y + .035, -70.3, 1.75, .07, 1.08);
+    for (const z of [-53.8, -60.5]) {
+      this.box(this.black, -4.2, 4.65, z, .36, .57, 1.27);
+      this.box(this.glow, -3.995, 4.65, z, .065, .34, .95);
     }
   }
   private openingRoofSkyline(): void {

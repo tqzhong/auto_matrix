@@ -7,7 +7,7 @@ import { truthKneel, truthSeat, spoonLessonSeat, smithFinaleLocked, smithCraterA
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { MORNING, FILM_SETS, OFFICE_WINDOW, OPENING_HOTEL, SENTINEL_TIMING, officeWindowPose, officeCrossingPose, openingHotelDiveMotion, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryBodyPose, recoveryCrewPose, podRescuePose, farewellPose } from '@auto_matrix/shared';
+import { MORNING, FILM_SETS, OFFICE_WINDOW, OPENING_HOTEL, OPENING_ROOF_EXIT, SENTINEL_TIMING, officeWindowPose, officeCrossingPose, openingHotelDiveMotion, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryBodyPose, recoveryCrewPose, podRescuePose, farewellPose } from '@auto_matrix/shared';
 import type { advanceMotion, MotionInput, MotionState } from './CharacterMotion.js';
 
 import { PillPerformance } from './PillPerformance.js';
@@ -1786,8 +1786,10 @@ export class HeroModels {
         }
         pelvis.position.y -= lowest; rig.root.updateWorldMatrix(true, true);
       }
+      const roofStairs = input.roofExit?.stairwell;
       if (!input.dojoOutfit && !input.realWorld && !input.seated && !input.floorSeated && motion.seated < .01 && !input.performance
-        && !input.windingUp && motion.attackAge > 1 && motion.skillAge > 1 && motion.hitAge > .5) placeHotelFeet(rig);
+        && !input.windingUp && motion.attackAge > 1 && motion.skillAge > 1 && motion.hitAge > .5
+        && (!roofStairs || input.roofExit!.elapsed >= OPENING_ROOF_EXIT.walk)) placeHotelFeet(rig, roofStairs);
     }
     if (input.hotelClimb !== undefined) placeOpeningHotelClimber(rig, input.hotelClimb);
     else if (hotelDive?.grab) placeOpeningHotelClimber(rig, 0, hotelDive.grab);

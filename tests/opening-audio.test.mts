@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_HOTEL, OPENING_PHONE, WELLS_AFTERMATH, filmEntry, openingBoothCrush, openingTruckPose,
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_HOTEL, OPENING_PHONE, OPENING_ROOF_EXIT, WELLS_AFTERMATH, filmEntry, openingBoothCrush, openingTruckPose,
   type AgentState, type FilmJourney, type OpeningHotelEncounter, type OpeningPhoneEncounter, type WorldEvent } from '@auto_matrix/shared';
 import { Engine } from '../packages/client/src/engine/Engine.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -24,12 +24,12 @@ function fixture() {
   const engine = Object.assign(Object.create(Engine.prototype), { playerControls: { id: 'trinity' }, audio,
     sandboxRenderer: { sync() {} }, updateAtmosphere() {} });
   let lastTick = 20;
-  type Frame = { tick?: number; running?: boolean; owner?: string; y?: number; exit?: number; trace?: number };
-  function frame(journey: FilmJourney, { tick = lastTick, running = true, owner = 'trinity', y, exit, trace }: Frame = {}) {
+  type Frame = { tick?: number; running?: boolean; owner?: string; y?: number; exit?: number; trace?: number; stairwell?: boolean };
+  function frame(journey: FilmJourney, { tick = lastTick, running = true, owner = 'trinity', y, exit, trace, stairwell }: Frame = {}) {
     const scene = FILM_SCENE_BY_ID[journey.scene], entry = filmEntry(scene);
     const actor: AgentState = { ...trinity, currentLocation: scene.set, isInMatrix: true, position: { ...entry, y: y ?? entry.y },
       currentAction: trace !== undefined ? { type: 'idle', parameters: { openingTrace: trace }, startedAt: tick, duration: 1, progress: 0 }
-        : exit === undefined ? null : { type: 'move_to', parameters: { roofExit: { elapsed: exit } }, startedAt: tick, duration: 1, progress: 0 } };
+        : exit === undefined ? null : { type: 'move_to', parameters: { roofExit: { elapsed: exit, stairwell } }, startedAt: tick, duration: 1, progress: 0 } };
     lastTick = tick; engine.running = running; engine.tick = tick; engine.playerControls.id = owner;
     Engine.prototype.setSandbox.call(engine, { ...sandbox.state, neoLife: { ...sandbox.state.neoLife!, journey } }, { trinity: actor, neo });
     return sounds.splice(0);
@@ -119,6 +119,14 @@ test('the roof sounds play on landing and at the saved window beat', () => {
   assert.deepEqual(h.frame({ ...j, openingRoof }, { exit: 1.68 }), ['glass']);
   assert.deepEqual(h.frame({ ...j, openingRoof: { ...openingRoof, phase: 'escaped' } }), []);
   assert.deepEqual(fixture().frame({ ...j, openingRoof }, { exit: 2 }), [], 'a restored roof pose does not replay the broken window');
+  const stairs = fixture(), { land, rollEnd } = OPENING_ROOF_EXIT;
+  const play = (exit: number, running = true) => stairs.frame({ ...j, openingRoof }, { exit, running, stairwell: true });
+  assert.deepEqual(play(land - .02), []);
+  assert.deepEqual(play(land), ['body']);
+  assert.deepEqual(play(land), []);
+  assert.deepEqual(play(rollEnd), ['wind']);
+  assert.deepEqual(play(rollEnd, false), []);
+  assert.deepEqual(play(rollEnd + .1), []);
 });
 
 test('Wells rings until grasp, disconnects on success and sounds the physical booth contact once', () => {

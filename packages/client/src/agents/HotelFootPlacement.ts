@@ -1,15 +1,18 @@
 import * as THREE from 'three';
-import { FILM_SETS, HOTEL_SURFACES, LAFAYETTE, hotelFloor, AMBUSH_FLOORS, AMBUSH_STAIRS, AMBUSH_STOREYS, ambushFloor } from '@auto_matrix/shared';
+import { FILM_SETS, HOTEL_SURFACES, LAFAYETTE, hotelFloor, AMBUSH_FLOORS, AMBUSH_STAIRS, AMBUSH_STOREYS, ambushFloor,
+  OPENING_ROOF_EXIT, OPENING_ROOF_STAIRS, openingRoofStairHeight } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 
 const hotelCenter = FILM_SETS.film_lafayette.center;
 const hotelBase = hotelCenter.y - LAFAYETTE.upper - 1;
+const roofStairSurfaces = OPENING_ROOF_STAIRS.map(({ from, to, y }) =>
+  ({ x: 0, z: (from + to) / 2, width: OPENING_ROOF_EXIT.width, depth: from - to, y }));
 const soles = new WeakMap<HeroRig, THREE.Vector3[][]>();
 const proceduralSoles = new WeakMap<CharacterRig, THREE.Vector3[][]>();
 
-function solePoints(rig: HeroRig): THREE.Vector3[][] {
+export function heroSolePoints(rig: HeroRig): THREE.Vector3[][] {
   const saved = soles.get(rig); if (saved) return saved;
   const shoes = rig.root.getObjectByName('shoes01') as THREE.SkinnedMesh;
   const { position, skinIndex, skinWeight } = shoes.geometry.attributes;
@@ -30,18 +33,19 @@ function solePoints(rig: HeroRig): THREE.Vector3[][] {
 
 // The actor's root follows the shared stair collider; each sole needs its own
 // tread height. Keep the gait's raised foot above that tread, not at root level.
-export function placeHotelFeet(rig: HeroRig): void {
+export function placeHotelFeet(rig: HeroRig, roofStairs = false): void {
   const origin = rig.root.getWorldPosition(new THREE.Vector3());
   const ambushCenter = FILM_SETS.film_ambush_house.center;
-  const ambush = Math.abs(origin.x - ambushCenter.x) <= 9 && origin.z >= ambushCenter.z + 12 && origin.z <= ambushCenter.z + 34
+  const ambush = !roofStairs && Math.abs(origin.x - ambushCenter.x) <= 9 && origin.z >= ambushCenter.z + 12 && origin.z <= ambushCenter.z + 34
     && origin.y >= ambushCenter.y - 1 - AMBUSH_STAIRS.rise * AMBUSH_STOREYS - .1 && origin.y <= ambushCenter.y - 1 + .1;
-  const center = ambush ? ambushCenter : hotelCenter, base = ambush ? center.y - 1 : hotelBase;
+  const center = roofStairs ? FILM_SETS.film_hotel_roofs.center : ambush ? ambushCenter : hotelCenter;
+  const base = roofStairs || ambush ? center.y - 1 : hotelBase;
   const x = origin.x - center.x, y = origin.y - base, z = origin.z - center.z;
-  if (!ambush && (x < 30 || x > 48 || z < -8 || z > 26 || y < -.1 || y > LAFAYETTE.upper + .1)) return;
+  if (!roofStairs && !ambush && (x < 30 || x > 48 || z < -8 || z > 26 || y < -.1 || y > LAFAYETTE.upper + .1)) return;
   const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
-  const points = solePoints(rig), sample = new THREE.Vector3();
+  const points = heroSolePoints(rig), sample = new THREE.Vector3();
   // Sample only nearby treads; do not scan all thirteen storeys per shoe vertex.
-  const surfaces = (ambush ? AMBUSH_FLOORS : HOTEL_SURFACES).filter(surface => Math.abs(surface.y - y) < 1 && surface.y <= y + .8
+  const surfaces = (roofStairs ? roofStairSurfaces : ambush ? AMBUSH_FLOORS : HOTEL_SURFACES).filter(surface => Math.abs(surface.y - y) < 1 && surface.y <= y + .8
     && Math.abs(surface.x - x) < surface.width / 2 + 2.5 && Math.abs(surface.z - z) < surface.depth / 2 + 2.5);
   const legs = ['R', 'L'].map((side, index) => {
     const hip = rig.bones.get('hip_' + side)!, knee = rig.bones.get('knee_' + side)!, ankle = rig.bones.get('ankle_' + side)!;
@@ -49,7 +53,8 @@ export function placeHotelFeet(rig: HeroRig): void {
     const hinge = knee.getWorldPosition(new THREE.Vector3());
     const target = ankle.getWorldPosition(new THREE.Vector3());
     const upper = start.distanceTo(hinge), lower = hinge.distanceTo(target);
-    const floor = ambush ? ambushFloor(target.x - center.x, target.z - center.z, y) : hotelFloor(target.x - center.x, target.z - center.z, y);
+    const fx = target.x - center.x, fz = target.z - center.z;
+    const floor = roofStairs ? openingRoofStairHeight(fx, fz) : ambush ? ambushFloor(fx, fz, y) : hotelFloor(fx, fz, y);
     const lift = Math.max(0, target.y - origin.y - rig.footHeight);
     let support = -Infinity;
     for (const point of points[index]) {

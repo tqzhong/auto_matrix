@@ -86,6 +86,52 @@ export interface OpeningRoofEncounter {
   pursuit?: OpeningPursuitCast;
 }
 
+export interface OpeningRoofExit {
+  elapsed: number;
+  origin: Vector3;
+  stairwell?: true;
+}
+
+export const OPENING_ROOF_EXIT = {
+  paneZ: -48.35, landingZ: -52.2, restZ: -57.85, doorZ: -64.95, alleyZ: -66.55, width: 8.8,
+  land: 3, rollEnd: 4.28, rise: 5.24, walk: 6.08, duration: 8.65,
+} as const;
+
+function roofStairFlight(from: number, y: number) {
+  return Array.from({ length: 6 }, (_, step) => ({
+    from: from - step * .68, to: from - (step + 1) * .68, y: y - (step + 1) * .34, rise: .34,
+  }));
+}
+
+const upperRoofLanding = { from: -48.8, to: -52.6, y: -.35, rise: 0 };
+const upperRoofFlight = roofStairFlight(upperRoofLanding.to, upperRoofLanding.y);
+const middleRoofLanding = { from: upperRoofFlight[5].to, to: -59.4, y: upperRoofFlight[5].y, rise: 0 };
+const lowerRoofFlight = roofStairFlight(middleRoofLanding.to, middleRoofLanding.y);
+export const OPENING_ROOF_STAIRS = [
+  upperRoofLanding, ...upperRoofFlight, middleRoofLanding, ...lowerRoofFlight,
+  { from: lowerRoofFlight[5].to, to: -76.6, y: lowerRoofFlight[5].y, rise: 0 },
+] as const;
+
+export function openingRoofStairHeight(x: number, z: number, sloped = false): number | undefined {
+  if (Math.abs(x) > OPENING_ROOF_EXIT.width / 2) return;
+  const tread = OPENING_ROOF_STAIRS.find(surface => z <= surface.from && z >= surface.to);
+  if (tread) return tread.y + (sloped ? tread.rise * (z - tread.to) / (tread.from - tread.to) : 0);
+}
+
+export function openingRoofStairPose(elapsed: number) {
+  const { land, rollEnd, rise, walk, duration, landingZ, restZ, alleyZ } = OPENING_ROOF_EXIT;
+  const walking = elapsed >= walk;
+  const seconds = walking ? duration - walk : rollEnd - land;
+  const t = Math.max(0, Math.min(1, (elapsed - (walking ? walk : land)) / seconds));
+  const ease = (p: number) => { const u = Math.max(0, Math.min(1, p)); return u * u * (3 - 2 * u); };
+  const from = walking ? restZ : landingZ, to = walking ? alleyZ : restZ;
+  const z = from + (to - from) * ease(t), vz = (to - from) * 6 * t * (1 - t) / seconds;
+  const y = openingRoofStairHeight(0, z, true) ?? upperRoofLanding.y;
+  const vy = ((openingRoofStairHeight(0, z - .01, true) ?? y) - y) * -vz * 100;
+  const yaw = Math.PI * (1 - ease((elapsed - rollEnd) / .55) + ease((elapsed - rise) / (walk - rise)));
+  return { z, y, yaw, vy, vz };
+}
+
 export function openingRoofGlassBroken(roof?: OpeningRoofEncounter, exitElapsed = 0): boolean {
   return exitElapsed >= 1.68 || roof?.phase === 'escaped';
 }

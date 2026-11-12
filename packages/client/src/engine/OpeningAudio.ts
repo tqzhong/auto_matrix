@@ -1,6 +1,6 @@
-import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, WELLS_AFTERMATH, WELLS_BOOTH, openingBoothCrush,
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, OPENING_ROOF_EXIT, WELLS_AFTERMATH, WELLS_BOOTH, openingBoothCrush,
   openingHotelDoorHit, openingHotelGlassBroken, openingHotelHallOfficer, openingHotelLanded, openingHotelTraceTime, openingRoofGlassBroken, openingTruckPose, wellsAftermathDoor,
-  type AgentState, type FilmJourney, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
+  type AgentState, type FilmJourney, type OpeningHotelEncounter, type OpeningPhoneEncounter, type OpeningRoofExit } from '@auto_matrix/shared';
 import type { GameAudio } from './GameAudio.js';
 
 type OpeningSounds = Pick<GameAudio, 'landlineSound' | 'meetingSound' | 'governmentSound' | 'matrixEscapeSound'
@@ -30,13 +30,18 @@ function hotelSounds(audio: OpeningSounds, previous: OpeningHotelEncounter, hote
     audio.interludeSound('keys');
 }
 
-function roofSounds(audio: OpeningSounds, previous: OpeningAudioState, current: OpeningAudioState): void {
+function roofSounds(audio: OpeningSounds, previous: OpeningAudioState, current: OpeningAudioState, exit?: OpeningRoofExit): void {
   const roof = current.journey.openingRoof, old = previous.journey.openingRoof;
   const floor = FILM_SETS.film_hotel_roofs.center.y;
   if (roof?.phase === 'running' && current.roofExit === undefined && previous.roofExit === undefined
     && previous.height > floor + .12 && current.height >= floor - .1 && current.height <= floor + .08) audio.governmentSound('body');
   if (roof?.phase === 'running' && roof.crossed && old?.leap && !old.crossed) audio.governmentSound('body');
   if (!openingRoofGlassBroken(old, previous.roofExit) && openingRoofGlassBroken(roof, current.roofExit)) audio.governmentSound('glass');
+  if (exit?.stairwell) {
+    const before = previous.roofExit ?? 0;
+    if (before < OPENING_ROOF_EXIT.land && exit.elapsed >= OPENING_ROOF_EXIT.land) audio.governmentSound('body');
+    if (before < OPENING_ROOF_EXIT.rollEnd && exit.elapsed >= OPENING_ROOF_EXIT.rollEnd) audio.windowSound(true);
+  }
 }
 
 function wellsSounds(audio: OpeningSounds, previous: OpeningPhoneEncounter, phone: OpeningPhoneEncounter): void {
@@ -83,7 +88,7 @@ export function updateOpeningAudio(audio: OpeningSounds, previous: OpeningAudioS
   const old = before?.journey;
   const sameAttempt = old && (!hotel || hotel.attempts === old.openingHotel?.attempts)
     && (!roof || roof.attempts === old.openingRoof?.attempts) && (!phone || phone.attempts === old.openingPhone?.attempts);
-  const exit = roof ? actor.currentAction?.parameters.roofExit as { elapsed: number } | undefined : undefined;
+  const exit = roof ? actor.currentAction?.parameters.roofExit as OpeningRoofExit | undefined : undefined;
   const trace = openingHotelTraceTime(hotel, actor);
   const next: OpeningAudioState = { journey, tick, height: actor.position.y, roofExit: exit?.elapsed, trace };
   if (hotel?.phase === 'phone' || hotel?.phase === 'answering' && hotel.elapsed < OPENING_HOTEL.phone.grasp || phone?.phase === 'running'
@@ -111,7 +116,7 @@ export function updateOpeningAudio(audio: OpeningSounds, previous: OpeningAudioS
     }
   }
   if (hotel && old.openingHotel) hotelSounds(audio, old.openingHotel, hotel);
-  if (roof && old.openingRoof) roofSounds(audio, before, next);
+  if (roof && old.openingRoof) roofSounds(audio, before, next, exit);
   if (phone && old.openingPhone) wellsSounds(audio, old.openingPhone, phone);
   return next;
 }

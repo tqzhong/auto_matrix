@@ -56,6 +56,7 @@ import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentAtComputer,
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { OPENING_HOTEL, WELLS_AFTERMATH, openingHotelClimbed, openingHotelClimbPose, openingHotelDiveMotion, openingHotelHallTime, openingHotelTraceTime, openingHotelTraceTiming, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
+import { OPENING_ROOF_EXIT } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot, basementDropPlayback, tvExitEmergeRoot, tvExitEmergingRole, type BasementDropPlayback } from '@auto_matrix/shared';
 
@@ -1190,6 +1191,7 @@ export class PlayerControls {
     const hotelClimb = state.currentLocation === 'film_heart_hotel' ? openingHotelClimbed(this.openingHotel) : undefined;
     this.motion.hotelClimb = hotelClimb;
     const roofExit = state.currentAction?.parameters.roofExit as MotionInput['roofExit'];
+    const stairwellExit = roofExit?.stairwell ? roofExit : undefined;
     if (this.motion.roofExit && !roofExit) this.performing = false;
     this.motion.roofExit = roofExit;
     if (roofExit) this.performing = true;
@@ -1389,7 +1391,7 @@ export class PlayerControls {
     if (this.motion.roofExit) this.motion.speed = this.motion.hotel303 ? 0 : Math.hypot(state.velocity.x, state.velocity.z);
     if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7 && this.motion.morning?.phase !== 'lying') this.motion.speed = 1.45;
     if (this.motion.wakeCall?.phase === 'leaving' && this.motion.wakeCall.elapsed > 1.15 && this.motion.wakeCall.elapsed < 3.05) this.motion.speed = 1.35;
-    this.motion.firstPerson = this.firstPerson;
+    this.motion.firstPerson = this.firstPerson && !stairwellExit;
     this.motion.grounded = hotelDive ? !hotelDive.airborne : dropRoot ? !basementDropPose(basement!.drop!).airborne : wall?.role === 'neo' && wall.phase === 'falling' ? false : Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix, this.structures) + .12;
     this.motion.verticalVelocity = wall?.role === 'neo' && wall.phase === 'falling' ? state.velocity.y : this.vy;
     this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.cabin || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || !this.firstPerson && this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
@@ -1574,6 +1576,16 @@ export class PlayerControls {
       this.camera.fov = this.camera.aspect < .85 ? 66 + 7 * cover : 62 + 3 * cover;
       this.camera.near = .12;
       this.camera.updateProjectionMatrix();
+    } else if (stairwellExit) {
+      const { center } = FILM_SETS.film_hotel_roofs, t = stairwellExit.elapsed;
+      const inside = t >= OPENING_ROOF_EXIT.land, descending = t >= OPENING_ROOF_EXIT.walk;
+      const portrait = this.camera.aspect < .85;
+      const x = inside ? (portrait ? 1.9 : 2.85) : (portrait ? 1.55 : 2.75);
+      const lead = inside && !descending ? (portrait ? -4.65 : -3.7) : descending ? (portrait ? 5.3 : 4.25) : (portrait ? 8.8 : 7.4);
+      this.camera.position.set(this.position.x + x, this.position.y + (inside ? 3.05 : 3.85), this.position.z + lead);
+      this.camera.lookAt(center.x, this.position.y + (inside && !descending ? .88 : 1.75), this.position.z - (descending ? .6 : 0));
+      this.camera.fov = portrait ? 76 : 60;
+      this.camera.near = .12; this.camera.updateProjectionMatrix();
     } else if (phoneExit && state.currentLocation === 'film_wells_phone') {
       const { center, width, depth } = FILM_SETS.film_wells_phone;
       this.camera.fov = Math.max(57, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(35)) / this.camera.aspect)));

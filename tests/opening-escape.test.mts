@@ -3,9 +3,10 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createHash } from 'node:crypto';
-import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, filmEntry, filmPosition, openingHotelClimbPose, openingHotelDivePose, type AgentState, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, OPENING_ROOF_EXIT, filmEntry, filmPosition, groundHeight, openingRoofStairHeight, openingRoofStairPose, openingHotelClimbPose, openingHotelDivePose, type AgentState, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { poseOpeningRoofExit } from '../packages/client/src/agents/OpeningRoofPerformance.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { OpeningHotelSystem } from '../packages/server/src/story/OpeningHotelSystem.js';
@@ -99,7 +100,32 @@ test('Trinity meets the 303 pane and balcony with the rendered body and reaches 
   reaching.bones.forEach((bone, i) => assert.ok(bone.distanceTo(onLadder.bones[i]) < 1e-6));
 });
 
-test('the roof exit opens a real window while retaining the wall and an exterior landing', t => {
+test('Trinity’s boot soles clear the real treads during the roll, rise and descent', async t => {
+  const { models, rig } = await actor('trinity'); t.after(() => models.dispose());
+  const { center } = FILM_SETS.film_hotel_roofs, body = new THREE.Group(), point = new THREE.Vector3();
+  body.add(rig.root);
+  const boots = rig.root.getObjectByName('shoes01') as THREE.SkinnedMesh;
+  assert.ok(boots?.isSkinnedMesh);
+  for (const elapsed of [3.18, 3.52, 3.83, 4.298, 4.65, 5.27, 5.9, 6.42, 6.79, 7.08, 7.34, 7.393, 7.55, 7.7, 7.97, 8.38]) {
+    const pose = openingRoofStairPose(elapsed), motion = newMotion();
+    const input = { speed: -pose.vz, grounded: true, verticalVelocity: pose.vy, turn: 0,
+      roofExit: { stairwell: true as const, elapsed, origin: filmEntry(FILM_SCENE_BY_ID.m1_roofs) } };
+    body.position.set(center.x, center.y - 1 + pose.y, center.z + pose.z);
+    body.rotation.y = pose.yaw;
+    models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
+    poseOpeningRoofExit(rig, input.roofExit);
+    body.updateMatrixWorld(true); boots.skeleton.update();
+    let clearance = Infinity;
+    for (let vertex = 0; vertex < boots.geometry.attributes.position.count; vertex++) {
+      boots.localToWorld(boots.getVertexPosition(vertex, point));
+      const tread = openingRoofStairHeight(point.x - center.x, point.z - center.z);
+      if (tread !== undefined) clearance = Math.min(clearance, point.y - (center.y - 1 + tread));
+    }
+    assert.ok(clearance > -.08 && (elapsed < OPENING_ROOF_EXIT.walk || clearance < .12), `${elapsed}: the nearest boot is ${clearance} units from its tread`);
+  }
+});
+
+test('the roof exit opens a real window while retaining the wall and the stairwell landings', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
@@ -126,7 +152,11 @@ test('the roof exit opens a real window while retaining the wall and an exterior
     for (const y of [.5, 1.5, 2]) assert.equal(ray(2, y).length, 0, 'the rear parapet must not block the lower opening');
     assert.ok(ray(9).length > 0, 'the opaque wall beside the window must remain');
     const floor = new THREE.Raycaster(new THREE.Vector3(center.x, center.y + 3, center.z - 52.2), new THREE.Vector3(0, -1, 0), 0, 5).intersectObjects(renderer.root.children, true)[0];
-    assert.ok(floor && Math.abs(floor.point.y - (center.y - 1.35)) < .05, 'the dive must end on the exterior landing');
+    assert.ok(floor && Math.abs(floor.point.y - (center.y - 1.35)) < .05, 'the saved dive still has an upper landing');
+    const middle = new THREE.Vector3(center.x, center.y + 1, center.z - 57.85);
+    const tread = new THREE.Raycaster(middle, new THREE.Vector3(0, -1, 0), 0, 8).intersectObjects(renderer.root.children, true)[0];
+    assert.ok(tread && tread.point.y < floor.point.y - 1.8, 'the stairwell has a lower landing under the roll');
+    assert.ok(Math.abs(groundHeight({ x: middle.x, y: tread.point.y + 1, z: middle.z }, true) - tread.point.y - 1) < .02, 'rendered and physical landings agree');
   } finally { renderer.dispose(); globalThis.document = document; }
 });
 

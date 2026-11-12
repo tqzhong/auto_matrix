@@ -133,7 +133,7 @@ import { gardenPose, SUNRISE_GARDEN } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { APU_RIG, DOCK_GUNNERY, dockGunneryAngles, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TRUCKS, truckApproachPose, truckRescuePose } from '@auto_matrix/shared';
-import { OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, openingAnswerPose, openingHotelTraceTime, openingPhoneContact, openingHitPose, openingTruckPose, wellsStreetStructures, wellsTruckContact, wellsHitRoute, wellsSidewalkHeight } from '@auto_matrix/shared';
+import { OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, OPENING_ROOF_EXIT, openingRoofStairPose, openingAnswerPose, openingHotelTraceTime, openingPhoneContact, openingHitPose, openingTruckPose, wellsStreetStructures, wellsTruckContact, wellsHitRoute, wellsSidewalkHeight, type OpeningRoofExit } from '@auto_matrix/shared';
 import { WELLS_AFTERMATH, wellsAftermathCaption, wellsAftermathPose, wellsAftermathReady, type WellsAftermathGesture, type WellsAgentPlacement } from '@auto_matrix/shared';
 import { OpeningHotelSystem } from './OpeningHotelSystem.js';
 import { NebEscapeSystem } from './NebEscapeSystem.js';
@@ -587,17 +587,30 @@ export class FilmStorySystem {
     this.placeEpilogue(agent, tick);
     return trilogyEpilogueLocked(state.epilogue);
   }
-  openingRoofFrame(actor: AgentState, dt: number, tick: number): boolean {
+  openingRoofFrame(actor: AgentState, dt: number, tick: number, startStairwell = false): boolean {
     const state = this.state;
     if (state?.scene !== 'm1_roofs' || state.visiting || state.actor !== actor.id || state.openingRoof?.phase === 'failed') return false;
-    const previous = actor.currentAction?.parameters.roofExit as { elapsed: number; origin: AgentState['position'] } | undefined;
+    const previous = actor.currentAction?.parameters.roofExit as OpeningRoofExit | undefined;
     if (!previous && !(state.step === 2 && state.started !== undefined)) return false;
-    const duration = FILM_SCENE_BY_ID.m1_roofs.steps[2].seconds ?? 3, runSeconds = duration - OPENING_HOTEL.diveSeconds;
-    const exit = previous ?? { elapsed: Math.min(duration, Math.max(0, tick - state.started!) * .5), origin: { ...actor.position } };
+    const { land, rollEnd, rise, walk } = OPENING_ROOF_EXIT;
+    const runSeconds = land - OPENING_HOTEL.diveSeconds;
+    const exit: OpeningRoofExit = previous ?? { elapsed: Math.min(land, Math.max(0, tick - state.started!) * .5),
+      origin: { ...actor.position }, ...(startStairwell ? { stairwell: true } : {}) };
+    const duration = exit.stairwell ? OPENING_ROOF_EXIT.duration : land;
     exit.elapsed = Math.min(duration, exit.elapsed + Math.max(0, Math.min(.1, dt)));
     if (!previous) actor.currentAction = { type: 'move_to', parameters: { resolved: true, roofExit: exit }, startedAt: state.started!, duration: 1e9, progress: 0 };
     const set = FILM_SETS.film_hotel_roofs, windowZ = set.center.z - set.depth / 2 + 3.8;
-    if (exit.elapsed < runSeconds) {
+    if (exit.stairwell && exit.elapsed >= land) {
+      const pose = openingRoofStairPose(exit.elapsed);
+      actor.position = { x: set.center.x, y: set.center.y + pose.y, z: set.center.z + pose.z };
+      actor.velocity = { x: 0, y: pose.vy, z: pose.vz };
+      actor.rotation = pose.yaw;
+      delete actor.currentAction!.parameters.hotel303;
+      if (state.step === 2) state.lastText = exit.elapsed < rollEnd ? 'Trinity 抱头滚下楼梯。'
+        : exit.elapsed < rise ? '她回头盯住上方的破窗。楼梯间里只有风声。'
+        : exit.elapsed < walk ? '她撑住地面，忍着疼站起来。'
+        : 'Trinity 护着肋侧下完楼梯，朝巷口走去。';
+    } else if (exit.elapsed < runSeconds) {
       const progress = exit.elapsed / runSeconds;
       actor.position = { x: exit.origin.x + (set.center.x - exit.origin.x) * progress, y: exit.origin.y, z: exit.origin.z + (windowZ - exit.origin.z) * progress };
       actor.velocity = { x: (set.center.x - exit.origin.x) / runSeconds, y: 0, z: (windowZ - exit.origin.z) / runSeconds };
@@ -611,7 +624,9 @@ export class FilmStorySystem {
       actor.velocity = progress >= 1 ? { x: 0, y: 0, z: 0 } : { x: 0, y: (Math.cos(progress * Math.PI) * Math.PI * 1.1 - .35) / OPENING_HOTEL.diveSeconds, z: -6 / OPENING_HOTEL.diveSeconds };
       actor.currentAction!.parameters.hotel303 = { phase: 'dive', elapsed };
     }
-    if (state.step === 2 && exit.elapsed >= duration) this.advance('Trinity 冲过对面的窗户，落上外侧消防平台，继续赶往 Wells 与 Lake 的出口。', actor, tick);
+    if (state.step === 2 && exit.elapsed >= duration) this.advance(exit.stairwell
+      ? 'Trinity 到达巷口。按 G 接到 Wells 与 Lake 路口。'
+      : 'Trinity 冲过对面的窗户，落上上层平台，继续赶往 Wells 与 Lake 的出口。', actor, tick);
     return true;
   }
   private openingRoofTick(actor: AgentState, tick: number): void {
@@ -628,6 +643,14 @@ export class FilmStorySystem {
     const brown = this.world.agents.get('agent_brown');
     if (!brown || brown.currentLocation !== this.scene!.set) return;
     const roof = FILM_SETS.film_hotel_roofs;
+    const exit = actor.currentAction?.parameters.roofExit as OpeningRoofExit | undefined;
+    if (exit?.stairwell && actor.position.z < roof.center.z + OPENING_ROOF_EXIT.paneZ - .15) {
+      if (!brown.controller && brown.currentAction?.type !== 'idle') {
+        brown.velocity = { x: 0, y: 0, z: 0 };
+        brown.currentAction = { type: 'idle', parameters: { resolved: true, filmPursuit: true }, startedAt: tick, duration: 1, progress: 0 };
+      }
+      return;
+    }
     const takeoff = OPENING_ESCAPE.roofGapNear + 2;
     const landing = OPENING_ESCAPE.roofGapFar - 1;
     const localZ = brown.position.z - roof.center.z;
@@ -7604,8 +7627,8 @@ export class FilmStorySystem {
     if (step.kind === 'reach') { this.advance(step.label, agent, tick); return '已抵达目标。'; }
     if (state.scene === 'm1_roofs' && state.step === 2) {
       if (agent.currentAction?.parameters.roofExit) return state.lastText;
-      state.started = tick; this.openingRoofFrame(agent, 0, tick);
-      return state.lastText = 'Trinity 向对面的窗户助跑、护头破窗；撤离动作持续三秒，追兵仍在逼近。';
+      state.started = tick; this.openingRoofFrame(agent, 0, tick, true);
+      return state.lastText = 'Trinity 向亮着灯的窗户助跑，Brown 仍在逼近。';
     }
     state.started = tick; return `${step.label}。停留 ${step.seconds ?? 3} 秒。`;
   }

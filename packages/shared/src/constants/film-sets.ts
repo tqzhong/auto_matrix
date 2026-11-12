@@ -31,7 +31,7 @@ import { MEETING_CAR, MEETING_DESTINATION, meetingCarPose, meetingRoadContains }
 import { LAFAYETTE, hotelContains, hotelBlocked, hotelFloor } from './lafayette.js';
 import { mountainFloor } from './mountain.js';
 import { TRUCKS } from './trucks.js';
-import { OPENING_ESCAPE } from './opening-escape.js';
+import { OPENING_ESCAPE, openingRoofStairHeight } from './opening-escape.js';
 import { OPENING_HOTEL } from './opening-hotel.js';
 import { THE_ONE } from './the-one.js';
 import { HAMMER_ROUTE, HAMMER_COCKPIT, hammerHeight } from './hammer-flight.js';
@@ -62,7 +62,7 @@ export interface FilmSet {
 // The city remains available; these coordinates are shared by physics and rendering.
 const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: '城市之心旅馆 · 303', film: [1], architecture: 'hotel', world: 'matrix', width: 34, depth: 52, height: 12, light: 'night', detail: '303 / 烧旧墙纸、窄走廊、电话与电脑' },
-  { name: '旅馆屋顶与消防梯', film: [1], architecture: 'rooftop', world: 'matrix', width: 54, depth: 100, height: 24, light: 'night', detail: '烟囱、砖墙、相邻屋顶与消防通道' },
+  { name: '旅馆屋顶与后楼梯间', film: [1], architecture: 'rooftop', world: 'matrix', width: 54, depth: 100, height: 24, light: 'night', detail: '砖墙、相邻屋顶、暖光窗口与后楼梯间' },
   { name: 'Wells & Lake · 电话亭', film: [1], architecture: 'street', world: 'matrix', width: 48, depth: 94, height: 24, light: 'night', detail: '桥下路口、卡车车灯、玻璃电话亭' },
   { name: 'Anderson 公寓 · 101', film: [1], architecture: 'apartment', world: 'matrix', width: APARTMENT_ROOM.width, depth: APARTMENT_ROOM.depth, height: 11, light: 'night', detail: 'CRT 屏幕、线缆、唱片、101 门牌' },
   { name: '地下夜店 · 白兔', film: [1], architecture: 'club', world: 'matrix', width: 42, depth: 56, height: 14, light: 'night', detail: '人群剪影、工业柱网、低照度舞池' },
@@ -405,6 +405,8 @@ export function filmGroundHeight(position: Vector3, set: FilmSet, craterDepth = 
   if (set.id === 'film_hotel_roofs') {
     const z = position.z - set.center.z;
     if (z < OPENING_ESCAPE.roofGapNear && z > OPENING_ESCAPE.roofGapFar) return set.center.y - OPENING_ESCAPE.roofDrop;
+    const stairs = openingRoofStairHeight(position.x - set.center.x, z);
+    if (stairs !== undefined) return set.center.y + stairs;
   }
   if (set.id === 'film_mobil_station' && position.x - set.center.x > MOBIL_STATION.edge + .28) return set.center.y + MOBIL_STATION.trackFloor;
   if (set.id === 'film_club_hel') return set.center.y + helTerraceFloor(position.x - set.center.x, position.z - set.center.z);
