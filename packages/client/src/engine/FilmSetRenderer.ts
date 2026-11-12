@@ -1657,7 +1657,7 @@ export class FilmSetRenderer {
     if (!resumeRoof && this.prepareStagedColorTexture(renderer, prepared, colors.textures)) return;
     if (scene === 'm1_roofs' && lighting && prepared.lighting && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
       && this.prepareOpeningRoofShadows(renderer, camera, prepared, colors, lighting, prepared.lighting)) return;
-    this.prepareColorProgram(renderer, prepared.eye, colors, prepared.lighting, 'isolated');
+    this.prepareColorProgram(renderer, prepared.eye, colors, prepared.lighting, 'isolated', scene === 'm1_roofs' && !resumeRoof);
   }
   private prepareOpeningRoofEntryTextures(renderer: THREE.WebGLRenderer, prepared: OpeningPreparation,
     actor: (id: string) => THREE.Group | undefined): void {

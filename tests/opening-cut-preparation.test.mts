@@ -124,7 +124,7 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
     return (roofs ? node?.children[0] : node) as THREE.Mesh | undefined;
   };
   t.after(() => { film.dispose(); lighting.dispose(); material.dispose(); geometry.dispose(); shadowMaterial.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
-  return { film, journey, gpu, skin, shadow, material, actors, work, meshes, roots, depths, mapped, prepare, drain, enter, nextMesh, livePointSlots,
+  return { film, journey, gpu, skin, shadow, material, actors, work, meshes, roots, depths, mapped, programs, prepare, drain, enter, nextMesh, livePointSlots,
     requestVisit: () => {
       hero.visible = skin.visible = true;
       return film.beginOpeningVisit(gpu, camera, destination, player.id, [hero], lighting, sun);
@@ -176,6 +176,19 @@ for (const next of ['m1_roofs', 'm1_phone_escape'] as const) {
     h.film.update(undefined, undefined, 0); assert.equal(disposed, 1);
   });
 }
+
+test('the 303 cut waits a frame before reflecting the linked roof program', t => {
+  const h = fixture(t, 'm1_roofs');
+  for (let frame = 0; !h.programs.length && frame < 250; frame++) h.prepare();
+  const program = h.programs[0];
+  assert.ok(program);
+  let frame = 0, readyAt = -1, reflectedAt = -1;
+  t.mock.method(program, 'isReady', () => { readyAt = frame; return true; });
+  t.mock.method(program, 'getUniforms', () => { reflectedAt = frame; });
+
+  for (; reflectedAt < 0 && frame < 250; frame++) h.prepare();
+  assert.ok(readyAt >= 0 && reflectedAt > readyAt, 'read bindings on a later frame than the completion check');
+});
 
 test('the 303 cut prepares both shadow layouts while the roof images decode', t => {
   const h = fixture(t, 'm1_roofs', true); h.drain();
