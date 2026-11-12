@@ -298,7 +298,10 @@ export class FilmSetRenderer {
   private officeTowerDepth?: THREE.MeshDepthMaterial;
   private officeStreetDepth?: THREE.MeshDepthMaterial;
   private preparedLafayette?: LafayettePreparation;
-  private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
+  private preparedSecondOracle?: {
+    scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation;
+    gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling; textureUpload?: Generator<void, boolean>;
+  };
   private courtyardCastColors?: CastColorPreparation;
   private preparedLafayetteGround?: { meshes: ColorMesh[]; programs: ColorProgram[] };
   private preparedLafayetteLanding?: { meshes: ColorMesh[]; programs: ColorProgram[] };
@@ -1288,6 +1291,7 @@ export class FilmSetRenderer {
       return;
     }
     if (firstOracle && prepared.gpu !== renderer.properties) {
+      prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose(); prepared.colors = undefined; prepared.gpu = renderer.properties;
     }
     if (!prepared.colors && renderer.extensions.has('KHR_parallel_shader_compile')) {
@@ -1318,7 +1322,9 @@ export class FilmSetRenderer {
           if (!meshes.length) continue;
           colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
         }
-        this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated'); return;
+        this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated');
+        this.prepareStagedColorTexture(renderer, prepared, colors.textures, 4);
+        return;
       }
       // The infirmary shares the Hammer deck with the rest of the crew. Bane is still staged there until the call.
       if (next.id === 'm3_maggie_discovery') cast.push('ak', 'niobe', 'ghost', 'bane');
@@ -2372,7 +2378,10 @@ export class FilmSetRenderer {
       if (retainedEmpDock) this.empDock = undefined;
       const preparedSecondOracle = this.preparedSecondOracle && set?.id === this.preparedSecondOracle.room.current?.id
         && sceneId === this.preparedSecondOracle.scene && !journey?.visiting ? this.preparedSecondOracle : undefined;
-      if (preparedSecondOracle) { this.preparedSecondOracle = undefined; preparedSecondOracle.lighting?.dispose(); }
+      if (preparedSecondOracle) {
+        this.preparedSecondOracle = undefined; preparedSecondOracle.textureUpload?.return(false);
+        preparedSecondOracle.lighting?.dispose();
+      }
       const preparedMountain = set?.id === 'film_mountain_range' && sceneId === 'm2_mountain' && !journey?.visiting ? this.preparedMountain : undefined;
       if (preparedMountain) this.preparedMountain = undefined;
       const preparedFreeway = set?.id === 'film_freeway_101' && sceneId === 'm2_freeway' && !journey?.visiting ? this.preparedFreeway?.renderer : undefined;
@@ -5382,6 +5391,7 @@ export class FilmSetRenderer {
     this.preparedBaneCopy?.renderer.dispose(); this.preparedBaneCopy = undefined;
   }
   private cancelSecondOraclePreparation(): void {
+    this.preparedSecondOracle?.textureUpload?.return(false);
     this.preparedSecondOracle?.lighting?.dispose();
     this.preparedSecondOracle?.room.dispose(); this.preparedSecondOracle = undefined;
   }

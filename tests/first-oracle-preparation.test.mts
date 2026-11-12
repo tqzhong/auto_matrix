@@ -48,7 +48,9 @@ function fixture(t: TestContext) {
   } as unknown as THREE.WebGLRenderer;
   const prepare = () => {
     const count = work.length; film.prepareSecondOracle(gpu, camera, journey, id => actors.get(id));
-    assert.ok(work.length - count <= 1, 'prepare one batch, completed binding or texture per frame');
+    const frame = work.slice(count);
+    assert.ok(frame.filter(item => item === 'compile' || item === 'bindings').length <= 1);
+    assert.ok(frame.filter(item => item === 'texture').length <= 1 && frame.filter(item => item === 'strip').length <= 4);
     assert.equal(target, null); assert.equal(parent.visible, false); assert.equal(actor.parent, parent); assert.equal(skin.parent, actor); assert.equal(matrixClothes.visible,false); assert.equal(sun.castShadow,true); assert.equal(gpu.debug.checkShaderErrors, true);
   };
   const drain = () => { for (let i = 0; i < 1000; i++) prepare(); };
@@ -63,6 +65,40 @@ test('the closing meal prepares the existing apartment, hidden Matrix clothes an
   const late = new THREE.Group(), face = new THREE.Mesh(h.geometry, h.material); late.add(face); face.visible = false; h.actors.set('morpheus', late);
   const before = h.batches.length; h.drain(); assert.ok(h.batches.slice(before).flat().includes(face)); assert.equal(h.rooms.size, 1);
   const count = h.work.length; h.drain(); assert.equal(h.work.length, count, 'completed preparation stops compiling and uploading');
+});
+
+test('a large apartment actor map uploads in strips during program linking and is released on cancellation', t => {
+  const h = fixture(t);
+  class Bitmap { width = 2048; height = 2048; }
+  const previous = globalThis.ImageBitmap, bitmap = new Bitmap();
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  t.after(() => { if (previous) globalThis.ImageBitmap = previous; else Reflect.deleteProperty(globalThis, 'ImageBitmap'); });
+  h.texture.image = bitmap; h.texture.flipY = false;
+  const source = h.texture.source, rows: number[] = [], released: THREE.Texture[] = [];
+  const residency = new WeakMap<THREE.Texture, { __webglTexture: object; __version: number }>();
+  Object.assign(h.gpu, {
+    capabilities: { maxTextureSize: 4096 }, properties: { get: (map: THREE.Texture) => residency.get(map) ?? {} },
+    state: { bindTexture() {}, unbindTexture() {} },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true, pixelStorei() {},
+      texSubImage2D(_target: number, _level: number, _x: number, row: number, width: number, height: number,
+        _format: number, _type: number, image: Bitmap) {
+        assert.equal(image, bitmap); assert.deepEqual([width, height], [2048, 256]); rows.push(row); h.work.push('strip');
+      } }),
+    initTexture(map: THREE.Texture) {
+      residency.set(map, { __webglTexture: {}, __version: map.version });
+      if (map.source.dataReady) h.work.push('texture');
+      else map.addEventListener('dispose', () => released.push(map));
+    },
+  });
+  let uploadFrame: string[] = [];
+  for (let i = 0; i < 1000 && !rows.length; i++) {
+    const count = h.work.length; h.prepare(); uploadFrame = h.work.slice(count);
+  }
+  assert.deepEqual(uploadFrame, ['compile', 'strip', 'strip', 'strip', 'strip'], 'stage the first Oracle actor map while the first program is still linking');
+  assert.deepEqual(rows, [0, 256, 512, 768]);
+  assert.equal(residency.has(h.texture), false);
+  h.journey.interlude!.phase = 'ready'; h.prepare();
+  assert.equal(released.length, 1); assert.notEqual(released[0], h.texture); assert.equal(h.texture.source, source);
 });
 
 test('first Oracle preparation rebuilds GPU bindings and releases cancellation resources', t => {
