@@ -247,3 +247,52 @@ test('Smith keeps his hand against the moving cab grip and his soles supported w
     }
   }
 });
+
+test('Wells agents look at the receiver and at the people they are talking to', async t => {
+  const source = await actor('smith'), asset = await source.models['load']('smith');
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  Object.assign(globalThis, { document: { createElement: () => ({ getContext: () => ({
+    fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {},
+  }) }) } });
+  const models = new CharacterModels();
+  t.after(() => { models.dispose(); source.models.dispose(); if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document'); });
+  const rigs = setup().cast().map(agent => models.create(agent));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(rigs.every(rig => rig.hero), 'use the delivered agent models');
+  const heads = rigs.map(rig => rig.hero!.bones.get('head')!);
+  const { center } = FILM_SETS[scene.set];
+  const eye = (head: THREE.Bone) => head.localToWorld((head.userData.cameraEye as THREE.Vector3).clone());
+  const forward = (head: THREE.Bone) => new THREE.Vector3(0, 0, 1).transformDirection(head.matrixWorld);
+  for (const curbside of [true, undefined] as const) {
+    const { x, y, z } = WELLS_AFTERMATH.receiver;
+    const receiver = new THREE.Vector3(center.x + x, center.y - 1 + y + (curbside ? WELLS_CURB.height : 0), center.z + z);
+    function draw(elapsed: number) {
+      rigs.forEach((rig, i) => {
+        const gesture = { role: WELLS_AFTERMATH.roles[i], elapsed, curbside };
+        const pose = wellsAftermathPose(gesture);
+        rig.root.position.set(center.x + pose.x, center.y - 1 + pose.y, center.z + pose.z);
+        rig.root.rotation.y = pose.yaw;
+        models.animate(rig, 0, { speed: pose.speed, grounded: true, verticalVelocity: 0, turn: 0, wellsAftermath: gesture }, 0);
+        rig.root.updateWorldMatrix(true, true);
+      });
+    }
+    for (const [start, end, targets] of [
+      [6.93, 7.68, [1, 0, 1]],
+      [8.48, 9.95, [2, 2, 0]],
+      [10.73, 11.14, [2, 0, 0]],
+    ] as const) for (let elapsed = start; elapsed < end; elapsed += .05) {
+      draw(elapsed);
+      targets.forEach((target, i) => {
+        const toward = eye(heads[target]).sub(eye(heads[i]));
+        const error = THREE.MathUtils.radToDeg(forward(heads[i]).setY(0).angleTo(toward.setY(0)));
+        assert.ok(error < 24, `${roles[i]} looks ${error.toFixed(1)}° away from ${roles[target]} at ${elapsed.toFixed(2)}s`);
+      });
+    }
+    draw(5.2);
+    const error = THREE.MathUtils.radToDeg(forward(heads[0]).angleTo(receiver.clone().sub(eye(heads[0]))));
+    assert.ok(error < 36, `Smith looks ${error.toFixed(1)}° away from the dropped receiver`);
+  }
+});

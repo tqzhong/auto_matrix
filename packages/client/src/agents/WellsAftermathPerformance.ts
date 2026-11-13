@@ -18,10 +18,11 @@ export function poseWellsAftermath(rig: CharacterRig, gesture?: WellsAftermathGe
   rig.root.userData.wellsSpeaking = amount > 0;
   if (!gesture || !pose) return;
   const { elapsed, role } = gesture, { bones } = hero;
-  bones.get('head')!.rotation.y += pose.listen;
-  bones.get('head')!.rotation.x += pose.inspect * .22 + amount * .035;
+  bones.get('head')!.rotation.x += pose.inspect * .22;
   bones.get('spine')!.rotation.x += pose.inspect * .25;
   bones.get('chest')!.rotation.x += pose.inspect * .16;
+  if (elapsed >= 4.18) lookAroundBooth(rig, gesture, pose);
+  bones.get('head')!.rotation.x += amount * .035;
   if (role !== 'smith' || elapsed >= 2.48) return;
 
   const center = FILM_SETS.film_wells_phone.center, truckZ = center.z - 26, streetY = center.y - 1;
@@ -69,4 +70,44 @@ export function poseWellsAftermath(rig: CharacterRig, gesture?: WellsAftermathGe
     reach(upper, lower, hand.position, target, new THREE.Vector3(-.65, -.35, .5).applyQuaternion(facing));
     hand.quaternion.copy(lower.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
   }
+}
+
+function lookAroundBooth(rig: CharacterRig, gesture: WellsAftermathGesture, pose: ReturnType<typeof wellsAftermathPose>): void {
+  const { elapsed, role, curbside } = gesture;
+  const { bones } = rig.hero!;
+  const head = bones.get('head')!, spine = bones.get('spine')!, chest = bones.get('chest')!;
+  const center = FILM_SETS.film_wells_phone.center;
+  const point = head.getWorldPosition(new THREE.Vector3());
+  const eyeY = point.y + (head.userData.cameraEye as THREE.Vector3).y;
+  const lookAtAgent = (target: WellsAftermathGesture['role']) => {
+    const other = wellsAftermathPose({ elapsed, role: target, curbside });
+    return new THREE.Vector3(center.x + other.x, eyeY + other.y - pose.y, center.z + other.z);
+  };
+  let target: THREE.Vector3, weight: number;
+  if (role === 'smith' && elapsed < 6.2) {
+    const receiver = WELLS_AFTERMATH.receiver;
+    target = new THREE.Vector3(center.x + receiver.x, center.y - 1 + receiver.y + (curbside ? WELLS_CURB.height : 0), center.z + receiver.z);
+    weight = smooth(elapsed, 4.18, 4.96) * (1 - smooth(elapsed, 5.64, 6.2));
+  } else if (role === 'smith') {
+    target = lookAtAgent('agent_jones').lerp(lookAtAgent('agent_brown'), smooth(elapsed, 7.78, 8.43));
+    weight = smooth(elapsed, 6.2, 6.88);
+  } else if (role === 'agent_jones') {
+    const brownSpeaks = smooth(elapsed, 7.83, 8.45) * (1 - smooth(elapsed, 10.13, 10.68));
+    target = lookAtAgent('smith').lerp(lookAtAgent('agent_brown'), brownSpeaks);
+    weight = smooth(elapsed, 5.36, 5.9);
+  } else {
+    const jonesSpeaks = smooth(elapsed, 6.23, 6.89) * (1 - smooth(elapsed, 7.8, 8.38));
+    target = lookAtAgent('smith').lerp(lookAtAgent('agent_jones'), jonesSpeaks);
+    weight = smooth(elapsed, 5.75, 6.21);
+  }
+  const { clamp } = THREE.MathUtils;
+  const relative = rig.root.worldToLocal(target.clone()).sub(rig.root.worldToLocal(point));
+  const turn = clamp(Math.atan2(relative.x, relative.z) * .21, -.39, .39) * weight;
+  spine.rotation.y += turn;
+  chest.rotation.y += turn;
+  const aim = head.parent!.worldToLocal(target).sub(head.position);
+  const yaw = clamp(Math.atan2(aim.x, aim.z), -1.27, 1.27);
+  const pitch = clamp(-Math.atan2(aim.y, Math.hypot(aim.x, aim.z)), -.27, .98);
+  const facing = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch, yaw, head.rotation.z, 'YXZ'));
+  head.quaternion.slerp(facing, weight);
 }

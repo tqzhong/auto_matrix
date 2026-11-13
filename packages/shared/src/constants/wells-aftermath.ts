@@ -70,13 +70,12 @@ export function wellsAftermathPose({ elapsed, role, curbside }: WellsAftermathGe
   const turn = Math.atan2(Math.sin(facing - heading), Math.cos(facing - heading));
   const line = wellsAftermathDialogue(elapsed);
   const attention = line ? transition(elapsed, line.from, line.from + .24) * (1 - transition(elapsed, line.to - .3, line.to)) : 0;
-  const listen = line && line.role !== role ? (line.role === 'agent_brown' ? .32 : -.25) * attention : 0;
   const inspect = smith ? transition(elapsed, 4.18, 5.05) * (1 - transition(elapsed, 5.75, 6.53)) : 0;
   const floor = curbside ? WELLS_CURB.height * transition(z, WELLS_CURB.edgeZ + .75, WELLS_CURB.edgeZ) : 0;
   const cab = 1.55 + (curbside ? WELLS_CURB.truckLift : 0);
   return { x, y: smith ? cab * (1 - leave) + floor * leave : floor, z,
     yaw: smith && elapsed < start ? -Math.PI / 2 + (heading + Math.PI / 2) * transition(elapsed, 1.82, start)
       : heading + turn * arrive - (smith ? 2.27 * transition(elapsed, 5.6, 6.75) : 0),
-    speed: length * 6 * step * (1 - step) / (stop - start), travel: length * walk, inspect, listen,
+    speed: length * 6 * step * (1 - step) / (stop - start), travel: length * walk, inspect,
     speaking: line?.role === role ? Math.pow(Math.sin((elapsed - line.from) * 15), 2) * attention : 0 };
 }
