@@ -6026,7 +6026,7 @@ export class FilmStorySystem {
     else if (emp?.elapsed === DOCK_EMP.seconds) state.lastText = '哨兵落地，船坞陷入停电。援军争取了时间，但 APU 和自动防御也已失效。J 记录这次选择的代价。';
     return true;
   }
-  driveFrame(agent: AgentState, input: DriveInput, dt: number, tick: number, focus = false): boolean {
+  driveFrame(agent: AgentState, input: DriveInput, dt: number, tick: number, focus: boolean | null = false): boolean {
     const journey = this.state;
     if (journey?.scene === 'm3_hammer_tunnels' && journey.hammer?.phase === 'arrived' && !journey.visiting && this.controls(agent)) {
       this.hammerFrame(agent, tick); return true;

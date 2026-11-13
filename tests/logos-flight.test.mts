@@ -168,6 +168,53 @@ test('a partially pumped Logos igniter survives server restore, release and paus
   h.advance(); h.command('next'); assert.equal(state.scene, 'm3_farewell');
 });
 
+test('restored Logos pressure waits for the first live focus input without triggering a release', () => {
+  const h = game(), state = h.state();
+  state.scene = 'm3_sun'; state.actor = 'trinity'; state.step = 0;
+  state.logos = { ...newLogosFlight('sun'), stage: 'stall', altitude: 78, vertical: -4,
+    ignition: { phase: 'pumping', elapsed: .5, held: true, pump: .55, stroke: .4, attempts: 0 } };
+  h.players.setRunning(false);
+  h.players.possess('p', 'trinity', h.tick());
+  const controls = { x: 0, z: 0, yaw: Math.PI, sprint: false, jump: false };
+  h.players.receiveInput('p', { ...controls, focus: false, sequence: 1 });
+  const saved = structuredClone(state.logos);
+  h.players.step(.05, false, h.tick());
+  assert.deepEqual(state.logos, saved);
+  h.players.setRunning(true);
+  h.players.step(.05, true, h.tick());
+  assert.deepEqual(state.logos.ignition, saved.ignition, 'a paused packet must not release the igniter');
+  assert.ok(state.logos.altitude < saved.altitude, 'the ship keeps descending after time resumes');
+  h.players.receiveInput('p', { ...controls, focus: true, sequence: 2 });
+  h.players.step(.05, true, h.tick());
+  assert.equal(state.logos.ignition?.attempts, 0);
+  assert.ok(state.logos.ignition!.pump > saved.ignition!.pump);
+  h.players.receiveInput('p', { ...controls, focus: false, sequence: 3 });
+  h.players.step(.05, true, h.tick());
+  assert.equal(state.logos.ignition?.phase, 'offline');
+  assert.equal(state.logos.ignition?.attempts, 1, 'an explicit live release below the threshold still fails');
+});
+
+test('restoring a ready Logos igniter requires a live press before releasing to ignite', () => {
+  const h = game(), state = h.state();
+  state.scene = 'm3_sun'; state.actor = 'trinity'; state.step = 0;
+  state.logos = { ...newLogosFlight('sun'), stage: 'stall', altitude: 69, vertical: -6,
+    ignition: { phase: 'ready', elapsed: 1.2, held: true, pump: 1.25, stroke: 1, attempts: 0 } };
+  h.players.possess('p', 'trinity', h.tick());
+  const controls = { x: 0, z: 0, yaw: Math.PI, sprint: false, jump: false };
+  for (let sequence = 1; sequence <= 3; sequence++) {
+    h.players.receiveInput('p', { ...controls, focus: false, sequence });
+    h.players.step(.05, true, h.tick());
+  }
+  assert.equal(state.logos.ignition?.phase, 'ready');
+  assert.equal(state.logos.ignition?.attempts, 0);
+  h.players.receiveInput('p', { ...controls, focus: true, sequence: 4 });
+  h.players.step(.05, true, h.tick());
+  h.players.receiveInput('p', { ...controls, focus: false, sequence: 5 });
+  h.players.step(.05, true, h.tick());
+  assert.equal(state.logos.ignition?.phase, 'running');
+  assert.equal(state.logos.ignition?.attempts, 1);
+});
+
 test('Logos scene lighting darkens again below the clouds and keeps the same ship through the chapter handoff', () => {
   const h = game(), journey = h.state(), actor = h.world.agents.get('trinity')!;
   const scene = new THREE.Scene(); scene.background = new THREE.Color(); scene.fog = new THREE.FogExp2();

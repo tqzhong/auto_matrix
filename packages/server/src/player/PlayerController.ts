@@ -22,6 +22,7 @@ interface PlayerSession {
   agentId: string;
   input: PlayerInput;
   lastInput: number;
+  logosFocusHeld?: boolean;
   vy: number;
   planar: { x: number; z: number };
   lastAttack: number;
@@ -196,6 +197,7 @@ export class PlayerController {
       const session = this.sessions.get(owner)!;
       const airborne = airbornePlayer(agent, this.sandbox?.state.structures);
       session.input = { ...idleInput(), yaw: agent.rotation }; session.lastInput = Date.now();
+      session.logosFocusHeld = false;
       if (!airborne) session.planar = { x: 0, z: 0 }; session.strike = undefined; session.impulse = undefined; session.palm = undefined;
       if (!this.sandbox?.life.film.truthFrame(agent, 0, tick) && !airborne) agent.velocity = { x: 0, y: session.vy, z: 0 };
       this.sessions.delete(owner); this.sessions.set(socketId, session); this.owners.set(id, socketId);
@@ -738,8 +740,13 @@ export class PlayerController {
       if (this.sandbox?.life.film.hammerGunnerFrame(agent, input, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.strike = undefined; session.impulse = undefined; session.palm = undefined; session.input.jump = false; continue;
       }
+      const logos = lesson?.scene === 'm3_sun' && !lesson.visiting && lesson.actor === agent.id && lesson.logos?.phase === 'riding' ? lesson.logos : undefined;
+      const focus = Boolean(input.focus);
+      // A held key in the save needs a live press before a missing or neutral packet can release it.
+      const ignitionFocus = logos?.ignition?.held && !session.logosFocusHeld && !focus ? null : focus;
+      session.logosFocusHeld = Boolean(logos && focus);
       if (this.sandbox?.life.film.driveFrame(agent, input.drive ?? { throttle: 0, steer: 0,
-        brake: this.sandbox.life.film.state?.logos?.phase !== 'riding' }, dt, tick, Boolean(input.focus))) {
+        brake: this.sandbox.life.film.state?.logos?.phase !== 'riding' }, dt, tick, ignitionFocus)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.strike = undefined; session.impulse = undefined; session.palm = undefined; session.input.jump = false;
         continue;
       }

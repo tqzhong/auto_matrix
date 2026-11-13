@@ -244,18 +244,18 @@ function stepDefense(flight: LogosFlight, input: DriveInput, dt: number, focus: 
   return next;
 }
 
-function stepIgnitionFlight(flight: LogosFlight, input: DriveInput, dt: number, focus: boolean): LogosFlight {
+function stepIgnitionFlight(flight: LogosFlight, input: DriveInput, dt: number, focus: boolean | null): LogosFlight {
   if (!dt) return flight;
   if (flight.crash) return stepCrash(flight, dt);
   const ignition = { ...flight.ignition! }, next = { ...flight, ignition, elapsed: flight.elapsed + dt,
     stageElapsed: flight.stageElapsed + dt, cooldown: 0, pulse: 0 };
-  ignition.elapsed += dt;
+  if (focus !== null) ignition.elapsed += dt;
   if (ignition.phase === 'powered') {
     steerFlight(next, input, dt);
     if (next.altitude >= logosCloudTop(next) - 4) { ignition.phase = 'offline'; ignition.elapsed = 0; }
     else if (next.stageElapsed >= 14) next.phase = 'wrecked';
   } else {
-    if (flight.stage === 'stall' && ignition.phase !== 'running') {
+    if (focus !== null && flight.stage === 'stall' && ignition.phase !== 'running') {
       if (focus && !ignition.held && ignition.phase === 'offline') {
         ignition.phase = 'pumping'; ignition.pump = 0; ignition.elapsed = 0;
       }
@@ -268,11 +268,12 @@ function stepIgnitionFlight(flight: LogosFlight, input: DriveInput, dt: number, 
           ignition.phase = ignition.phase === 'ready' ? 'running' : 'offline'; ignition.elapsed = 0; ignition.attempts++;
         }
       }
-      ignition.held = focus;
     }
-    const pumping = ignition.phase === 'pumping' || ignition.phase === 'ready';
-    const target = pumping ? Math.min(1, ignition.pump / LOGOS_IGNITION.ready) : 0;
-    ignition.stroke += (target - ignition.stroke) * (1 - Math.exp(-9 * dt));
+    if (focus !== null) {
+      const pumping = ignition.phase === 'pumping' || ignition.phase === 'ready';
+      const target = pumping ? Math.min(1, ignition.pump / LOGOS_IGNITION.ready) : 0;
+      ignition.stroke += (target - ignition.stroke) * (1 - Math.exp(-9 * dt));
+    }
     // Gravity plus drag makes a continuous arc; restored thrust arrests part of the descent.
     const acceleration = ignition.phase === 'running' ? Math.max(0, (-7 - flight.vertical) * 2) : 0;
     next.vertical += (-9.81 - .035 * flight.vertical * Math.abs(flight.vertical) + acceleration) * dt;
@@ -294,12 +295,12 @@ function stepIgnitionFlight(flight: LogosFlight, input: DriveInput, dt: number, 
       x: next.x, altitude: next.altitude, z: next.z, speed: next.speed, lateral: next.lateral, vertical: next.vertical,
       pitch: pose.pitch, yaw: pose.yaw || 0, roll: pose.roll || 0 };
   }
-  ignition.held = focus;
+  if (focus !== null) ignition.held = focus;
   if (next.phase !== 'riding') { next.speed = 0; next.vertical = 0; next.lateral = 0; }
   return next;
 }
 
-function stepSun(flight: LogosFlight, input: DriveInput, dt: number, focus: boolean): LogosFlight {
+function stepSun(flight: LogosFlight, input: DriveInput, dt: number, focus: boolean | null): LogosFlight {
   if (flight.ignition) return stepIgnitionFlight(flight, input, dt, focus);
   const next = { ...flight, elapsed: flight.elapsed + dt, stageElapsed: flight.stageElapsed + dt,
     cooldown: 0, pulse: 0 };
@@ -330,8 +331,8 @@ function stepSun(flight: LogosFlight, input: DriveInput, dt: number, focus: bool
   return next;
 }
 
-export function stepLogosFlight(flight: LogosFlight, input: DriveInput, delta: number, focus = false): LogosFlight {
+export function stepLogosFlight(flight: LogosFlight, input: DriveInput, delta: number, focus: boolean | null = false): LogosFlight {
   if (flight.phase !== 'riding') return flight;
   const dt = Math.max(0, Math.min(.1, delta));
-  return flight.mode === 'defense' ? stepDefense(flight, input, dt, focus) : stepSun(flight, input, dt, focus);
+  return flight.mode === 'defense' ? stepDefense(flight, input, dt, Boolean(focus)) : stepSun(flight, input, dt, focus);
 }
