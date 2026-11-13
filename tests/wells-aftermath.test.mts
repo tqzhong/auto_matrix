@@ -162,6 +162,13 @@ test('Wells aftermath: the saved take moves the cab door and drops the receiver 
   const expected = new THREE.Vector3(center.x + WELLS_AFTERMATH.receiver.x, center.y - 1 + WELLS_AFTERMATH.receiver.y, center.z + WELLS_AFTERMATH.receiver.z);
   assert.ok(dropped.distanceTo(expected) < 1e-7);
   assert.ok(Math.abs(new THREE.Box3().setFromObject(receiver).min.y - (center.y - 1)) < .015, 'the receiver rests on the street');
+  const throughMouthpiece = (x: number, y: number) => {
+    const from = receiver.localToWorld(new THREE.Vector3(x, y, .18));
+    const into = receiver.localToWorld(new THREE.Vector3(x, y, .1)).sub(from).normalize();
+    return new THREE.Raycaster(from, into, 0, .09).intersectObject(receiver, true)[0]?.distance;
+  };
+  assert.ok((throughMouthpiece(0, -.31) ?? 0) > .045, 'the Wells close-up sees into a recessed center hole');
+  assert.ok((throughMouthpiece(.014, -.31) ?? 1) < .045, 'the plastic surface remains between adjacent holes');
   h.frame(55); draw();
   assert.equal(Math.abs(door.rotation.y), 0);
   assert.ok(receiver.getWorldPosition(new THREE.Vector3()).distanceTo(dropped) < 1e-7);

@@ -73,6 +73,37 @@ test('Wells: the truck has grounded axles and real headlamps that swing toward t
   }
 });
 
+test('Wells: the turning headlamps sweep the phone before impact and settle on the wreck for investigation', t => {
+  const h = fixture(t);
+  const lamps = h.truck.children.filter((light): light is THREE.SpotLight => light instanceof THREE.SpotLight);
+  assert.equal(lamps.length, 2);
+  const phone = { ...h.running(5.508), curbside: true, phase: 'connected', impactElapsed: 0 } as const;
+  const target = streetPoint(0, 4.75, OPENING_PHONE.boothZ);
+  const intensity = (light: THREE.SpotLight, point: THREE.Vector3) => {
+    const origin = light.getWorldPosition(new THREE.Vector3());
+    const direction = light.target.getWorldPosition(new THREE.Vector3()).sub(origin).normalize();
+    const ray = point.clone().sub(origin), distance = ray.length();
+    const edge = THREE.MathUtils.smoothstep(ray.normalize().dot(direction), Math.cos(light.angle), Math.cos(light.angle * (1 - light.penumbra)));
+    return light.intensity * edge / (distance * distance);
+  };
+  h.draw(phone);
+  const approach = lamps.map(light => light.intensity);
+  assert.ok(lamps.every(light => intensity(light, target) < .04), 'the approaching cab starts with its lights on the street');
+  h.draw({ ...phone, impactElapsed: .72 });
+  assert.ok(lamps.some(light => intensity(light, target) > 1), 'the beam crosses the upper phone before the glass breaks');
+  for (const light of lamps) {
+    const nearbyRoad = h.truck.localToWorld(new THREE.Vector3(light.position.x, 0, light.position.z - 2.5));
+    assert.ok(intensity(light, nearbyRoad) < .1, 'the brightest part of the beam avoids the pavement directly in front of the cab');
+  }
+  h.draw({ ...phone, impactElapsed: 1.35 });
+  const stopped = lamps.map(light => light.intensity);
+  assert.ok(stopped.every((value, index) => value < approach[index] * .55 && value > 0), 'the headlights leave a lower pool on the wreck after contact');
+  h.draw({ ...phone, phase: 'done', impactElapsed: 1.35 });
+  assert.deepEqual(lamps.map(light => light.intensity), stopped);
+  h.draw({ ...h.running(15), curbside: true });
+  assert.deepEqual(lamps.map(light => light.intensity), approach, 'retry restores the approach lighting');
+});
+
 test('Wells: the raised booth and brick wall use the same visible and walkable street', t => {
   const h = fixture(t);
   const phone = { ...h.running(15), curbside: true } as const;

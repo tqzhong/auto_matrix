@@ -92,6 +92,50 @@ test('303 corridor doors face across the hall and sit against the side walls', t
   }
 });
 
+test('303 brings the flashlight onto the plaque and restores the playable hall lighting after the cut', t => {
+  const h = setup(t);
+  const hotel = h.journey.openingHotel!;
+  h.pose('trace');
+  const { root } = h.sets;
+  const beam = root.getObjectByName('hotel-303-hall-flashlight') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+  const plaque = root.getObjectByName('hotel-303-hall-number')!;
+  const roomLights = root.children.filter((light): light is THREE.PointLight => light instanceof THREE.PointLight);
+  const hallLight = roomLights.find(light => light.position.equals(new THREE.Vector3(0, 9, -12)))!;
+  const corridorLight = { position: hallLight.position.clone(), intensity: hallLight.intensity, distance: hallLight.distance, color: hallLight.color.getHex() };
+  hotel.traceHall = true;
+  hotel.traceElapsed = OPENING_HOTEL.trace.room + 1.1;
+  h.pose('trace');
+  assert.ok(beam.visible && beam.material.opacity > 0);
+  const approachOpacity = beam.material.opacity;
+  hotel.traceElapsed = OPENING_HOTEL.trace.room + 2.96;
+  h.pose('trace');
+  const number = root.worldToLocal(plaque.getWorldPosition(new THREE.Vector3()));
+  const axis = new THREE.Vector3(0, 1, 0).applyQuaternion(beam.quaternion);
+  const farEnd = beam.position.clone().addScaledVector(axis, beam.scale.y / 2);
+  assert.ok(Math.hypot(farEnd.x - number.x, farEnd.y - number.y) < .04);
+  assert.ok(farEnd.z < number.z && number.z - farEnd.z < .3);
+  assert.ok(Math.hypot(hallLight.position.x - number.x, hallLight.position.y - number.y) < .22,
+    'the close-up concentrates the lit spot on the number instead of below it');
+  assert.ok(beam.material.opacity < approachOpacity / 2, 'the beam fades before the close-up crosses the plaque');
+  assert.equal(h.sample(), 13);
+  delete hotel.traceElapsed;
+  h.pose('corridor');
+  assert.equal(beam.visible, false);
+  assert.deepEqual({ position: hallLight.position, intensity: hallLight.intensity, distance: hallLight.distance, color: hallLight.color.getHex() }, corridorLight);
+  assert.equal(h.sample(), 13);
+});
+
+test('303 door trim has one visible surface across the door frame and wall', t => {
+  const h = setup(t); h.pose('trace');
+  const { root } = h.sets;
+  for (const [x, y] of [[.42, 8.18], [3.58, 6.52], [-3.58, 6.52], [3.53, 8.16], [3.53, 9.16]]) {
+    const origin = root.localToWorld(new THREE.Vector3(x, y, -2));
+    const hits = new THREE.Raycaster(origin, new THREE.Vector3(0, 0, 1), 0, 4).intersectObject(root);
+    assert.ok(hits.length > 0);
+    assert.equal(hits.filter(hit => hit.distance - hits[0].distance < .001).length, 1, `overlapping faces at ${x}/${y}`);
+  }
+});
+
 test('303 prepares the real flashlight material while the corridor is still hidden', t => {
   const h = setup(t); h.pose('trace');
   const beam = h.sets.root.getObjectByName('hotel-303-hall-flashlight');

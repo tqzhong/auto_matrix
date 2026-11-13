@@ -451,7 +451,7 @@ export class FilmSetRenderer {
   private hotel303Pistol?: THREE.Group;
   private hotel303DeskLight?: THREE.PointLight;
   private hotel303HallLight?: THREE.PointLight;
-  private hotel303Beam?: THREE.Mesh;
+  private hotel303Beam?: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   private hotel303Receiver?: HardlineHandset;
   private hotel303Cord?: THREE.Line;
   private openingRoofGlass?: THREE.Group;
@@ -3692,8 +3692,11 @@ export class FilmSetRenderer {
     this.black = this.mat(0x1c241f, .7);
     this.white = this.mat(0xaeb6a4, .76);
     this.glass = new THREE.MeshPhysicalMaterial({ color: 0xa0b7a6, metalness: .12, roughness: .13,
-      transparent: true, opacity: .24, side: THREE.DoubleSide, depthWrite: false });
+      transparent: true, opacity: .12, side: THREE.FrontSide, depthWrite: false });
     this.materials.add(this.glass);
+    const brokenGlass = this.glass.clone();
+    brokenGlass.side = THREE.DoubleSide; brokenGlass.opacity = .2;
+    this.materials.add(brokenGlass);
     const frame = this.mat(0x889d8c, .52, .53);
     const boothZ = OPENING_PHONE.boothZ;
     this.openingBooth = new THREE.Group(); this.openingBooth.name = 'opening-phone-booth'; this.openingBooth.userData.dynamic = true;
@@ -3717,6 +3720,7 @@ export class FilmSetRenderer {
     }
     for (const x of WELLS_BOOTH.panes) {
       const pane = this.box(this.glass, x, paneBox.y, 0, paneBox.width, paneBox.height, paneBox.depth); pane.name = 'opening-booth-intact-pane';
+      pane.castShadow = false;
       this.openingBooth.add(pane); this.openingBoothPanes.push(pane);
       for (const y of [.78, 2.4, 4.42, 6.83]) pane.add(this.box(frame, 0, y - paneBox.y, 0, .061, .105, paneBox.depth));
       pane.add(this.box(frame, 0, .54 - paneBox.y, 0, .06, .45, paneBox.depth));
@@ -3749,7 +3753,8 @@ export class FilmSetRenderer {
       const cy = points.reduce((sum, p) => sum + p[0], 0) / 3, cz = points.reduce((sum, p) => sum + p[1], 0) / 3;
       const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(points.flatMap(p => [0, p[0] - cy, p[1] - cz]), 3)); geometry.computeVertexNormals();
       geometry.computeBoundingSphere();
-      const shard = this.mesh(geometry, this.glass, side * 1.8, cy, cz, this.openingGlass); shard.name = 'opening-booth-glass-fragment';
+      const shard = this.mesh(geometry, brokenGlass, side * 1.8, cy, cz, this.openingGlass); shard.name = 'opening-booth-glass-fragment';
+      shard.castShadow = false;
       this.openingGlassPieces.push({ mesh: shard, origin: shard.position.clone(), side });
     }
   }
@@ -4043,14 +4048,14 @@ export class FilmSetRenderer {
       this.box(soot, wall.x, set.height / 2, wall.z, wall.width, set.height, wall.depth);
       for (const y of [1.1, 3.8, 8.5]) this.box(plaster, wall.x, y, wall.z + .42, wall.width, .16, .06);
     }
-    this.box(soot, 0, 10, OPENING_HOTEL.doorZ, 7.12, 4, .65);
+    this.box(soot, 0, 10, OPENING_HOTEL.doorZ, 7, 4, .65);
     const door = new THREE.Group(); door.name = 'hotel-303-door'; door.userData.dynamic = true;
     door.position.set(-3.23, 0, OPENING_HOTEL.doorZ); this.root.add(door); this.hotel303Door = door;
     door.add(this.box(this.wood, 3.23, 3.95, 0, 6.35, 7.9, .3, .1));
     door.add(this.box(this.metal, 5.8, 3.7, .24, .35, .18, .17));
-    this.box(this.metal, 0, 8.1, OPENING_HOTEL.doorZ, 7.2, .34, .65);
+    this.box(this.metal, 0, 8.1, OPENING_HOTEL.doorZ, 7.2, .34, .75);
     for (const x of [-3.55, 3.55]) {
-      this.box(this.metal, x, 4, OPENING_HOTEL.doorZ, .3, 8, .65);
+      this.box(this.metal, x, 4, OPENING_HOTEL.doorZ, .3, 8, .75);
       this.box(soot, x * .925, 4, OPENING_HOTEL.doorZ + .16, .32, 8, .32);
     }
     const plaque = this.label('303', 0, 8.8, OPENING_HOTEL.doorZ + .45, 2.1, '#d8d0b6', '#34413e', 108).clone();
@@ -4073,10 +4078,18 @@ export class FilmSetRenderer {
     this.hotel303DeskLight.position.set(-9.5, 4.8, desk.z); this.root.add(this.hotel303DeskLight);
     const corridorLight = this.hotel303HallLight = new THREE.PointLight(0xc3b89a, 125, 30, 2);
     corridorLight.position.set(0, 9, -12); this.root.add(corridorLight);
-    const beamMaterial = new THREE.MeshBasicMaterial({ color: 0xc4dacb, transparent: true, opacity: .034, blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide, depthWrite: false, toneMapped: false });
+    const beamMaterial = new THREE.MeshBasicMaterial({ color: 0xc4dacb, transparent: true, opacity: .026, blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide, depthWrite: false, toneMapped: false, vertexColors: true });
     this.materials.add(beamMaterial);
-    const beam = this.hotel303Beam = this.mesh(new THREE.CylinderGeometry(.95, .035, 1, 16, 1, true), beamMaterial, 0, 0, 0);
+    const cone = new THREE.CylinderGeometry(.85, .035, 1, 24, 6, true);
+    const colors = new THREE.BufferAttribute(new Float32Array(cone.attributes.position.count * 4), 4);
+    for (let i = 0; i < colors.count; i++) {
+      const distance = cone.attributes.position.getY(i) + .5;
+      colors.setXYZW(i, 1, 1, 1, 1 - THREE.MathUtils.smoothstep(distance, .3, 1));
+    }
+    cone.setAttribute('color', colors);
+    const beam = this.hotel303Beam = new THREE.Mesh(this.own(cone), beamMaterial);
+    this.root.add(beam);
     beam.name = 'hotel-303-hall-flashlight'; beam.userData.dynamic = true;
     beam.visible = beam.castShadow = beam.receiveShadow = false;
     for (const z of [-20, -12, -4]) {
@@ -4156,12 +4169,14 @@ export class FilmSetRenderer {
     const lead = openingHotelHallOfficer(0, elapsed);
     const focus = THREE.MathUtils.smoothstep(elapsed, 1.35, 2.7);
     const from = new THREE.Vector3(lead.x + .33, 2.85, lead.z + .45);
-    const toward = new THREE.Vector3((-3.35 + Math.sin(elapsed * 2.8) * .7) * (1 - focus),
-      THREE.MathUtils.lerp(3.25, 6.2, focus), OPENING_HOTEL.doorZ - .33).sub(from);
+    const spot = new THREE.Vector3((-3.35 + Math.sin(elapsed * 2.8) * .7) * (1 - focus),
+      THREE.MathUtils.lerp(3.25, 6.2, focus), OPENING_HOTEL.doorZ - .33);
+    const toward = spot.clone().sub(from);
     beam.visible = true; beam.position.copy(from).addScaledVector(toward, .5);
+    beam.material.opacity = THREE.MathUtils.lerp(.026, .004, focus);
     beam.scale.y = toward.length();
-    light.position.copy(from).addScaledVector(toward, .69);
-    light.color.setHex(0xdbe9d9); light.intensity = 110 - focus * 70; light.distance = 13;
+    light.position.copy(from).addScaledVector(toward, .69).lerp(spot.setZ(OPENING_HOTEL.doorZ - 1.52), focus);
+    light.color.setHex(0xdbe9d9); light.intensity = THREE.MathUtils.lerp(110, 8, focus); light.distance = THREE.MathUtils.lerp(13, 6, focus);
     beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), toward.normalize());
   }
   private hotelPhone(): void {

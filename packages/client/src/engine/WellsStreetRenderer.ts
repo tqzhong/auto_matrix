@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import {
-  OPENING_PHONE, WELLS_AFTERMATH, WELLS_CURBSIDE, WELLS_STREET, WELLS_TRUCK, streetLamps, wellsTruckLift, wellsWheelLift,
+  OPENING_PHONE, WELLS_AFTERMATH, WELLS_CURB, WELLS_CURBSIDE, WELLS_STREET, WELLS_TRUCK, streetLamps, wellsTruckLift, wellsWheelLift,
   type FilmSet, type openingTruckPose,
 } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import { UrbanMaterials } from './UrbanMaterials.js';
+
+const headlampIntensity = 240;
 
 /** Local street scenery and a truck driven by the saved Wells encounter. */
 export class WellsStreetRenderer {
@@ -14,6 +16,7 @@ export class WellsStreetRenderer {
   private truck = new THREE.Group();
   private driverDoor = new THREE.Group();
   private wheels: THREE.Group[] = [];
+  private headlamps: THREE.SpotLight[] = [];
   private urban = new UrbanMaterials();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
@@ -40,6 +43,9 @@ export class WellsStreetRenderer {
     const lift = wellsTruckLift(pose);
     this.truck.position.set(pose.x, lift, pose.z); this.truck.rotation.y = pose.yaw;
     this.driverDoor.rotation.y = doorAngle;
+    // Let the light sweep with the cab, then leave a lower pool on the wreck.
+    const settled = 1 - THREE.MathUtils.smoothstep(pose.z, WELLS_CURB.edgeZ - 2.5, WELLS_CURB.edgeZ + .5);
+    for (const lamp of this.headlamps) lamp.intensity = THREE.MathUtils.lerp(headlampIntensity, 105, settled);
     const travel = Math.hypot(pose.x - 15, pose.z - 4);
     const sin = Math.sin(pose.yaw), cos = Math.cos(pose.yaw);
     for (const wheel of this.wheels) {
@@ -55,7 +61,7 @@ export class WellsStreetRenderer {
     const road = this.urban.surface('asphalt_02', width + 34, span, 8);
     const concrete = this.urban.surface('concrete_pavement_03', pavingWidth, walkwayLength, 6);
     this.urban.setWet(true);
-    road.color.setHex(0x647670); road.normalScale.setScalar(.36); road.clearcoat = .48;
+    road.color.setHex(0x647670); road.normalScale.setScalar(.36); road.clearcoat = .28; road.clearcoatRoughness = .38;
     concrete.color.setHex(0x8c9281); concrete.clearcoat = .13;
     this.materials.add(road); this.materials.add(concrete);
     this.box(this.street, road, 0, -.24, 18, width + 34, .48, span).name = 'wells-asphalt';
@@ -158,9 +164,9 @@ export class WellsStreetRenderer {
       if (index % 2 === Number(x > 0)) this.point(x, poleHeight - .3, z, 0xb7c4ab, 130, 33);
     }
     this.point(-8, 9, bridgeZ + 10, 0x99b7a4, 170, 38);
-    this.point(6, 4.5, OPENING_PHONE.boothZ - 9, 0x9ca991, 92, 28);
-    this.spot(this.street, [-7, 10.6, OPENING_PHONE.boothZ + 4.2], [0, 1.8, OPENING_PHONE.boothZ],
-      0xe5ead3, 390, 38, .55);
+    this.point(6, 5.8, OPENING_PHONE.boothZ - 8, 0xb8a580, 38, 21);
+    this.spot(this.street, [-4.8, 11, OPENING_PHONE.boothZ + 3.4], [0, 1.8, OPENING_PHONE.boothZ],
+      0xdbe9df, 300, 32, .43);
   }
 
   private buildTruck(): void {
@@ -168,7 +174,7 @@ export class WellsStreetRenderer {
     this.materials.add(paint);
     const compactor = this.standard(0x394239, .75, .24), dark = this.standard(0x171e1a, .88, .3);
     const steel = this.standard(0x65746b, .54, .69), rubber = this.standard(0x101612, .98);
-    const glass = this.standard(0x23342e, .18, .24), headlamp = this.basic(0xe7e8cc), amber = this.basic(0xe49b32), tail = this.basic(0x91382a);
+    const glass = this.standard(0x23342e, .18, .24), headlamp = this.basic(0xe5eee7), amber = this.basic(0xe49b32), tail = this.basic(0x91382a);
     const { chassis, windshield, roof, cargo } = WELLS_TRUCK;
     const front = -chassis.depth / 2, low = chassis.y - chassis.height / 2, hood = chassis.y + chassis.height / 2;
     this.profile(paint, chassis.width, [[front, low], [front, 1.23], [front + .19, 1.23], [front + .19, 2.36], [front + .38, hood], [-2.52, hood],
@@ -207,7 +213,8 @@ export class WellsStreetRenderer {
       this.box(this.truck, steel, lampX, 1.9, front + .145, .78, .65, .14);
       this.box(this.truck, headlamp, lampX, 1.9, front + .055, .62, .46, .05);
       this.box(this.truck, amber, side * 1.79, hood + .04, -6.51, .31, .13, .36);
-      this.spot(this.truck, [lampX, 1.9, front], [lampX * .55, .14, front - 25], 0xe2e9ca, 240, 39, .71);
+      this.headlamps.push(this.spot(this.truck, [lampX, 1.9, front], [lampX * .55, 4.8, front - 19],
+        0xd4e9e8, headlampIntensity, 39, .58));
       if (side > 0) {
         this.box(this.truck, glass, 1.845, 3.53, -1.24, .08, 1.04, 1.84);
         this.box(this.truck, paint, 1.91, 3, -.31, .1, .5, 3.76);
@@ -297,10 +304,11 @@ export class WellsStreetRenderer {
     this.street.add(light); this.lights.push(light);
   }
   private spot(parent: THREE.Group, position: [number, number, number], target: [number, number, number],
-    color: number, intensity: number, distance: number, angle: number): void {
+    color: number, intensity: number, distance: number, angle: number): THREE.SpotLight {
     const light = new THREE.SpotLight(color, intensity, distance, angle, .72, 2);
     light.position.set(...position); light.target.position.set(...target);
     parent.add(light, light.target); this.lights.push(light);
+    return light;
   }
   dispose(): void {
     this.root.removeFromParent(); this.root.clear();
