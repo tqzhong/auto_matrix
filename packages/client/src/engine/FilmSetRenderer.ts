@@ -1646,10 +1646,11 @@ export class FilmSetRenderer {
       } else colors.meshes.unshift(...meshes);
       this.queueColorTextures(colors.textures, meshes);
     }
+    const liveOverlays = scene === 'm1_roofs' ? [this.marker, shadow] : [shadow];
     if (scene === 'm1_roofs' && (prepared.roofFirstColors?.length ?? 0) < 8 && colors.meshes.length) {
       // Link the entry's expensive color programs while the uploads are still pending.
       (prepared.roofFirstColors ??= []).push(...colors.meshes.slice(0, 4));
-      this.linkColorBatch(renderer, prepared.eye, colors, prepared.lighting, 'isolated', shadow);
+      this.linkColorBatch(renderer, prepared.eye, colors, prepared.lighting, 'isolated', liveOverlays);
       return;
     }
     if (scene === 'm1_roofs' && !prepared.roofMapsReady && [...prepared.room.textures].every(texture => texture.image)) {
@@ -1662,7 +1663,7 @@ export class FilmSetRenderer {
     if (!resumeRoof && this.prepareStagedColorTexture(renderer, prepared, colors.textures)) return;
     if (scene === 'm1_roofs' && lighting && prepared.lighting && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
       && this.prepareOpeningRoofShadows(renderer, camera, prepared, colors, lighting, prepared.lighting)) return;
-    this.prepareColorProgram(renderer, prepared.eye, colors, prepared.lighting, 'isolated', scene === 'm1_roofs' && !resumeRoof, shadow);
+    this.prepareColorProgram(renderer, prepared.eye, colors, prepared.lighting, 'isolated', scene === 'm1_roofs' && !resumeRoof, liveOverlays);
   }
   private prepareOpeningRoofEntryTextures(renderer: THREE.WebGLRenderer, prepared: OpeningPreparation,
     actor: (id: string) => THREE.Group | undefined): void {
@@ -1781,7 +1782,7 @@ export class FilmSetRenderer {
     if (!this.prepareColorProgram(renderer, camera, prepared, lighting, colorState)) this.prepareColorTexture(renderer, prepared.textures);
   }
   private prepareColorProgram(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting: LightCulling | undefined,
-    colorState: 'live' | 'isolated', deferBindings = false, liveShadow?: THREE.Mesh): boolean {
+    colorState: 'live' | 'isolated', deferBindings = false, liveOverlays?: readonly (THREE.Mesh | undefined)[]): boolean {
     const programs = renderer.info.programs;
     let program = prepared.readyProgram;
     if (program) {
@@ -1790,7 +1791,7 @@ export class FilmSetRenderer {
     }
     if (!program) {
       const ready = prepared.programs.findIndex(candidate => programs?.includes(candidate) && candidate.isReady());
-      if (ready < 0) return this.linkColorBatch(renderer, camera, prepared, lighting, colorState, liveShadow);
+      if (ready < 0) return this.linkColorBatch(renderer, camera, prepared, lighting, colorState, liveOverlays);
       [program] = prepared.programs.splice(ready, 1);
       // Give the driver a frame between completion and reflecting uniforms.
       if (deferBindings) {
@@ -1803,22 +1804,24 @@ export class FilmSetRenderer {
     return true;
   }
   private linkColorBatch(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting: LightCulling | undefined,
-    colorState: 'live' | 'isolated' | 'depth', liveShadow?: THREE.Mesh): boolean {
+    colorState: 'live' | 'isolated' | 'depth', liveOverlays: readonly (THREE.Mesh | undefined)[] = []): boolean {
     const batch = prepared.meshes.splice(0, 4);
     if (!batch.length) return false;
     const programs = renderer.info.programs, start = programs?.length ?? 0;
-    // The contact shadow is unlit and shared by the live and prepared sets.
-    // Compiling it caches a second program but must leave the live bindings in use.
-    const bindings = liveShadow && batch.includes(liveShadow) && !Array.isArray(liveShadow.material)
-      ? renderer.properties.get(liveShadow.material) as { currentProgram?: ColorProgram } : undefined;
-    const saved = bindings?.currentProgram ? { ...bindings } : undefined;
+    // Shared unlit overlays may draw in the live set while the next set prepares.
+    const saved = [];
+    for (const mesh of liveOverlays) {
+      if (!mesh || !batch.includes(mesh) || Array.isArray(mesh.material)) continue;
+      const bindings = renderer.properties.get(mesh.material) as { currentProgram?: ColorProgram };
+      if (bindings.currentProgram) saved.push({ bindings, live: { ...bindings } });
+    }
     try {
       this.compileColorBatch(renderer, batch, subject => {
         if (lighting) lighting.compileSubject(renderer, camera, subject, undefined, undefined, colorState);
         else renderer.compile(subject, camera, prepared.scene);
       });
     } finally {
-      if (saved) Object.assign(bindings!, saved);
+      for (const { bindings, live } of saved) Object.assign(bindings, live);
     }
     if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
     return true;

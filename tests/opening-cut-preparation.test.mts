@@ -56,8 +56,11 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   let target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
   const hotelShadow = { currentProgram: {}, uniforms: {}, uniformsList: [] as unknown[] | null, lightsStateVersion: 13,
     needsLights: false, outputColorSpace: THREE.LinearSRGBColorSpace, fog: scene.fog, programs: new Map<number, typeof programs[number]>() };
-  const hotelShadowProgram = hotelShadow.currentProgram, hotelShadowUniforms = hotelShadow.uniforms, hotelShadowList = hotelShadow.uniformsList;
-  const properties = () => ({ get: (object: THREE.Texture | THREE.Material) => object === shadowMaterial ? hotelShadow : { __version: uploaded.get(object as THREE.Texture) } });
+  const hotelGoal = { ...hotelShadow, currentProgram: {}, uniforms: {}, uniformsList: [], programs: new Map<number, typeof programs[number]>() };
+  const overlayBindings = new Map<THREE.Mesh, typeof hotelShadow>([[shadow, hotelShadow], [film.goalMarker, hotelGoal]]);
+  const hotelOverlays = [...overlayBindings.values()].map(bindings => ({ bindings, live: { ...bindings } }));
+  const properties = () => ({ get: (object: THREE.Texture | THREE.Material) => object === shadowMaterial ? hotelShadow
+    : object === film.goalMarker.material ? hotelGoal : { __version: uploaded.get(object as THREE.Texture) } });
   const gpu = { properties: properties(), info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
     shadowMap: { enabled: roofs, type: THREE.PCFSoftShadowMap },
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }), getRenderTarget: () => target,
@@ -70,12 +73,12 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
       const points = lights.filter(light => light instanceof THREE.PointLight).length;
       const program = { program: {}, isReady: () => true, getUniforms: () => { work.push('bindings'); } };
       programs.push(program); work.push('compile');
-      if (batch.includes(shadow)) {
-        hotelShadow.currentProgram = program;
-        hotelShadow.uniforms = {};
-        hotelShadow.uniformsList = null;
-        hotelShadow.lightsStateVersion = points;
-        hotelShadow.programs.set(points, program);
+      for (const [mesh, bindings] of overlayBindings) if (batch.includes(mesh)) {
+        bindings.currentProgram = program;
+        bindings.uniforms = {};
+        bindings.uniformsList = null;
+        bindings.lightsStateVersion = points;
+        bindings.programs.set(points, program);
       }
       if (batch.every(mesh => mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshDepthMaterial)) {
         assert.equal(colors.environment, null); assert.equal(colors.fog, null);
@@ -137,7 +140,7 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   };
   t.after(() => { film.dispose(); lighting.dispose(); material.dispose(); geometry.dispose(); shadowMaterial.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
   return { film, journey, gpu, skin, shadow, material, actors, work, meshes, roots, depths, mapped, programs, prepare, drain, enter, nextMesh, livePointSlots,
-    hotelShadow, hotelShadowProgram, hotelShadowUniforms, hotelShadowList,
+    hotelOverlays,
     requestVisit: () => {
       hero.visible = skin.visible = true;
       return film.beginOpeningVisit(gpu, camera, destination, player.id, [hero], lighting, sun);
@@ -146,17 +149,21 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
     replaceGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
 
-test('303 rooftop preparation caches the shadow variant without replacing the live hotel bindings', t => {
+test('303 rooftop preparation caches the goal marker and shadow without replacing the live hotel bindings', t => {
   const h = fixture(t, 'm1_roofs');
-  h.drain();
-  const roofProgram = h.hotelShadow.programs.get(4);
-  assert.ok(roofProgram && h.programs.includes(roofProgram), 'keep the linked program on the real shadow material for the handoff');
-  assert.equal(h.hotelShadow.currentProgram, h.hotelShadowProgram);
-  assert.equal(h.hotelShadow.uniforms, h.hotelShadowUniforms);
-  assert.equal(h.hotelShadow.uniformsList, h.hotelShadowList);
-  assert.equal(h.hotelShadow.lightsStateVersion, 13);
+  for (let frame = 0; frame < 250; frame++) {
+    h.prepare();
+    for (const { bindings, live } of h.hotelOverlays) {
+      assert.equal(bindings.currentProgram, live.currentProgram, 'the next live draw uses the hotel program');
+      assert.equal(bindings.uniforms, live.uniforms);
+      assert.equal(bindings.uniformsList, live.uniformsList);
+      assert.equal(bindings.lightsStateVersion, 13);
+    }
+  }
+  const programs = h.hotelOverlays.map(({ bindings }) => bindings.programs.get(4));
+  assert.ok(programs.every(program => program && h.programs.includes(program)), 'the rooftop programs remain cached for both objects');
   h.enter();
-  assert.equal(h.hotelShadow.programs.get(4), roofProgram);
+  assert.deepEqual(h.hotelOverlays.map(({ bindings }) => bindings.programs.get(4)), programs);
 });
 
 test('a requested opening revisit adopts its prepared room and releases a cancelled visit', t => {
