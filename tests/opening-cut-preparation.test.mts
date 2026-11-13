@@ -54,7 +54,10 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   const roofRetry = () => film.active?.id === 'film_hotel_roofs' && journey.scene === 'm1_roofs'
     && !journey.visiting && journey.openingRoof?.phase === 'failed';
   let target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
-  const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
+  const hotelShadow = { currentProgram: {}, uniforms: {}, uniformsList: [] as unknown[] | null, lightsStateVersion: 13,
+    needsLights: false, outputColorSpace: THREE.LinearSRGBColorSpace, fog: scene.fog, programs: new Map<number, typeof programs[number]>() };
+  const hotelShadowProgram = hotelShadow.currentProgram, hotelShadowUniforms = hotelShadow.uniforms, hotelShadowList = hotelShadow.uniformsList;
+  const properties = () => ({ get: (object: THREE.Texture | THREE.Material) => object === shadowMaterial ? hotelShadow : { __version: uploaded.get(object as THREE.Texture) } });
   const gpu = { properties: properties(), info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
     shadowMap: { enabled: roofs, type: THREE.PCFSoftShadowMap },
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }), getRenderTarget: () => target,
@@ -65,7 +68,15 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
       assert.ok(batch.length > 0 && batch.length <= 4); assert.equal(target?.width, 1);
       const lights: THREE.Light[] = []; colors.traverseVisible(object => { if (object instanceof THREE.Light) lights.push(object); });
       const points = lights.filter(light => light instanceof THREE.PointLight).length;
-      programs.push({ program: {}, isReady: () => true, getUniforms: () => { work.push('bindings'); } }); work.push('compile');
+      const program = { program: {}, isReady: () => true, getUniforms: () => { work.push('bindings'); } };
+      programs.push(program); work.push('compile');
+      if (batch.includes(shadow)) {
+        hotelShadow.currentProgram = program;
+        hotelShadow.uniforms = {};
+        hotelShadow.uniformsList = null;
+        hotelShadow.lightsStateVersion = points;
+        hotelShadow.programs.set(points, program);
+      }
       if (batch.every(mesh => mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshDepthMaterial)) {
         assert.equal(colors.environment, null); assert.equal(colors.fog, null);
         depths.set(points, [...(depths.get(points) ?? []), ...batch as THREE.Mesh[]]);
@@ -126,6 +137,7 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   };
   t.after(() => { film.dispose(); lighting.dispose(); material.dispose(); geometry.dispose(); shadowMaterial.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
   return { film, journey, gpu, skin, shadow, material, actors, work, meshes, roots, depths, mapped, programs, prepare, drain, enter, nextMesh, livePointSlots,
+    hotelShadow, hotelShadowProgram, hotelShadowUniforms, hotelShadowList,
     requestVisit: () => {
       hero.visible = skin.visible = true;
       return film.beginOpeningVisit(gpu, camera, destination, player.id, [hero], lighting, sun);
@@ -133,6 +145,19 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
     decodeRoofMaps: () => { defer = false; pendingImages.splice(0).forEach(ready => ready()); },
     replaceGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
+
+test('303 rooftop preparation caches the shadow variant without replacing the live hotel bindings', t => {
+  const h = fixture(t, 'm1_roofs');
+  h.drain();
+  const roofProgram = h.hotelShadow.programs.get(4);
+  assert.ok(roofProgram && h.programs.includes(roofProgram), 'keep the linked program on the real shadow material for the handoff');
+  assert.equal(h.hotelShadow.currentProgram, h.hotelShadowProgram);
+  assert.equal(h.hotelShadow.uniforms, h.hotelShadowUniforms);
+  assert.equal(h.hotelShadow.uniformsList, h.hotelShadowList);
+  assert.equal(h.hotelShadow.lightsStateVersion, 13);
+  h.enter();
+  assert.equal(h.hotelShadow.programs.get(4), roofProgram);
+});
 
 test('a requested opening revisit adopts its prepared room and releases a cancelled visit', t => {
   const h = fixture(t, 'm1_phone_escape', false, true), saved = structuredClone(h.journey);
