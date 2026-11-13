@@ -1,6 +1,9 @@
 import * as THREE from 'three';
-import { FILM_SETS, OPENING_HOTEL, openingHotelClimbPose } from '@auto_matrix/shared';
+import { FILM_SETS, OPENING_HOTEL, openingHotelClimbPose, openingHotelPickupPose, type OpeningHotelPickupGesture } from '@auto_matrix/shared';
+import type { CharacterRig } from './CharacterModel.js';
 import type { HeroRig } from './HeroModel.js';
+import { poseHelPistol } from './HelCoatcheckPerformance.js';
+import { openingHotelPistolRest, openingHotelPistolRotation } from './HelPistolModel.js';
 import { reach } from './SpoonPerformance.js';
 
 const { ladderZ, ladderHeight, ladderRungs: rungs, ladderRails: rails } = OPENING_HOTEL;
@@ -8,6 +11,50 @@ const center = FILM_SETS.film_heart_hotel.center;
 const smooth = THREE.MathUtils.smoothstep;
 const up = new THREE.Vector3(0, 1, 0), forward = new THREE.Vector3(0, 0, 1);
 const wristAbove = .224, wristBehind = .196;
+
+export function poseOpeningHotelPickup(rig: CharacterRig, gesture: OpeningHotelPickupGesture, aimPitch?: number): void {
+  const gun = rig.weapons?.[0];
+  if (!gun) return;
+  const { bent, time, held } = openingHotelPickupPose(gesture), { grasp, lift, end } = OPENING_HOTEL.pickup;
+  const hero = rig.hero, body = rig.root.getWorldQuaternion(new THREE.Quaternion());
+  const shoulder = hero?.bones.get('shoulder_R') ?? rig.shoulders[0], elbow = hero?.bones.get('elbow_R') ?? rig.elbows[0];
+  const wrist = hero?.bones.get('wrist_R') ?? rig.mobilWrists?.[0];
+  if (!wrist) { gun.visible = held; return; }
+  const point = new THREE.Vector3(), resting = wrist.getWorldPosition(point).clone();
+  const restRotation = wrist.getWorldQuaternion(new THREE.Quaternion());
+  const grip = smooth(time, grasp - .15, grasp);
+  const fingers = hero && grip < 1 ? Array.from({ length: 15 }, (_, i) => hero.bones.get(`finger${Math.floor(i / 3) + 1}-${i % 3 + 1}_R`)!) : [];
+  const open = fingers.map(finger => finger.quaternion.clone());
+  if (hero && bent > 0) {
+    const bone = (name: string) => hero.bones.get(name)!;
+    const feet = (['R', 'L'] as const).map(side => bone(`ankle_${side}`).getWorldPosition(new THREE.Vector3()));
+    const pelvis = bone('pelvis'); pelvis.position.y -= 1.68 * bent; pelvis.position.z -= .16 * bent;
+    bone('spine').rotation.x += .78 * bent; bone('chest').rotation.x += .5 * bent;
+    bone('head').rotation.x -= .25 * bent;
+    for (const [i, side] of (['R', 'L'] as const).entries()) {
+      const hip = bone(`hip_${side}`), knee = bone(`knee_${side}`), ankle = bone(`ankle_${side}`);
+      const ankleRotation = ankle.getWorldQuaternion(new THREE.Quaternion()).slerp(body, bent);
+      const foot = feet[i].add(new THREE.Vector3(i ? .16 : -.10, 0, i ? -.19 : .14).applyQuaternion(body).multiplyScalar(bent));
+      reach(hip, knee, ankle.position, foot, new THREE.Vector3(i ? .36 : -.36, .25, 1).applyQuaternion(body));
+      ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(ankleRotation));
+    }
+  }
+  const reaching = smooth(time, .06, grasp), raising = smooth(time, grasp, lift), aiming = smooth(time, lift - .03, end);
+  poseHelPistol(rig, aimPitch, false, gun);
+  const floor = openingHotelPistolRest(gesture.fallen), carried = gun.getWorldPosition(point).clone();
+  const ready = rig.root.localToWorld(new THREE.Vector3(-.31, 2.67, .89));
+  const position = floor.lerp(ready.lerp(carried, aiming), raising);
+  const upraised = body.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(.25, .03, -.2, 'YXZ')));
+  const direction = openingHotelPistolRotation.clone().slerp(upraised.slerp(gun.getWorldQuaternion(new THREE.Quaternion()), aiming), raising);
+  const orientation = direction.multiply(gun.quaternion.clone().invert());
+  const offset = gun.position.clone().multiply(wrist.getWorldScale(point)).applyQuaternion(orientation);
+  const aimWrist = position.sub(offset);
+  const pole = new THREE.Vector3(-1, -.5, -.8).lerp(new THREE.Vector3(-.65, .4, -.32), bent).applyQuaternion(body);
+  reach(shoulder, elbow, wrist.position, resting.lerp(aimWrist, reaching), pole);
+  wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(restRotation.slerp(orientation, reaching)));
+  fingers.forEach((finger, i) => finger.quaternion.slerp(open[i], 1 - grip));
+  gun.visible = held;
+}
 
 function climbStep(height: number, phase: number, bottom: number = rungs.bottom, top: number = ladderHeight, spacing: number = rungs.spacing) {
   const last = Math.floor((top - bottom) / spacing);

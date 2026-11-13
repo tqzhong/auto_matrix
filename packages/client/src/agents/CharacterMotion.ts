@@ -2,7 +2,7 @@ import { AMBUSH_CALL, TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, 
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
-import { OPENING_HOTEL, openingAnswerPose, openingHotelClimbPose, openingHotelDiveMotion, openingHotelPhonePose, wellsAftermathPose, type OpeningHotelEncounter, type OpeningPursuitGesture } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingAnswerPose, openingHotelClimbPose, openingHotelDiveMotion, openingHotelPhonePose, openingHotelPickupPose, wellsAftermathPose, type OpeningHotelEncounter, type OpeningHotelPickupGesture, type OpeningPursuitGesture } from '@auto_matrix/shared';
 import { OPENING_ESCAPE, OPENING_ROOF_EXIT, openingRoofStairPose, type OpeningRoofExit } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
 import { hammerHandoverPose } from '@auto_matrix/shared';
@@ -121,7 +121,7 @@ export interface MotionInput {
   theOne?: TheOneGesture;
   reloaded?: ReloadedGesture;
   catch?: CatchGesture;
-  hotel303?: { phase: 'surrender' | 'dive' | 'answer'; elapsed: number; from?: OpeningHotelEncounter['callFrom'] };
+  hotel303?: { phase: 'surrender' | 'dive' | 'answer'; elapsed: number; from?: OpeningHotelEncounter['callFrom'] } | OpeningHotelPickupGesture;
   hotelReload?: number;
   hotelPursuit?: OpeningPursuitGesture;
   hotelBreach?: { travel: number; speed: number; impact: number };
@@ -758,7 +758,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       climbing: input.hotelClimb < OPENING_HOTEL.ladderHeight ? 0 : undefined };
     dt = 0;
   }
-  if (input.hotel303?.phase === 'surrender') {
+  if (input.hotel303?.phase === 'pickup') {
+    const pickup = openingHotelPickupPose(input.hotel303);
+    Object.assign(state, newMotion(), { time: input.hotel303.elapsed, speed: pickup.speed, phase: pickup.travel / 2.8 });
+    input = { ...input, speed: pickup.speed, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false, crouching: false };
+    dt = 0;
+  } else if (input.hotel303?.phase === 'surrender') {
     Object.assign(state, newMotion(), { time: input.hotel303.elapsed });
     input = { ...input, speed: 0, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false };
     dt = 0;

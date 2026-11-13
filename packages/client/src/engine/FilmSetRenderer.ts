@@ -51,7 +51,7 @@ import { ambushApproachTarget, ambushEscapeTarget } from '@auto_matrix/shared';
 import { ORACLE_REQUEST, oracleRequestLocked, ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS, ORACLE_ENTRANCE, ORACLE_ENTRANCE_WALLS, oracleArrivalDoor, oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, OFFICE_RETREAT_WINDOW, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
-import { OPENING_HOTEL, openingHotelBreachTime, openingHotelDoorAngle, openingHotelGlassBroken, openingHotelGlassTime, openingHotelHallOfficer, openingHotelHallTime, openingHotelLanded, openingHotelPhoneHeld, openingHotelTraceTime, openingRoofGlassBroken, type OpeningPursuitCast } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingHotelBreachTime, openingHotelDoorAngle, openingHotelGlassBroken, openingHotelGlassTime, openingHotelHallOfficer, openingHotelHallTime, openingHotelLanded, openingHotelPhoneHeld, openingHotelPickupPose, openingHotelTraceTime, openingRoofGlassBroken, type OpeningHotelPickupGesture, type OpeningPursuitCast } from '@auto_matrix/shared';
 import { OPENING_ROOF_EXIT, OPENING_ROOF_STAIRS, openingRoofStairHeight } from '@auto_matrix/shared';
 import { RELOADED } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
@@ -92,7 +92,7 @@ import { apartmentLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { ClubSetRenderer } from './ClubSetRenderer.js';
 import { HelClubPerformers } from './HelClubPerformers.js';
-import { createHelPistol } from '../agents/HelPistolModel.js';
+import { createHelPistol, openingHotelPistolRest, openingHotelPistolRotation } from '../agents/HelPistolModel.js';
 import { HEL_TERRACE, HEL_DISARM, HEL_BREAKOUT, HEL_TRIO, helDisarmGun, helBreakoutGun, type HelDisarm, type HelBreakoutGesture } from '@auto_matrix/shared';
 import { SentinelSetRenderer } from './SentinelSetRenderer.js';
 import { CypherRestaurantRenderer } from './CypherRestaurantRenderer.js';
@@ -2763,8 +2763,10 @@ export class FilmSetRenderer {
         this.poseHotel303Shards(hotel.phase === 'dive' ? Math.max(0, time - openingHotelGlassTime(hotel)) : Infinity);
       }
       if (this.hotel303Pistol) {
-        this.hotel303Pistol.visible = Boolean(hotel?.fallen && !hotel.disarmed && hotel.phase === 'combat');
-        if (hotel?.fallen) this.hotel303Pistol.position.set(hotel.fallen.x - this.current!.center.x, .12, hotel.fallen.z - this.current!.center.z);
+        const gesture = actor?.currentAction?.parameters.hotel303 as OpeningHotelPickupGesture | undefined;
+        const held = gesture?.phase === 'pickup' && openingHotelPickupPose(gesture).held;
+        this.hotel303Pistol.visible = Boolean(hotel?.fallen && !hotel.disarmed && hotel.phase === 'combat' && !held);
+        if (this.hotel303Pistol.visible && hotel?.fallen) this.hotel303Pistol.position.copy(this.root.worldToLocal(openingHotelPistolRest(hotel.fallen)));
       }
       if (this.hotel303DeskLight) {
         const alley = openingHotelLanded(hotel), light = this.hotel303DeskLight;
@@ -4005,9 +4007,9 @@ export class FilmSetRenderer {
     const soot = this.pbr('damaged_plaster', 0x3b4540, 4);
     const plaster = this.pbr('damaged_plaster', 0x6a7066, 5);
     const carpet = this.mat(0x302d2a, .95);
-    this.box(this.pbr('old_wood_floor', 0x897f72, 5), 0, .04, 12, set.width - 1.6, .07, 25);
-    this.box(carpet, 0, .085, 12, 19, .035, 17);
-    this.box(carpet, 0, .024, -11.9, 8.8, .035, 24.2);
+    const { woodFloor, roomCarpet, hallCarpet } = OPENING_HOTEL;
+    this.box(this.pbr('old_wood_floor', 0x897f72, 5), 0, woodFloor.bottom + woodFloor.height / 2, woodFloor.z, set.width - woodFloor.wallInset, woodFloor.height, woodFloor.depth);
+    for (const floor of [roomCarpet, hallCarpet]) this.box(carpet, 0, floor.bottom + floor.height / 2, floor.z, floor.width, floor.height, floor.depth);
     this.box(soot, 0, 10.28, -12.3, set.width - .65, .35, 25.9).castShadow = false;
     for (const wall of OPENING_HOTEL.walls.slice(0, 2)) {
       this.box(soot, wall.x, set.height / 2, wall.z, wall.width, set.height, wall.depth);
@@ -4032,11 +4034,13 @@ export class FilmSetRenderer {
     this.crt(-11.1, 3.6, desk.z, .66);
     this.chair(-7.5, desk.z + 2, Math.PI);
     this.hotelPhone();
-    this.hotel303Pistol = new THREE.Group(); this.hotel303Pistol.name = 'hotel-303-dropped-pistol'; this.hotel303Pistol.userData.dynamic = true;
+    this.hotel303Pistol = createHelPistol(this.mat(0x242b2c, .28, .75));
+    this.hotel303Pistol.name = 'hotel-303-dropped-pistol'; this.hotel303Pistol.userData.dynamic = true;
+    this.hotel303Pistol.quaternion.copy(openingHotelPistolRotation);
+    this.hotel303Pistol.traverse(object => {
+      if (object instanceof THREE.Mesh) { this.own(object.geometry); object.castShadow = object.receiveShadow = true; }
+    });
     this.hotel303Pistol.visible = false; this.root.add(this.hotel303Pistol);
-    this.hotel303Pistol.add(this.box(this.black, 0, .22, 0, 1.05, .17, .24));
-    const grip = this.box(this.metal, -.24, .08, .15, .24, .27, .14); grip.rotation.z = -.35; this.hotel303Pistol.add(grip);
-    this.hotel303Pistol.add(this.box(this.brass, .35, .33, 0, .13, .12, .16));
     this.hotel303DeskLight = new THREE.PointLight(0x8fcbb3, 180, 18, 2);
     this.hotel303DeskLight.position.set(-9.5, 4.8, desk.z); this.root.add(this.hotel303DeskLight);
     const corridorLight = this.hotel303HallLight = new THREE.PointLight(0xc3b89a, 125, 30, 2);

@@ -1,5 +1,5 @@
-import { FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, distance, filmPosition, openingHotelAlleyGuard, openingHotelBreachOfficer, openingHotelClimbPose, openingHotelClimbed, openingHotelDivePose, openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneLine, openingHotelPhonePose, openingHotelTraceLine, openingHotelTraceTime, openingHotelTraceTiming, playerBlocked, rayBox,
-  type AgentState, type CombatImpact, type OpeningHotelEncounter, type OpeningPursuer, type OpeningPursuitCast, type OpeningPursuitGesture, type SandboxState, type SandboxThreat, type Vector3 } from '@auto_matrix/shared';
+import { FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, combatDisplace, distance, filmPosition, openingHotelAlleyGuard, openingHotelBreachOfficer, openingHotelClimbPose, openingHotelClimbed, openingHotelDivePose, openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneLine, openingHotelPhonePose, openingHotelPickupPose, openingHotelTraceLine, openingHotelTraceTime, openingHotelTraceTiming, playerBlocked, rayBox,
+  type AgentState, type CombatImpact, type OpeningHotelEncounter, type OpeningHotelPickupGesture, type OpeningPursuer, type OpeningPursuitCast, type OpeningPursuitGesture, type SandboxState, type SandboxThreat, type Vector3 } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
 const SET = FILM_SETS.film_heart_hotel;
@@ -159,15 +159,25 @@ export class OpeningHotelSystem {
     const state = this.state;
     if (!state || state.phase !== 'combat' || state.fallen) return;
     state.fallen = { ...position };
-    this.journey!.lastText = '第一名警员倒下，手枪滑到地上。靠近落枪位置按 G 夺枪，或继续用 F 还击。';
+    this.journey!.lastText = '第一名警员倒下，手枪落到地上。靠近落枪位置按 G 拾起，或继续用 F 还击。';
   }
   disarm(actor: AgentState): string {
     const state = this.state;
-    if (!state || state.phase !== 'combat' || !state.fallen || state.disarmed) return this.journey!.lastText;
-    if (distance(actor.position, state.fallen) > 4) return '靠近倒下的警员，按 G 夺过手枪。';
-    state.disarmed = true; state.ammo = OPENING_HOTEL.magazine;
-    this.journey!.lastText = 'Trinity 夺过手枪。左键 / T 开火，F 近身反击，X 避开警员枪线；R 换弹。';
-    return this.journey!.lastText;
+    if (!state || state.phase !== 'combat' || !state.fallen || state.disarmed || state.pickup) return this.journey!.lastText;
+    const fallen = state.fallen, from = { position: { ...actor.position }, yaw: actor.rotation };
+    const { radius, stance } = OPENING_HOTEL.pickup;
+    if (distance(from.position, fallen) > radius || Math.abs(from.position.y - fallen.y) > .16) return '靠近落枪位置，站稳后按 G 拾起手枪。';
+    const angle = distance(from.position, fallen) < .06 ? from.yaw : Math.atan2(fallen.x - from.position.x, fallen.z - from.position.z);
+    for (const offset of [0, -.48, .48, -.96, .96]) {
+      const yaw = angle + offset;
+      const position = { x: fallen.x - stance * Math.sin(yaw), y: from.position.y, z: fallen.z - stance * Math.cos(yaw) };
+      const reached = combatDisplace(from.position, directionTo(from.position, position), distance(from.position, position), true, this.sandbox().structures);
+      if (distance(reached, position) > .001) continue;
+      state.pickup = { elapsed: 0, from, to: { position, yaw: yaw + .24 } };
+      this.frame(actor);
+      return this.journey!.lastText = 'Trinity 俯身去够掉落的手枪。';
+    }
+    return '走到落枪旁空旷的位置，再按 G 拾起手枪。';
   }
   active(actor: AgentState): boolean {
     const journey = this.journey;
@@ -267,6 +277,11 @@ export class OpeningHotelSystem {
     const journey = this.journey, state = this.state;
     if (journey?.scene !== 'm1_room303' || journey.visiting || journey.actor !== actor.id || !state) return false;
     if (journey.step === 0 && openingHotelTraceTime(state) !== undefined) { this.frame(actor); return true; }
+    if (state.phase === 'combat' && state.pickup && actor.status === 'alive') {
+      const saved = actor.currentAction?.parameters.hotel303 as OpeningHotelPickupGesture | undefined;
+      if (saved?.phase !== 'pickup' || saved.elapsed !== state.pickup.elapsed) this.frame(actor);
+      return true;
+    }
     if (!['breach', 'answering', 'dive', 'ladder_ready', 'climbing', 'done'].includes(state.phase)) return false;
     const action = actor.currentAction, gesture = action?.parameters.hotel303 as { phase: string; elapsed: number } | undefined;
     const saved = state.phase === 'breach' || state.phase === 'dive' || state.phase === 'answering'
@@ -296,6 +311,21 @@ export class OpeningHotelSystem {
       const line = openingHotelTraceLine(elapsed);
       this.journey!.lastText = line ? `${line.speaker} · ${line.text}` : elapsed >= timing.room ? 'Heart O’ the City Hotel · 303'
         : elapsed >= trace.room ? '走廊里传来脚步声。' : elapsed >= trace.located ? '线路已定位。' : '电话响起。';
+    } else if (state.phase === 'combat' && state.pickup && state.fallen) {
+      const pickup = state.pickup;
+      pickup.elapsed += Math.max(0, Math.min(.1, dt));
+      const pose = openingHotelPickupPose(pickup);
+      actor.position = { x: pose.x, y: pose.y, z: pose.z };
+      actor.rotation = pose.yaw;
+      actor.velocity = { x: 0, y: 0, z: 0 };
+      if (pose.done) {
+        delete state.pickup; state.disarmed = true; state.ammo = OPENING_HOTEL.magazine;
+        actor.currentAction = null;
+        this.journey!.lastText = 'Trinity 拿稳手枪。左键 / T 开火，F 近身反击，X 避开警员枪线；R 换弹。';
+      } else {
+        const gesture: OpeningHotelPickupGesture = { phase: 'pickup', ...pickup, fallen: state.fallen };
+        actor.currentAction = { type: 'idle', parameters: { resolved: true, hotel303: gesture }, startedAt: state.lastTick, duration: 1, progress: 0 };
+      }
     } else if (state.phase === 'breach') {
       if (dt > 0 && state.breachYaw === undefined) {
         // A paused save from before staging can resume from its existing clock.
@@ -381,12 +411,13 @@ export class OpeningHotelSystem {
     if (state.phase === 'failed') return true;
     if (state.phase !== 'combat') return false;
     if (actor.status !== 'alive' || actor.health <= 0) {
+      this.failPickup(actor);
       state.phase = 'failed'; this.journey.lastText = '警员的枪线封死 303。J 打开手记，从破门检查点重试。'; return true;
     }
     if (state.reloadAt !== undefined && tick >= state.reloadAt) { state.ammo = OPENING_HOTEL.magazine; delete state.reloadAt; }
     if (!this.enemies.length) {
       if (state.disarmed) { state.phase = 'phone'; this.onAdvance?.('警员倒下。走到电话桌前，按 G 联络 Morpheus。', actor, tick); }
-      else this.journey.lastText = '枪声停了。靠近倒下的警员按 G，拿起掉落的手枪。';
+      else if (!state.pickup) this.journey.lastText = '枪声停了。靠近倒下的警员按 G，拿起掉落的手枪。';
       return true;
     }
     for (const enemy of this.enemies) {
@@ -404,7 +435,7 @@ export class OpeningHotelSystem {
           direction, damage, combo: 0, matrix: true, downed: actor.health <= 0,
           shot: { from, surface: hit ? 'body' : 'stone' } }, tick);
         enemy.lastStrike = tick; delete enemy.attackAt; delete enemy.aim;
-        if (actor.health <= 0) { actor.status = 'dead'; state.phase = 'failed'; this.journey.lastText = 'Trinity 被警员击倒。J 打开手记，从破门检查点重试。'; return true; }
+        if (actor.health <= 0) { actor.status = 'dead'; this.failPickup(actor); state.phase = 'failed'; this.journey.lastText = 'Trinity 被警员击倒。J 打开手记，从破门检查点重试。'; return true; }
       } else if (lead && !state.disarmed && distance(enemy.position, actor.position) > 3.1) {
         const direction = directionTo(enemy.position, actor.position);
         const next = { ...enemy.position, x: enemy.position.x + direction.x * 1.8, z: enemy.position.z + direction.z * 1.8 };
@@ -418,5 +449,11 @@ export class OpeningHotelSystem {
       }
     }
     return true;
+  }
+
+  private failPickup(actor: AgentState): void {
+    if (!this.state?.pickup) return;
+    delete this.state.pickup;
+    actor.currentAction = null;
   }
 }

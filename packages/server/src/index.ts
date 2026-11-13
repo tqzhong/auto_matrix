@@ -281,6 +281,7 @@ const playerTimer = setInterval(() => {
   const contactPhase = journey?.contact?.phase;
   const hotelGlass = openingHotelGlassBroken(journey?.openingHotel), hotelLanded = openingHotelLanded(journey?.openingHotel);
   const hotelDoor = openingHotelDoorHit(journey?.openingHotel), hotelBreach = journey?.openingHotel?.breachYaw !== undefined;
+  const hotelPickup = journey?.openingHotel?.pickup;
   const hotelCall = journey?.openingHotel?.phase === 'answering' ? journey.openingHotel.elapsed : undefined, hotelText = journey?.lastText;
   const hotelTrace = openingHotelTraceTime(journey?.openingHotel);
   const roofPhase = journey?.openingRoof?.phase;
@@ -310,7 +311,8 @@ const playerTimer = setInterval(() => {
     || current?.scene === 'm1_room303' && !current.visiting && (openingHotelGlassBroken(current.openingHotel) !== hotelGlass || openingHotelLanded(current.openingHotel) !== hotelLanded
       || hotelTrace !== undefined && (openingHotelTraceTime(current.openingHotel) === undefined || current.lastText !== hotelText)
       || openingHotelDoorHit(current.openingHotel) !== hotelDoor || (current.openingHotel?.breachYaw !== undefined) !== hotelBreach
-      || openingHotelPhoneHeld(hotelAnswer) !== openingHotelPhoneHeld(hotelCall) || hotelAnswer !== undefined && current.lastText !== hotelText)) {
+      || openingHotelPhoneHeld(hotelAnswer) !== openingHotelPhoneHeld(hotelCall) || hotelAnswer !== undefined && current.lastText !== hotelText
+      || Boolean(current.openingHotel?.pickup) !== Boolean(hotelPickup))) {
     // Publish a story boundary with its poses; the next slow simulation tick may never run after a pause.
     sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state, timeOfDay: world.timeOfDay, simulation: simulationState() }, simLoop.getTick());
     return;

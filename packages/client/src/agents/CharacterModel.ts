@@ -16,6 +16,7 @@ import { poseHelElevator } from './HelElevatorPerformance.js';
 import { poseHelDanceDoor } from './HelDanceDoorPerformance.js';
 import { poseHelPistol } from './HelCoatcheckPerformance.js';
 import { createHelPistol } from './HelPistolModel.js';
+import { poseOpeningHotelPickup } from './OpeningHotelContact.js';
 import { createMouseWeapon } from './MouseWeapon.js';
 import { poseHelDisarm } from './HelDisarmPerformance.js';
 import { poseHelBreakout } from './HelBreakoutPerformance.js';
@@ -1071,9 +1072,10 @@ export class CharacterModels {
     if (input.truckWeapons?.role === 'morpheus' && !rig.truckProps) { rig.truckProps = new TruckWeaponProps(rig.root); this.truckProps.add(rig.truckProps); }
     rig.truckProps?.hide();
     const pickupArmed = input.freewayPickup?.role === 'trinity' && input.freewayPickup.phase === 'shooting';
-    const armed = !input.helDoorPush && !input.helElevator && !input.helGarage && !input.architect && !input.sourcePortal && !input.trinityTerminal && !input.truckWeapons && (input.armed || pickupArmed || Boolean(input.helDisarm));
+    const hotelPickup = input.hotel303?.phase === 'pickup' ? input.hotel303 : undefined;
+    const armed = !input.helDoorPush && !input.helElevator && !input.helGarage && !input.architect && !input.sourcePortal && !input.trinityTerminal && !input.truckWeapons && (input.armed || pickupArmed || Boolean(input.helDisarm || hotelPickup));
     const pulseRifle = Boolean(input.dockGateCover || input.crosscut && ['cypher', 'tank'].includes(input.crosscut.role) || input.betrayal && ['cypher', 'tank'].includes(input.betrayal.role));
-    const weaponStyle: CharacterRig['weaponStyle'] = pickupArmed ? 'hel_pistol' : pulseRifle ? 'pulse' : input.weaponStyle ?? (rig.rifle ? 'rifle' : 'pistol');
+    const weaponStyle: CharacterRig['weaponStyle'] = pickupArmed || hotelPickup ? 'hel_pistol' : pulseRifle ? 'pulse' : input.weaponStyle ?? (rig.rifle ? 'rifle' : 'pistol');
     const helPistol = weaponStyle === 'hel_pistol' && !input.freewayPickup;
     const mouseWeapon = Boolean(rig.mouseFrame) && weaponStyle === 'pistol';
     if (armed && rig.weapons && (rig.weaponStyle !== weaponStyle || Boolean(rig.weapons[0].userData.helPistol) !== helPistol)) {
@@ -1276,7 +1278,8 @@ export class CharacterModels {
     if (rig.hero) {
       this.heroes.animate(rig.hero, pose, rig.motion, input, delta);
       if (rig.hero.support === 'mouse' && armed && weaponStyle === 'pistol') this.heroes.mousePistols(rig.hero, rig.weapons!, rig.motion.shotAge, input.mouseRoomTime);
-      if (armed && helPistol && input.helDanceDoor === undefined && !input.helDisarm)
+      if (hotelPickup) poseOpeningHotelPickup(rig, hotelPickup, input.aimPitch);
+      else if (armed && helPistol && input.helDanceDoor === undefined && !input.helDisarm)
         poseHelPistol(rig, input.aimPitch, input.training?.kind === 'red_dress' && input.training.role === 'smith', rig.weapons?.[0], input.hotelReload);
       if (armed && helPistol && input.training?.kind === 'red_dress' && input.training.role === 'smith') this.heroes.trainingPistolHands(rig.hero);
       poseHelDisarm(rig, input.helDisarm);
@@ -1495,7 +1498,8 @@ export class CharacterModels {
     poseHelGarage(rig, input.helGarage);
     poseHelElevator(rig, input.helElevator);
     poseHelDanceDoor(rig, input.helDoorPush);
-    if (armed && helPistol && input.helDanceDoor === undefined && !input.helDisarm) poseHelPistol(rig, input.aimPitch, false, rig.weapons?.[0], input.hotelReload);
+    if (hotelPickup) poseOpeningHotelPickup(rig, hotelPickup, input.aimPitch);
+    else if (armed && helPistol && input.helDanceDoor === undefined && !input.helDisarm) poseHelPistol(rig, input.aimPitch, false, rig.weapons?.[0], input.hotelReload);
     poseHelDisarm(rig, input.helDisarm);
     poseHelBreakout(rig, input.helBreakout);
     poseMaggieDiscovery(rig, input.maggieDiscovery);

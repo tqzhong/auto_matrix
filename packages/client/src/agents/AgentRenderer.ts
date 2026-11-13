@@ -726,7 +726,8 @@ export class AgentRenderer {
         : doorActor && helDanceDoorLocked(journey) && journey!.helDanceDoor!.physical ? journey!.helDanceDoor : undefined;
       const door = physicalDoor ?? (doorActor && helDanceDoorLocked(journey) ? journey!.helDanceDoor : undefined);
       const doorPush = door ? door.elapsed / helDanceDoorDuration(door) : undefined;
-      const pistolView = id === this.playerId && this.firstPerson && (disarmGesture || this.playerMotion?.armed && this.playerMotion.weaponStyle === 'hel_pistol');
+      const pistolView = id === this.playerId && this.firstPerson && (disarmGesture || this.playerMotion?.hotel303?.phase === 'pickup'
+        || this.playerMotion?.armed && this.playerMotion.weaponStyle === 'hel_pistol');
       const apuView = id === this.playerId && this.firstPerson && Boolean(this.playerMotion?.apuDriving || this.playerMotion?.dockReload || this.playerMotion?.dockLastStand || this.playerMotion?.dockGate);
       const recoveryView = id === this.playerId && this.firstPerson && (this.playerMotion?.performance === 'recover' || this.playerMotion?.cabin?.kind === 'wake');
       const constructView = id === this.playerId && this.firstPerson && (this.playerMotion?.construct?.role === 'neo' && this.playerMotion.construct.phase === 'image' || this.playerMotion?.reveal?.kind === 'construct' && this.playerMotion.reveal.role === 'neo');

@@ -8,6 +8,9 @@ export const OPENING_HOTEL = {
     align: .56, grasp: .96, lift: 1.62, lower: 6.22, release: 6.9, end: 7.24 },
   doorZ: 1,
   window: { x: 0, z: -23, paneZ: -25.61 },
+  woodFloor: { z: 12, bottom: .005, height: .07, wallInset: 1.6, depth: 25 },
+  roomCarpet: { z: 12, bottom: .0675, height: .035, width: 19, depth: 17 },
+  hallCarpet: { z: -11.9, bottom: .0065, height: .035, width: 8.8, depth: 24.2 },
   ladderZ: -30,
   ladderHeight: 7,
   lowerDeck: { z: -30.8, y: -.35, width: 11, depth: 9, thickness: .4 },
@@ -22,6 +25,7 @@ export const OPENING_HOTEL = {
   pursuit: { triggerZ: -4, startZ: 6.8, stopZ: -23.9, spacing: 6.2, speed: 6.2 },
   officers: [{ id: 'citizen_4', x: -1.6, behind: 3.2 }, { id: 'citizen_14', x: 1.65, behind: 6.3 }],
   alley: { y: -8, x: 3.6, z: -38.8, front: -26, back: -42, width: 27 },
+  pickup: { radius: 4, stance: 1.12, grasp: .55, lift: .88, end: 1.09 },
   magazine: 8,
   reloadTicks: 3,
   combatOfficers: ['citizen_4', 'citizen_14', 'citizen_10', 'citizen_13'],
@@ -37,6 +41,13 @@ export type OpeningPursuitCast = Partial<Record<OpeningPursuer, Pick<AgentState,
   'position' | 'rotation' | 'velocity' | 'currentLocation' | 'isInMatrix' | 'targetPosition' | 'currentPath' | 'currentAction'>>>;
 export interface OpeningPursuitGesture { travel: number; speed: number; lookPitch?: number }
 
+export interface OpeningHotelPickup {
+  elapsed: number;
+  from: { position: Vector3; yaw: number };
+  to: { position: Vector3; yaw: number };
+}
+export interface OpeningHotelPickupGesture extends OpeningHotelPickup { phase: 'pickup'; fallen: Vector3 }
+
 export function openingHotelAlleyGuard(actor?: AgentState | null): actor is AgentState {
   return actor?.id === 'smith' && actor.currentLocation === 'film_heart_hotel' && actor.status === 'alive' && !actor.controller
     && (actor.currentAction?.parameters.hotelPursuit as OpeningPursuitGesture | undefined)?.lookPitch !== undefined;
@@ -46,6 +57,7 @@ export interface OpeningHotelEncounter {
   phase: 'trace' | 'breach' | 'combat' | 'phone' | 'answering' | 'corridor' | 'dive' | 'ladder_ready' | 'climbing' | 'done' | 'failed';
   elapsed: number; lastTick: number; attempts: number;
   disarmed: boolean; ammo: number; shots: number; fallen?: Vector3;
+  pickup?: OpeningHotelPickup;
   reloadAt?: number; climbed?: number; breachYaw?: number; traceElapsed?: number; traceHall?: true;
   callFrom?: { position: Vector3; yaw: number };
   diveFrom?: { position: Vector3; yaw: number };
@@ -104,6 +116,18 @@ export function openingHotelLanded(hotel?: OpeningHotelEncounter): boolean {
 function ease(value: number, start: number, end: number): number {
   const t = Math.max(0, Math.min(1, (value - start) / (end - start)));
   return t * t * (3 - 2 * t);
+}
+
+export function openingHotelPickupPose({ elapsed, from, to }: OpeningHotelPickup) {
+  const dx = to.position.x - from.position.x, dz = to.position.z - from.position.z;
+  const length = Math.hypot(dx, dz), approach = Math.max(.14, length * .2);
+  const progress = ease(elapsed, 0, approach), turn = Math.atan2(Math.sin(to.yaw - from.yaw), Math.cos(to.yaw - from.yaw));
+  const time = Math.max(0, elapsed - approach), { grasp, lift, end } = OPENING_HOTEL.pickup;
+  return { x: from.position.x + dx * progress, y: to.position.y, z: from.position.z + dz * progress,
+    yaw: from.yaw + turn * progress, travel: length * progress,
+    speed: length * (ease(elapsed + .001, 0, approach) - progress) * 1000,
+    time, bent: ease(time, .015, grasp) * (1 - ease(time, grasp, lift)),
+    held: time >= grasp, done: elapsed >= approach + end - 1e-6 };
 }
 
 // Each actor clears the jamb before fanning out into the room.

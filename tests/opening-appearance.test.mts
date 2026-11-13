@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_ROOF_EXIT, filmEntry, openingRoofLeapPose, openingRoofStairPose, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, OPENING_ROOF_EXIT, filmEntry, filmPosition, openingHotelPickupPose, openingRoofLeapPose, openingRoofStairPose, type FilmJourney, type OpeningHotelPickupGesture, type SandboxState } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import type { CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
@@ -153,6 +154,72 @@ test('Trinity visibly seats the 303 magazine with her left hand and returns to a
   assert.deepEqual(magazine.position.toArray(), chamber.toArray(), 'the magazine is flush when aiming resumes');
   assert.ok(gun.getWorldQuaternion(new THREE.Quaternion()).angleTo(pointing) < 1e-6);
   assert.ok(left.getWorldPosition(new THREE.Vector3()).distanceTo(idleLeft) < 1e-6);
+});
+
+test('Trinity lifts the same 303 pistol from the carpet without skipping hand contact', async t => {
+  const source = await actor('trinity'), asset = await source.models['load']('trinity');
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: { createElement: () => ({ getContext: () => ({
+    fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {},
+  }) }) } });
+  const scene = new THREE.Scene(), scenery = new FilmSetRenderer(scene), renderer = new AgentRenderer(scene);
+  t.after(() => { scenery.dispose(); renderer.dispose(); source.models.dispose(); if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document'); });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const trinity = world.agents.get('trinity')!, film = FILM_SCENE_BY_ID.m1_room303;
+  const floor = OPENING_HOTEL.roomCarpet.bottom + OPENING_HOTEL.roomCarpet.height;
+  const fallen = filmPosition(film.set, -5.35, 10.3), yaw = Math.PI;
+  const from = { position: { ...fallen, z: fallen.z + 2.3 }, yaw };
+  const to = { position: { ...fallen, z: fallen.z + OPENING_HOTEL.pickup.stance }, yaw: yaw + .24 };
+  const journey: FilmJourney = { version: 1, scene: film.id, actor: 'trinity', step: 1, completed: [], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: from.position,
+    openingHotel: { phase: 'combat', elapsed: 0, lastTick: 0, attempts: 0, disarmed: false, ammo: 0, shots: 0, fallen } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const camera = new THREE.PerspectiveCamera(62, 16 / 9, .1, 1000);
+  Object.assign(trinity, { currentLocation: film.set, isInMatrix: true, position: from.position });
+  renderer.updateAgent('trinity', trinity);
+  for (let i = 0; i < 8; i++) await new Promise(resolve => setImmediate(resolve));
+  const body = renderer.getAgentBody('trinity')!, hero = renderer.getAgentHero('trinity')!;
+  assert.ok(hero, 'use the delivered model');
+  const approach = Math.hypot(to.position.x - from.position.x, to.position.z - from.position.z) * .2;
+  const gesture: OpeningHotelPickupGesture = { phase: 'pickup', elapsed: 0, from, to, fallen };
+  function draw(time: number, firstPerson: boolean) {
+    gesture.elapsed = approach + time;
+    const pose = openingHotelPickupPose(gesture);
+    trinity.position = { x: pose.x, y: pose.y, z: pose.z }; trinity.rotation = pose.yaw;
+    trinity.currentAction = { type: 'idle', parameters: { resolved: true, hotel303: gesture }, startedAt: 0, duration: 1, progress: 0 };
+    renderer.updateAgent('trinity', trinity); renderer.getAgent('trinity')!.position.copy(trinity.position); body.rotation.y = pose.yaw;
+    renderer.setPlayer('trinity', firstPerson);
+    renderer.setPlayerMotion({ speed: 0, grounded: true, verticalVelocity: 0, turn: 0, firstPerson, hotel303: gesture, aimPitch: .1 });
+    camera.position.copy(trinity.position).y += 4;
+    renderer.update(0, camera, 0, 0, journey);
+    scenery.update(trinity, sandbox, 0);
+    scene.updateMatrixWorld(true);
+    return { onFloor: scenery.root.getObjectByName('hotel-303-dropped-pistol')!, held: body.getObjectByName('character-hel_pistol')! };
+  }
+  const position = new THREE.Vector3(), rotation = new THREE.Quaternion();
+  for (const first of [true, false]) {
+    const reaching = draw(OPENING_HOTEL.pickup.grasp - .001, first);
+    assert.ok(reaching.onFloor.visible && !reaching.held.visible);
+    assert.ok(Math.abs(new THREE.Box3().setFromObject(reaching.onFloor).min.y - floor) < .006);
+    const point = reaching.onFloor.getWorldPosition(position).clone();
+    const flat = reaching.onFloor.getWorldQuaternion(rotation).clone();
+    const palm = hero.getObjectByName('wrist_R')!.localToWorld(new THREE.Vector3(.11, -.22, .07));
+    assert.ok(palm.distanceTo(point) < .13, 'the hand reaches the dropped pistol before it lifts');
+    const grasp = draw(OPENING_HOTEL.pickup.grasp + .001, first);
+    assert.ok(!grasp.onFloor.visible && grasp.held.visible);
+    assert.ok(grasp.held.getWorldPosition(position).distanceTo(point) < .04);
+    assert.ok(grasp.held.getWorldQuaternion(rotation).angleTo(flat) < .04);
+    assert.equal(grasp.held.parent, hero.getObjectByName('wrist_R'));
+    const lift = draw(OPENING_HOTEL.pickup.lift, first);
+    assert.equal(lift.held, grasp.held);
+    assert.ok(lift.held.getWorldPosition(position).y > point.y + 2);
+    const target = lift.held.getWorldPosition(position).clone();
+    draw(OPENING_HOTEL.pickup.grasp, first);
+    assert.ok(draw(OPENING_HOTEL.pickup.lift, first).held.getWorldPosition(position).distanceTo(target) < 1e-8);
+  }
 });
 
 test('cold hero rigs assemble on separate frames and disposal cancels a queued rig', async t => {

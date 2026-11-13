@@ -68,6 +68,11 @@ function finishHotelBreach(h: ReturnType<typeof setup>) {
     h.players.step(.1, true, h.tick());
 }
 
+function finishHotelPickup(h: ReturnType<typeof setup>) {
+  for (let frame = 0; frame < 25 && !h.sandbox.life.film.state?.openingHotel?.disarmed; frame++)
+    h.players.step(.08, true, h.tick());
+}
+
 function finishHotelDive(h: ReturnType<typeof setup>) {
   for (let frame = 0; frame < 30 && h.sandbox.life.film.state?.openingHotel?.phase === 'dive'; frame++)
     h.players.step(.1, true, h.tick());
@@ -824,7 +829,38 @@ test('303 breach saves its timing, then Trinity disarms, shoots and reaches the 
     h.sandbox.attack(actor, h.tick(), hit % 3);
   }
   assert.equal(lead.health, 0); assert.ok(state.openingHotel?.fallen);
-  actor.position = { ...state.openingHotel!.fallen! }; h.command('act');
+  const drop = state.openingHotel!.fallen!;
+  actor.position = { ...drop, z: drop.z + 4.1 };
+  h.command('act');
+  assert.equal(state.openingHotel?.pickup, undefined, 'a distant request leaves the pistol on the floor');
+  const barrier = { id: 'test:303-pickup-wall', kind: 'barricade' as const, owner: 'matrix', matrix: true, health: 999,
+    position: { ...drop, z: drop.z + 1.4 }, film: { scene: 'm1_room303', width: 9, height: 4, depth: .25 } };
+  h.sandbox.state.structures.push(barrier);
+  actor.position = { ...drop, z: drop.z + 3.35 };
+  const blocked = { ...actor.position };
+  h.command('act');
+  assert.equal(state.openingHotel?.pickup, undefined, 'G cannot move Trinity through an intervening wall');
+  assert.deepEqual(actor.position, blocked);
+  h.sandbox.state.structures = h.sandbox.state.structures.filter(structure => structure.id !== barrier.id);
+  actor.position = { ...state.openingHotel!.fallen!, z: state.openingHotel!.fallen!.z + 2.3 }; h.command('act');
+  assert.equal(state.openingHotel?.disarmed, false, 'G starts the reach, with the gun still on the floor');
+  assert.equal(state.openingHotel?.ammo, 0);
+  assert.equal(hotel.shoot(actor, 0, 0, h.tick()), '');
+  assert.equal(hotel.reload(actor, h.tick()), '');
+  for (let frame = 0; frame < 8; frame++) h.players.step(.05, true, h.tick());
+  const pose = structuredClone(actor.currentAction), position = { ...actor.position };
+  assert.equal((pose?.parameters.hotel303 as { phase: string })?.phase, 'pickup');
+  assert.ok(distance(position, state.openingHotel!.fallen!) < 2.3);
+  h.command('act');
+  h.players.step(.05, false, h.tick());
+  assert.deepEqual(actor.currentAction, pose, 'repeat G and pause preserve the pickup clock');
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state));
+  h.players.release('film-player', h.tick());
+  h.sandbox.restore(saved); state = h.sandbox.life.film.state!;
+  h.players.possess('film-player', 'trinity', h.tick());
+  assert.deepEqual(actor.currentAction, pose);
+  assert.deepEqual(actor.position, position);
+  finishHotelPickup(h);
   assert.equal(state.openingHotel?.disarmed, true); assert.equal(state.openingHotel.ammo, OPENING_HOTEL.magazine);
   actor.position = filmPosition('film_heart_hotel', 0, 0);
   const targets = [...h.sandbox.state.threats].sort((a, b) => distance(a.position, actor.position) - distance(b.position, actor.position));
@@ -1315,7 +1351,7 @@ test('Trinity can walk from 303 through the roof gap and answer the phone withou
   assert.equal(lead.health, 0);
   const fallen = state.openingHotel!.fallen!;
   walkTo(room.set, fallen.x - FILM_SETS[room.set].center.x, fallen.z - FILM_SETS[room.set].center.z);
-  h.command('act'); assert.equal(state.openingHotel?.disarmed, true);
+  h.command('act'); finishHotelPickup(h); assert.equal(state.openingHotel?.disarmed, true);
   walkTo(room.set, 0, 0);
   const targets = [...h.sandbox.state.threats].sort((a, b) => distance(a.position, h.actor().position) - distance(b.position, h.actor().position));
   for (const target of targets) for (let shot = 0; target.health > 0 && shot < 3; shot++) {
@@ -4442,7 +4478,7 @@ test('the entire film route completes through interactions, driving and real com
             }
             assert.equal(target.health, 0);
           }
-          actor.position = { ...state.openingHotel!.fallen! }; h.command('act'); h.advance();
+          actor.position = { ...state.openingHotel!.fallen! }; h.command('act'); finishHotelPickup(h); h.advance();
           assert.equal(state.openingHotel?.disarmed, true);
         } else if (index === 2 || index === 4) { h.command('act'); if (index === 2) finishHotelCall(h); else finishHotelDive(h); }
         else if (index === 5) {
