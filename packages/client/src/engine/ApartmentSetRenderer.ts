@@ -6,7 +6,7 @@ import { apartmentDisc } from '../agents/ApartmentDisc.js';
 import { apartmentHandset, apartmentHandsetPose } from '../agents/ApartmentHandset.js';
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { LightCulling } from './LightCulling.js';
-import { cacheReadyProgramLocations, shadowCasterProxies } from './PrepareShaderProgram.js';
+import { cacheReadyProgramLocations, preserveProgramBindings, shadowCasterProxies } from './PrepareShaderProgram.js';
 import { bitmapUploadImage, stageBitmapTexture } from './BitmapTextureRows.js';
 import { prepareMeshBuffers } from './PrepareMeshBuffers.js';
 
@@ -323,6 +323,7 @@ export class ApartmentSetRenderer {
   private *prepareReturnSteps(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene,
     subjects: (THREE.Group | THREE.Mesh)[], destination: ApartmentReturn, normalMeshes?: THREE.Mesh[], shadows?: ReturnShadows): Generator<void> {
     const opening = destination === 'm1_wake_up';
+    const sharedOverlays = opening ? subjects.slice(1).filter((object): object is THREE.Mesh => object instanceof THREE.Mesh && object.material instanceof THREE.MeshBasicMaterial) : [];
     const invitation = destination === 'deferred_contact';
     const entryScene = destination === 'neo_apartment' ? undefined : FILM_SCENE_BY_ID[invitation ? 'm1_wake_up' : destination];
     const lights = new THREE.Scene(); lights.environment = scene.environment; lights.fog = scene.fog;
@@ -393,8 +394,9 @@ export class ApartmentSetRenderer {
     const compile = (batch: (THREE.Mesh | THREE.Line)[], lights: LightCulling, view: THREE.PerspectiveCamera, state: 'live' | 'depth') => {
       const subject = new THREE.Group(), previous = renderer.getRenderTarget(), programs = renderer.info.programs, start = programs?.length ?? 0;
       subject.traverse = visit => batch.forEach(visit);
+      const restore = preserveProgramBindings(renderer, sharedOverlays.filter(mesh => batch.includes(mesh)));
       try { renderer.setRenderTarget(target); lights.compileSubject(renderer, view, subject, undefined, undefined, state); }
-      finally { renderer.setRenderTarget(previous); }
+      finally { restore(); renderer.setRenderTarget(previous); }
       if (programs) pending.push(...programs.slice(start) as ColorProgram[]);
     };
     try {

@@ -4,6 +4,17 @@ import { usesOpaqueShadowDepth } from './OpaqueShadowDepth.js';
 
 type Program = NonNullable<THREE.WebGLRenderer['info']['programs']>[number];
 
+/** Keep live material bindings while linking another program on the same material. */
+export function preserveProgramBindings(renderer: THREE.WebGLRenderer, meshes: readonly (THREE.Mesh | undefined)[]): () => void {
+  const saved: { bindings: object; live: object }[] = [];
+  for (const mesh of meshes) {
+    if (!mesh || Array.isArray(mesh.material)) continue;
+    const bindings = renderer.properties.get(mesh.material) as { currentProgram?: Program };
+    if (bindings.currentProgram) saved.push({ bindings, live: { ...bindings } });
+  }
+  return () => { for (const { bindings, live } of saved) Object.assign(bindings, live); };
+}
+
 /** Cache locations after parallel compilation reports completion. */
 export function cacheReadyProgramLocations(renderer: THREE.WebGLRenderer, program: Program): void {
   const debug = renderer.debug, checks = debug.checkShaderErrors;

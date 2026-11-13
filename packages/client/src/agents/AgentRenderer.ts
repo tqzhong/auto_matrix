@@ -101,7 +101,7 @@ export class AgentRenderer {
   private models = new CharacterModels();
   private preparedOpeningApartment = new WeakSet<THREE.Group>();
   private hotelCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; pursuit: boolean; heroes: THREE.Group[]; steps?: Generator<void> };
-  private wellsCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; heroes: THREE.Group[]; steps?: Generator<void> };
+  private wellsCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; heroes: THREE.Group[]; meshes: THREE.Mesh[]; steps?: Generator<void> };
   private fallenFloorShapes = new WeakMap<THREE.Object3D, Float32Array>();
   private custody = new OfficeCustodyPerformance();
   private preparedOfficeActors?: WeakMap<THREE.Group, {
@@ -271,6 +271,7 @@ export class AgentRenderer {
     this.hotelCastPreparation?.steps?.return(undefined);
     this.hotelCastPreparation = undefined;
   }
+  get wellsCastMeshes(): readonly THREE.Mesh[] | undefined { return this.wellsCastPreparation?.meshes; }
   prepareWellsCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, phone?: OpeningPhoneEncounter): boolean {
     const beforeCast = phone?.phase === 'answering' || phone?.phase === 'connected' || phone?.phase === 'done' && !phone.aftermath;
     const heroes = beforeCast ? WELLS_AFTERMATH.roles.map(id => this.getAgentHero(id)).filter((hero): hero is THREE.Group => hero !== undefined) : [];
@@ -280,18 +281,26 @@ export class AgentRenderer {
     if (!prepared || prepared.gpu !== gpu || prepared.heroes.length !== heroes.length
       || prepared.heroes.some((hero, index) => hero !== heroes[index])) {
       this.cancelWellsCastPreparation();
-      this.wellsCastPreparation = prepared = { gpu, heroes, steps: this.prepareWellsCastAssets(renderer, camera, heroes) };
+      const cast = new Set<THREE.Mesh>();
+      const collect = (object: THREE.Object3D) => { if (object instanceof THREE.Mesh) cast.add(object); };
+      for (const hero of heroes) {
+        for (const child of hero.children) child.traverseVisible(collect);
+        // The closed mouth hides its teeth and tongue until the first line.
+        hero.getObjectByName('smith-mouth')?.traverse(collect);
+      }
+      const meshes = [...cast];
+      this.wellsCastPreparation = prepared = { gpu, heroes, meshes, steps: this.prepareWellsCastAssets(renderer, camera, heroes, meshes) };
     }
     if (prepared.steps?.next().done) prepared.steps = undefined;
     return prepared.steps !== undefined;
   }
-  private *prepareWellsCastAssets(renderer: THREE.WebGLRenderer, camera: THREE.Camera, heroes: THREE.Group[]): Generator<void> {
+  private *prepareWellsCastAssets(renderer: THREE.WebGLRenderer, camera: THREE.Camera, heroes: THREE.Group[], cast: THREE.Mesh[]): Generator<void> {
     yield* this.prepareCastMaps(renderer, heroes, ['Anatomical_head_and_hands', 'Tailored_coat_upper', 'short04']);
     const meshes: THREE.Mesh[] = [], geometries = new Set<THREE.BufferGeometry>();
-    for (const hero of heroes) for (const child of hero.children) child.traverseVisible(object => {
-      if (!(object instanceof THREE.Mesh) || geometries.has(object.geometry)) return;
+    for (const object of cast) {
+      if (geometries.has(object.geometry)) continue;
       meshes.push(object); geometries.add(object.geometry);
-    });
+    }
     yield* prepareMeshBuffers(renderer, camera, meshes);
   }
   private *prepareCastMaps(renderer: THREE.WebGLRenderer, heroes: THREE.Group[], names: string[], normalMaps = false): Generator<void> {

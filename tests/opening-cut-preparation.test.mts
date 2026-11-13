@@ -512,6 +512,58 @@ test('an early cut finishes the Wells booth without waiting for parallel shader 
   assert.deepEqual(h.work, []);
 });
 
+test('Wells links the real cast materials and holds the packed depth variants through the investigation', t => {
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera();
+  const sun = new THREE.DirectionalLight(), light = new THREE.PointLight(0xffffff, 1);
+  sun.castShadow = true; scene.add(sun, light);
+  const lighting = new LightCulling(scene), film = new FilmSetRenderer(scene);
+  Object.assign(film, { currentScene: 'm1_phone_escape' });
+  const geometry = new THREE.BoxGeometry(), skin = new THREE.MeshStandardMaterial(), teeth = new THREE.MeshStandardMaterial();
+  geometry.morphAttributes.position = [geometry.attributes.position.clone(), geometry.attributes.position.clone()];
+  const head = new THREE.SkinnedMesh(geometry, skin), mouth = new THREE.Mesh(new THREE.BoxGeometry(), teeth);
+  const hero = new THREE.Group(); hero.add(head, mouth); hero.visible = mouth.visible = false; head.castShadow = true; scene.add(hero);
+  const cast = [head, mouth], compiled: THREE.Mesh[] = [], reflected = new Set<object>();
+  const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  const previous = new THREE.WebGLRenderTarget(8, 8);
+  let target: THREE.WebGLRenderTarget | null = previous;
+  const renderer = { properties: {}, info: { programs }, extensions: { has: () => true }, debug: { checkShaderErrors: true },
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    getRenderTarget: () => target, setRenderTarget: (next: typeof target) => { target = next; },
+    compile(subject: THREE.Object3D, _eye: THREE.Camera, view: THREE.Scene) {
+      assert.notEqual(view, scene); assert.equal(target?.width, 1);
+      let batch = 0;
+      subject.traverse(object => {
+        assert.ok(object instanceof THREE.Mesh); compiled.push(object); batch++;
+        const program = { program: {}, isReady: () => true, getUniforms() { reflected.add(this); } };
+        programs.push(program);
+      });
+      assert.ok(batch <= 4);
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const phone: OpeningPhoneEncounter = { phase: 'answering', remaining: 6, lastTick: 0, attempts: 0 };
+  t.after(() => { film.dispose(); lighting.dispose(); previous.dispose(); geometry.dispose(); mouth.geometry.dispose(); skin.dispose(); teeth.dispose(); });
+  for (let frame = 0; frame < 24; frame++) {
+    const compiles = compiled.length, reflections = reflected.size;
+    film.prepareWellsCastPrograms(renderer, camera, lighting, phone, cast);
+    assert.ok(compiled.length === compiles || reflected.size === reflections, 'link and reflect in separate frames');
+    assert.equal(target, previous);
+  }
+  assert.ok(compiled.includes(head) && compiled.includes(mouth), 'link the actual skin and the hidden speech material');
+  const depth = compiled.find(mesh => mesh.material instanceof THREE.MeshDepthMaterial);
+  assert.ok(depth instanceof THREE.SkinnedMesh && depth.material instanceof THREE.MeshDepthMaterial);
+  assert.equal(depth.geometry, geometry); assert.equal(depth.material.depthPacking, THREE.RGBADepthPacking);
+  assert.equal(reflected.size, programs.length);
+  assert.equal(head.parent, hero); assert.equal(mouth.visible || hero.visible, false);
+  let disposed = 0; depth.material.addEventListener('dispose', () => disposed++);
+  phone.phase = 'done';
+  film.prepareWellsCastPrograms(renderer, camera, lighting, phone);
+  assert.equal(disposed, 0, 'retain the depth program through its first live draw');
+  film.prepareWellsCastPrograms(renderer, camera, lighting);
+  film.prepareWellsCastPrograms(renderer, camera, lighting);
+  assert.equal(disposed, 1);
+});
+
 test('Wells prepares the investigating cast maps and buffers during the answer and releases a failed attempt', t => {
   class Bitmap { width = 2048; height = 2048; }
   const previous = globalThis.ImageBitmap;
@@ -526,13 +578,15 @@ test('Wells prepares the investigating cast maps and buffers during the answer a
   const smith = new THREE.Group(), brown = new THREE.Group();
   const smithMesh = new THREE.Mesh(new THREE.BoxGeometry()), brownMesh = new THREE.Mesh(new THREE.BoxGeometry());
   smith.add(smithMesh); brown.add(brownMesh);
+  const mouth = new THREE.Group(), teeth = new THREE.Mesh(new THREE.BoxGeometry());
+  mouth.name = 'smith-mouth'; mouth.visible = false; mouth.add(teeth); smith.add(mouth);
   const actors = new Map([['agent_jones', hero], ['smith', smith], ['agent_brown', brown]]);
   const agents = Object.assign(Object.create(AgentRenderer.prototype), { getAgentHero: (id: string) => actors.get(id) }) as AgentRenderer;
   const phone: OpeningPhoneEncounter = { phase: 'running', remaining: 7, lastTick: 0, attempts: 0 };
   const prepare = () => agents.prepareWellsCast(renderer, camera, phone);
   t.after(() => {
     agents.prepareWellsCast(renderer, camera); geometry.dispose(); skin.dispose(); suit.dispose(); hair.dispose();
-    for (const mesh of [smithMesh, brownMesh]) { mesh.geometry.dispose(); mesh.material.dispose(); }
+    for (const mesh of [smithMesh, brownMesh, teeth]) { mesh.geometry.dispose(); mesh.material.dispose(); }
     hero.children.forEach(mesh => (mesh as THREE.Mesh<THREE.BufferGeometry, THREE.Material>).material.dispose());
     if (previous) globalThis.ImageBitmap = previous;
     else Reflect.deleteProperty(globalThis, 'ImageBitmap');
@@ -607,7 +661,8 @@ test('Wells prepares the investigating cast maps and buffers during the answer a
   assert.equal(allocations[3].mipmaps, true); assert.equal(gpu.get(hair)?.__webglTexture, allocations[3]);
   const material = smithMesh.material;
   for (let frame = 0; frame < 15 && prepare(); frame++);
-  assert.deepEqual(staged, new Set([geometry, smithMesh.geometry, brownMesh.geometry]));
+  assert.deepEqual(staged, new Set([geometry, smithMesh.geometry, brownMesh.geometry, teeth.geometry]));
+  assert.ok(agents.wellsCastMeshes?.includes(teeth)); assert.equal(mouth.visible, false);
   assert.equal(smithMesh.material, material); assert.equal(smithMesh.parent, smith);
   assert.equal(activeTarget, target); assert.equal(renderer.autoClear, true); assert.equal(renderer.sortObjects, true);
   assert.deepEqual(disposed, allocations.map(upload => upload.texture));

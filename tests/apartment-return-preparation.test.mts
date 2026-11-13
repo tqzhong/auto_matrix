@@ -215,6 +215,39 @@ test('Wells leaves a frame between shader completion and reading its bindings', 
   assert.deepEqual(h.work, ['compile', 'bindings']);
 });
 
+test('preparing the 101 handoff leaves the shared ground shadow bound to Wells until the cut', t => {
+  const h = fixture(); t.after(h.dispose);
+  const material = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false });
+  const live = new THREE.Mesh(h.arms.geometry, material), arrival = new THREE.Mesh(h.arms.geometry, material);
+  h.scene.add(live); arrival.visible = false; t.after(() => material.dispose());
+  const wellsProgram = {}, apartmentProgram = { program: {}, isReady: () => false, getUniforms() {} };
+  const bindings = { currentProgram: wellsProgram, uniforms: {}, uniformsList: [], lightsStateVersion: 7, programs: new Map([[7, wellsProgram]]) };
+  const previous = { ...bindings };
+  const get = h.renderer.properties.get.bind(h.renderer.properties);
+  t.mock.method(h.renderer.properties, 'get', (object: object) => object === material ? bindings : get(object));
+  const compile = h.renderer.compile.bind(h.renderer);
+  t.mock.method(h.renderer, 'compile', (subject: THREE.Object3D, camera: THREE.Camera, scene: THREE.Scene) => {
+    const result = compile(subject, camera, scene);
+    subject.traverse(object => {
+      if (object !== arrival) return;
+      Object.assign(bindings, { currentProgram: apartmentProgram, uniforms: {}, uniformsList: null, lightsStateVersion: 10 });
+      bindings.programs.set(10, apartmentProgram);
+    });
+    return result;
+  });
+  delete h.journey.pills; h.journey.scene = 'm1_phone_escape';
+  h.journey.openingPhone = { phase: 'connected', remaining: 5, lastTick: 0, attempts: 0 };
+  for (let frame = 0; frame < 60; frame++) {
+    h.prepare([arrival]);
+    assert.equal(bindings.currentProgram, previous.currentProgram);
+    assert.equal(bindings.uniforms, previous.uniforms);
+    assert.equal(bindings.uniformsList, previous.uniformsList);
+    assert.equal(bindings.lightsStateVersion, previous.lightsStateVersion);
+  }
+  assert.equal(bindings.programs.get(10), apartmentProgram);
+  assert.ok(live.visible && !arrival.visible);
+});
+
 test('Wells links the street canopy before the apartment door reveals it', t => {
   const h = fixture();
   const geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial();

@@ -13,7 +13,7 @@ import { TvRepairRenderer } from './TvRepairRenderer.js';
 import { WellsStreetRenderer } from './WellsStreetRenderer.js';
 import { bitmapUploadImage, stageBitmapTexture } from './BitmapTextureRows.js';
 import { HardlineHandset } from '../agents/HardlineHandset.js';
-import { OPENING_PHONE, WELLS_AFTERMATH, WELLS_BOOTH, WELLS_CURB, WELLS_STREET, WELLS_TRUCK, openingBoothCrush, openingBoothPartPose, streetLamps, wellsAftermathDoor } from '@auto_matrix/shared';
+import { OPENING_PHONE, WELLS_AFTERMATH, WELLS_BOOTH, WELLS_CURB, WELLS_STREET, WELLS_TRUCK, openingBoothCrush, openingBoothPartPose, streetLamps, wellsAftermathDoor, type OpeningPhoneEncounter } from '@auto_matrix/shared';
 import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
 import { SENTINEL_POWER } from '@auto_matrix/shared';
 import { steakAge, crewMealAge } from '@auto_matrix/shared';
@@ -58,7 +58,7 @@ import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS, LobbySetRenderer } from './LobbySetRenderer.js';
 import { OFFICE_POINT_SLOTS, OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { LightCulling } from './LightCulling.js';
-import { cacheReadyProgramLocations, shadowCasterProxies } from './PrepareShaderProgram.js';
+import { cacheReadyProgramLocations, preserveProgramBindings, shadowCasterProxies } from './PrepareShaderProgram.js';
 import { prepareMeshBuffers } from './PrepareMeshBuffers.js';
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -432,6 +432,10 @@ export class FilmSetRenderer {
     gpu: THREE.WebGLRenderer['properties']; beam?: THREE.Mesh; cord?: THREE.Line; normalMeshes?: THREE.Mesh[];
     shadowMeshes: THREE.Mesh[]; shadowMaterials: Set<THREE.MeshDepthMaterial>;
     buffers: ColorMesh[]; bufferGeometries: WeakSet<THREE.BufferGeometry>; bufferUpload?: Generator<void>;
+  };
+  private preparedWellsCast?: ColorPreparation & {
+    gpu: THREE.WebGLRenderer['properties']; cast: readonly THREE.Mesh[];
+    shadowMeshes: THREE.Mesh[]; shadowMaterials: Set<THREE.MeshDepthMaterial>;
   };
   private wellsStreet?: WellsStreetRenderer;
   private openingBooth?: THREE.Group;
@@ -1471,6 +1475,31 @@ export class FilmSetRenderer {
     this.preparedHotelPolice?.shadowMaterials.forEach(material => material.dispose());
     this.preparedHotelPolice = undefined;
   }
+  prepareWellsCastPrograms(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
+    phone?: OpeningPhoneEncounter, cast?: readonly THREE.Mesh[]): void {
+    if (this.currentScene !== 'm1_phone_escape' || !phone || phone.phase === 'running' || phone.phase === 'failed'
+      || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+      this.cancelWellsCastPrograms();
+      return;
+    }
+    // The packed depth proxies own their programs until the scene is released.
+    if (phone.aftermath || !cast?.length) return;
+    let prepared = this.preparedWellsCast;
+    if (!prepared || prepared.gpu !== renderer.properties || prepared.cast !== cast) {
+      this.cancelWellsCastPrograms();
+      const shadowMaterials = new Set<THREE.MeshDepthMaterial>();
+      const shadowMeshes = renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
+        ? shadowCasterProxies(cast, shadowMaterials) : [];
+      this.preparedWellsCast = prepared = { gpu: renderer.properties, cast, scene: this.scene, meshes: cast.slice(),
+        programs: [], textures: new Set(), shadowMeshes, shadowMaterials };
+    }
+    if (this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true)) return;
+    this.linkColorBatch(renderer, camera, { ...prepared, meshes: prepared.shadowMeshes }, lighting, 'depth');
+  }
+  private cancelWellsCastPrograms(): void {
+    this.preparedWellsCast?.shadowMaterials.forEach(material => material.dispose());
+    this.preparedWellsCast = undefined;
+  }
   private openingRoom(scene: OpeningVisitScene, camera: THREE.Camera) {
     const next = FILM_SCENE_BY_ID[scene], set = FILM_SETS[next.set], { x, y, z } = set.center;
     const room = new FilmSetRenderer(new THREE.Scene(), this.streetAsphalt), eye = camera.clone(), entry = filmEntry(next);
@@ -1812,20 +1841,13 @@ export class FilmSetRenderer {
     if (!batch.length) return false;
     const programs = renderer.info.programs, start = programs?.length ?? 0;
     // Shared unlit overlays may draw in the live set while the next set prepares.
-    const saved = [];
-    for (const mesh of liveOverlays) {
-      if (!mesh || !batch.includes(mesh) || Array.isArray(mesh.material)) continue;
-      const bindings = renderer.properties.get(mesh.material) as { currentProgram?: ColorProgram };
-      if (bindings.currentProgram) saved.push({ bindings, live: { ...bindings } });
-    }
+    const restore = preserveProgramBindings(renderer, liveOverlays.filter(mesh => mesh && batch.includes(mesh)));
     try {
       this.compileColorBatch(renderer, batch, subject => {
         if (lighting) lighting.compileSubject(renderer, camera, subject, undefined, undefined, colorState);
         else renderer.compile(subject, camera, prepared.scene);
       });
-    } finally {
-      for (const { bindings, live } of saved) Object.assign(bindings, live);
-    }
+    } finally { restore(); }
     if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
     return true;
   }
@@ -5598,6 +5620,7 @@ export class FilmSetRenderer {
     this.cancelOpeningPreparation();
     this.cancelOpeningRoofRetry();
     this.cancelOpeningVisit();
+    this.cancelWellsCastPrograms();
     this.cancelPodPreparation();
     this.cancelMatrixEscapePreparation();
     this.cancelOneDeckPreparation();
