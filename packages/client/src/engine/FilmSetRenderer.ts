@@ -216,7 +216,7 @@ type OpeningPreparation = {
   roofFirstColors?: ColorSubject[];
   roofMapsReady?: boolean;
   roofEntryTexturesReady?: boolean;
-  roofShadows?: {
+  shadows?: {
     materials: Set<THREE.MeshDepthMaterial>;
     layouts: { lighting: LightCulling; eye: THREE.Camera; meshes: THREE.Mesh[] }[];
   };
@@ -1590,10 +1590,10 @@ export class FilmSetRenderer {
     if (prepared.gpu !== renderer.properties) {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose(); prepared.colors = undefined; prepared.gpu = renderer.properties;
-      for (const material of prepared.roofShadows?.materials ?? []) {
+      for (const material of prepared.shadows?.materials ?? []) {
         material.dispose(); prepared.room.materials.delete(material);
       }
-      prepared.roofShadows = undefined; prepared.roofMapsReady = undefined; prepared.roofFirstColors = undefined;
+      prepared.shadows = undefined; prepared.roofMapsReady = undefined; prepared.roofFirstColors = undefined;
       prepared.roofEntryTexturesReady = undefined;
     }
     if (resumeRoof) this.prepareOpeningRoofEntryTextures(renderer, prepared, actor);
@@ -1660,9 +1660,12 @@ export class FilmSetRenderer {
       colors.meshes = [...new Set([...mapped, ...colors.meshes])];
       this.queueColorTextures(colors.textures, mapped);
     }
+    const shadowLayouts = lighting && prepared.lighting && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
+      ? [lighting, prepared.lighting] as const : undefined;
+    // Link the truck's depth variants while the street textures are still uploading.
+    if (scene === 'm1_phone_escape' && shadowLayouts && this.prepareOpeningShadows(renderer, camera, prepared, colors, ...shadowLayouts)) return;
     if (!resumeRoof && this.prepareStagedColorTexture(renderer, prepared, colors.textures)) return;
-    if (scene === 'm1_roofs' && lighting && prepared.lighting && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
-      && this.prepareOpeningRoofShadows(renderer, camera, prepared, colors, lighting, prepared.lighting)) return;
+    if (scene === 'm1_roofs' && shadowLayouts && this.prepareOpeningShadows(renderer, camera, prepared, colors, ...shadowLayouts)) return;
     this.prepareColorProgram(renderer, prepared.eye, colors, prepared.lighting, 'isolated', scene === 'm1_roofs' && !resumeRoof, liveOverlays);
   }
   private prepareOpeningRoofEntryTextures(renderer: THREE.WebGLRenderer, prepared: OpeningPreparation,
@@ -1732,18 +1735,18 @@ export class FilmSetRenderer {
     }
     return true;
   }
-  private prepareOpeningRoofShadows(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: OpeningPreparation,
-    colors: CastColorPreparation, hotel: LightCulling, roof: LightCulling): boolean {
-    if (!prepared.roofShadows) {
+  private prepareOpeningShadows(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: OpeningPreparation,
+    colors: CastColorPreparation, currentLights: LightCulling, nextLights: LightCulling): boolean {
+    if (!prepared.shadows) {
       const materials = new Set<THREE.MeshDepthMaterial>();
       const meshes = shadowCasterProxies([...(prepared.roofFirstColors ?? []), ...colors.meshes], materials);
       for (const material of materials) prepared.room.materials.add(material);
       // The first shadow draw uses the previous pass's light counts.
-      prepared.roofShadows = { materials, layouts: meshes.length ? [
-        { lighting: hotel, eye: camera, meshes: meshes.slice() }, { lighting: roof, eye: prepared.eye, meshes },
+      prepared.shadows = { materials, layouts: meshes.length ? [
+        { lighting: currentLights, eye: camera, meshes: meshes.slice() }, { lighting: nextLights, eye: prepared.eye, meshes },
       ] : [] };
     }
-    const layouts = prepared.roofShadows.layouts, layout = layouts[0];
+    const layouts = prepared.shadows.layouts, layout = layouts[0];
     if (!layout) return false;
     const programs = renderer.info.programs, start = programs?.length ?? 0;
     this.compileColorBatch(renderer, layout.meshes.splice(0, 4),

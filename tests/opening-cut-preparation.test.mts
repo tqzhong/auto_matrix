@@ -440,6 +440,21 @@ test('a failed roof attempt or visit releases the detached Wells assets exactly 
   h.enter(); assert.notEqual(h.film.root.getObjectByName('wells-asphalt'), mesh);
 });
 
+test('the roof prepares the opaque Wells truck shadow before entering the street', t => {
+  const h = fixture(t, 'm1_phone_escape');
+  h.gpu.shadowMap.enabled = true;
+  h.drain();
+  const truck = [...h.roots][0].getObjectByName('wells-truck-chassis') as THREE.Mesh;
+  assert.ok(truck.castShadow);
+  const depths = h.depths.get(7);
+  assert.ok(depths?.some(proxy => proxy.material instanceof THREE.MeshDepthMaterial
+    && proxy.material.depthPacking === THREE.RGBADepthPacking && proxy.material.side === THREE.BackSide
+    && !proxy.material.map && !(proxy instanceof THREE.SkinnedMesh)), 'prepare the opaque packed depth program with the Wells lights');
+  h.enter();
+  assert.equal(h.film.root.getObjectById(truck.id), truck);
+  assert.ok(truck.castShadow);
+});
+
 test('a cold roof failure prepares the live rooftop and Brown before the retry', t => {
   const h = fixture(t, 'm1_phone_escape');
   const brown = new THREE.Group(), jacket = new THREE.SkinnedMesh(h.skin.geometry, h.material);
