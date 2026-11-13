@@ -4050,9 +4050,12 @@ export class FilmSetRenderer {
     for (const z of [-20, -12, -4]) {
       this.box(plaster, -set.width / 2 + .65, 4.6, z, .18, 8.6, 7.2);
       this.box(plaster, set.width / 2 - .65, 4.6, z, .18, 8.6, 7.2);
-      for (const x of [-12, 12]) {
-        this.box(this.wood, x, 3.5, z, 4.8, 7.1, .18, .12);
-        this.box(this.brass, x + 1.5, 3.2, z + .14, .16, .16, .1);
+      for (const side of [-1, 1]) {
+        const wallFace = set.width / 2 - .74;
+        this.box(this.wood, side * (wallFace + .015), 3.55, z, .18, 7.1, 4.8, .04);
+        this.box(this.metal, side * (wallFace - .06), 7.16, z, .18, .28, 5.18);
+        for (const jamb of [-2.49, 2.49]) this.box(this.metal, side * (wallFace - .06), 3.59, z + jamb, .18, 7.18, .2);
+        this.box(this.brass, side * (wallFace - .17), 3.2, z + side * 1.75, .17, .2, .18);
       }
       this.box(soot, 0, 10, z, set.width - 1, .25, .28);
     }

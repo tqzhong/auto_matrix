@@ -75,6 +75,23 @@ test('303 keeps its lighting layout across the room, corridor, camera and saved 
     }
 });
 
+test('303 corridor doors face across the hall and sit against the side walls', t => {
+  const h = setup(t), root = h.sets.root;
+  h.pose('corridor');
+  const entrance = root.getObjectByName('hotel-303-door')?.children[0];
+  assert.ok(entrance instanceof THREE.Mesh);
+  const halfWidth = FILM_SETS.film_heart_hotel.width / 2;
+  for (const z of [-20, -12, -4]) for (const side of [-1, 1]) {
+    const origin = root.localToWorld(new THREE.Vector3(0, 4, z));
+    const ray = new THREE.Raycaster(origin, new THREE.Vector3(side, 0, 0));
+    const hit = ray.intersectObject(root)[0];
+    assert.ok(hit?.object instanceof THREE.Mesh);
+    assert.equal(hit.object.material, entrance.material, 'the first surface at each opening is the door leaf');
+    assert.ok(hit.distance > halfWidth - .85 && hit.distance < halfWidth - .35, `door at ${side}/${z} must sit against the side wall, hit ${hit.distance}`);
+    assert.ok(Math.abs(hit.normal?.x ?? 0) > .99, 'the door must face the center of the hall');
+  }
+});
+
 test('303 prepares the real flashlight material while the corridor is still hidden', t => {
   const h = setup(t); h.pose('trace');
   const beam = h.sets.root.getObjectByName('hotel-303-hall-flashlight');
