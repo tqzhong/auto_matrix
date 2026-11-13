@@ -9,7 +9,7 @@ import { CameraController } from '../packages/client/src/engine/CameraController
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { TheOneRenderer } from '../packages/client/src/engine/TheOneRenderer.js';
 import { FILM_SCENE_BY_ID, filmEntry, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
-import { OPENING_HOTEL, type OpeningHotelEncounter } from '@auto_matrix/shared';
+import { OPENING_HOTEL, OPENING_PHONE, WELLS_CURB, openingTruckPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
@@ -2029,6 +2029,40 @@ test('the opening phone camera restores its paused exterior shot and releases it
   game.event(game.document, 'mousemove', { movementX: 100, movementY: 0 });
   game.step(.3, .05, false);
   assert.ok(Math.abs(angle(game.yaw(), yaw)) > .08, 'normal mouse look is restored');
+});
+
+test('the Wells impact camera keeps the wall, booth and approaching cab in view', t => {
+  const game = setup(t, Math.PI), film = FILM_SCENE_BY_ID.m1_phone_escape, set = FILM_SETS[film.set];
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  Object.assign(game.state, { id: 'trinity', currentLocation: film.set, position: filmPosition(film.set, -.55, -28.85) });
+  const phone = { phase: 'connected' as const, remaining: 5.5, lastTick: 0, attempts: 1, impactElapsed: 0, curbside: true as const };
+  const journey: FilmJourney = { version: 1, scene: film.id, actor: 'trinity', step: 2, completed: [], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: { ...game.state.position }, openingPhone: phone };
+  const renderer = new FilmSetRenderer(new THREE.Scene()), sandbox = { neoLife: { journey }, structures: [] } as unknown as SandboxState;
+  t.after(() => renderer.dispose());
+  game.controls.possess(game.state);
+  for (const aspect of [16 / 9, 780 / 1080]) for (const [remaining, elapsed] of [[13, 0], [5.5, 0], [5.5, .6], [5.5, 1.025], [.02, 1.35]]) {
+    phone.remaining = remaining; phone.impactElapsed = elapsed; game.camera.aspect = aspect;
+    game.controls.update(0, game.state, game.group, false, true, undefined, true);
+    renderer.update(game.state, sandbox, 0); renderer.root.updateWorldMatrix(true, true); game.camera.updateWorldMatrix(true, true);
+    const wall = renderer.root.getObjectByName('wells-booth-wall')!;
+    for (const y of [-.6, 0, .6]) {
+      const direction = new THREE.Vector3(-.92, y, .5).unproject(game.camera).sub(game.camera.position).normalize();
+      const nearWall = new THREE.Raycaster(game.camera.position, direction, .1, 8).intersectObject(wall, false);
+      assert.equal(nearWall.length, 0, `the near wall blocks the left side of the frame at aspect ${aspect}`);
+    }
+    const cab = openingTruckPose(phone);
+    const points = [
+      [4.5, 2.8, WELLS_CURB.wallZ],
+      [0, 4, OPENING_PHONE.boothZ],
+      [cab.x - 2.5 * Math.sin(cab.yaw), 2.8, cab.z - 2.5 * Math.cos(cab.yaw)],
+    ];
+    for (const [x, y, z] of points) {
+      const screen = new THREE.Vector3(set.center.x + x, set.center.y + y, set.center.z + z).project(game.camera);
+      assert.ok(Math.abs(screen.x) < .96 && Math.abs(screen.y) < .9 && Math.abs(screen.z) < 1,
+        `a subject leaves the impact frame at ${elapsed}s, aspect ${aspect}: ${screen.toArray()}`);
+    }
+  }
 });
 
 test('the club whisper keeps Trinity visible beside Neo and first person can still look around', t => {

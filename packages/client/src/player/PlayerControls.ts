@@ -1609,9 +1609,14 @@ export class PlayerControls {
         this.camera.position.set(center.x + THREE.MathUtils.clamp(x, 1 - width / 2, width / 2 - 1), center.y + 8 + rise,
           center.z + THREE.MathUtils.clamp(z, nearWall, depth / 2 - 1));
         this.camera.lookAt(center.x + origin.x + direction.x * 2.8, center.y + 2.5 + rise, center.z + origin.z + direction.z * 2.8);
+      } else if (wellsCurbside) {
+        // Frame the pavement and the wall the booth is pushed against from the open street.
+        this.camera.fov = Math.max(54, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(42)) / this.camera.aspect)));
+        this.camera.updateProjectionMatrix();
+        this.camera.position.set(center.x - 17.5, center.y + 4.5 + rise, center.z + WELLS_CURB.wallZ + 9.5);
+        this.camera.lookAt(center.x + 1.8, center.y + 2.6 + rise, center.z - 28.2);
       } else {
-        const z = wellsCurbside ? WELLS_CURB.wallZ + 2.1 : -45;
-        this.camera.position.set(center.x - 17, center.y + 7 + rise, center.z + z);
+        this.camera.position.set(center.x - 17, center.y + 7, center.z - 45);
         this.camera.lookAt(center.x + 3, center.y + 2.5 + rise, center.z - 26.5);
       }
     } else if (alarmView) {
