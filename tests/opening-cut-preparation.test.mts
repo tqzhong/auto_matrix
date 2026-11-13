@@ -51,6 +51,7 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   const work: string[] = [], meshes = new Set<THREE.Object3D>(), roots = new Set<THREE.Object3D>();
   const depths = new Map<number, THREE.Mesh[]>(), mapped = new Set<THREE.Mesh>();
+  const bufferMeshes = new Set<THREE.Mesh>(), bufferTargets = new Map<THREE.WebGLRenderTarget, number>();
   const roofRetry = () => film.active?.id === 'film_hotel_roofs' && journey.scene === 'm1_roofs'
     && !journey.visiting && journey.openingRoof?.phase === 'failed';
   let target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
@@ -63,6 +64,7 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
     : object === film.goalMarker.material ? hotelGoal : { __version: uploaded.get(object as THREE.Texture) } });
   const gpu = { properties: properties(), info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
     shadowMap: { enabled: roofs, type: THREE.PCFSoftShadowMap },
+    autoClear: true, sortObjects: true, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }), getRenderTarget: () => target,
     setRenderTarget: (value: typeof target) => { target = value; },
     compile(subject: THREE.Object3D, eye: THREE.Camera, colors: THREE.Scene) {
@@ -106,12 +108,29 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
       }
     },
     initTexture(map: THREE.Texture) { uploaded.set(map, map.version); work.push('texture'); },
+    render(view: THREE.Scene) {
+      assert.notEqual(view, scene);
+      assert.ok(target?.width === 1 && !gpu.autoClear && !gpu.sortObjects);
+      if (!bufferTargets.has(target)) {
+        const offscreen = target;
+        bufferTargets.set(offscreen, 0);
+        offscreen.addEventListener('dispose', () => bufferTargets.set(offscreen, bufferTargets.get(offscreen)! + 1));
+      }
+      assert.ok(view.children.length > 0 && view.children.length <= 4);
+      for (const mesh of view.children) {
+        assert.ok(mesh instanceof THREE.Mesh && !mesh.material.visible && !mesh.frustumCulled);
+        assert.ok(!bufferMeshes.has(mesh), 'each buffer is prepared once per renderer');
+        bufferMeshes.add(mesh);
+      }
+      work.push('buffers');
+    },
   } as unknown as THREE.WebGLRenderer;
   const prepare = (resumeRoof = false) => {
     const before = work.length, live = film.root.children.slice();
     film.prepareOpening(gpu, camera, journey, id => actors.get(id), shadow, lighting, undefined, resumeRoof);
     assert.ok(work.length - before <= (roofRetry() || resumeRoof ? 2 : 1), 'preparation budgets GPU work per frame');
     assert.deepEqual(film.root.children, live); assert.equal(target, null); assert.equal(gpu.debug.checkShaderErrors, true);
+    assert.ok(gpu.autoClear && gpu.sortObjects);
     assert.equal(hero.parent, scene); assert.equal(skin.visible || hero.visible || shadow.visible, false);
   };
   const drain = () => { for (let frame = 0; frame < 250; frame++) prepare(); };
@@ -140,13 +159,14 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   };
   t.after(() => { film.dispose(); lighting.dispose(); material.dispose(); geometry.dispose(); shadowMaterial.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
   return { film, journey, gpu, skin, shadow, material, actors, work, meshes, roots, depths, mapped, programs, prepare, drain, enter, nextMesh, livePointSlots,
+    bufferMeshes, bufferTargets,
     hotelOverlays,
     requestVisit: () => {
       hero.visible = skin.visible = true;
       return film.beginOpeningVisit(gpu, camera, destination, player.id, [hero], lighting, sun);
     },
     decodeRoofMaps: () => { defer = false; pendingImages.splice(0).forEach(ready => ready()); },
-    replaceGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
+    replaceGpu: () => { uploaded = new WeakMap(); bufferMeshes.clear(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
 
 test('303 rooftop preparation caches the goal marker and shadow without replacing the live hotel bindings', t => {
@@ -453,6 +473,41 @@ test('the roof prepares the opaque Wells truck shadow before entering the street
   h.enter();
   assert.equal(h.film.root.getObjectById(truck.id), truck);
   assert.ok(truck.castShadow);
+});
+
+test('the roof prepares the actual Wells street, cab and intact booth buffers before the cut', t => {
+  const h = fixture(t, 'm1_phone_escape');
+  h.drain();
+  const room = [...h.roots][0];
+  const road = room.getObjectByName('wells-asphalt') as THREE.Mesh;
+  const cab = room.getObjectByName('wells-truck-chassis') as THREE.Mesh;
+  const pane = room.getObjectByName('opening-booth-intact-pane') as THREE.Mesh;
+  const shard = room.getObjectByName('opening-booth-glass-fragment') as THREE.Mesh;
+  const surfaces = [road, cab, pane];
+  assert.ok(surfaces.every(mesh => h.bufferMeshes.has(mesh)));
+  assert.ok(surfaces.every(mesh => mesh.visible && mesh.material.visible && mesh.frustumCulled));
+  assert.ok(!h.bufferMeshes.has(shard));
+  assert.deepEqual([...h.bufferTargets.values()], [1]);
+  h.replaceGpu(); h.drain();
+  assert.ok(surfaces.every(mesh => h.bufferMeshes.has(mesh)), 'GPU replacement prepares the same detached geometry again');
+  assert.deepEqual([...h.bufferTargets.values()], [1, 1]);
+  h.enter();
+  for (const mesh of surfaces) assert.equal(h.film.root.getObjectById(mesh.id), mesh);
+});
+
+test('a failed roof attempt releases a partially prepared Wells buffer batch', t => {
+  const h = fixture(t, 'm1_phone_escape');
+  h.gpu.extensions.has = () => false;
+  for (let frame = 0; frame < 250 && !h.bufferMeshes.size; frame++) h.prepare();
+  assert.equal(h.bufferMeshes.size, 4, 'geometry preparation requires no parallel shader extension');
+  assert.deepEqual([...h.bufferTargets.values()], [0]);
+  const [mesh] = h.bufferMeshes;
+  let disposed = 0; mesh.geometry.addEventListener('dispose', () => disposed++);
+  h.journey.openingRoof!.phase = 'failed';
+  h.prepare(); h.prepare();
+  assert.equal(disposed, 1);
+  assert.deepEqual([...h.bufferTargets.values()], [1]);
+  assert.equal(h.bufferMeshes.size, 4);
 });
 
 test('the roof prepares the first Wells glass fragment while the booth is still intact', t => {

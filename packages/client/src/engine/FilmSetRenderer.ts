@@ -209,6 +209,7 @@ type OpeningPreparation = {
   room: FilmSetRenderer;
   steps?: Generator<void>;
   textureUpload?: Generator<void, boolean>;
+  bufferUpload?: Generator<void>;
   colors?: CastColorPreparation;
   lighting?: LightCulling;
   gpu?: THREE.WebGLRenderer['properties'];
@@ -1618,6 +1619,7 @@ export class FilmSetRenderer {
     const prepared = this.preparedOpening;
     if (prepared.gpu !== renderer.properties) {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
+      prepared.bufferUpload?.return(undefined); prepared.bufferUpload = undefined;
       prepared.lighting?.dispose(); prepared.colors = undefined; prepared.gpu = renderer.properties;
       for (const material of prepared.shadows?.materials ?? []) {
         material.dispose(); prepared.room.materials.delete(material);
@@ -1630,7 +1632,10 @@ export class FilmSetRenderer {
       if (prepared.steps.next().done) prepared.steps = undefined;
       return;
     }
-    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) {
+      if (scene === 'm1_phone_escape') this.prepareWellsEntryBuffers(renderer, prepared);
+      return;
+    }
     if (!prepared.colors) {
       if (scene !== 'm1_roofs' && [...prepared.room.textures].some(texture => !texture.image)) return;
       const colors = this.colorPreparation(prepared.room.root, [], { includeBasic: true });
@@ -1698,7 +1703,19 @@ export class FilmSetRenderer {
     if (scene === 'm1_phone_escape' && shadowLayouts && this.prepareOpeningShadows(renderer, camera, prepared, colors, ...shadowLayouts)) return;
     if (!resumeRoof && this.prepareStagedColorTexture(renderer, prepared, colors.textures)) return;
     if (scene === 'm1_roofs' && shadowLayouts && this.prepareOpeningShadows(renderer, camera, prepared, colors, ...shadowLayouts)) return;
-    this.prepareColorProgram(renderer, prepared.eye, colors, prepared.lighting, 'isolated', scene === 'm1_roofs' && !resumeRoof, liveOverlays);
+    const compiling = this.prepareColorProgram(renderer, prepared.eye, colors, prepared.lighting, 'isolated', scene === 'm1_roofs' && !resumeRoof, liveOverlays);
+    if (!compiling && scene === 'm1_phone_escape') this.prepareWellsEntryBuffers(renderer, prepared);
+  }
+  private prepareWellsEntryBuffers(renderer: THREE.WebGLRenderer, prepared: OpeningPreparation): void {
+    if (!prepared.bufferUpload) {
+      const meshes: THREE.Mesh[] = [], geometries = new Set<THREE.BufferGeometry>();
+      prepared.room.root.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh) || geometries.has(object.geometry)) return;
+        meshes.push(object); geometries.add(object.geometry);
+      });
+      prepared.bufferUpload = prepareMeshBuffers(renderer, prepared.eye, meshes);
+    }
+    prepared.bufferUpload.next();
   }
   private prepareOpeningRoofEntryTextures(renderer: THREE.WebGLRenderer, prepared: OpeningPreparation,
     actor: (id: string) => THREE.Group | undefined): void {
@@ -2460,7 +2477,7 @@ export class FilmSetRenderer {
         && sceneId === this.preparedOpening.scene && !journey?.visiting ? this.preparedOpening : undefined;
       if (preparedOpening) {
         this.preparedOpening = undefined;
-        preparedOpening.textureUpload?.return(false); preparedOpening.lighting?.dispose();
+        preparedOpening.bufferUpload?.return(undefined); preparedOpening.textureUpload?.return(false); preparedOpening.lighting?.dispose();
       }
       const enteringOffice = set?.id === 'film_metacortex_floor' || set?.id === 'film_office_ledge';
       const prepared = enteringOffice ? this.preparedOffice?.renderer : undefined;
@@ -5520,6 +5537,7 @@ export class FilmSetRenderer {
     const prepared = this.preparedOpening;
     if (!prepared) return;
     this.preparedOpening = undefined;
+    prepared.bufferUpload?.return(undefined);
     prepared.textureUpload?.return(false); prepared.lighting?.dispose(); prepared.steps?.return(undefined); prepared.room.dispose();
   }
   private cancelOpeningRoofRetry(): void {
