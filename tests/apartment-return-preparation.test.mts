@@ -240,6 +240,10 @@ test('resuming 101 prepares the room and visitors with the player light layout b
   assert.ok(directions.every(count => count === 2));
   assert.equal(fill.visible, false);
   assert.equal(h.work.filter(step => step === 'texture').length, 1);
+  h.journey.contact = { phase: 'noticed', elapsed: 0, paid: true };
+  for (let frame = 0; frame < 30; frame++) h.prepare([visitor], undefined, true);
+  assert.ok(h.apartment.returnNormalMeshes?.length === 1 && h.apartment.returnNormalMeshes[0] === skin,
+    'the deferred invitation only prepares its visitors');
   h.cancel();
   assert.equal(h.apartment.returnNormalMeshes, undefined);
   h.journey.scene = 'm1_wake_up'; h.journey.visiting = 'm1_room303';

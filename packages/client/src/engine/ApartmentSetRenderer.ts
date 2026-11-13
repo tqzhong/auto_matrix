@@ -283,7 +283,7 @@ export class ApartmentSetRenderer {
     const previous = this.returnPreparation;
     const phone = journey?.scene === 'm1_phone_escape' ? journey.openingPhone : undefined;
     const opening = phone?.phase === 'connected' || phone?.phase === 'done';
-    const resuming = journey?.scene === 'm1_wake_up' && (resume || previous?.resume === true);
+    const resuming = !deferred && journey?.scene === 'm1_wake_up' && (resume || previous?.resume === true);
     const blue = journey?.scene === 'm1_pills' && journey.pills?.phase === 'taking' && journey.pills.choice === 'blue';
     const club = journey?.scene === 'm1_club' && ['whisper', 'question', 'reply', 'departing', 'done'].includes(journey.club?.phase ?? '');
     const invitation = deferred && journey?.scene === 'm1_wake_up' && journey.contact?.phase === 'noticed';
