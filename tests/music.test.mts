@@ -349,6 +349,22 @@ test('government rescue effects cover interrogation machinery, bullets, the phon
   assert.ok([...ctx.oscillators, ...ctx.sources].every(source => source.starts > 0), 'every cue is scheduled immediately');
 });
 
+test('Trinity’s 303 footfall has a stronger, brighter attack than the staged officers’ footfall', async t => {
+  const h = audioHarness(t); await h.audio.resume(); const ctx = h.contexts[0];
+  h.audio.governmentSound('hall-step');
+  h.audio.governmentSound('trinity-step');
+  assert.equal(ctx.sources.length, 2, 'each footfall adds one short noise burst');
+  assert.equal(ctx.oscillators.length, 2, 'each footfall has one low layer');
+  const [officer, trinity] = ctx.sources.map(source => source.connections[0] as ReturnType<typeof ctx.createBiquadFilter>);
+  assert.equal(officer.frequency.value, 360);
+  assert.ok(trinity.frequency.value > officer.frequency.value);
+  const attack = (filter: typeof trinity) => (filter.connections[0] as ReturnType<typeof ctx.createGain>).gain.events[1].value;
+  assert.ok(attack(trinity) > attack(officer));
+  h.audio.toggle('effects');
+  h.audio.governmentSound('trinity-step');
+  assert.equal(ctx.sources.length, 2);
+});
+
 test('air rescue effects give the minigun, glass wall, rope, cut and crash separate audible layers', async t => {
   const h = audioHarness(t); await h.audio.resume(); const ctx = h.contexts[0];
   const before = { sources: ctx.sources.length, oscillators: ctx.oscillators.length };

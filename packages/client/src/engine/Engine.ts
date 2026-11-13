@@ -209,7 +209,7 @@ export class Engine {
       }
     }
     const hallStep = this.agentRenderer.update(delta, this.camera, this.simulationSpeed, this.tick, meeting, garageCar);
-    if (hallStep && this.running) this.audio.governmentSound('hall-step');
+    if (hallStep && this.running) this.audio.governmentSound('trinity-step');
     if (this.playerControls?.id) {
       const group = this.agentRenderer.getAgent(this.playerControls.id);
       if (group) {

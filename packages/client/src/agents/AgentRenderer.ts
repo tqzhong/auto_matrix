@@ -583,7 +583,8 @@ export class AgentRenderer {
     const openingSet = this.matrix && opening && player?.isInMatrix && filmSetAt(player.position, true)?.id === opening.set ? opening.set : undefined;
     const hallWalker = openingSet === 'film_heart_hotel' && journey?.openingHotel?.phase === 'corridor'
       && !journey.visiting && journey.actor === this.playerId && player?.status === 'alive' && speed > 0
-      && this.playerMotion?.grounded && this.playerMotion.speed > .1 ? playerEntry : undefined;
+      && this.playerMotion?.grounded && this.playerMotion.speed > .1
+      && Math.hypot(player.velocity.x, player.velocity.z) > .1 ? playerEntry : undefined;
     const previousStep = Math.floor((hallWalker?.rig.motion.phase ?? 0) * 2);
     const roof = journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     const roofExit = player?.currentAction?.parameters.roofExit as MotionInput['roofExit'];

@@ -439,7 +439,7 @@ test('the live 303 escape reports each moving footfall and stays quiet when the 
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const renderer = new AgentRenderer(new THREE.Scene()); t.after(() => renderer.dispose());
   const scene = FILM_SCENE_BY_ID.m1_room303, position = filmEntry(scene);
-  const trinity = { ...world.agents.get('trinity')!, position, currentLocation: scene.set, isInMatrix: true };
+  const trinity = { ...world.agents.get('trinity')!, position, currentLocation: scene.set, isInMatrix: true, velocity: { x: 0, y: 0, z: -8.4 } };
   const journey: FilmJourney = { version: 1, scene: scene.id, actor: trinity.id, step: 3, completed: [], enteredAt: 0,
     reflections: {}, lastText: '', checkpoint: position,
     openingHotel: { phase: 'corridor', elapsed: 0, lastTick: 20, attempts: 0, disarmed: true, ammo: 2, shots: 0 } };
@@ -463,6 +463,13 @@ test('the live 303 escape reports each moving footfall and stays quiet when the 
   for (let i = 0; i < 24; i++) assert.equal(draw(), false, 'standing or blocked movement makes no steps');
   renderer.setPlayerMotion({ ...moving, grounded: false });
   for (let i = 0; i < 24; i++) assert.equal(draw(), false, 'the feet are airborne');
+  renderer.updateAgent(trinity.id, { ...trinity, velocity: { x: 0, y: 0, z: 0 } }, journey);
+  renderer.setPlayerMotion({ ...moving, speed: .5 });
+  gait.phase = Math.ceil(gait.phase) - .001;
+  const beforeReconciliation = gait.phase;
+  assert.equal(draw(), false, 'the client’s small correction at an intact pane is silent once the server stops the player');
+  assert.ok(Math.floor(gait.phase * 2) > Math.floor(beforeReconciliation * 2), 'the correction crosses a footfall boundary');
+  renderer.updateAgent(trinity.id, trinity, journey);
   renderer.setPlayerMotion(moving);
   for (let i = 0; i < 24; i++) assert.equal(draw(1, { ...journey, visiting: scene.id }), false, 'journal views stay quiet');
   for (let i = 0; i < 24; i++) assert.equal(draw(1, { ...journey, openingHotel: { ...journey.openingHotel!, phase: 'combat' } }), false, 'other phases keep their own cues');
