@@ -1,9 +1,11 @@
 import * as THREE from 'three';
-import { FILM_SETS, WELLS_AFTERMATH, WELLS_CURB, wellsAftermathPose, type WellsAftermathGesture } from '@auto_matrix/shared';
+import { FILM_SETS, WELLS_AFTERMATH, WELLS_CURB, wellsAftermathDoor, wellsAftermathPose, type WellsAftermathGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 
 const smooth = THREE.MathUtils.smoothstep;
+const up = new THREE.Vector3(0, 1, 0);
+const cabPalm = new THREE.Vector3(.21, -.18, .02);
 
 export function poseWellsAftermath(rig: CharacterRig, gesture?: WellsAftermathGesture): void {
   const hero = rig.hero;
@@ -24,7 +26,7 @@ export function poseWellsAftermath(rig: CharacterRig, gesture?: WellsAftermathGe
 
   const center = FILM_SETS.film_wells_phone.center, truckZ = center.z - 26, streetY = center.y - 1;
   const truckLift = gesture.curbside ? WELLS_CURB.truckLift : 0, sidewalk = gesture.curbside ? WELLS_CURB.height : 0;
-  const { upperStep, lowerStep } = WELLS_AFTERMATH;
+  const { upperStep, lowerStep, door, doorGrip } = WELLS_AFTERMATH;
   const stepping = 1 - smooth(elapsed, 2.15, 2.48), brace = smooth(elapsed, .72, 1.05) * (1 - smooth(elapsed, 1.65, 2.12));
   // The cab crouch changes leg reach; the walking targets still sit on the street.
   const legs = (['L', 'R'] as const).map(side => {
@@ -53,12 +55,18 @@ export function poseWellsAftermath(rig: CharacterRig, gesture?: WellsAftermathGe
     reach(hip, knee, ankle.position, target, new THREE.Vector3(lead ? .12 : -.12, .15, 1).applyQuaternion(facing));
     ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
   }
-  if (brace > 0) {
+  const handContact = smooth(elapsed, .74, .94) * (1 - smooth(elapsed, 1.65, 2.12));
+  if (handContact > 0) {
     const upper = bones.get('shoulder_R')!, lower = bones.get('elbow_R')!, hand = bones.get('wrist_R')!;
-    const support = new THREE.Vector3(center.x - 2.09, streetY + 3.37 + truckLift, truckZ - .13);
-    const target = hand.getWorldPosition(new THREE.Vector3()).lerp(support, brace);
-    const orientation = hand.getWorldQuaternion(new THREE.Quaternion());
-    reach(upper, lower, hand.position, target, new THREE.Vector3(-.46, -.2, -.48));
+    const angle = wellsAftermathDoor(elapsed);
+    const support = new THREE.Vector3(doorGrip.x + doorGrip.width / 2 + .006, doorGrip.y, doorGrip.z)
+      .applyAxisAngle(up, angle).add(new THREE.Vector3(center.x + door.x, streetY + truckLift, truckZ + door.z));
+    const palm = cabPalm.clone();
+    const flat = new THREE.Quaternion().setFromAxisAngle(up, angle + Math.PI);
+    const orientation = hand.getWorldQuaternion(new THREE.Quaternion()).slerp(flat, handContact);
+    const target = hand.localToWorld(palm.clone()).lerp(support, handContact)
+      .sub(palm.multiply(hand.getWorldScale(new THREE.Vector3())).applyQuaternion(orientation));
+    reach(upper, lower, hand.position, target, new THREE.Vector3(-.65, -.35, .5).applyQuaternion(facing));
     hand.quaternion.copy(lower.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
   }
 }

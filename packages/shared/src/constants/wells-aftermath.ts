@@ -11,6 +11,7 @@ export const WELLS_AFTERMATH = {
   receiverShot: 11.25,
   receiver: { x: -3.6, y: .073, z: -36.45 },
   door: { x: -1.94, z: -2.2 },
+  doorGrip: { x: .24, y: 3.12, z: 1.26, width: .10, height: .085, depth: .36 },
   upperStep: { x: -2.34, y: 1.69, z: -.65 },
   lowerStep: { x: -2.62, y: .8, z: -.65 },
 } as const;

@@ -3558,7 +3558,8 @@ export class PlayerControls {
       setShot([-12.15, 3.25, smith.z - 5.2], [smith.x + 1.8, 1.55, smith.z - 1.25], 44, 63);
     } else {
       const lowered = THREE.MathUtils.smoothstep(elapsed, 1.06, 2.24);
-      setShot([-7.8, .18, -25.4], [-2.85 - .6 * lowered, .48 - .89 * lowered, -26.52], 35, 54);
+      const widen = (1 - THREE.MathUtils.smoothstep(elapsed, 1.5, 1.92));
+      setShot([-7.8 - 1.2 * widen, .18 + .52 * widen, -25.4 + 1.45 * widen], [-2.85 - .6 * lowered, .48 - .89 * lowered + 1.4 * widen, -26.52], 35 + 5 * widen, 54);
     }
   }
 

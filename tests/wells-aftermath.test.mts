@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SCENE_BY_ID, FILM_SETS, WELLS_AFTERMATH, WELLS_CURB, filmEntry, filmPosition, wellsAftermathPose, type WellsAftermathGesture, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, WELLS_AFTERMATH, WELLS_CURB, filmEntry, filmPosition, openingTruckPose, wellsAftermathDoor, wellsAftermathPose, type WellsAftermathGesture, type WorldEvent } from '@auto_matrix/shared';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { WellsStreetRenderer } from '../packages/client/src/engine/WellsStreetRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
@@ -165,18 +166,22 @@ test('Wells aftermath: the saved take moves the cab door and drops the receiver 
   assert.ok(receiver.getWorldPosition(new THREE.Vector3()).distanceTo(dropped) < 1e-7);
 });
 
-test('Smith keeps his soles on the cab treads and above the pavement as he starts walking', async t => {
+test('Smith keeps his hand against the moving cab grip and his soles supported when he steps out', async t => {
   const source = await actor('smith'), asset = await source.models['load']('smith');
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
   Object.assign(globalThis, { document: { createElement: () => ({ getContext: () => ({
+    fillRect() {}, strokeRect() {}, fillText() {},
     createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {},
   }) }) } });
   const h = setup(), models = new CharacterModels(), smith = h.cast()[0];
   smith.isInMatrix = true; smith.currentLocation = scene.set;
   const rig = models.create(smith);
-  t.after(() => { models.dispose(); source.models.dispose(); if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document'); });
+  const set = FILM_SETS[scene.set], { center } = set, scenery = new THREE.Group();
+  scenery.position.set(center.x, center.y - 1, center.z);
+  const street = new WellsStreetRenderer(scenery, set);
+  t.after(() => { street.dispose(); models.dispose(); source.models.dispose(); if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document'); });
   await new Promise(resolve => setImmediate(resolve));
   assert.ok(rig.hero, 'use the delivered Smith model');
   const shoes = rig.hero.root.getObjectByName('shoes01') as THREE.SkinnedMesh;
@@ -186,7 +191,7 @@ test('Smith keeps his soles on the cab treads and above the pavement as he start
     for (let j = 1; j < 4; j++) if (skinWeight.getComponent(i, j) > skinWeight.getComponent(i, influence)) influence = j;
     return shoes.skeleton.bones[skinIndex.getComponent(i, influence)].name.endsWith('_L') ? 'left' : 'right';
   });
-  const { center } = FILM_SETS[scene.set], point = new THREE.Vector3();
+  const point = new THREE.Vector3();
   function soles(elapsed: number, curbside: WellsAftermathGesture['curbside']) {
     const gesture: WellsAftermathGesture = { role: 'smith', elapsed, curbside }, pose = wellsAftermathPose(gesture);
     rig.root.position.set(center.x + pose.x, center.y - 1 + pose.y, center.z + pose.z);
@@ -206,6 +211,34 @@ test('Smith keeps his soles on the cab treads and above the pavement as he start
     const tread = soles(1.2, curbside);
     assert.ok(Math.abs(tread.left - WELLS_AFTERMATH.lowerStep.y - lift) < .02, 'left shoe meets the lower tread');
     assert.ok(Math.abs(tread.right - WELLS_AFTERMATH.upperStep.y - lift) < .02, 'right shoe meets the upper tread');
+    const door = scenery.getObjectByName('wells-driver-door')!;
+    const rail = (door.getObjectByName('wells-driver-grip') ?? door.children.at(-1)) as THREE.Mesh;
+    rail.geometry.computeBoundingBox();
+    const hand = rig.hero.bones.get('wrist_R')!;
+    const skin = rig.hero.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    const skinIndex = skin.geometry.attributes.skinIndex, skinWeight = skin.geometry.attributes.skinWeight;
+    const handVertices = Array.from({ length: skin.geometry.attributes.position.count }, (_, i) => i).filter(i => {
+      let weight = 0;
+      for (let j = 0; j < 4; j++) if (/^(wrist|finger).*_R$/.test(skin.skeleton.bones[skinIndex.getComponent(i, j)].name)) weight += skinWeight.getComponent(i, j);
+      return weight > .7;
+    });
+    for (const elapsed of [.96, 1.03, 1.13, 1.3, 1.55]) {
+      soles(elapsed, curbside);
+      street.update(openingTruckPose({ phase: 'done', lastTick: 0, remaining: 0, attempts: 0, curbside }), wellsAftermathDoor(elapsed));
+      scenery.updateMatrixWorld(true);
+      const palm = hand.localToWorld(point.set(.21, -.18, .02));
+      const gap = rail.geometry.boundingBox!.distanceToPoint(rail.worldToLocal(palm));
+      assert.ok(gap < .095, `${surface} ${elapsed}: Smith's palm misses the swinging cab grip by ${gap}`);
+      skin.skeleton.update();
+      const { min, max } = rail.geometry.boundingBox!;
+      let nearest = Infinity, deepest = 0;
+      for (const vertex of handVertices) {
+        rail.worldToLocal(skin.localToWorld(skin.getVertexPosition(vertex, point)));
+        nearest = Math.min(nearest, rail.geometry.boundingBox!.distanceToPoint(point));
+        deepest = Math.max(deepest, Math.min(point.x - min.x, max.x - point.x, point.y - min.y, max.y - point.y, point.z - min.z, max.z - point.z));
+      }
+      assert.ok(nearest < .03 && deepest < .025, `${surface} ${elapsed}: cab grip gap ${nearest}, penetration ${deepest}`);
+    }
     for (let frame = 0; frame <= 60; frame++) {
       const elapsed = 1.9 + frame / 100, low = soles(elapsed, curbside);
       assert.ok(low.left >= pavement - .02, `${elapsed}: left sole penetrates the ${surface} by ${pavement - low.left}`);

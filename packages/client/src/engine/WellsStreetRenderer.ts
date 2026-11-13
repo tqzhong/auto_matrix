@@ -183,7 +183,7 @@ export class WellsStreetRenderer {
     this.box(this.truck, steel, 0, 1.09, front + .19, chassis.width, .27, .38);
     this.box(this.truck, dark, 0, 1.93, front + .11, 1.93, 1.14, .12);
     for (let i = -4; i <= 4; i++) this.box(this.truck, steel, i * .197, 1.93, front + .04, .053, 1.05, .026);
-    const { door, upperStep, lowerStep } = WELLS_AFTERMATH;
+    const { door, doorGrip, upperStep, lowerStep } = WELLS_AFTERMATH;
     this.driverDoor.name = 'wells-driver-door';
     this.driverDoor.position.set(door.x, 0, door.z); this.truck.add(this.driverDoor);
     this.box(this.driverDoor, glass, .095, 3.53, .96, .08, 1.04, 1.84);
@@ -191,6 +191,9 @@ export class WellsStreetRenderer {
     this.box(this.driverDoor, paint, .03, 4.047, .98, .13, .105, 1.96);
     for (const z of [.035, 1.925]) this.box(this.driverDoor, paint, .03, 3.54, z, .13, 1.01, .11);
     this.box(this.driverDoor, steel, -.045, 2.94, 1.61, .11, .085, .28);
+    const { x, y, z, width, height, depth } = doorGrip;
+    for (const offset of [-.135, .135]) this.box(this.driverDoor, steel, .16, y, z + offset, .16, height, .075);
+    this.box(this.driverDoor, steel, x, y, z, width, height, depth).name = 'wells-driver-grip';
     for (const step of [upperStep, lowerStep])
       this.box(this.truck, steel, step.x, step.y - .075, step.z, .7, .15, 1.26).name = 'wells-cab-step';
     for (const edge of [-.49, .49]) {
