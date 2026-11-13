@@ -204,7 +204,7 @@ export class WellsStreetRenderer {
       this.box(this.truck, steel, lampX, 1.9, front + .145, .78, .65, .14);
       this.box(this.truck, headlamp, lampX, 1.9, front + .055, .62, .46, .05);
       this.box(this.truck, amber, side * 1.79, hood + .04, -6.51, .31, .13, .36);
-      this.spot(this.truck, [lampX, 1.9, front], [lampX * .55, .14, front - 25], 0xe2e9ca, 480, 39, .71);
+      this.spot(this.truck, [lampX, 1.9, front], [lampX * .55, .14, front - 25], 0xe2e9ca, 240, 39, .71);
       if (side > 0) {
         this.box(this.truck, glass, 1.845, 3.53, -1.24, .08, 1.04, 1.84);
         this.box(this.truck, paint, 1.91, 3, -.31, .1, .5, 3.76);

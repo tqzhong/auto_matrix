@@ -56,6 +56,7 @@ test('Wells: the truck has grounded axles and real headlamps that swing toward t
   h.draw(h.running(.05));
   for (const [i, light] of lamps.entries()) {
     assert.ok(light.intensity > 0 && light.distance > 20 && !light.castShadow);
+    assert.ok(light.intensity <= 240, 'preserve the Wells headlamp intensity limit for wet pavement');
     const after = direction(light);
     assert.ok(after.dot(before[i]) < .65, 'the beam turns with the saved truck yaw');
     assert.ok(after.dot(streetPoint(0, 2.5, -30.08).sub(light.getWorldPosition(new THREE.Vector3())).normalize()) > Math.cos(light.angle));
