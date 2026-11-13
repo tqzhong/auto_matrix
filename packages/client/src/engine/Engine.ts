@@ -126,7 +126,7 @@ export class Engine {
     this.lightCulling = new LightCulling(this.scene);
     this.voxelRenderer = new VoxelRenderer(this.scene);
     this.voxelRenderer.init();
-    this.filmSets = new FilmSetRenderer(this.scene);
+    this.filmSets = new FilmSetRenderer(this.scene, this.voxelRenderer.streetAsphalt);
     this.agentRenderer = new AgentRenderer(this.scene);
     this.sandboxRenderer = new SandboxRenderer(this.scene, this.agentRenderer);
     this.audio = new GameAudio();

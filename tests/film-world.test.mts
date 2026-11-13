@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FILM_SETS, filmPosition } from '../packages/shared/src/constants/film-sets.ts';
+import { FILM_SCENE_BY_ID, filmEntry } from '../packages/shared/src/constants/film-story.ts';
 import { MOUNTAIN } from '../packages/shared/src/constants/mountain.ts';
 import { PILL_ROOM } from '../packages/shared/src/constants/pills.ts';
 import { INTERROGATION_ROOM } from '../packages/shared/src/constants/interrogation.ts';
@@ -14,6 +15,7 @@ test('film sets admit walking in both worlds and use their own floor', () => {
     const position = set.id === 'film_operation_room' ? filmPosition(set.id, SOURCE_BRIEFING.entry.x, SOURCE_BRIEFING.entry.z)
       : set.id === 'film_hammer_route' ? filmPosition(set.id, 0, HAMMER_COCKPIT.walk.back - 1)
       : set.id === TRAINMAN_CHASE.set ? filmPosition(set.id, TRAINMAN_CHASE.entry.x, TRAINMAN_CHASE.entry.z)
+      : set.id === 'film_hotel_roofs' ? filmEntry(FILM_SCENE_BY_ID.m1_roofs)
       : filmPosition(set.id, set.architecture === 'freeway' ? 14 : set.id === 'film_agent_interrogation' ? INTERROGATION_ROOM.approach.x : set.id === 'film_tv_repair' ? 8.5 : 0, set.id === 'film_mountain_range' ? MOUNTAIN.door.z : 0);
     assert.equal(playerBlocked(position, set.world === 'matrix'), false, set.name);
     assert.equal(groundHeight(position, set.world === 'matrix'), position.y, set.name);

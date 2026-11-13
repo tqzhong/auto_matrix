@@ -464,7 +464,7 @@ export class FilmSetRenderer {
   private architectRoom?: ArchitectRoomRenderer;
   private architectState?: AgentState;
 
-  constructor(private scene: THREE.Scene) {
+  constructor(private scene: THREE.Scene, private streetAsphalt?: THREE.MeshStandardMaterial) {
     scene.add(this.root);
     this.marker = new THREE.Mesh(new THREE.TorusGeometry(1.2, .035, 8, 48), new THREE.MeshBasicMaterial({ color: 0xeac987, transparent: true, opacity: .8, depthWrite: false }));
     this.marker.rotation.x = -Math.PI / 2; this.marker.visible = false; scene.add(this.marker);
@@ -1473,7 +1473,7 @@ export class FilmSetRenderer {
   }
   private openingRoom(scene: OpeningVisitScene, camera: THREE.Camera) {
     const next = FILM_SCENE_BY_ID[scene], set = FILM_SETS[next.set], { x, y, z } = set.center;
-    const room = new FilmSetRenderer(new THREE.Scene()), eye = camera.clone(), entry = filmEntry(next);
+    const room = new FilmSetRenderer(new THREE.Scene(), this.streetAsphalt), eye = camera.clone(), entry = filmEntry(next);
     room.current = set; room.currentScene = scene; room.root.position.set(x, y - 1, z);
     if (scene === 'm1_roofs' && this.currentScene === 'm1_room303' && this.current?.id === 'film_heart_hotel'
       && this.materials.has(this.metal) && this.materials.has(this.wood) && this.materials.has(this.plaster)) {
@@ -3387,17 +3387,19 @@ export class FilmSetRenderer {
           material.needsUpdate = true;
         }
       };
-      const map = source ? new THREE.Texture() : loader.load(`/assets/${directory}/${id}-${kind}.jpg`, loadedMap);
+      const sharedSource = source?.image && source.image.complete !== false ? source.source : undefined;
+      const map = sharedSource ? new THREE.Texture() : loader.load(`/assets/${directory}/${id}-${kind}.jpg`, loadedMap);
       map.wrapS = map.wrapT = THREE.RepeatWrapping; map.repeat.set(repeat, repeat); map.anisotropy = 8;
       if (kind === 'color') map.colorSpace = THREE.SRGBColorSpace; this.textures.add(map);
-      if (source) {
-        // Mark the new texture before sharing the hotel's already uploaded source.
+      if (sharedSource) {
+        // Mark the new texture before sharing the already uploaded source.
         map.needsUpdate = true;
-        map.source = source.source;
+        map.source = sharedSource;
         loadedMap(map);
       }
     };
-    const shared = directory === 'film-materials' ? this.roofSurfaceSources?.get(id) : undefined;
+    const shared = directory === 'film-materials' ? this.roofSurfaceSources?.get(id)
+      : directory === 'surfaces' && id === 'asphalt_02' && this.current?.id === 'film_hotel_roofs' ? this.streetAsphalt : undefined;
     texture('color', shared?.map); texture('normal', shared?.normalMap); texture('roughness', shared?.roughnessMap);
     return material;
   }

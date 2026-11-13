@@ -8,7 +8,8 @@ import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', deferRoofMaps = false, visiting = false) {
+function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', deferRoofMaps = false, visiting = false,
+  streetAsphalt?: THREE.MeshStandardMaterial) {
   const roofs = destination === 'm1_roofs', next = FILM_SCENE_BY_ID[destination];
   const landmark = roofs ? 'opening-roof-window-glass' : 'wells-asphalt';
   const previous = globalThis.document;
@@ -22,7 +23,7 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
     else ready();
     return texture;
   });
-  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), camera = new THREE.PerspectiveCamera();
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene, streetAsphalt), camera = new THREE.PerspectiveCamera();
   scene.environment = new THREE.Texture(); scene.fog = new THREE.FogExp2();
   const sun = new THREE.DirectionalLight(); sun.castShadow = true;
   scene.add(sun, new THREE.DirectionalLight(), new THREE.HemisphereLight());
@@ -260,6 +261,67 @@ test('the 303 cut shares loaded surface sources while keeping each room responsi
   assert.deepEqual(new Set(sharedMaps(roofMeshes)), new Set(staged));
   h.film.update(undefined, undefined, 0);
   assert.equal(roofDisposals, 9);
+});
+
+test('the rooftop reuses the street asphalt source with its own sampler and lifetime', t => {
+  const url = (kind: string) => `/assets/surfaces/asphalt_02-${kind}.jpg`;
+  const streetTexture = (kind: string) => {
+    const map = new THREE.Texture({ width: 256, height: 256, complete: true, currentSrc: url(kind) });
+    map.wrapS = map.wrapT = THREE.RepeatWrapping; map.anisotropy = 8; map.repeat.set(2.125, 250);
+    if (kind === 'color') map.colorSpace = THREE.SRGBColorSpace;
+    map.needsUpdate = true;
+    return map;
+  };
+  const sources = ['color', 'normal', 'roughness'].map(streetTexture);
+  const street = new THREE.MeshStandardMaterial({ map: sources[0], normalMap: sources[1], roughnessMap: sources[2] });
+  t.after(() => { street.dispose(); sources.forEach(map => map.dispose()); });
+  const h = fixture(t, 'm1_roofs', false, false, street);
+  const versions = sources.map(map => map.source.version);
+  let streetDisposals = 0;
+  sources.forEach(map => map.addEventListener('dispose', () => streetDisposals++));
+  const roofMaps = (meshes: Iterable<THREE.Object3D>) => {
+    for (const mesh of meshes) {
+      if (!(mesh instanceof THREE.Mesh) || !(mesh.material instanceof THREE.MeshStandardMaterial)) continue;
+      if (mesh.material.map?.image.currentSrc === url('color')) return [mesh.material.map, mesh.material.normalMap!, mesh.material.roughnessMap!];
+    }
+    return [];
+  };
+  const verify = (maps: THREE.Texture[]) => {
+    assert.equal(maps.length, 3);
+    for (const [i, map] of maps.entries()) {
+      assert.equal(map.source, sources[i].source, 'reuse the already loaded asphalt source');
+      assert.notEqual(map, sources[i]);
+      assert.equal(map.source.version, versions[i]);
+      assert.deepEqual(map.repeat.toArray(), [6, 6]);
+      assert.deepEqual(sources[i].repeat.toArray(), [2.125, 250]);
+      assert.equal(map.colorSpace, sources[i].colorSpace);
+      assert.equal(map.flipY, sources[i].flipY);
+    }
+  };
+
+  h.drain();
+  const cancelled = roofMaps(h.mapped); verify(cancelled);
+  let cancelledDisposals = 0;
+  cancelled.forEach(map => map.addEventListener('dispose', () => cancelledDisposals++));
+  h.journey.visiting = 'm1_roofs'; h.prepare();
+  assert.equal(cancelledDisposals, 3);
+  assert.equal(streetDisposals, 0);
+
+  delete h.journey.visiting; h.mapped.clear(); h.drain();
+  const staged = roofMaps(h.mapped); verify(staged);
+  let roofDisposals = 0;
+  staged.forEach(map => map.addEventListener('dispose', () => roofDisposals++));
+  h.enter();
+  const roof: THREE.Object3D[] = []; h.film.root.traverse(mesh => roof.push(mesh));
+  assert.deepEqual(roofMaps(roof), staged);
+  assert.equal(roofDisposals, 0);
+  h.film.update(undefined, undefined, 0);
+  assert.equal(roofDisposals, 3);
+  assert.equal(streetDisposals, 0);
+
+  h.enter();
+  const coldRoof: THREE.Object3D[] = []; h.film.root.traverse(mesh => coldRoof.push(mesh));
+  verify(roofMaps(coldRoof));
 });
 
 test('the 303 cut prepares both shadow layouts while the roof images decode', t => {

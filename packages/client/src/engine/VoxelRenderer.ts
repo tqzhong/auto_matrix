@@ -57,6 +57,7 @@ export class VoxelRenderer {
   readonly matrix = new VisibleGroup();
   readonly real = new VisibleGroup();
   interiors!: LifeInteriors;
+  streetAsphalt?: THREE.MeshPhysicalMaterial;
   private officeShell?: THREE.Mesh;
   private textures: THREE.Texture[] = [];
   private traffic: THREE.InstancedMesh | null = null;
@@ -225,7 +226,7 @@ export class VoxelRenderer {
   }
 
   private buildStreets(): void {
-    const asphalt = this.materials.surface('asphalt_02', 17, 2000, 8);
+    const asphalt = this.streetAsphalt = this.materials.surface('asphalt_02', 17, 2000, 8);
     for (let n = 240; n <= 2000; n += STREET_SPACING) {
       for (let direction = 0; direction < 2; direction++) {
         const plane = new THREE.PlaneGeometry(17, 2000), road = new THREE.Mesh<THREE.BufferGeometry>(plane, asphalt);
