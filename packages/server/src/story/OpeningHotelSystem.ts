@@ -206,7 +206,7 @@ export class OpeningHotelSystem {
   }
   reload(actor: AgentState, tick: number): string {
     if (!this.active(actor) || this.state!.reloadAt !== undefined || this.state!.ammo === OPENING_HOTEL.magazine) return '';
-    this.state!.reloadAt = tick + 3;
+    this.state!.reloadAt = tick + OPENING_HOTEL.reloadTicks;
     return 'Trinity 更换弹匣。躲开已经亮起的射线。';
   }
   retry(actor: AgentState, tick: number): string {

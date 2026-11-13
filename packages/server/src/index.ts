@@ -227,8 +227,12 @@ sockets.getIO().on('connection', async socket => {
       return;
     }
     if (type === 'player_action' && typeof data?.kind === 'string' && simLoop.isRunning()) {
+      const hotel = sandbox.life.film.openingHotel.state, reloadAt = hotel?.reloadAt;
       const text = players.act(socket.id, data.kind, simLoop.getTick());
       if (text) socket.emit('message', { type: 'notification', data: { message: text, level: 'info' }, tick: simLoop.getTick(), timestamp: Date.now() });
+      if (reloadAt === undefined && hotel?.reloadAt !== undefined) {
+        sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state }, simLoop.getTick());
+      }
       return;
     }
     if (type === 'request_full_state') {

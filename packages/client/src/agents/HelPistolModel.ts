@@ -1,5 +1,12 @@
 import * as THREE from 'three';
 
+export const PISTOL_MAGAZINE_Y = -.24;
+
+export function openingHotelPistolLowering(progress: number): number {
+  const smooth = THREE.MathUtils.smoothstep;
+  return smooth(progress, 0, .23) * (1 - smooth(progress, .78, 1));
+}
+
 export function createHelPistol(material: THREE.Material): THREE.Group {
   const gun = new THREE.Group(); gun.userData.helPistol = true;
   const box = (name: string, x: number, y: number, z: number, w: number, h: number, d: number) => {
@@ -10,7 +17,7 @@ export function createHelPistol(material: THREE.Material): THREE.Group {
   const barrel = new THREE.Mesh(new THREE.CylinderGeometry(.042, .042, .08, 16), material);
   barrel.position.set(0, .065, .435); barrel.rotation.x = Math.PI / 2; gun.add(barrel);
   box('hel-pistol-grip', 0, -.1, -.025, .08, .27, .13).rotation.x = .12;
-  box('hel-pistol-magazine', 0, -.24, -.04, .09, .025, .135);
+  box('hel-pistol-magazine', 0, PISTOL_MAGAZINE_Y, -.04, .09, .025, .135);
   const guard = new THREE.Mesh(new THREE.TorusGeometry(.075, .012, 8, 20), material);
   guard.position.set(0, -.035, .09); guard.rotation.y = Math.PI / 2; guard.scale.y = .56; gun.add(guard);
   box('hel-pistol-trigger', 0, -.045, .055, .025, .07, .026).rotation.x = -.2;

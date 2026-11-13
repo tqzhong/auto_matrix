@@ -98,6 +98,63 @@ test('Brown’s shoulder roll clears the rooftop and ends in a single-knee recov
   }
 });
 
+test('Trinity visibly seats the 303 magazine with her left hand and returns to aim', async t => {
+  const source = await actor('trinity'), asset = await source.models['load']('trinity');
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: { createElement: () => ({ getContext: () => ({
+    fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {},
+  }) }) } });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const trinity = world.agents.get('trinity')!, film = FILM_SCENE_BY_ID.m1_room303;
+  Object.assign(trinity, { currentLocation: film.set, isInMatrix: true, position: filmEntry(film) });
+  const renderer = new AgentRenderer(new THREE.Scene()), camera = new THREE.PerspectiveCamera();
+  camera.position.copy(trinity.position).y += 4;
+  t.after(() => { renderer.dispose(); source.models.dispose(); if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document'); });
+  renderer.setPlayer('trinity', true);
+  renderer.updateAgent('trinity', trinity);
+  for (let i = 0; i < 8; i++) await new Promise(resolve => setImmediate(resolve));
+  const body = renderer.getAgentBody('trinity')!;
+  const hero = renderer.getAgentHero('trinity')!;
+  assert.ok(hero, 'use the delivered model');
+  const journey = { scene: film.id, actor: 'trinity', step: 1,
+    openingHotel: { phase: 'combat', elapsed: 0, lastTick: 7, attempts: 0, disarmed: true, ammo: 4, shots: 4 } } as FilmJourney;
+  const motion = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, firstPerson: true,
+    armed: true, weaponStyle: 'hel_pistol' as const, aimPitch: 0 };
+  const draw = (hotelReload?: number) => {
+    renderer.setPlayerMotion({ ...motion, hotelReload });
+    renderer.update(0, camera, 0, 7, journey); body.updateMatrixWorld(true);
+    return body.getObjectByName('character-hel_pistol')!;
+  };
+  const gun = draw(), magazine = gun.getObjectByName('hel-pistol-magazine')!;
+  const left = hero.getObjectByName('wrist_L')!, right = hero.getObjectByName('wrist_R')!;
+  const chamber = magazine.position.clone(), pointing = gun.getWorldQuaternion(new THREE.Quaternion());
+  const idleLeft = left.getWorldPosition(new THREE.Vector3());
+  const grip = gun.position.clone();
+  for (const phase of [.4, .53, .65]) {
+    assert.equal(draw(phase), gun, 'keep the same pistol in the right hand');
+    assert.equal(gun.parent, right);
+    assert.ok(gun.position.distanceTo(grip) < 1e-7);
+    assert.ok(chamber.y - magazine.position.y > .16, 'the magazine must leave the grip');
+    const wrist = gun.worldToLocal(left.getWorldPosition(new THREE.Vector3()));
+    assert.ok(wrist.distanceTo(magazine.position) < .47, 'the left hand moves to the magazine');
+    assert.ok(left.getWorldPosition(new THREE.Vector3()).distanceTo(idleLeft) > .8);
+    assert.ok(gun.getWorldQuaternion(new THREE.Quaternion()).angleTo(pointing) > .2, 'the pistol is lowered into reach');
+  }
+  draw(.53);
+  const stopped = left.getWorldPosition(new THREE.Vector3());
+  const detached = magazine.position.clone();
+  draw(.24); draw(.53);
+  assert.ok(stopped.distanceTo(left.getWorldPosition(new THREE.Vector3())) < 1e-6, 'the saved time determines the pose');
+  assert.deepEqual(magazine.position.toArray(), detached.toArray());
+  draw();
+  assert.deepEqual(magazine.position.toArray(), chamber.toArray(), 'the magazine is flush when aiming resumes');
+  assert.ok(gun.getWorldQuaternion(new THREE.Quaternion()).angleTo(pointing) < 1e-6);
+  assert.ok(left.getWorldPosition(new THREE.Vector3()).distanceTo(idleLeft) < 1e-6);
+});
+
 test('cold hero rigs assemble on separate frames and disposal cancels a queued rig', async t => {
   const source = await actor('smith'), asset = await source.models['load']('smith');
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());

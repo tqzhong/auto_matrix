@@ -23,6 +23,7 @@ export const OPENING_HOTEL = {
   officers: [{ id: 'citizen_4', x: -1.6, behind: 3.2 }, { id: 'citizen_14', x: 1.65, behind: 6.3 }],
   alley: { y: -8, x: 3.6, z: -38.8, front: -26, back: -42, width: 27 },
   magazine: 8,
+  reloadTicks: 3,
   combatOfficers: ['citizen_4', 'citizen_14', 'citizen_10', 'citizen_13'],
   walls: [
     { x: -10.25, z: 1, width: 13.5, depth: .65, height: 12 },

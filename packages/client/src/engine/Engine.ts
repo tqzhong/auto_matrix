@@ -94,6 +94,7 @@ export class Engine {
   playerControls?: PlayerControls;
   private running = true;
   private tick = 0;
+  private tickAge = 0;
   private timeOfDay = 7500;
   private weather: SandboxState['weather'] = 'clear';
   private sandbox?: SandboxState;
@@ -175,6 +176,7 @@ export class Engine {
     const delta = Math.min(frameDelta, 0.1);
     this.frameRate.update(frameDelta);
     this.elapsed += delta * this.simulationSpeed;
+    this.tickAge += delta * this.simulationSpeed;
     const meeting = this.sandbox?.neoLife?.journey;
     this.cameraController.setEnabled(!this.playerControls?.id);
     if (!this.playerControls?.id) this.cameraController.update(delta);
@@ -189,6 +191,10 @@ export class Engine {
         openingTrace = openingHotelTraceTime(this.playerControls.openingHotel, state);
         const guard = this.playerControls.openingHotel ? this.agentRenderer.getAgentState('smith') : undefined;
         this.playerControls.hotelAlleyGuard = openingHotelAlleyGuard(guard) ? guard.position : undefined;
+        const hotel = this.playerControls.openingHotel;
+        this.playerControls.motion.hotelReload = state.status === 'alive' && hotel?.phase === 'combat' && hotel.reloadAt !== undefined
+          ? THREE.MathUtils.clamp(1 - (hotel.reloadAt - this.tick - Math.min(.98, this.tickAge * 2)) / OPENING_HOTEL.reloadTicks, 0, 1)
+          : undefined;
         this.playerControls.update(delta, state, group, this.running, phone?.phase === 'connected' || phone?.phase === 'done'
           || phone?.phase === 'failed' && Boolean(phone.answer || phone.hit), phone?.aftermath?.elapsed, phone?.curbside);
       }
@@ -463,6 +469,8 @@ export class Engine {
     if (sections) this.onProfile?.({ at: performance.now(), sections, calls: this.renderer.info.render.calls, triangles: this.renderer.info.render.triangles, scene: player?.currentLocation ?? 'overview' });
   };
   setSimulation(state: SimulationState, time?: number): void {
+    // A paused take renders at its saved tick, including after a cold start.
+    if (state.tick !== this.tick || state.running !== this.running) this.tickAge = 0;
     this.running = state.running;
     this.tick = state.tick;
     this.simulationSpeed = state.running ? state.speed * (state.timeScale ?? 1) : 0;

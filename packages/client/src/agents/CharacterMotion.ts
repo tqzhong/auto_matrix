@@ -122,6 +122,7 @@ export interface MotionInput {
   reloaded?: ReloadedGesture;
   catch?: CatchGesture;
   hotel303?: { phase: 'surrender' | 'dive' | 'answer'; elapsed: number; from?: OpeningHotelEncounter['callFrom'] };
+  hotelReload?: number;
   hotelPursuit?: OpeningPursuitGesture;
   hotelBreach?: { travel: number; speed: number; impact: number };
   hotelLookPitch?: number;

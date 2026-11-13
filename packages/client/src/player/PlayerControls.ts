@@ -46,6 +46,7 @@ import { ceasefireCamera, ceasefireWitnessTarget } from './CeasefireCamera.js';
 import { gardenCamera } from './GardenCamera.js';
 import { podThirdPersonCamera } from './PodCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
+import { openingHotelPistolLowering } from '../agents/HelPistolModel.js';
 import { ZION_ENGINEERING } from '@auto_matrix/shared';
 import { upperDiggerEye, upperDiggerLookBack } from '../agents/UpperDiggerPerformance.js';
 import { ambushCompanyStep } from '@auto_matrix/shared';
@@ -3265,9 +3266,13 @@ export class PlayerControls {
       const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
       this.camera.lookAt(eye.clone().add(forward));
     } else if (this.firstPerson) {
+      const reload = this.motion.hotelReload === undefined ? 0 : openingHotelPistolLowering(this.motion.hotelReload);
+      target.x += Math.sin(this.yaw) * .19 * reload;
+      target.z += Math.cos(this.yaw) * .19 * reload;
       this.camera.position.copy(target);
       if (this.motion.grounded && this.motion.speed > .1) this.camera.position.y += Math.sin(this.cameraStep * 2) * .018;
-      const pitch = interview?.pinned ? THREE.MathUtils.lerp(this.pitch, -Math.PI / 2 + this.pitch * .6, interview.pinned) : this.pitch;
+      const pitch = interview?.pinned ? THREE.MathUtils.lerp(this.pitch, -Math.PI / 2 + this.pitch * .6, interview.pinned)
+        : THREE.MathUtils.lerp(this.pitch, .67, reload);
       this.camera.lookAt(target.x + Math.sin(this.yaw) * Math.cos(pitch), target.y - Math.sin(pitch), target.z + Math.cos(this.yaw) * Math.cos(pitch));
     } else if (this.templeSpeech && !this.dragging && now - this.lastLook > 700 && this.motion.speed < .1) {
       // Look over the rostrum so the speaker and the listening rows share the shot.
