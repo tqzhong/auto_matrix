@@ -77,7 +77,7 @@ test('303 sounds follow the line, door, glass and climb through pauses and retri
   assert.deepEqual(h.frame(hotel('trace')), []);
   assert.deepEqual(h.frame(hotel('breach')), ['hangup']);
   assert.deepEqual(h.frame(hotel('breach', .3)), []);
-  assert.deepEqual(h.frame(hotel('breach', .5)), ['door']);
+  assert.deepEqual(h.frame(hotel('breach', .5)), ['door-kick']);
   assert.deepEqual(h.frame(hotel('breach', .6)), []);
   assert.deepEqual(fixture().frame(hotel('breach', .7)), [], 'cold resume after contact does not replay the door');
   assert.deepEqual(h.frame(hotel('combat', 0, 1)), [], 'retry starts after the door has opened');

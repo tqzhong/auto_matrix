@@ -461,7 +461,9 @@ export class Engine {
         || (liveMatrixJourney?.scene === 'm1_ledge' && liveMatrixJourney.office?.climbed === undefined)))
         this.agentRenderer.cullOfficeStreetShadows(this.camera, this.lightingSystem.directionalLight, enclosedLiftFloor);
       if (roomFar < cameraFar) { this.camera.far = roomFar; this.camera.updateProjectionMatrix(); }
-      this.postProcessing.render(filmSet?.id !== 'film_extraction_car');
+      // The trace covers the frame. Resume all passes while it still covers the first hall view.
+      const covered = openingTrace !== undefined && openingTrace < OPENING_HOTEL.trace.located;
+      this.postProcessing.render(filmSet?.id !== 'film_extraction_car', covered);
       this.openingTrace.render(this.renderer, openingTrace);
     } finally {
       if (roomFar < cameraFar) { this.camera.far = cameraFar; this.camera.updateProjectionMatrix(); }

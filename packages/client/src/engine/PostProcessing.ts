@@ -199,15 +199,18 @@ export class WorldOcclusionPass extends GTAOPass {
 export class PostProcessing {
   onMeasure?: (name: string, milliseconds: number) => void;
   private composer: EffectComposer;
+  private scenePass: RenderPass;
   private bloom: UnrealBloomPass;
   private output: OutputPass;
   private occlusion: WorldOcclusionPass;
   private antialias: ShaderPass;
   private pixelRatio: number;
+  private coveredGpu?: THREE.WebGLRenderer['properties'];
   constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
     this.composer = new EffectComposer(renderer);
     this.composer.renderTarget1.depthBuffer = false;
-    this.composer.addPass(new RenderPass(scene, camera));
+    this.scenePass = new RenderPass(scene, camera);
+    this.composer.addPass(this.scenePass);
     this.occlusion = new WorldOcclusionPass(scene, camera, window.innerWidth, window.innerHeight);
     this.occlusion.updateGtaoMaterial({ radius: 1.8, thickness: 1, scale: .8, samples: 8, distanceFallOff: 1 });
     this.occlusion.blendIntensity = .65;
@@ -246,13 +249,22 @@ export class PostProcessing {
     }
     this.pixelRatio = renderer.getPixelRatio(); this.resize(window.innerWidth, window.innerHeight);
   }
-  render(occlusion = true): void {
+  render(occlusion = true, covered = false): void {
     this.occlusion.enabled = occlusion;
     // The comparison AO path can swap the buffers. Always start the scene
     // on the depth-capable target, regardless of the previous frame's swaps.
     this.composer.readBuffer = this.composer.renderTarget2;
     this.composer.writeBuffer = this.composer.renderTarget1;
-    this.composer.render();
+    const { renderer, readBuffer, writeBuffer } = this.composer;
+    // Prepare the normal and fullscreen programs once before the hall enters view.
+    if (!covered || this.coveredGpu !== renderer.properties) {
+      this.composer.render();
+      this.coveredGpu = covered ? renderer.properties : undefined;
+      return;
+    }
+    const target = renderer.getRenderTarget(), autoClear = renderer.autoClear;
+    try { this.scenePass.render(renderer, writeBuffer, readBuffer, 0, false); }
+    finally { renderer.autoClear = autoClear; renderer.setRenderTarget(target); }
   }
   prepareNormals(renderer: THREE.WebGLRenderer, actor?: THREE.Group, destination?: readonly THREE.Mesh[], deferBindings = false): void {
     this.occlusion.prepareNormals(renderer, actor, destination, deferBindings);
@@ -264,6 +276,7 @@ export class PostProcessing {
   resize(w: number, h: number, pixelRatio = this.pixelRatio): void {
     if (this.pixelRatio !== pixelRatio) { this.pixelRatio = pixelRatio; this.composer.setPixelRatio(pixelRatio); }
     this.composer.setSize(w, h); this.antialias.uniforms.resolution.value.set(1 / (w * pixelRatio), 1 / (h * pixelRatio));
+    this.coveredGpu = undefined;
   }
   dispose(): void {
     this.bloom.materialHighPassFilter.dispose();

@@ -18,7 +18,7 @@ export type OpeningAudioState = {
 
 function hotelSounds(audio: OpeningSounds, previous: OpeningHotelEncounter, hotel: OpeningHotelEncounter): void {
   if (previous.phase === 'trace' && hotel.phase === 'breach') audio.landlineSound('hangup');
-  if (previous.phase === 'breach' && !openingHotelDoorHit(previous) && openingHotelDoorHit(hotel)) audio.meetingSound('door');
+  if (previous.phase === 'breach' && !openingHotelDoorHit(previous) && openingHotelDoorHit(hotel)) audio.governmentSound('door-kick');
   const phone = OPENING_HOTEL.phone;
   const before = previous.phase === 'answering' ? previous.elapsed : 0;
   if (hotel.phase === 'answering' && before < phone.grasp && hotel.elapsed >= phone.grasp) audio.landlineSound('pickup');

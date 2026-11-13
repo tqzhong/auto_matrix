@@ -229,6 +229,26 @@ function audioHarness(t: TestContext, saved?: string, Audio = GameAudio) {
   return { audio, contexts, requests, window, document, storage, legacyStorage, flush, respond };
 }
 
+test('the Room 303 kick sends a low impact and a short latch crack to the effects bus', async t => {
+  const h = audioHarness(t);
+  await h.audio.resume();
+  const context = h.contexts[0], effects = context.gains[1];
+  const play = h.audio.governmentSound.bind(h.audio) as (kind: string) => void;
+  play('door-kick');
+  const thump = context.oscillators[0];
+  assert.equal(context.oscillators.length, 1);
+  assert.ok(thump.frequency.events[0].value < 200);
+  assert.ok(thump.connections[0].connections.includes(effects));
+  const noises = context.sources.filter(source => source.starts === 1);
+  assert.equal(noises.length, 2);
+  const crack = noises[0].connections[0];
+  assert.ok(crack.connections[0].connections.includes(effects));
+  h.audio.toggle('effects');
+  play('door-kick');
+  assert.equal(context.oscillators.length, 1);
+  assert.equal(context.sources.filter(source => source.starts === 1).length, 2);
+});
+
 test('the Wells score leaves a gap between the line cut and physical impact', async t => {
   const h = audioHarness(t), game = scene();
   game.player!.id = 'trinity'; game.player!.currentLocation = FILM_SCENE_BY_ID.m1_phone_escape.set;

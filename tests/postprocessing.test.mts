@@ -111,6 +111,44 @@ test('the scene starts on the same depth target after the occlusion comparison p
   } finally { post.dispose(); globalThis.window = previousWindow; }
 });
 
+test('the covered scene prepares color and shadows before resuming full post-processing', t => {
+  const previousWindow = globalThis.window;
+  globalThis.window = { innerWidth: 64, innerHeight: 64 } as Window & typeof globalThis;
+  const original = new THREE.WebGLRenderTarget(16, 16);
+  let target: THREE.WebGLRenderTarget | null = original;
+  const renderer = { autoClear: true, properties: {}, getPixelRatio: () => 1, getSize: (size: THREE.Vector2) => size.set(64, 64),
+    getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; } } as unknown as THREE.WebGLRenderer;
+  const post = new PostProcessing(renderer, new THREE.Scene(), new THREE.PerspectiveCamera());
+  const composer = post['composer'], draws: number[] = [];
+  try {
+    const [scene, ...passes] = composer.passes;
+    t.mock.method(scene, 'render', (_renderer, _write, read) => {
+      assert.equal(read, composer.renderTarget2);
+      renderer.setRenderTarget(read);
+      draws.push(0);
+    });
+    passes.forEach((pass, index) => t.mock.method(pass, 'render', () => draws.push(index + 1)));
+    post.render(true, true);
+    assert.deepEqual(draws, [0, 1, 2, 3, 4], 'prepare the normal and fullscreen programs before the hall appears');
+    draws.length = 0;
+    post.render(true, true);
+    assert.deepEqual(draws, [0]);
+    assert.equal(target, original);
+    assert.equal(scene.renderToScreen, false);
+    draws.length = 0;
+    post.render();
+    assert.deepEqual(draws, [0, 1, 2, 3, 4]);
+    assert.equal(target, original);
+    draws.length = 0;
+    post.render(true, true);
+    assert.deepEqual(draws, [0, 1, 2, 3, 4], 'prepare a new trace from the current scene');
+    post.resize(96, 64);
+    draws.length = 0;
+    post.render(true, true);
+    assert.deepEqual(draws, [0, 1, 2, 3, 4], 'prepare the recreated buffers after a resize');
+  } finally { post.dispose(); original.dispose(); globalThis.window = previousWindow; }
+});
+
 test('default occlusion multiplies the existing color without copying or swapping it', t => {
   const pass = new WorldOcclusionPass(new THREE.Scene(), new THREE.PerspectiveCamera(), 64, 64);
   const renderer = { shadowMap: { autoUpdate: true, needsUpdate: false } } as THREE.WebGLRenderer;
