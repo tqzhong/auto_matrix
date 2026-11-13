@@ -36,6 +36,7 @@ type ReturnShadows = { lighting: LightCulling; materials: Set<THREE.MeshDepthMat
 type ApartmentReturn = 'm1_wake_up' | 'm1_morning' | 'neo_apartment' | 'deferred_contact';
 type ReturnMesh = THREE.Mesh | THREE.Line;
 type ReturnSubject = THREE.Group | THREE.Mesh;
+type ReturnArrivals = { actor?: THREE.Group; subjects: ReturnSubject[] };
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
 export class ApartmentSetRenderer {
@@ -67,7 +68,7 @@ export class ApartmentSetRenderer {
   private roomLights: THREE.Light[] = [];
   private returnPreparation?: {
     gpu: THREE.WebGLRenderer['properties']; subjects: ReturnSubject[]; points: number; destination: ApartmentReturn;
-    steps?: Generator<void>; normalMeshes?: THREE.Mesh[]; shadows?: ReturnShadows; arrivals?: ReturnSubject[];
+    steps?: Generator<void>; normalMeshes?: THREE.Mesh[]; shadows?: ReturnShadows; arrivals?: ReturnArrivals;
   };
   constructor(parent: THREE.Group, private cityLights?: THREE.Group) {
     this.root.name = 'anderson-shared-apartment'; parent.add(this.root);
@@ -292,7 +293,7 @@ export class ApartmentSetRenderer {
     const destination = opening || resuming ? 'm1_wake_up' : club ? 'm1_morning' : blue ? 'neo_apartment' : invitation ? 'deferred_contact' : undefined;
     if (!destination || journey?.visiting || (!actor && !resuming) || !renderer.extensions.has('KHR_parallel_shader_compile')) {
       const shadows = previous?.shadows;
-      if (journey?.scene === 'm1_wake_up' && !journey.visiting && previous?.gpu === renderer.properties
+      if (journey?.scene === 'm1_wake_up' && !journey.visiting && !previous?.arrivals && previous?.gpu === renderer.properties
         && shadows?.materials.size && shadows.entryFrames < 2) {
         // The first shadow draw still sees Wells' light counts. Keep both programs through the next draw.
         previous.steps?.return(undefined); previous.steps = undefined; previous.normalMeshes = undefined;
@@ -306,15 +307,16 @@ export class ApartmentSetRenderer {
     const points = this.roomLights.reduce((count, light) => count + Number(light instanceof THREE.PointLight && light.intensity > 0), 0);
     if (resuming && previous?.arrivals && previous.gpu === renderer.properties && previous.points === points && previous.steps
       && previous.subjects.every(object => subjects.includes(object))) {
-      previous.arrivals.push(...subjects.filter(object => !previous.subjects.includes(object)));
+      previous.arrivals.actor = actor;
+      previous.arrivals.subjects.push(...subjects.filter(object => !previous.subjects.includes(object)));
       previous.subjects = subjects;
     }
     if (previous?.gpu !== renderer.properties || previous.points !== points || previous.destination !== destination || (previous.arrivals !== undefined) !== resuming || previous.subjects.length !== subjects.length
       || subjects.some((object, index) => previous.subjects[index] !== object)) {
       this.cancelReturnPreparation();
       const normalMeshes: THREE.Mesh[] | undefined = destination === 'neo_apartment' ? undefined : [];
-      const arrivals = resuming ? [] : undefined;
-      const shadows: ReturnShadows | undefined = opening && openingLights && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
+      const arrivals = resuming ? { actor, subjects: [] } : undefined;
+      const shadows: ReturnShadows | undefined = (opening || resuming) && openingLights && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
         ? { lighting: openingLights, materials: new Set(), entryFrames: 0 } : undefined;
       this.returnPreparation = { gpu: renderer.properties, subjects, points, destination, normalMeshes, shadows, arrivals,
         steps: this.prepareReturnSteps(renderer, camera, scene, subjects, destination, normalMeshes, shadows, arrivals) };
@@ -330,7 +332,7 @@ export class ApartmentSetRenderer {
     preparation?.shadows?.materials.forEach(material => material.dispose());
   }
   private *prepareReturnSteps(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene,
-    subjects: ReturnSubject[], destination: ApartmentReturn, normalMeshes?: THREE.Mesh[], shadows?: ReturnShadows, arrivals?: ReturnSubject[]): Generator<void> {
+    subjects: ReturnSubject[], destination: ApartmentReturn, normalMeshes?: THREE.Mesh[], shadows?: ReturnShadows, arrivals?: ReturnArrivals): Generator<void> {
     const opening = destination === 'm1_wake_up';
     const resume = arrivals !== undefined;
     const sharedOverlays: THREE.Mesh[] = [];
@@ -365,8 +367,8 @@ export class ApartmentSetRenderer {
     }
     eye.fov = 57; eye.updateProjectionMatrix(); eye.updateMatrixWorld();
     const frustum = new THREE.Frustum().setFromProjectionMatrix(eye.projectionMatrix.clone().multiply(eye.matrixWorldInverse));
-    const meshes = new Set<ReturnMesh>(), textures = new Set<THREE.Texture>(), priorityMaps = new Set<THREE.Texture>();
-    const buffers: ReturnMesh[] = [], geometries = new Set<THREE.BufferGeometry>(), queue: ReturnMesh[] = [];
+    const meshes = new Set<ReturnMesh>(), textures = new Set<THREE.Texture>(), priorityMaps = new Set<THREE.Texture>(), actorMaps = new Set<THREE.Texture>();
+    const buffers: ReturnMesh[] = [], geometries = new Set<THREE.BufferGeometry>(), queue: ReturnMesh[] = [], entryColors: ReturnMesh[] = [];
     const collect = (mesh: THREE.Object3D, batch = queue) => {
       if (!(mesh instanceof THREE.Mesh || mesh instanceof THREE.Line) || meshes.has(mesh)) return;
       meshes.add(mesh); batch.push(mesh);
@@ -387,28 +389,40 @@ export class ApartmentSetRenderer {
           if (opening && object.material instanceof THREE.MeshBasicMaterial && !sharedOverlays.includes(object)) sharedOverlays.push(object);
           continue;
         }
+        const player = object === arrivals?.actor, playerMeshes: ReturnMesh[] = [];
+        const colors = player ? playerMeshes : batch;
         // Neo switches to the home sleeves and shirt on his first frame in the room.
         if (!invitation) for (const name of ['Tracking_arms', 'Tracking_shirt']) {
-          const part = object.getObjectByName(name); if (part) collect(part, batch);
+          const part = object.getObjectByName(name); if (part) collect(part, colors);
         }
-        object.traverseVisible(mesh => collect(mesh, batch));
-        if (resume) for (const name of ['Anatomical_head_and_hands', 'Tracking_arms', 'short04']) {
+        object.traverseVisible(mesh => collect(mesh, colors));
+        if (player) entryColors.unshift(...playerMeshes);
+        if (resume) for (const name of player ? ['Tracking_arms', 'Anatomical_head_and_hands'] : ['short04', 'Anatomical_head_and_hands']) {
           const mesh = object.getObjectByName(name);
           if (!(mesh instanceof THREE.Mesh) || !(mesh.material instanceof THREE.MeshStandardMaterial)) continue;
-          for (const map of [mesh.material.map, mesh.material.normalMap]) if (map) priorityMaps.add(map);
+          for (const map of [mesh.material.map, mesh.material.normalMap]) if (map) (player ? actorMaps : priorityMaps).add(map);
         }
       }
     };
     if (resume) addSubjects(subjects, queue);
-    if (!invitation) this.root.traverseVisible(mesh => collect(mesh));
+    const surfaces: ReturnMesh[] = [];
+    if (!invitation) this.root.traverseVisible(mesh => collect(mesh, resume ? surfaces : queue));
     if (!resume) addSubjects(subjects, queue);
-    const streetMeshes: ReturnMesh[] = [];
     if (!invitation) for (const object of this.cityLights?.children ?? []) {
       if (!object.visible || !(object instanceof THREE.Mesh || object instanceof THREE.Line)) continue;
       object.updateWorldMatrix(true, false);
-      if (!object.frustumCulled || frustum.intersectsObject(object)) collect(object, resume ? streetMeshes : queue);
+      if (!object.frustumCulled || frustum.intersectsObject(object)) collect(object, resume ? surfaces : queue);
     }
-    if (resume) queue.unshift(...streetMeshes);
+    if (resume) {
+      const seen = new Set<THREE.Material>();
+      for (const mesh of surfaces) {
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        const first = materials.some(material => !seen.has(material));
+        materials.forEach(material => seen.add(material));
+        // Link one piece of each surface before spending frames on repeated streets.
+        (first ? entryColors : queue).push(mesh);
+      }
+    }
     const pending: ColorProgram[] = [], culling = new LightCulling(lights), target = new THREE.WebGLRenderTarget(1, 1);
     if (entryScene) culling.minimumPointSlots = APARTMENT_POINT_SLOTS;
     if (opening) {
@@ -416,68 +430,79 @@ export class ApartmentSetRenderer {
       const canopy = this.cityLights?.getObjectByName('central-park-canopy');
       if (canopy instanceof THREE.InstancedMesh && !meshes.has(canopy)) queue.push(canopy);
     }
-    const casters = shadows ? shadowCasterProxies(meshes, shadows.materials) : [];
-    const depthQueue = shadows && casters.length ? [
+    const shadowVariants = new Set<string>();
+    const addCasters = (objects: Iterable<THREE.Object3D>) => shadows ? shadowCasterProxies(objects, shadows.materials, shadowVariants) : [];
+    const casters = addCasters(meshes);
+    const depthQueue = shadows ? [
       { lights: shadows.lighting, eye: camera, meshes: casters.slice() }, { lights: culling, eye, meshes: casters },
     ] : [];
     const uploadBuffers = prepareMeshBuffers(renderer, eye, buffers, target);
     target.texture.name = 'apartment-return-preparation';
-    const compile = (batch: (THREE.Mesh | THREE.Line)[], lights: LightCulling, view: THREE.PerspectiveCamera, state: 'live' | 'depth') => {
+    const compile = (batch: ReturnMesh[], lights: LightCulling, view: THREE.PerspectiveCamera, state: 'live' | 'depth', first = false) => {
       const subject = new THREE.Group(), previous = renderer.getRenderTarget(), programs = renderer.info.programs, start = programs?.length ?? 0;
       subject.traverse = visit => batch.forEach(visit);
       const restore = preserveProgramBindings(renderer, sharedOverlays.filter(mesh => batch.includes(mesh)));
       try { renderer.setRenderTarget(target); lights.compileSubject(renderer, view, subject, undefined, undefined, state); }
       finally { restore(); renderer.setRenderTarget(previous); }
-      if (programs) pending.push(...programs.slice(start) as ColorProgram[]);
+      if (programs) {
+        const linked = programs.slice(start) as ColorProgram[];
+        if (first) pending.unshift(...linked);
+        else pending.push(...linked);
+      }
     };
-    const uploadTextures = this.prepareReturnTextures(renderer, textures, priorityMaps, entryScene !== undefined);
+    const uploadTextures = this.prepareReturnTextures(renderer, textures, priorityMaps, entryScene !== undefined, actorMaps);
     try {
-      while (arrivals?.length || queue.length || pending.length || depthQueue.length || buffers.length || textures.size || priorityMaps.size) {
-        if (arrivals?.length) {
+      while (arrivals?.subjects.length || entryColors.length || queue.length || pending.length || depthQueue.some(depth => depth.meshes.length) || buffers.length
+        || textures.size || priorityMaps.size || actorMaps.size) {
+        if (arrivals?.subjects.length) {
           const newMeshes: ReturnMesh[] = [];
-          addSubjects(arrivals.splice(0), newMeshes);
+          addSubjects(arrivals.subjects.splice(0), newMeshes);
           queue.unshift(...newMeshes);
+          const newCasters = addCasters([...entryColors, ...newMeshes]);
+          for (const depth of depthQueue) depth.meshes.unshift(...newCasters);
         }
-        const programs = renderer.info.programs, ready = pending.findIndex(program => programs?.includes(program) && program.isReady());
-        const textureTurn = !queue.length && !depthQueue.length && !buffers.length;
+        const depth = depthQueue.find(layout => layout.meshes.length);
+        const programs = renderer.info.programs;
+        const first = entryColors.length > 0;
+        const ready = first || resume && depth ? -1 : pending.findIndex(program => programs?.includes(program) && program.isReady());
+        const textureTurn = !entryColors.length && !queue.length && !depth && !buffers.length;
         if (ready >= 0) {
           const [program] = pending.splice(ready, 1);
           // Give the completed handoff program a frame before reflecting its uniforms.
           if (entryScene && !resume) yield;
           if (renderer.info.programs?.includes(program)) cacheReadyProgramLocations(renderer, program);
-        } else if (queue.length) {
-          const batch = queue.splice(0, 4);
+        } else if (first || queue.length && !(resume && depth)) {
+          const batch = (first ? entryColors : queue).splice(0, 4);
           if (entryScene) for (const mesh of batch) if (mesh instanceof THREE.SkinnedMesh) {
             if (Array.isArray(mesh.material)) mesh.material.forEach(prepareSkinnedMaterial);
             else prepareSkinnedMaterial(mesh.material);
           }
-          compile(batch, culling, eye, 'live');
-        } else if (depthQueue.length) {
-          const depth = depthQueue[0];
+          compile(batch, culling, eye, 'live', first);
+        } else if (depth) {
           compile(depth.meshes.splice(0, 4), depth.lights, depth.eye, 'depth');
-          if (!depth.meshes.length) depthQueue.shift();
         } else if (buffers.length) uploadBuffers.next();
         // These uploads can run while the independently submitted colour programs are linking.
-        if ((resume || (ready < 0 && textureTurn)) && (textures.size || priorityMaps.size)) uploadTextures.next();
+        if ((resume || (ready < 0 && textureTurn)) && (textures.size || priorityMaps.size || actorMaps.size)) uploadTextures.next();
         yield;
       }
     } finally { uploadTextures.return(undefined); uploadBuffers.return(undefined); culling.dispose(); target.dispose(); }
   }
-  private *prepareReturnTextures(renderer: THREE.WebGLRenderer, textures: Set<THREE.Texture>, priority: Set<THREE.Texture>, stage: boolean): Generator<void> {
+  private *prepareReturnTextures(renderer: THREE.WebGLRenderer, textures: Set<THREE.Texture>, priority: Set<THREE.Texture>, stage: boolean,
+    actor: Set<THREE.Texture>): Generator<void> {
     for (;;) {
-      for (const texture of new Set([...priority, ...textures])) {
+      for (const texture of new Set([...actor, ...priority, ...textures])) {
         const image = texture.image as { width?: number; complete?: boolean } | null;
         if (!texture.version || !image || image.complete === false) continue;
         const { __version, __webglTexture } = renderer.properties.get(texture) as { __version?: number; __webglTexture?: WebGLTexture };
         const upload = (image.width ?? 0) >= 1024 && __version !== texture.version;
         if (upload) {
           const bitmap = stage && !__webglTexture && bitmapUploadImage(renderer, texture);
-          if (!bitmap || !(yield* stageBitmapTexture(renderer, texture, bitmap))) {
+          if (!bitmap || !(yield* stageBitmapTexture(renderer, texture, bitmap, actor.has(texture) || priority.has(texture) ? 2 : 1))) {
             const current = renderer.properties.get(texture) as { __version?: number };
             if (texture.image && current.__version !== texture.version) renderer.initTexture(texture);
           }
         }
-        textures.delete(texture); priority.delete(texture);
+        textures.delete(texture); priority.delete(texture); actor.delete(texture);
         if (upload) break;
       }
       yield;

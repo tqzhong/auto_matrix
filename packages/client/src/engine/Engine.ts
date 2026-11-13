@@ -326,7 +326,7 @@ export class Engine {
         this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentDistant('neo')]
         : deferredContact ? [this.agentRenderer.requestApartmentGuest('choi'), this.agentRenderer.requestApartmentGuest('dujour'), this.filmSets.goalMarker]
         : clubReturn ? [this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo')] : undefined,
-      openingHandoff ? this.lightCulling : undefined, deferredContact, resumeApartment);
+      openingHandoff || resumeApartment ? this.lightCulling : undefined, deferredContact, resumeApartment);
     if (!this.playerControls?.firstPerson) this.filmSets.preparePodColors(this.renderer, this.camera, this.agentRenderer.getAgentHero('neo'));
     if (meeting?.scene === 'm1_oracle' && player?.id === meeting.actor)
       this.filmSets.prepareAmbush(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
@@ -425,9 +425,9 @@ export class Engine {
     const hotelNormals = hotelPreparation && !preparingHotelTextures ? this.filmSets.openingHotelNormalMeshes : undefined;
     const openingNormals = this.filmSets.openingRoofRetryNormalMeshes ?? hotelNormals ?? wellsCast;
     const apartmentNormals = openingNormals ? undefined : this.voxelRenderer.interiors.apartmentReturnNormalMeshes;
-    const neoNormals = preparingLafayetteNormals || openingHandoff && !preparingApartment || apartmentNormals ? neoAtHome : undefined;
+    const neoNormals = preparingLafayetteNormals || resumeApartment || openingHandoff && !preparingApartment || apartmentNormals ? neoAtHome : undefined;
     this.postProcessing.prepareNormals(this.renderer, openingNormals ? this.filmSets.root : neoNormals,
-      openingNormals ?? apartmentNormals, wellsCast !== undefined || apartmentNormals !== undefined);
+      openingNormals ?? apartmentNormals, wellsCast !== undefined || resumeApartment || apartmentNormals !== undefined);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0, openingHotel !== undefined);
     this.filmSets.renderTelevisionPreview(this.renderer);

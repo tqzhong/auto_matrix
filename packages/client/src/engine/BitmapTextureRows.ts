@@ -37,7 +37,7 @@ export function uploadBitmapRows(renderer: THREE.WebGLRenderer, texture: THREE.T
 }
 
 /** Prepare a shared texture offstage so a draw can still upload the original at any time. */
-export function* stageBitmapTexture(renderer: THREE.WebGLRenderer, texture: THREE.Texture, image: ImageBitmap): Generator<void, boolean> {
+export function* stageBitmapTexture(renderer: THREE.WebGLRenderer, texture: THREE.Texture, image: ImageBitmap, stripsPerFrame = 1): Generator<void, boolean> {
   const { source, version } = texture, gpu = renderer.properties;
   const staging = new THREE.Texture(image, undefined, texture.wrapS, texture.wrapT, texture.magFilter,
     texture.minFilter, THREE.RGBAFormat, THREE.UnsignedByteType, texture.anisotropy, texture.colorSpace);
@@ -45,13 +45,13 @@ export function* stageBitmapTexture(renderer: THREE.WebGLRenderer, texture: THRE
   staging.generateMipmaps = texture.generateMipmaps; staging.flipY = false; staging.unpackAlignment = texture.unpackAlignment;
   staging.needsUpdate = true;
   try {
-    for (let row = 0; row < image.height;) {
+    for (let row = 0, strips = 0; row < image.height;) {
       const { __webglTexture } = renderer.properties.get(texture) as { __webglTexture?: WebGLTexture };
       if (__webglTexture || gpu !== renderer.properties || texture.version !== version || texture.source !== source || texture.image !== image) return false;
       const end = uploadBitmapRows(renderer, staging, image, row);
       if (end === undefined) return false;
       row = end;
-      if (row < image.height) yield;
+      if (row < image.height && ++strips % stripsPerFrame === 0) yield;
     }
     // Register the original sampler before releasing the staging reference to its populated allocation.
     texture.source = staging.source;

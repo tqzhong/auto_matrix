@@ -29,8 +29,8 @@ export function cacheReadyProgramLocations(renderer: THREE.WebGLRenderer, progra
 }
 
 /** Match the packed depth variants of the actual casters without moving their meshes. */
-export function shadowCasterProxies(meshes: Iterable<THREE.Object3D>, materials: Set<THREE.MeshDepthMaterial>): THREE.Mesh[] {
-  const variants = new Map<string, THREE.Mesh>();
+export function shadowCasterProxies(meshes: Iterable<THREE.Object3D>, materials: Set<THREE.MeshDepthMaterial>, seen = new Set<string>()): THREE.Mesh[] {
+  const variants: THREE.Mesh[] = [];
   for (const mesh of meshes) {
     if (!(mesh instanceof THREE.Mesh) || !mesh.castShadow || mesh.customDepthMaterial || mesh instanceof THREE.BatchedMesh) continue;
     const surfaces = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
@@ -45,7 +45,8 @@ export function shadowCasterProxies(meshes: Iterable<THREE.Object3D>, materials:
       const key = [side, map?.channel ?? -1, alphaMap?.channel ?? -1, surface.alphaTest > 0, skinned, instanced,
         instanced && Boolean(mesh.instanceColor), instanced && Boolean(mesh.morphTexture),
         morph.position?.length ?? -1, morph.normal?.length ?? -1, morph.color?.length ?? -1].join(',');
-      if (variants.has(key)) continue;
+      if (seen.has(key)) continue;
+      seen.add(key);
       const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side, map, alphaMap, alphaTest: surface.alphaTest });
       prepareSkinnedMaterial(depth); materials.add(depth);
       let caster: THREE.Mesh;
@@ -53,8 +54,8 @@ export function shadowCasterProxies(meshes: Iterable<THREE.Object3D>, materials:
         const proxy = new THREE.InstancedMesh(mesh.geometry, depth, 0);
         proxy.instanceColor = mesh.instanceColor; proxy.morphTexture = mesh.morphTexture; caster = proxy;
       } else caster = skinned ? new THREE.SkinnedMesh(mesh.geometry, depth) : new THREE.Mesh(mesh.geometry, depth);
-      variants.set(key, caster);
+      variants.push(caster);
     }
   }
-  return [...variants.values()];
+  return variants;
 }

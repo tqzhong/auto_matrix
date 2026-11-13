@@ -310,6 +310,95 @@ test('the resumed apartment finishes the large skin maps while ready shader bind
   assert.deepEqual(uploaded, [h.texture, map], 'a ready room binding can share a frame with one actor upload');
 });
 
+test('the 101 landing prepares distinct room and street surfaces ahead of repeated street pieces', t => {
+  const h = fixture(); t.after(h.dispose);
+  const signal = h.street.clone(), material = new THREE.MeshBasicMaterial();
+  h.street.frustumCulled = false;
+  signal.material = material; signal.frustumCulled = false;
+  t.after(() => { material.dispose(); signal.dispose(); });
+  for (let i = 0; i < 8; i++) {
+    const road = h.street.clone(); road.frustumCulled = false; h.city.add(road);
+    t.after(() => road.dispose());
+  }
+  h.city.add(signal);
+  h.journey.scene = 'm1_wake_up'; h.journey.contact = { phase: 'door', elapsed: 0 };
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const prepare = () => h.apartment.prepareReturn(h.renderer, camera, h.scene, h.journey, undefined, [], undefined, false, true);
+  assert.equal(prepare(), true);
+  for (const mesh of [h.root.children[0], h.street, signal]) assert.ok(h.batches[0].includes(mesh));
+  h.ready();
+  for (let i = 0; i < 50; i++) prepare();
+  assert.ok(h.city.children.filter(object => object instanceof THREE.InstancedMesh).every(mesh => h.batches.flat().includes(mesh)));
+});
+
+test('late 101 visitors wait behind the player’s pending color programs and sleeves', t => {
+  const h = fixture(); t.after(h.dispose);
+  const guest = new THREE.Group(), skin = h.arms.clone(), sleeve = h.arms;
+  const playerParts = Array.from({ length: 6 }, () => new THREE.Mesh(h.arms.geometry, h.arms.material));
+  h.actor.add(...playerParts);
+  for (let i = 0; i < 4; i++) { const mesh = h.shirt.clone(); mesh.visible = true; guest.add(mesh); }
+  skin.name = 'Anatomical_head_and_hands'; skin.visible = true; h.actor.add(skin);
+  const sleeveMap = new THREE.Texture({ width: 2048, height: 2048 });
+  sleeveMap.needsUpdate = true;
+  const sleeveMaterial = new THREE.MeshStandardMaterial({ map: sleeveMap }); sleeve.material = sleeveMaterial;
+  t.after(() => { sleeveMap.dispose(); sleeveMaterial.dispose(); });
+  const uploaded: THREE.Texture[] = [], init = h.renderer.initTexture;
+  t.mock.method(h.renderer, 'initTexture', (map: THREE.Texture) => {
+    uploaded.push(map);
+    if (map === h.texture) init(map);
+  });
+  h.journey.scene = 'm1_wake_up'; h.journey.contact = { phase: 'door', elapsed: 0 };
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const prepare = (actor?: THREE.Group, visitors: THREE.Group[] = []) =>
+    h.apartment.prepareReturn(h.renderer, camera, h.scene, h.journey, actor, visitors, undefined, false, true);
+  prepare();
+  prepare(h.actor);
+  prepare(h.actor, [guest]);
+  assert.ok(h.batches[2].some(mesh => playerParts.includes(mesh as THREE.Mesh)), 'continue linking Neo when the guest arrives');
+  assert.ok(h.batches[2].every(mesh => !guest.children.includes(mesh)), 'keep the remaining player meshes ahead of the guest');
+  assert.deepEqual(uploaded, [h.texture, sleeveMap]);
+  h.ready();
+  for (let i = 0; i < 50; i++) prepare(h.actor, [guest]);
+  assert.ok(guest.children.every(mesh => h.batches.flat().includes(mesh)));
+});
+
+test('a cold 101 save prepares the first shadow layout when the detailed player arrives', t => {
+  const h = fixture(), { renderer, scene, actor, arms, journey } = h;
+  const source = new LightCulling(scene), caster = new THREE.SkinnedMesh(arms.geometry, arms.material);
+  caster.castShadow = true; prepareOpaqueShadowDepth(caster); actor.add(caster);
+  Object.assign(renderer, { shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap } });
+  const compile = renderer.compile, prepared = new Set<THREE.MeshDepthMaterial>(), disposed = new Set<THREE.MeshDepthMaterial>();
+  t.after(() => { h.dispose(); source.dispose(); });
+  const shadowLayouts = new Set<number>();
+  t.mock.method(renderer, 'compile', (subject: THREE.Object3D, eye: THREE.PerspectiveCamera, lights: THREE.Scene) => {
+    const casters: THREE.MeshDepthMaterial[] = [];
+    subject.traverse(object => {
+      if (object instanceof THREE.SkinnedMesh && object.material instanceof THREE.MeshDepthMaterial) casters.push(object.material);
+    });
+    if (!casters.length) return compile.call(renderer, subject, eye, lights);
+    assert.equal(lights.fog, null);
+    let spots = 0;
+    lights.traverseVisible(light => { if (light instanceof THREE.SpotLight && light.castShadow) spots++; });
+    shadowLayouts.add(spots);
+    for (const material of casters) {
+      if (prepared.has(material)) continue;
+      prepared.add(material);
+      material.addEventListener('dispose', () => disposed.add(material));
+    }
+  });
+  journey.scene = 'm1_wake_up'; journey.contact = { phase: 'door', elapsed: 0 };
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const prepare = (neo?: THREE.Group, landing = true) => h.apartment.prepareReturn(renderer, camera, scene, journey, neo, [], source, false, landing);
+  assert.equal(prepare(), true);
+  assert.equal(prepare(actor), true);
+  for (let frame = 0; frame < 16; frame++) prepare(actor);
+  assert.deepEqual(shadowLayouts, new Set([0, 1]), 'link late player depth for the overview and the apartment before possession');
+  assert.ok(prepared.size > 0 && disposed.size === 0);
+  assert.equal(caster.material, arms.material);
+  assert.equal(prepare(undefined, false), false);
+  assert.deepEqual(disposed, prepared);
+});
+
 test('preparing the 101 handoff leaves the shared ground shadow bound to Wells until the cut', t => {
   const h = fixture(); t.after(h.dispose);
   const material = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false });
