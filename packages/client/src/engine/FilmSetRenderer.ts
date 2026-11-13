@@ -189,6 +189,7 @@ type ClubPreparation = {
   gpu?: THREE.WebGLRenderer['properties'];
   colors?: CastColorPreparation;
   lighting?: LightCulling;
+  entryTextures?: Set<THREE.Texture>;
   textureUpload?: Generator<void, boolean>;
   crowdQueued?: boolean;
 };
@@ -936,12 +937,14 @@ export class FilmSetRenderer {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose(); prepared.gpu = renderer.properties;
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true }), actors: new Set() };
+      prepared.entryTextures = new Set();
       prepared.colors.meshes.push(this.marker, ...shadows.filter((mesh): mesh is THREE.Mesh => mesh !== undefined));
       prepared.lighting = new LightCulling(prepared.colors.scene);
       prepared.lighting.minimumPointSlots = CLUB_POINT_SLOTS; prepared.lighting.stablePointSlots = true;
       prepared.crowdQueued = prepared.renderer.crowdSources.length > 0;
     }
     const colors = prepared.colors;
+    const entryTextures = prepared.entryTextures!;
     for (const id of ['neo', 'trinity']) {
       const group = actor(id);
       if (!group || colors.actors.has(group)) continue;
@@ -954,6 +957,10 @@ export class FilmSetRenderer {
       });
       if (!meshes.length) continue;
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+      if (id === 'trinity') for (const mesh of meshes) {
+        if ((mesh.userData.club || mesh.name === 'Anatomical_head_and_hands') && mesh.material.map)
+          entryTextures.add(mesh.material.map);
+      }
     }
     if (!prepared.crowdQueued) {
       const crowd = prepared.renderer.crowdSources;
@@ -965,6 +972,8 @@ export class FilmSetRenderer {
         colors.textures = new Set([...crowdTextures, ...colors.textures]);
       }
     }
+    // Start the entrance costume before the crowd and scenery can exhaust a short resume window.
+    if (entryTextures.size && this.prepareStagedColorTexture(renderer, prepared, entryTextures, 2)) return;
     if (renderer.extensions.has('KHR_parallel_shader_compile')
       && this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated')) return;
     this.prepareStagedColorTexture(renderer, prepared, colors.textures);
