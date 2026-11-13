@@ -399,18 +399,33 @@ export class HeroModels {
     if (id === 'trinity' && !support && asset.parser.json.extras.trinityShoulderSupport?.version === 1)
       this.shoulders.attach(root, bones, rest);
     const guardFace = guard === 'agent_jones' ? 'narrow' : guard ? 'wide' : undefined;
+    const faceWidth = guardFace === 'narrow' ? .93 : guardFace ? 1.08 : 1;
+    const faceHeight = guardFace === 'narrow' ? 1.03 : guardFace ? .96 : 1;
     if (guardFace) root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !object.name.includes('Anatomical')) return;
       object.geometry = object.geometry.clone(); this.geometries.add(object.geometry);
       const position = object.geometry.attributes.position;
       for (let i = 0; i < position.count; i++) if (position.getY(i) > 3.78) {
-        position.setX(i, position.getX(i) * (guardFace === 'narrow' ? .93 : 1.08));
-        position.setY(i, 3.78 + (position.getY(i) - 3.78) * (guardFace === 'narrow' ? 1.03 : .96));
+        position.setX(i, position.getX(i) * faceWidth);
+        position.setY(i, 3.78 + (position.getY(i) - 3.78) * faceHeight);
       }
       position.needsUpdate = true; object.geometry.computeVertexNormals();
+      for (const morph of object.geometry.morphAttributes.position ?? []) {
+        for (let i = 0; i < morph.count; i++) {
+          morph.setX(i, morph.getX(i) * faceWidth);
+          morph.setY(i, morph.getY(i) * faceHeight);
+        }
+      }
     });
     const head = bones.get('head')!;
     const metadata = asset.parser.json.extras as { eye: number[]; head: number[]; waist: number[]; glassesTemples?: [number, number, number][][]; articulatedJaw?: ArticulatedJawData; eyelidCorrectives?: EyelidCorrectivesData; filmExpressionReference?: { clip: string } };
+    const smithMouth = head.getObjectByName('smith-mouth');
+    if (smithMouth) {
+      smithMouth.visible = false;
+      smithMouth.scale.set(faceWidth, faceHeight, 1);
+      smithMouth.position.y = (metadata.head[1] - 3.78) * (faceHeight - 1);
+      smithMouth.traverse(object => { if (object instanceof THREE.Mesh) object.castShadow = false; });
+    }
     const eye = new THREE.Vector3().fromArray(metadata.eye).sub(new THREE.Vector3().fromArray(metadata.head));
     head.userData.cameraEye = eye.clone().setX(0);
     if (support === 'cypher') head.userData.cypherEyeHalfWidth = Math.abs(eye.x);

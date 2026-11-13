@@ -65,6 +65,12 @@ Rebuild with `scripts/build-neo-mouth.py --source /path/to/pinned-mouth-source -
 
 Actual skinned hand/utensil, mouth/food, stool/floor, cold-load and first-person checks are in `crew-meal-model`, `crew-meal-seat`, `interlude-visibility` and `neb-subjects` tests. Finite contact samples include explicit tolerances and do not prove all-pose zero penetration. Offline mesh images are inspection evidence, not native game frames or a performance acceptance. See [the meal evidence and remaining limitations](../../../../../output/gameplay/trilogy-crew-meal-2026-10-15/README.md).
 
+## Wells investigation speech
+
+Smith, Jones and Brown share the jaw and lip shapes in `smith.glb`. The original neutral mesh, skin weights and textures are retained. Neo's existing MakeHuman jaw weights register to Smith's original anatomical UVs, and the existing CC0 teeth and tongue are fitted to Smith's mouth. The lower teeth and tongue move with the jaw, while the upper teeth stay fixed to the head. The new geometry adds 450,844 bytes and 7,568 triangles. The interior is visible only during the Wells dialogue.
+
+To rebuild, run `scripts/build-smith-speech.py --neutral /path/to/neutral-smith.glb --donor /path/to/neo.glb --output /path/to/staging/smith.glb` with NumPy and Pillow. Use the neutral Smith from `b491b99f` and the supplied Neo with `jawOpen` and the separate oral meshes. The asset records both source hashes and the oral fit error.
+
 ## Connected wrist skin
 
 The four main GLBs now include an anatomical wrist section between the previously cut hand rings and the covered forearm. It comes from each character's existing pinned CC0 MakeHuman body, morphs and weights. The face, hands, skeleton, existing binary buffer prefix and original textures remain intact. Trinity's jacket also receives up to .025 world units of radial clearance at the lower sleeves; only its position/normal accessor references change, with its old buffers retained. This repairs the skin exposed through her formerly undersized sleeve rather than hiding the restored anatomy.

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, WELLS_AFTERMATH, WELLS_CURB, wellsAftermathDoor, wellsAftermathPose, type WellsAftermathGesture } from '@auto_matrix/shared';
+import { FILM_SETS, WELLS_AFTERMATH, WELLS_CURB, wellsAftermathDoor, wellsAftermathPose, wellsAftermathSpeech, type WellsAftermathGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 
@@ -11,18 +11,26 @@ export function poseWellsAftermath(rig: CharacterRig, gesture?: WellsAftermathGe
   const hero = rig.hero;
   if (!hero || !gesture && !rig.root.userData.wellsSpeaking) return;
   const pose = gesture && wellsAftermathPose(gesture);
-  const amount = pose?.speaking ?? 0;
+  const speech = gesture && wellsAftermathSpeech(gesture), amount = speech?.open ?? 0;
   const face = hero.root.getObjectByName('Anatomical_head_and_hands') as THREE.Mesh | undefined;
-  const jaw = face?.morphTargetDictionary?.jawOpen;
-  if (jaw !== undefined && face?.morphTargetInfluences) face.morphTargetInfluences[jaw] = amount * .33;
-  rig.root.userData.wellsSpeaking = amount > 0;
+  const openIndex = face?.morphTargetDictionary?.jawOpen, roundIndex = face?.morphTargetDictionary?.mouthRound;
+  if (face?.morphTargetInfluences && openIndex !== undefined && roundIndex !== undefined) {
+    face.morphTargetInfluences[openIndex] = amount;
+    face.morphTargetInfluences[roundIndex] = speech?.round ?? 0;
+  }
+  const mouth = hero.root.getObjectByName('smith-mouth'), jaw = mouth?.getObjectByName('smith-jaw');
+  if (mouth && jaw) {
+    mouth.visible = amount > .025;
+    jaw.rotation.x = amount * (jaw.userData.openingAngle as number);
+  }
+  rig.root.userData.wellsSpeaking = Boolean(gesture);
   if (!gesture || !pose) return;
   const { elapsed, role } = gesture, { bones } = hero;
   bones.get('head')!.rotation.x += pose.inspect * .22;
   bones.get('spine')!.rotation.x += pose.inspect * .25;
   bones.get('chest')!.rotation.x += pose.inspect * .16;
   if (elapsed >= 4.18) lookAroundBooth(rig, gesture, pose);
-  bones.get('head')!.rotation.x += amount * .035;
+  bones.get('head')!.rotation.x += amount * .03;
   if (role !== 'smith' || elapsed >= 2.48) return;
 
   const center = FILM_SETS.film_wells_phone.center, truckZ = center.z - 26, streetY = center.y - 1;

@@ -6,6 +6,7 @@ import { FILM_SCENE_BY_ID, FILM_SETS, WELLS_AFTERMATH, WELLS_CURB, filmEntry, fi
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WellsStreetRenderer } from '../packages/client/src/engine/WellsStreetRenderer.js';
+import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
@@ -248,7 +249,7 @@ test('Smith keeps his hand against the moving cab grip and his soles supported w
   }
 });
 
-test('Wells agents look at the receiver and at the people they are talking to', async t => {
+test('Wells agents look at their targets and only the speaker moves their mouth', async t => {
   const source = await actor('smith'), asset = await source.models['load']('smith');
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
@@ -263,6 +264,15 @@ test('Wells agents look at the receiver and at the people they are talking to', 
   await new Promise(resolve => setImmediate(resolve));
   assert.ok(rigs.every(rig => rig.hero), 'use the delivered agent models');
   const heads = rigs.map(rig => rig.hero!.bones.get('head')!);
+  const faces = rigs.map(rig => rig.hero!.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh);
+  const jawIndices = faces.map(face => face.morphTargetDictionary?.jawOpen);
+  assert.ok(jawIndices.every(index => index !== undefined), 'the delivered Smith, Jones and Brown meshes must have a moving jaw');
+  const jaws = () => faces.map((face, i) => face.morphTargetInfluences![jawIndices[i]!]);
+  const mouths = heads.map(head => head.getObjectByName('smith-mouth')!);
+  const lowers = mouths.map(mouth => mouth.getObjectByName('smith-teeth-lower') as THREE.Mesh);
+  const uppers = mouths.map(mouth => mouth.getObjectByName('smith-teeth-upper') as THREE.Mesh);
+  assert.ok(mouths.every(mouth => !mouth.visible), 'the oral surfaces start hidden');
+  const tooth = (mesh: THREE.Mesh, vertex: number) => mesh.localToWorld(new THREE.Vector3().fromBufferAttribute(mesh.geometry.attributes.position, vertex));
   const { center } = FILM_SETS[scene.set];
   const eye = (head: THREE.Bone) => head.localToWorld((head.userData.cameraEye as THREE.Vector3).clone());
   const forward = (head: THREE.Bone) => new THREE.Vector3(0, 0, 1).transformDirection(head.matrixWorld);
@@ -294,5 +304,52 @@ test('Wells agents look at the receiver and at the people they are talking to', 
     draw(5.2);
     const error = THREE.MathUtils.radToDeg(forward(heads[0]).angleTo(receiver.clone().sub(eye(heads[0]))));
     assert.ok(error < 36, `Smith looks ${error.toFixed(1)}° away from the dropped receiver`);
+    for (const [start, end, speaker] of [[4.8, 6.3, 0], [6.3, 7.95, 1], [7.95, 10.25, 2], [10.25, 11.85, 0]]) {
+      const amounts: number[] = [];
+      for (let elapsed = start; elapsed < end; elapsed += .025) {
+        draw(elapsed);
+        const values = jaws();
+        values.forEach((value, i) => { if (i !== speaker) assert.equal(value, 0); });
+        amounts.push(values[speaker]);
+      }
+      assert.ok(Math.max(...amounts) > .35 && Math.min(...amounts) === 0, `${roles[speaker]} opens and closes their mouth during the line`);
+    }
+    for (const elapsed of [8.05, 9.15, 10.13]) {
+      draw(elapsed);
+      const blockers: THREE.Mesh[] = [];
+      for (const { root } of rigs.slice(0, 2)) {
+        root.updateMatrixWorld(true);
+        root.traverseVisible(object => {
+          if (object instanceof THREE.SkinnedMesh) object.computeBoundingSphere();
+          if (object instanceof THREE.Mesh) blockers.push(object);
+        });
+      }
+      for (const aspect of [16 / 9, 780 / 1080]) {
+        const camera = new THREE.PerspectiveCamera(50, aspect, .06, 500);
+        const controls = Object.assign(Object.create(PlayerControls.prototype) as PlayerControls, { camera });
+        controls['wellsAftermathCamera'](elapsed, curbside);
+        camera.updateMatrixWorld(true);
+        const lips = heads[2].localToWorld(new THREE.Vector3(0, -.085, .28));
+        const direction = lips.clone().sub(camera.position);
+        const hits = new THREE.Raycaster(camera.position, direction.clone().normalize(), 0, direction.length() - .07)
+          .intersectObjects(blockers, false);
+        assert.equal(hits.length, 0, `Brown's speaking shot at ${elapsed}s is blocked by ${hits[0]?.object.name}`);
+        const projected = lips.project(camera);
+        assert.ok(Math.abs(projected.x) < .9 && Math.abs(projected.y) < .9 && Math.abs(projected.z) < 1);
+      }
+    }
+    draw(8.74);
+    const brown = jaws(); assert.ok(brown[2] > 0);
+    const lower = heads[2].worldToLocal(tooth(lowers[2], 6)), upper = heads[2].worldToLocal(tooth(uppers[2], 6));
+    const spacing = tooth(lowers[2], 6).distanceTo(tooth(lowers[2], 63));
+    draw(9.88); draw(8.74);
+    assert.deepEqual(jaws(), brown, 'restoring a saved dialogue time restores the expression');
+    assert.ok(lower.distanceTo(heads[2].worldToLocal(tooth(lowers[2], 6))) < 1e-9);
+    for (const rig of rigs) models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 }, 0);
+    assert.deepEqual(jaws(), [0, 0, 0], 'leaving Wells restores the neutral mouths');
+    assert.ok(mouths.every(mouth => !mouth.visible));
+    assert.ok(lower.distanceTo(heads[2].worldToLocal(tooth(lowers[2], 6))) > .02, 'the lower teeth follow the mandible');
+    assert.ok(upper.distanceTo(heads[2].worldToLocal(tooth(uppers[2], 6))) < 1e-9, 'the upper teeth remain fixed in the head');
+    assert.ok(Math.abs(spacing - tooth(lowers[2], 6).distanceTo(tooth(lowers[2], 63))) < .001, 'the lower teeth keep their size');
   }
 });

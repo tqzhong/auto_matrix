@@ -56,7 +56,7 @@ import { officeClipboardPoint } from '@auto_matrix/shared';
 import { APARTMENT, APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentAtComputer, apartmentContactLocked, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
-import { OPENING_HOTEL, WELLS_AFTERMATH, WELLS_CURB, openingHotelClimbed, openingHotelClimbPose, openingHotelDiveMotion, openingHotelHallTime, openingHotelPickupPose, openingHotelTraceTime, openingHotelTraceTiming, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
+import { OPENING_HOTEL, WELLS_AFTERMATH, WELLS_CURB, openingHotelClimbed, openingHotelClimbPose, openingHotelDiveMotion, openingHotelHallTime, openingHotelPickupPose, openingHotelTraceTime, openingHotelTraceTiming, wellsAftermathDialogue, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
 import { OPENING_ESCAPE, OPENING_ROOF_EXIT } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot, basementDropPlayback, tvExitEmergeRoot, tvExitEmergingRole, type BasementDropPlayback } from '@auto_matrix/shared';
@@ -3581,7 +3581,12 @@ export class PlayerControls {
       setShot([lerp(-6.5, receiver.x + .045, close), lerp(-.05, receiver.y - .59, close), lerp(-38.75, receiver.z + .17, close)],
         [receiver.x + .12 * close, receiver.y - 1 + .13 * close, receiver.z + .285 * close], 28, 24);
     } else if (elapsed >= conversationShot) {
-      setShot([portrait ? -15.85 : -15.1, 4.2, -35.2], [-5.65, 1.12, -34.75], 47, 65);
+      const line = wellsAftermathDialogue(elapsed);
+      if (line?.role === 'agent_jones') setShot([-7.9, 3.35, -36.45], [-5.8, 2.58, -32.24], 31, 32);
+      else if (line?.role === 'agent_brown') setShot([-5.55, 3.14, -36.3], [-8.12, 2.78, -37.09], 35, 38);
+      else if (line?.role === 'smith' && line.from >= 10) setShot([-9.05, 3.46, -39.1], [-4.95, 2.81, -35.58], 28, 32);
+      else if (line?.role === 'smith') setShot([-3.65, .95, -37.12], [-4.55, 2.63, -35.74], 32, 32);
+      else setShot([portrait ? -15.85 : -15.1, 4.2, -35.2], [-5.65, 1.12, -34.75], 47, 65);
     } else if (elapsed >= streetShot) {
       const smith = wellsAftermathPose({ elapsed, role: 'smith', curbside });
       setShot([-12.15, 3.25, smith.z - 5.2], [smith.x + 1.8, 1.55, smith.z - 1.25], 44, 63);

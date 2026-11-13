@@ -7,7 +7,7 @@ export const WELLS_AFTERMATH = {
   bootShot: .32,
   firstFoot: .74,
   streetShot: 2.4,
-  conversationShot: 5.35,
+  conversationShot: 4.8,
   receiverShot: 11.25,
   receiver: { x: -3.6, y: .073, z: -36.45 },
   door: { x: -1.94, z: -2.2 },
@@ -26,10 +26,17 @@ export interface WellsAftermath {
 export interface WellsAftermathGesture { elapsed: number; role: WellsAgent; curbside?: true }
 
 const dialogue = [
-  { from: 4.8, to: 6.3, role: 'smith', text: 'Smith：亭里没人。' },
-  { from: 6.3, to: 7.95, role: 'agent_jones', text: 'Jones：她从电话线逃走了。' },
-  { from: 7.95, to: 10.25, role: 'agent_brown', text: 'Brown：线人的消息是真的。下一个目标已经查到了。' },
-  { from: 10.25, to: 11.85, role: 'smith', text: 'Smith：Neo。' },
+  { from: 4.8, to: 6.3, role: 'smith', text: 'Smith：亭里没人。',
+    mouth: [[.17, .43, -.31], [.42, .46, -.44], [.7, .6, .05], [.94, .54, -.16]] },
+  { from: 6.3, to: 7.95, role: 'agent_jones', text: 'Jones：她从电话线逃走了。',
+    mouth: [[.13, .66, -.15], [.28, .42, .64], [.45, .51, -.22], [.62, .76, .22], [.8, .51, -.36],
+      [.96, .59, .35], [1.12, .42, .73], [1.32, .5, .04]] },
+  { from: 7.95, to: 10.25, role: 'agent_brown', text: 'Brown：线人的消息是真的。下一个目标已经查到了。',
+    mouth: [[.10, .57, -.27], [.24, .39, .18], [.37, .42, -.07], [.49, .63, .29], [.63, .4, -.38], [.76, .46, -.27],
+      [.9, .48, -.17], [1.03, .43, .02], [1.2, .67, -.12], [1.32, .42, -.36], [1.43, .46, .11], [1.53, .43, .62],
+      [1.64, .62, .34], [1.75, .4, -.37], [1.84, .43, -.1], [1.95, .68, -.28], [2.06, .62, .45], [2.18, .43, .1]] },
+  { from: 10.25, to: 11.85, role: 'smith', text: 'Smith：Neo。',
+    mouth: [[.42, .45, -.36], [.65, .69, .77], [.81, .28, .65]] },
 ] as const;
 
 const progress = (elapsed: number, from: number, to: number) => Math.max(0, Math.min(1, (elapsed - from) / (to - from)));
@@ -47,6 +54,19 @@ export function wellsAftermathDialogue(elapsed: number) {
 export function wellsAftermathCaption(elapsed: number): string {
   return wellsAftermathDialogue(elapsed)?.text
     ?? (elapsed >= 11.85 ? '特工找到了下一个目标，Neo。' : elapsed >= 2.4 ? 'Smith 走到被撞毁的电话亭旁。' : 'Smith 推开卡车驾驶室的门。');
+}
+
+export function wellsAftermathSpeech({ elapsed, role }: WellsAftermathGesture) {
+  const line = wellsAftermathDialogue(elapsed);
+  if (line?.role !== role) return;
+  const time = elapsed - line.from;
+  let open = 0, round = 0;
+  for (const [beat, jaw, lips] of line.mouth) {
+    const weight = transition(time, beat - .087, beat) * (1 - transition(time, beat, beat + .095));
+    open += jaw * weight;
+    round += lips * weight;
+  }
+  return { open, round };
 }
 
 export function wellsAftermathDoor(elapsed: number | undefined): number {
@@ -68,14 +88,11 @@ export function wellsAftermathPose({ elapsed, role, curbside }: WellsAftermathGe
   const arrive = transition(elapsed, stop - .7, stop + .45);
   const facing = smith ? 2.02 : jones ? 2.84 : 1.22;
   const turn = Math.atan2(Math.sin(facing - heading), Math.cos(facing - heading));
-  const line = wellsAftermathDialogue(elapsed);
-  const attention = line ? transition(elapsed, line.from, line.from + .24) * (1 - transition(elapsed, line.to - .3, line.to)) : 0;
   const inspect = smith ? transition(elapsed, 4.18, 5.05) * (1 - transition(elapsed, 5.75, 6.53)) : 0;
   const floor = curbside ? WELLS_CURB.height * transition(z, WELLS_CURB.edgeZ + .75, WELLS_CURB.edgeZ) : 0;
   const cab = 1.55 + (curbside ? WELLS_CURB.truckLift : 0);
   return { x, y: smith ? cab * (1 - leave) + floor * leave : floor, z,
     yaw: smith && elapsed < start ? -Math.PI / 2 + (heading + Math.PI / 2) * transition(elapsed, 1.82, start)
       : heading + turn * arrive - (smith ? 2.27 * transition(elapsed, 5.6, 6.75) : 0),
-    speed: length * 6 * step * (1 - step) / (stop - start), travel: length * walk, inspect,
-    speaking: line?.role === role ? Math.pow(Math.sin((elapsed - line.from) * 15), 2) * attention : 0 };
+    speed: length * 6 * step * (1 - step) / (stop - start), travel: length * walk, inspect };
 }
