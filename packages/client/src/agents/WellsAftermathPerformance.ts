@@ -26,6 +26,11 @@ export function poseWellsAftermath(rig: CharacterRig, gesture?: WellsAftermathGe
   const truckLift = gesture.curbside ? WELLS_CURB.truckLift : 0, sidewalk = gesture.curbside ? WELLS_CURB.height : 0;
   const { upperStep, lowerStep } = WELLS_AFTERMATH;
   const stepping = 1 - smooth(elapsed, 2.15, 2.48), brace = smooth(elapsed, .72, 1.05) * (1 - smooth(elapsed, 1.65, 2.12));
+  // The cab crouch changes leg reach; the walking targets still sit on the street.
+  const legs = (['L', 'R'] as const).map(side => {
+    const ankle = bones.get(`ankle_${side}`)!;
+    return { side, ankle, walkTarget: ankle.getWorldPosition(new THREE.Vector3()) };
+  });
   const pelvis = bones.get('pelvis')!;
   pelvis.position.y -= (.5 + .36 * brace) * stepping;
   bones.get('spine')!.rotation.x += .26 * stepping;
@@ -34,7 +39,7 @@ export function poseWellsAftermath(rig: CharacterRig, gesture?: WellsAftermathGe
   const facing = rig.root.getWorldQuaternion(new THREE.Quaternion());
   const platform = (point: { x: number; y: number; z: number }, offset: number) =>
     new THREE.Vector3(center.x + point.x, streetY + point.y + hero.footHeight, truckZ + point.z + offset);
-  for (const side of ['L', 'R'] as const) {
+  for (const { side, ankle, walkTarget } of legs) {
     const lead = side === 'L';
     const upper = platform({ ...upperStep, y: upperStep.y + truckLift }, lead ? .28 : -.27);
     const lower = platform({ ...lowerStep, y: lowerStep.y + truckLift }, .25);
@@ -42,8 +47,8 @@ export function poseWellsAftermath(rig: CharacterRig, gesture?: WellsAftermathGe
     const step = smooth(elapsed, lead ? 1.28 : 1.64, lead ? 1.91 : 2.25);
     const foot = (lead ? upper.lerp(lower, smooth(elapsed, .81, 1.18)) : upper).lerp(floor, step);
     foot.y += Math.sin(Math.PI * step) * .15;
-    const hip = bones.get(`hip_${side}`)!, knee = bones.get(`knee_${side}`)!, ankle = bones.get(`ankle_${side}`)!;
-    const target = ankle.getWorldPosition(new THREE.Vector3()).lerp(foot, stepping);
+    const hip = bones.get(`hip_${side}`)!, knee = bones.get(`knee_${side}`)!;
+    const target = walkTarget.lerp(foot, stepping);
     const orientation = ankle.getWorldQuaternion(new THREE.Quaternion()).slerp(facing, stepping);
     reach(hip, knee, ankle.position, target, new THREE.Vector3(lead ? .12 : -.12, .15, 1).applyQuaternion(facing));
     ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));

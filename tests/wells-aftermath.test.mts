@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, FILM_SETS, WELLS_AFTERMATH, filmEntry, filmPosition, type WorldEvent } from '@auto_matrix/shared';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FILM_SCENE_BY_ID, FILM_SETS, WELLS_AFTERMATH, WELLS_CURB, filmEntry, filmPosition, wellsAftermathPose, type WellsAftermathGesture, type WorldEvent } from '@auto_matrix/shared';
+import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
@@ -10,6 +12,7 @@ import { PlayerController } from '../packages/server/src/player/PlayerController
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
+import { actor } from './helpers/fighting-hand-fixture.mts';
 
 const scene = FILM_SCENE_BY_ID.m1_phone_escape;
 const roles = ['smith', 'agent_jones', 'agent_brown'];
@@ -160,4 +163,54 @@ test('Wells aftermath: the saved take moves the cab door and drops the receiver 
   h.frame(55); draw();
   assert.equal(Math.abs(door.rotation.y), 0);
   assert.ok(receiver.getWorldPosition(new THREE.Vector3()).distanceTo(dropped) < 1e-7);
+});
+
+test('Smith keeps his soles on the cab treads and above the pavement as he starts walking', async t => {
+  const source = await actor('smith'), asset = await source.models['load']('smith');
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  Object.assign(globalThis, { document: { createElement: () => ({ getContext: () => ({
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {},
+  }) }) } });
+  const h = setup(), models = new CharacterModels(), smith = h.cast()[0];
+  smith.isInMatrix = true; smith.currentLocation = scene.set;
+  const rig = models.create(smith);
+  t.after(() => { models.dispose(); source.models.dispose(); if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document'); });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(rig.hero, 'use the delivered Smith model');
+  const shoes = rig.hero.root.getObjectByName('shoes01') as THREE.SkinnedMesh;
+  const { position, skinIndex, skinWeight } = shoes.geometry.attributes;
+  const sides = Array.from({ length: position.count }, (_, i) => {
+    let influence = 0;
+    for (let j = 1; j < 4; j++) if (skinWeight.getComponent(i, j) > skinWeight.getComponent(i, influence)) influence = j;
+    return shoes.skeleton.bones[skinIndex.getComponent(i, influence)].name.endsWith('_L') ? 'left' : 'right';
+  });
+  const { center } = FILM_SETS[scene.set], point = new THREE.Vector3();
+  function soles(elapsed: number, curbside: WellsAftermathGesture['curbside']) {
+    const gesture: WellsAftermathGesture = { role: 'smith', elapsed, curbside }, pose = wellsAftermathPose(gesture);
+    rig.root.position.set(center.x + pose.x, center.y - 1 + pose.y, center.z + pose.z);
+    rig.root.rotation.y = pose.yaw;
+    models.animate(rig, 0, { speed: 0, grounded: pose.y <= .12, verticalVelocity: 0, turn: 0, wellsAftermath: gesture }, 0);
+    rig.root.updateMatrixWorld(true); shoes.skeleton.update();
+    const low = { left: Infinity, right: Infinity };
+    for (let i = 0; i < sides.length; i++) {
+      shoes.localToWorld(shoes.getVertexPosition(i, point));
+      low[sides[i]] = Math.min(low[sides[i]], point.y - (center.y - 1));
+    }
+    return low;
+  }
+  for (const curbside of [true, undefined] as const) {
+    const lift = curbside ? WELLS_CURB.truckLift : 0, pavement = curbside ? WELLS_CURB.height : 0;
+    const surface = curbside ? 'curbside pavement' : 'legacy street';
+    const tread = soles(1.2, curbside);
+    assert.ok(Math.abs(tread.left - WELLS_AFTERMATH.lowerStep.y - lift) < .02, 'left shoe meets the lower tread');
+    assert.ok(Math.abs(tread.right - WELLS_AFTERMATH.upperStep.y - lift) < .02, 'right shoe meets the upper tread');
+    for (let frame = 0; frame <= 60; frame++) {
+      const elapsed = 1.9 + frame / 100, low = soles(elapsed, curbside);
+      assert.ok(low.left >= pavement - .02, `${elapsed}: left sole penetrates the ${surface} by ${pavement - low.left}`);
+      assert.ok(low.right >= pavement - .02, `${elapsed}: right sole penetrates the ${surface} by ${pavement - low.right}`);
+      assert.ok(Math.min(low.left, low.right) <= pavement + .045, `${elapsed}: a shoe must support the transition to walking`);
+    }
+  }
 });
