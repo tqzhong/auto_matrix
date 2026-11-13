@@ -320,7 +320,7 @@ export class Engine {
     const wellsCast = this.agentRenderer.wellsCastMeshes;
     this.filmSets.prepareWellsCastPrograms(this.renderer, this.camera, this.lightCulling, openingPhone, wellsCast);
     const preparingApartment = preparingWellsCast
-      || openingHandoff && this.agentRenderer.prepareOpeningApartmentActor()
+      || (openingHandoff || resumeApartment) && this.agentRenderer.prepareOpeningApartmentActor()
       || this.voxelRenderer.interiors.prepareApartmentReturn(this.renderer, this.camera, this.scene, this.sandbox?.neoLife, neoAtHome,
       apartmentCast ? [this.agentRenderer.getAgentHero('choi'), this.agentRenderer.getAgentHero('dujour'),
         this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentDistant('neo')]

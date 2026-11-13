@@ -74,9 +74,11 @@ function fixture() {
     initTexture(map: THREE.Texture) { assert.equal(map, texture); work.push('texture'); uploaded.set(map, map.version); },
   } as unknown as THREE.WebGLRenderer;
   const journey = { scene: 'm1_pills', pills: { phase: 'taking', elapsed: 6, choice: 'blue' } } as FilmJourney;
+  let resuming = false;
   const prepare = (objects?: readonly (THREE.Group | THREE.Mesh | undefined)[], openingLights?: LightCulling, deferred = false, resume = false) => {
+    resuming = journey.scene === 'm1_wake_up' && !journey.visiting && !deferred && (resume || resuming);
     const before = work.length, pending = apartment.prepareReturn(renderer, camera, scene, journey, actor, objects, openingLights, deferred, resume);
-    assert.ok(work.length - before <= 1, 'one compile, binding completion or texture upload per frame');
+    assert.ok(work.length - before <= (resuming ? 2 : 1), 'at most one shader batch and one texture upload during a cold entry');
     assert.equal(renderer.getRenderTarget(), null); assert.equal(renderer.debug.checkShaderErrors, true);
     assert.equal(city.visible, false); assert.ok(roomLights.every(light => !light.visible));
     assert.equal(landingLight.visible, false); assert.equal(landingLight.intensity, 0);
@@ -258,13 +260,54 @@ test('resuming 101 prepares the guests’ skin maps before warming the rest of t
   h.journey.scene = 'm1_wake_up'; h.journey.contact = { phase: 'door', elapsed: 0 };
   const prepare = () => h.prepare([choi, dujour], undefined, false, true);
   assert.equal(prepare(), true);
-  assert.deepEqual(h.work, ['texture']);
+  assert.deepEqual(h.work, ['compile', 'texture']);
   assert.equal(prepare(), true);
-  assert.deepEqual(h.work, ['texture', 'compile']);
+  assert.deepEqual(h.work, ['compile', 'texture', 'compile']);
   h.ready();
   for (let frame = 0; frame < 80; frame++) prepare();
   assert.ok(h.batches.flat().includes(skin));
   assert.equal(h.work.filter(step => step === 'texture').length, 1, 'both guests and the room share one resident map');
+});
+
+test('a cold apartment starts room uploads and preserves pending bindings when Neo loads', t => {
+  const h = fixture(); t.after(h.dispose);
+  const eye = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const { apartment, renderer, scene, journey, actor, arms, shirt, root, work, batches } = h;
+  journey.scene = 'm1_wake_up'; journey.contact = { phase: 'door', elapsed: 0 };
+  const prepare = (neo?: THREE.Group, onLanding = true) => apartment.prepareReturn(renderer, eye, scene, journey, neo, [], undefined, false, onLanding);
+  assert.equal(prepare(), true, 'the room can prepare before the detailed actor is available');
+  assert.deepEqual(work, ['compile', 'texture'], 'a colour batch and an upload advance together while shaders link');
+  assert.ok(batches[0].includes(root.children[0]));
+  assert.equal(prepare(actor), true);
+  assert.ok(batches[1].includes(arms) && batches[1].includes(shirt), 'the entry outfit is linked as soon as its model appears');
+  h.ready();
+  for (let frame = 0; frame < 80; frame++) prepare(actor);
+  assert.equal(work.filter(step => step === 'texture').length, 1, 'the completed room upload stays resident when the cast changes');
+  assert.equal(work.filter(step => step === 'bindings').length, batches.length, 'late models preserve unfinished room program bindings');
+  for (let frame = 0; frame < 30; frame++) prepare();
+  assert.ok(apartment.returnNormalMeshes?.length, 'the landing has a completed room queue');
+  prepare(undefined, false);
+  assert.equal(apartment.returnNormalMeshes, undefined, 'leaving the landing screen without Neo clears the queue');
+});
+
+test('the resumed apartment finishes the large skin maps while ready shader bindings are queued', t => {
+  const h = fixture(); t.after(h.dispose);
+  const skin = h.arms.clone(); skin.name = 'Anatomical_head_and_hands'; skin.visible = true;
+  const map = new THREE.Texture({ width: 2048, height: 2048 }); map.needsUpdate = true;
+  const material = new THREE.MeshStandardMaterial({ map }); skin.material = material; h.actor.add(skin);
+  t.after(() => { map.dispose(); material.dispose(); });
+  h.journey.scene = 'm1_wake_up'; h.journey.contact = { phase: 'door', elapsed: 0 };
+  const uploaded: THREE.Texture[] = [];
+  const init = h.renderer.initTexture;
+  t.mock.method(h.renderer, 'initTexture', (texture: THREE.Texture) => {
+    uploaded.push(texture);
+    if (texture === h.texture) init(texture);
+  });
+  const eye = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const prepare = (neo?: THREE.Group) => h.apartment.prepareReturn(h.renderer, eye, h.scene, h.journey, neo, [], undefined, false, true);
+  prepare(); h.ready();
+  prepare(h.actor);
+  assert.deepEqual(uploaded, [h.texture, map], 'a ready room binding can share a frame with one actor upload');
 });
 
 test('preparing the 101 handoff leaves the shared ground shadow bound to Wells until the cut', t => {
