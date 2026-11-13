@@ -65,7 +65,7 @@ export class ApartmentSetRenderer {
   private roomLights: THREE.Light[] = [];
   private returnPreparation?: {
     gpu: THREE.WebGLRenderer['properties']; subjects: (THREE.Group | THREE.Mesh)[]; points: number; destination: ApartmentReturn;
-    steps?: Generator<void>; normalMeshes?: THREE.Mesh[]; shadows?: ReturnShadows;
+    resume: boolean; steps?: Generator<void>; normalMeshes?: THREE.Mesh[]; shadows?: ReturnShadows;
   };
   constructor(parent: THREE.Group, private cityLights?: THREE.Group) {
     this.root.name = 'anderson-shared-apartment'; parent.add(this.root);
@@ -279,14 +279,15 @@ export class ApartmentSetRenderer {
     return this.returnPreparation?.steps ? undefined : this.returnPreparation?.normalMeshes;
   }
   prepareReturn(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, journey?: FilmJourney, actor?: THREE.Group,
-    entryObjects: readonly (THREE.Group | THREE.Mesh | undefined)[] = [], openingLights?: LightCulling, deferred = false): boolean {
+    entryObjects: readonly (THREE.Group | THREE.Mesh | undefined)[] = [], openingLights?: LightCulling, deferred = false, resume = false): boolean {
+    const previous = this.returnPreparation;
     const phone = journey?.scene === 'm1_phone_escape' ? journey.openingPhone : undefined;
     const opening = phone?.phase === 'connected' || phone?.phase === 'done';
+    const resuming = journey?.scene === 'm1_wake_up' && (resume || previous?.resume === true);
     const blue = journey?.scene === 'm1_pills' && journey.pills?.phase === 'taking' && journey.pills.choice === 'blue';
     const club = journey?.scene === 'm1_club' && ['whisper', 'question', 'reply', 'departing', 'done'].includes(journey.club?.phase ?? '');
     const invitation = deferred && journey?.scene === 'm1_wake_up' && journey.contact?.phase === 'noticed';
-    const destination = opening ? 'm1_wake_up' : club ? 'm1_morning' : blue ? 'neo_apartment' : invitation ? 'deferred_contact' : undefined;
-    const previous = this.returnPreparation;
+    const destination = opening || resuming ? 'm1_wake_up' : club ? 'm1_morning' : blue ? 'neo_apartment' : invitation ? 'deferred_contact' : undefined;
     if (!destination || journey?.visiting || !actor || !renderer.extensions.has('KHR_parallel_shader_compile')) {
       const shadows = previous?.shadows;
       if (journey?.scene === 'm1_wake_up' && !journey.visiting && previous?.gpu === renderer.properties
@@ -301,14 +302,14 @@ export class ApartmentSetRenderer {
     const subjects = destination === 'neo_apartment' ? [actor] : invitation ? arriving : [actor, ...arriving];
     if (!subjects.length) { this.cancelReturnPreparation(); return false; }
     const points = this.roomLights.reduce((count, light) => count + Number(light instanceof THREE.PointLight && light.intensity > 0), 0);
-    if (previous?.gpu !== renderer.properties || previous.points !== points || previous.destination !== destination || previous.subjects.length !== subjects.length
+    if (previous?.gpu !== renderer.properties || previous.points !== points || previous.destination !== destination || previous.resume !== resuming || previous.subjects.length !== subjects.length
       || subjects.some((object, index) => previous.subjects[index] !== object)) {
       this.cancelReturnPreparation();
       const normalMeshes: THREE.Mesh[] | undefined = destination === 'neo_apartment' ? undefined : [];
       const shadows: ReturnShadows | undefined = opening && openingLights && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
         ? { lighting: openingLights, materials: new Set(), entryFrames: 0 } : undefined;
-      this.returnPreparation = { gpu: renderer.properties, subjects, points, destination, normalMeshes, shadows,
-        steps: this.prepareReturnSteps(renderer, camera, scene, subjects, destination, normalMeshes, shadows) };
+      this.returnPreparation = { gpu: renderer.properties, subjects, points, destination, resume: resuming, normalMeshes, shadows,
+        steps: this.prepareReturnSteps(renderer, camera, scene, subjects, destination, normalMeshes, shadows, resuming) };
     }
     const prepared = this.returnPreparation!;
     if (prepared.steps?.next().done) prepared.steps = undefined;
@@ -321,14 +322,18 @@ export class ApartmentSetRenderer {
     preparation?.shadows?.materials.forEach(material => material.dispose());
   }
   private *prepareReturnSteps(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene,
-    subjects: (THREE.Group | THREE.Mesh)[], destination: ApartmentReturn, normalMeshes?: THREE.Mesh[], shadows?: ReturnShadows): Generator<void> {
+    subjects: (THREE.Group | THREE.Mesh)[], destination: ApartmentReturn, normalMeshes?: THREE.Mesh[], shadows?: ReturnShadows, resume = false): Generator<void> {
     const opening = destination === 'm1_wake_up';
     const sharedOverlays = opening ? subjects.slice(1).filter((object): object is THREE.Mesh => object instanceof THREE.Mesh && object.material instanceof THREE.MeshBasicMaterial) : [];
     const invitation = destination === 'deferred_contact';
     const entryScene = destination === 'neo_apartment' ? undefined : FILM_SCENE_BY_ID[invitation ? 'm1_wake_up' : destination];
     const lights = new THREE.Scene(); lights.environment = scene.environment; lights.fog = scene.fog;
     for (const light of scene.children) {
-      if (light.visible && (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) lights.add(light.clone());
+      if (!(light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) continue;
+      // The landing screen keeps the player's camera fill disabled until possession.
+      if (light.visible || resume && light instanceof THREE.DirectionalLight) {
+        const copy = light.clone(); copy.visible = true; lights.add(copy);
+      }
     }
     const fixtures = [...this.roomLights, this.landingLight,
       ...this.cityLights?.children.filter((light): light is THREE.PointLight => light instanceof THREE.PointLight) ?? []];
@@ -351,8 +356,13 @@ export class ApartmentSetRenderer {
     }
     eye.fov = 57; eye.updateProjectionMatrix(); eye.updateMatrixWorld();
     const frustum = new THREE.Frustum().setFromProjectionMatrix(eye.projectionMatrix.clone().multiply(eye.matrixWorldInverse));
-    const meshes = new Set<THREE.Mesh | THREE.Line>(), textures = new Set<THREE.Texture>();
+    const meshes = new Set<THREE.Mesh | THREE.Line>(), textures = new Set<THREE.Texture>(), guestSkins = new Set<THREE.Texture>();
     const collect = (object: THREE.Object3D) => { if (object instanceof THREE.Mesh || object instanceof THREE.Line) meshes.add(object); };
+    if (resume) for (const guest of subjects.slice(1)) {
+      if (!(guest instanceof THREE.Group)) continue;
+      const skin = guest.getObjectByName('Anatomical_head_and_hands');
+      if (skin instanceof THREE.Mesh && skin.material instanceof THREE.MeshStandardMaterial && skin.material.map) guestSkins.add(skin.material.map);
+    }
     if (!invitation) this.root.traverseVisible(collect);
     for (const subject of subjects) {
       if (subject instanceof THREE.Mesh) meshes.add(subject);
@@ -400,6 +410,12 @@ export class ApartmentSetRenderer {
       if (programs) pending.push(...programs.slice(start) as ColorProgram[]);
     };
     try {
+      // A resumed player can turn toward both guests before the rest of the room has finished warming up.
+      for (const texture of guestSkins) {
+        if (!texture.version || !texture.image || texture.image.complete === false) continue;
+        textures.delete(texture);
+        if (yield* this.prepareReturnTexture(renderer, texture, true)) yield;
+      }
       while (queue.length || pending.length || depthQueue.length || buffers.length || textures.size) {
         const programs = renderer.info.programs, ready = pending.findIndex(program => programs?.includes(program) && program.isReady());
         if (ready >= 0) {
@@ -421,22 +437,24 @@ export class ApartmentSetRenderer {
         } else if (buffers.length) uploadBuffers.next();
         else {
           for (const texture of textures) {
-            const image = texture.image as { width?: number; complete?: boolean } | null;
-            if (!texture.version || !image || image.complete === false) continue;
+            if (!texture.version || !texture.image || texture.image.complete === false) continue;
             textures.delete(texture);
-            const uploaded = renderer.properties.get(texture) as { __version?: number; __webglTexture?: WebGLTexture };
-            if ((image.width ?? 0) < 1024 || uploaded.__version === texture.version) continue;
-            const bitmap = entryScene && !uploaded.__webglTexture && bitmapUploadImage(renderer, texture);
-            if (!bitmap || !(yield* stageBitmapTexture(renderer, texture, bitmap))) {
-              const current = renderer.properties.get(texture) as { __version?: number };
-              if (texture.image && current.__version !== texture.version) renderer.initTexture(texture);
-            }
-            break;
+            if (yield* this.prepareReturnTexture(renderer, texture, entryScene !== undefined)) break;
           }
         }
         yield;
       }
     } finally { uploadBuffers.return(undefined); culling.dispose(); target.dispose(); }
+  }
+  private *prepareReturnTexture(renderer: THREE.WebGLRenderer, texture: THREE.Texture, stage: boolean): Generator<void, boolean> {
+    const uploaded = renderer.properties.get(texture) as { __version?: number; __webglTexture?: WebGLTexture };
+    if ((texture.image.width ?? 0) < 1024 || uploaded.__version === texture.version) return false;
+    const bitmap = stage && !uploaded.__webglTexture && bitmapUploadImage(renderer, texture);
+    if (!bitmap || !(yield* stageBitmapTexture(renderer, texture, bitmap))) {
+      const current = renderer.properties.get(texture) as { __version?: number };
+      if (texture.image && current.__version !== texture.version) renderer.initTexture(texture);
+    }
+    return true;
   }
   private mat(color: number, roughness: number, metalness = 0, source?: string): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(material);

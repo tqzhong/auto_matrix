@@ -74,8 +74,8 @@ function fixture() {
     initTexture(map: THREE.Texture) { assert.equal(map, texture); work.push('texture'); uploaded.set(map, map.version); },
   } as unknown as THREE.WebGLRenderer;
   const journey = { scene: 'm1_pills', pills: { phase: 'taking', elapsed: 6, choice: 'blue' } } as FilmJourney;
-  const prepare = (objects?: readonly (THREE.Group | THREE.Mesh | undefined)[], openingLights?: LightCulling, deferred = false) => {
-    const before = work.length, pending = apartment.prepareReturn(renderer, camera, scene, journey, actor, objects, openingLights, deferred);
+  const prepare = (objects?: readonly (THREE.Group | THREE.Mesh | undefined)[], openingLights?: LightCulling, deferred = false, resume = false) => {
+    const before = work.length, pending = apartment.prepareReturn(renderer, camera, scene, journey, actor, objects, openingLights, deferred, resume);
     assert.ok(work.length - before <= 1, 'one compile, binding completion or texture upload per frame');
     assert.equal(renderer.getRenderTarget(), null); assert.equal(renderer.debug.checkShaderErrors, true);
     assert.equal(city.visible, false); assert.ok(roomLights.every(light => !light.visible));
@@ -213,6 +213,54 @@ test('Wells leaves a frame between shader completion and reading its bindings', 
   assert.deepEqual(h.work, ['compile'], 'the completion check must yield before it reads bindings');
   assert.equal(h.prepare(), true);
   assert.deepEqual(h.work, ['compile', 'bindings']);
+});
+
+test('resuming 101 prepares the room and visitors with the player light layout before the first turn', t => {
+  const h = fixture(); t.after(h.dispose);
+  const fill = h.scene.children.find(light => light instanceof THREE.DirectionalLight && !light.castShadow)!;
+  fill.visible = false;
+  const directions: number[] = [], compile = h.renderer.compile;
+  t.mock.method(h.renderer, 'compile', (subject: THREE.Object3D, camera: THREE.Camera, lights: THREE.Scene) => {
+    directions.push(lights.children.filter(light => light instanceof THREE.DirectionalLight && light.visible).length);
+    return compile.call(h.renderer, subject, camera, lights);
+  });
+  const material = new THREE.MeshStandardMaterial({ map: h.texture }); t.after(() => material.dispose());
+  const visitor = new THREE.Group(), skin = new THREE.SkinnedMesh(h.arms.geometry, material);
+  visitor.add(skin);
+  h.journey.scene = 'm1_wake_up';
+  h.journey.contact = { phase: 'door', elapsed: 0, chairMotion: 'seated' };
+  assert.equal(h.prepare([visitor]), false, 'ordinary arrival still uses the Wells handoff');
+  assert.equal(h.prepare([visitor], undefined, false, true), true, 'a cold save starts preparing on the landing screen');
+  h.ready();
+  for (let frame = 0; frame < 80; frame++) h.prepare([visitor]);
+  const room = h.root.children[0] as THREE.Mesh;
+  for (const mesh of [skin, room]) assert.ok(h.batches.flat().includes(mesh));
+  assert.ok(h.apartment.returnNormalMeshes?.includes(skin));
+  assert.ok(h.slots.every(slots => slots === 10));
+  assert.ok(directions.every(count => count === 2));
+  assert.equal(fill.visible, false);
+  assert.equal(h.work.filter(step => step === 'texture').length, 1);
+  h.cancel();
+  assert.equal(h.apartment.returnNormalMeshes, undefined);
+  h.journey.scene = 'm1_wake_up'; h.journey.visiting = 'm1_room303';
+  assert.equal(h.prepare([visitor], undefined, false, true), false);
+});
+
+test('resuming 101 prepares the guests’ skin maps before warming the rest of the room', t => {
+  const h = fixture(); t.after(h.dispose);
+  const choi = new THREE.Group(), dujour = new THREE.Group();
+  const skin = h.arms.clone(); skin.name = 'Anatomical_head_and_hands'; skin.visible = true;
+  choi.add(skin); dujour.add(skin.clone());
+  h.journey.scene = 'm1_wake_up'; h.journey.contact = { phase: 'door', elapsed: 0 };
+  const prepare = () => h.prepare([choi, dujour], undefined, false, true);
+  assert.equal(prepare(), true);
+  assert.deepEqual(h.work, ['texture']);
+  assert.equal(prepare(), true);
+  assert.deepEqual(h.work, ['texture', 'compile']);
+  h.ready();
+  for (let frame = 0; frame < 80; frame++) prepare();
+  assert.ok(h.batches.flat().includes(skin));
+  assert.equal(h.work.filter(step => step === 'texture').length, 1, 'both guests and the room share one resident map');
 });
 
 test('preparing the 101 handoff leaves the shared ground shadow bound to Wells until the cut', t => {
