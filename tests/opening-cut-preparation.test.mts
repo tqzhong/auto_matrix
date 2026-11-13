@@ -455,6 +455,23 @@ test('the roof prepares the opaque Wells truck shadow before entering the street
   assert.ok(truck.castShadow);
 });
 
+test('the roof prepares the first Wells glass fragment while the booth is still intact', t => {
+  const h = fixture(t, 'm1_phone_escape');
+  h.drain();
+  const glass = [...h.roots][0].getObjectByName('opening-shattered-glass')!;
+  const fragments = glass.children.filter((child): child is THREE.Mesh => child instanceof THREE.Mesh);
+  assert.ok(fragments.length > 1);
+  const prepared = fragments.filter(fragment => h.meshes.has(fragment));
+  assert.equal(prepared.length, 1, 'one fragment prepares the shared material for both sides');
+  assert.equal(glass.visible, false);
+  assert.ok(fragments.every(fragment => fragment.material === prepared[0].material));
+  assert.ok(prepared[0].material instanceof THREE.MeshPhysicalMaterial);
+  assert.equal(prepared[0].material.side, THREE.DoubleSide);
+  h.enter();
+  assert.equal(h.film.root.getObjectById(glass.id), glass);
+  assert.equal(glass.visible, false);
+});
+
 test('a cold roof failure prepares the live rooftop and Brown before the retry', t => {
   const h = fixture(t, 'm1_phone_escape');
   const brown = new THREE.Group(), jacket = new THREE.SkinnedMesh(h.skin.geometry, h.material);

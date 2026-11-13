@@ -1634,6 +1634,9 @@ export class FilmSetRenderer {
     if (!prepared.colors) {
       if (scene !== 'm1_roofs' && [...prepared.room.textures].some(texture => !texture.image)) return;
       const colors = this.colorPreparation(prepared.room.root, [], { includeBasic: true });
+      // All the hidden booth fragments share one material for the first impact.
+      const fragment = prepared.room.openingGlassPieces[0]?.mesh;
+      if (fragment) colors.meshes.unshift(fragment);
       const goal = filmStepPosition(next, next.steps[0]);
       for (const light of colors.scene.children) if (light instanceof THREE.PointLight) {
         light.position.set(goal.x, goal.y + .68, goal.z); light.intensity = scene === 'm1_roofs' ? 5 : 0;
