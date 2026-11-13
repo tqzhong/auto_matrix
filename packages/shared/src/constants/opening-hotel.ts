@@ -235,9 +235,14 @@ export function openingHotelDivePose(elapsed: number, from?: OpeningHotelEncount
     z: launchZ + (landingZ - launchZ) * flight * (2 - flight), yaw: Math.PI };
 }
 
-export function openingHotelClimbed(hotel?: OpeningHotelEncounter): number | undefined {
+export function openingHotelClimbed(hotel?: OpeningHotelEncounter, actor?: AgentState): number | undefined {
   if (hotel?.phase === 'done') return OPENING_HOTEL.ladderHeight;
-  if (hotel?.phase === 'ladder_ready' || hotel?.phase === 'climbing') return hotel.climbed ?? 0;
+  if (hotel?.phase === 'ladder_ready') return hotel.climbed ?? 0;
+  if (hotel?.phase === 'climbing') {
+    const climbed = actor?.currentAction?.parameters.hotelClimb;
+    return typeof climbed === 'number' && Number.isFinite(climbed) && climbed >= 0 && climbed < OPENING_HOTEL.ladderHeight
+      ? climbed : hotel.climbed ?? 0;
+  }
 }
 
 export function openingHotelClimbPose(climbed: number) {
@@ -248,4 +253,41 @@ export function openingHotelClimbPose(climbed: number) {
   const rung = Math.min(stepOntoDeck, Math.max(0, climbed)) - .35;
   const deck = ladderHeight + landing.thickness + .24 * (1 - transfer);
   return { y: rung * (1 - lift) + deck * lift, z: ladderZ + landing.stepOffsetZ * transfer, transfer };
+}
+
+const { ladderRungs, ladderHeight } = OPENING_HOTEL;
+const lastHotelRung = Math.floor((ladderHeight - ladderRungs.bottom) / ladderRungs.spacing);
+const bootSwing = .56;
+const bootRelease = 5.62;
+const lastBootContactY = openingHotelClimbPose(bootRelease).y;
+
+export function openingHotelBootGrip(climbed: number): number {
+  return 1 - ease(climbed, 5.20, bootRelease);
+}
+
+function openingHotelBootStep(height: number, foot: number): number {
+  const step = (height + .57 - ladderRungs.bottom) / ladderRungs.spacing + foot * .5;
+  return Math.max(0, Math.min(lastHotelRung, step));
+}
+
+export function openingHotelBootRung(height: number, foot: number) {
+  const step = openingHotelBootStep(height, foot), held = Math.floor(step), swing = ease(step - held, bootSwing, 1);
+  return { y: ladderRungs.bottom + ladderRungs.spacing * (held + swing), clearance: Math.sin(Math.PI * swing) };
+}
+
+export function openingHotelBootContact(from: number, to: number): boolean {
+  if (from === to) return false;
+  const a = openingHotelClimbPose(from).y, b = openingHotelClimbPose(to).y;
+  if (a === b) return false;
+  const ascending = b > a;
+  for (let foot = 0; foot < 2; foot++) {
+    const start = openingHotelBootStep(a, foot), end = openingHotelBootStep(b, foot);
+    // Downward travel finishes the same swing at its lower edge.
+    const contact = ascending ? Math.floor(end) : Math.ceil(end - bootSwing) + bootSwing;
+    if (ascending ? start >= contact || contact > end : end > contact || contact >= start) continue;
+    const contactY = (contact - foot * .5) * ladderRungs.spacing + ladderRungs.bottom - .57;
+    // At the top, the boots clear the steel and move onto the platform.
+    if (contactY < lastBootContactY) return true;
+  }
+  return false;
 }

@@ -1045,6 +1045,7 @@ test('303 fire escape requires upward input and preserves climbing progress thro
     h.players.step(.1, true, h.tick());
   };
   for (let frame = 0; frame < 10; frame++) climb();
+  assert.equal(h.actor().currentAction?.parameters.hotelClimb, state.openingHotel!.climbed, 'fast movement carries the real rung progress');
   const progress = state.openingHotel!.climbed!; assert.ok(progress > 1);
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
   h.advance(20); assert.equal(state.openingHotel?.climbed, progress);

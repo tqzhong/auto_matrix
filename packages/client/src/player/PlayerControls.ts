@@ -1195,7 +1195,7 @@ export class PlayerControls {
     }
     const hotelCall = this.motion.hotel303?.phase === 'answer';
     const hotelDive = this.openingHotel?.phase === 'dive' && this.motion.hotel303?.phase === 'dive' ? openingHotelDiveMotion(this.motion.hotel303.elapsed) : undefined;
-    const hotelClimb = state.currentLocation === 'film_heart_hotel' ? openingHotelClimbed(this.openingHotel) : undefined;
+    const hotelClimb = state.currentLocation === 'film_heart_hotel' ? openingHotelClimbed(this.openingHotel, state) : undefined;
     this.motion.hotelClimb = hotelClimb;
     const roofExit = state.currentAction?.parameters.roofExit as MotionInput['roofExit'];
     const stairwellExit = roofExit?.stairwell ? roofExit : undefined;

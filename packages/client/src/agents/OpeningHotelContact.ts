@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, OPENING_HOTEL, openingHotelClimbPose, openingHotelPickupPose, type OpeningHotelPickupGesture } from '@auto_matrix/shared';
+import { FILM_SETS, OPENING_HOTEL, openingHotelBootGrip, openingHotelBootRung, openingHotelClimbPose, openingHotelPickupPose, type OpeningHotelPickupGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import type { HeroRig } from './HeroModel.js';
 import { poseHelPistol } from './HelCoatcheckPerformance.js';
@@ -76,7 +76,7 @@ function plant(upper: THREE.Bone, lower: THREE.Bone, end: THREE.Bone, target: TH
 export function placeOpeningHotelClimber(rig: HeroRig, climbed: number, weight = 1): void {
   if (climbed >= ladderHeight) return;
   const { y, transfer } = openingHotelClimbPose(climbed);
-  const feet = weight * (1 - smooth(climbed, 5.20, 5.62));
+  const feet = weight * openingHotelBootGrip(climbed);
   const baseY = center.y - 1, railZ = center.z + ladderZ + rungs.offsetZ;
   const bone = (name: string) => rig.bones.get(name)!;
   // Sit the hips back from the steel while the upper body leans into the climb.
@@ -110,7 +110,7 @@ export function placeOpeningHotelClimber(rig: HeroRig, climbed: number, weight =
       plant(bone('shoulder_' + side), bone('elbow_' + side), bone('wrist_' + side), target, new THREE.Vector3(sign * .4, -.8, 1), grip, hand);
     }
     if (feet) {
-      const rung = climbStep(y + .57, (1 - i) * .5);
+      const rung = openingHotelBootRung(y, 1 - i);
       const target = new THREE.Vector3(center.x + sign * .26, baseY + rung.y + rungs.height / 2 + rig.footHeight + .24 * rung.clearance, railZ + .35 + .24 * rung.clearance);
       const flat = new THREE.Quaternion().setFromAxisAngle(up, Math.PI);
       plant(bone('hip_' + side), bone('knee_' + side), bone('ankle_' + side), target, new THREE.Vector3(sign * .78, 0, -.78), flat, feet);

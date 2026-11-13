@@ -310,7 +310,7 @@ export class GameAudio {
       source.connect(filter); filter.connect(gain); gain.connect(output); source.start(start); source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
     }
   }
-  governmentSound(kind: 'earpiece' | 'serum' | 'alarm' | 'gunfire' | 'bullet' | 'body' | 'phone' | 'upload' | 'rotor' | 'minigun' | 'rocket' | 'glass' | 'rope' | 'cut' | 'crash' | 'hall-step' | 'trinity-step' | 'door-kick'): void {
+  governmentSound(kind: 'earpiece' | 'serum' | 'alarm' | 'gunfire' | 'bullet' | 'body' | 'phone' | 'upload' | 'rotor' | 'minigun' | 'rocket' | 'glass' | 'rope' | 'cut' | 'crash' | 'hall-step' | 'trinity-step' | 'door-kick' | 'ladder-grab' | 'ladder-step' | 'ladder-deck'): void {
     const bus = this.effects(); if (!bus) return;
     const { context: ctx, output } = bus; const at = ctx.currentTime;
     const tone = (start: number, from: number, to: number, duration: number, level: number, type: OscillatorType = 'sine') => {
@@ -348,6 +348,11 @@ export class GameAudio {
     }
     if (kind === 'hall-step') { noise(at, .16, 360, .042, 1.4); tone(at, 112, 64, .11, .024, 'triangle'); return; }
     if (kind === 'trinity-step') { noise(at, .13, 1350, .15, .85); tone(at, 155, 81, .12, .05, 'triangle'); return; }
+    if (kind === 'ladder-grab') { noise(at, .12, 1800, .11); tone(at, 680, 570, .16, .04, 'triangle'); return; }
+    if (kind === 'ladder-step') {
+      noise(at, .11, 675, .14, 1.2); tone(at, 420, 365, .135, .066, 'triangle'); tone(at + .006, 950, 870, .093, .036); return;
+    }
+    if (kind === 'ladder-deck') { noise(at, .19, 285, .19, .9); tone(at, 108, 59, .16, .082, 'triangle'); return; }
     if (kind === 'phone') { tone(at, 780, 1120, .12, .026, 'sine'); tone(at + .15, 1120, 780, .14, .023, 'sine'); return; }
     if (kind === 'upload') {
       for (let i = 0; i < 5; i++) tone(at + i * .095, 230 + i * 120, 540 + i * 180, .16, .018, 'square');

@@ -266,7 +266,7 @@ export class OpeningHotelSystem {
     state.climbed = Math.max(0, Math.min(OPENING_HOTEL.ladderHeight, (state.climbed ?? 0) + direction * seconds * OPENING_HOTEL.climbSpeed));
     this.frame(actor);
     if (seconds > 0) actor.velocity = { x: 0, y: (actor.position.y - previous.y) / seconds, z: (actor.position.z - previous.z) / seconds };
-    actor.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: direction }, startedAt: tick, duration: 1, progress: 0 };
+    actor.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: direction, hotelClimb: state.climbed }, startedAt: tick, duration: 1, progress: 0 };
     if (state.climbed >= OPENING_HOTEL.ladderHeight) {
       state.phase = 'done'; this.frame(actor);
       this.onAdvance?.('Trinity 爬上屋顶。Brown 和特工紧追而来，必须继续奔跑。', actor, tick);
@@ -397,7 +397,8 @@ export class OpeningHotelSystem {
       actor.rotation = Math.PI;
       actor.velocity = { x: 0, y: 0, z: 0 };
       actor.currentAction = state.phase === 'done' ? null
-        : { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: 0 }, startedAt: state.lastTick, duration: 1, progress: 0 };
+        : { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: 0,
+          ...(state.phase === 'climbing' ? { hotelClimb: climbed } : {}) }, startedAt: state.lastTick, duration: 1, progress: 0 };
     }
   }
   tick(actor: AgentState, tick: number): boolean {

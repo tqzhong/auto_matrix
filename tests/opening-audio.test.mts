@@ -24,11 +24,12 @@ function fixture() {
   const engine = Object.assign(Object.create(Engine.prototype), { playerControls: { id: 'trinity' }, audio,
     sandboxRenderer: { sync() {} }, updateAtmosphere() {} });
   let lastTick = 20;
-  type Frame = { tick?: number; running?: boolean; owner?: string; y?: number; exit?: number; trace?: number; stairwell?: boolean };
-  function frame(journey: FilmJourney, { tick = lastTick, running = true, owner = 'trinity', y, exit, trace, stairwell }: Frame = {}) {
+  type Frame = { tick?: number; running?: boolean; owner?: string; y?: number; exit?: number; trace?: number; stairwell?: boolean; climb?: number };
+  function frame(journey: FilmJourney, { tick = lastTick, running = true, owner = 'trinity', y, exit, trace, stairwell, climb }: Frame = {}) {
     const scene = FILM_SCENE_BY_ID[journey.scene], entry = filmEntry(scene);
     const actor: AgentState = { ...trinity, currentLocation: scene.set, isInMatrix: true, position: { ...entry, y: y ?? entry.y },
-      currentAction: trace !== undefined ? { type: 'idle', parameters: { openingTrace: trace }, startedAt: tick, duration: 1, progress: 0 }
+      currentAction: climb !== undefined ? { type: 'move_to', parameters: { player: true, climbing: true, hotelClimb: climb }, startedAt: tick, duration: 1, progress: 0 }
+        : trace !== undefined ? { type: 'idle', parameters: { openingTrace: trace }, startedAt: tick, duration: 1, progress: 0 }
         : exit === undefined ? null : { type: 'move_to', parameters: { roofExit: { elapsed: exit, stairwell } }, startedAt: tick, duration: 1, progress: 0 } };
     lastTick = tick; engine.running = running; engine.tick = tick; engine.playerControls.id = owner;
     Engine.prototype.setSandbox.call(engine, { ...sandbox.state, neoLife: { ...sandbox.state.neoLife!, journey } }, { trinity: actor, neo });
@@ -101,9 +102,50 @@ test('303 sounds follow the line, door, glass and climb through pauses and retri
   assert.deepEqual(h.frame(hotel('dive', 1.68, 1), { running: false }), []);
   assert.deepEqual(h.frame(hotel('dive', 1.68, 1)), []);
   assert.deepEqual(h.frame(hotel('ladder_ready', 0, 1)), []);
-  assert.deepEqual(h.frame(hotel('climbing', 0, 1)), ['keys']);
-  assert.deepEqual(h.frame(hotel('done', 0, 1)), ['keys']);
+  assert.deepEqual(h.frame(hotel('climbing', 0, 1)), ['ladder-grab']);
+  assert.deepEqual(h.frame(hotel('done', 0, 1)), ['ladder-deck']);
   assert.deepEqual(h.frame(hotel('done', 0, 1)), []);
+});
+
+test('the 303 ladder sounds only when a boot reaches a rung or lands on the platform', () => {
+  const h = fixture(), j = journey('m1_room303');
+  const push = (climbed: number | undefined, phase: OpeningHotelEncounter['phase'] = 'climbing', running = true) =>
+    h.frame({ ...j, openingHotel: { phase, climbed, elapsed: 0, lastTick: 20, attempts: 0, disarmed: true, ammo: 0, shots: 0 } }, { running });
+  assert.deepEqual(push(0, 'ladder_ready'), []);
+  assert.deepEqual(push(undefined), ['ladder-grab'], 'old ladder states default to the bottom rung');
+  assert.deepEqual(push(.44), []);
+  assert.deepEqual(push(.46), ['ladder-step']);
+  assert.deepEqual(push(.46), [], 'stationary and duplicate updates stay quiet');
+  assert.deepEqual(push(.79, 'climbing', false), []);
+  assert.deepEqual(push(.79), [], 'paused movement establishes the new baseline');
+  assert.deepEqual(push(1.12), ['ladder-step'], 'coalesced snapshots play one contact instead of a burst of old sounds');
+  assert.deepEqual(push(1.02), [], 'descending across a rung index alone only begins the swing');
+  assert.deepEqual(push(.83), [], 'the descended boot has not landed yet');
+  assert.deepEqual(push(.81), ['ladder-step']);
+  assert.deepEqual(push(.79), [], 'the next foot is still in the air');
+  assert.deepEqual(push(5.3), ['ladder-step'], 'large jumps still play a single latest contact');
+  assert.deepEqual(push(5.7), [], 'boots are no longer on the rungs during the transfer');
+  assert.deepEqual(push(OPENING_HOTEL.ladderHeight, 'done'), ['ladder-deck']);
+  assert.deepEqual(push(OPENING_HOTEL.ladderHeight, 'done'), []);
+
+  const recovered = fixture();
+  const frame = (climbed: number) => recovered.frame({ ...j, openingHotel: { phase: 'climbing', climbed, elapsed: 0, lastTick: 20,
+    attempts: 0, disarmed: true, ammo: 0, shots: 0 } });
+  assert.deepEqual(frame(1.1), [], 'cold recovery does not replay an earlier contact');
+  assert.deepEqual(frame(1.12), ['ladder-step']);
+});
+
+test('303 ladder audio follows the live actor pose between world snapshots, including on descent', () => {
+  const h = fixture(), j = { ...journey('m1_room303'), openingHotel: { phase: 'climbing' as const, climbed: 1.2,
+    elapsed: 0, lastTick: 20, attempts: 0, disarmed: true, ammo: 0, shots: 0 } };
+  assert.deepEqual(h.frame(j, { climb: .44 }), []);
+  assert.deepEqual(h.frame(j, { climb: .46 }), ['ladder-step']);
+  assert.deepEqual(h.frame(j, { climb: .7 }), []);
+  assert.deepEqual(h.frame(j, { climb: .52 }), []);
+  assert.deepEqual(h.frame(j, { climb: .49 }), ['ladder-step'], 'fast progress may go below a previous saved snapshot');
+  assert.deepEqual(h.frame(j, { climb: .49 }), []);
+  assert.deepEqual(h.frame(j, { climb: .8, owner: 'neo' }), []);
+  assert.deepEqual(h.frame(j, { climb: .81 }), [], 'reacquiring the actor starts at the current contact');
 });
 
 test('the roof sounds play on landing and at the saved window beat', () => {

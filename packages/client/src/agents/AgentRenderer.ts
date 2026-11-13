@@ -905,7 +905,7 @@ export class AgentRenderer {
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
       const hotel = journey?.scene === 'm1_room303' && !journey.visiting && journey.actor === id ? journey.openingHotel : undefined;
-      const hotelClimb = openingHotelClimbed(hotel);
+      const hotelClimb = openingHotelClimbed(hotel, state);
       const hotelPursuit = id !== this.playerId ? state.currentAction?.parameters.hotelPursuit as MotionInput['hotelPursuit'] : undefined;
       if (id !== this.playerId && (state.currentAction?.parameters.welcome || state.currentAction?.parameters.roofExit || wellsGesture || hotelClimb !== undefined || hotelPursuit && speed === 0)) { entry.body.rotation.y = state.rotation; difference = 0; }
       if (id !== this.playerId && (state.currentAction?.parameters.helProtection !== undefined || state.currentAction?.parameters.helElevator || state.currentAction?.parameters.helGarage || state.currentAction?.parameters.trainmanChase || state.currentAction?.parameters.mobilReunion || state.currentAction?.parameters.mobilBoarding !== undefined || state.currentAction?.parameters.oracleRequest || state.currentAction?.parameters.oracleLast || state.currentAction?.parameters.baneInquiry || state.currentAction?.parameters.hammerBriefing || state.currentAction?.parameters.zionDeployment || state.currentAction?.parameters.maggieDiscovery || state.currentAction?.parameters.logosBane || state.currentAction?.parameters.oracleAbsorption || state.currentAction?.parameters.architect || state.currentAction?.parameters.sourcePortal || state.currentAction?.parameters.truckRoad || state.currentAction?.parameters.freewayHandoff || state.currentAction?.parameters.freewayPickup || state.currentAction?.parameters.freewayDriver || smithLocked || state.currentAction?.parameters.oracleRestored || state.currentAction?.parameters.epilogue || state.currentAction?.parameters.upperDigger || state.currentAction?.parameters.diggers || state.currentAction?.parameters.dockReload || state.currentAction?.parameters.dockLastStand || state.currentAction?.parameters.dockGate || state.currentAction?.parameters.dockGateCover || state.currentAction?.parameters.dockReunion || state.currentAction?.parameters.dockDeparture || state.currentAction?.parameters.dockEvacuation || state.currentAction?.parameters.shaftSeal || state.currentAction?.parameters.templeDefense || state.currentAction?.parameters.dockBriefing || state.currentAction?.parameters.empOperator || state.currentAction?.parameters.officeCustody && (delta * speed === 0 || (state.currentAction.parameters.officeCustody as MotionInput['officeCustody'])?.street))) { entry.body.rotation.y = heading; difference = 0; }
@@ -1111,7 +1111,7 @@ export class AgentRenderer {
       input.hotelLookPitch = undefined;
       if (hotel && openingHotelAlleyGuard(this.agents.get('smith')?.state)) {
         const look = hotel.phase === 'ladder_ready' ? 1 : hotel.phase === 'dive' && input.hotel303?.phase === 'dive' ? openingHotelDiveMotion(input.hotel303.elapsed).grab
-          : hotel.phase === 'climbing' ? 1 - THREE.MathUtils.smoothstep(hotel.climbed ?? 0, 0, .65) : 0;
+          : hotel.phase === 'climbing' ? 1 - THREE.MathUtils.smoothstep(hotelClimb ?? 0, 0, .65) : 0;
         input.hotelLookPitch = look * .46;
       }
       input.logosBane = (id === this.playerId ? this.playerMotion?.logosBane : state.currentAction?.parameters.logosBane) as MotionInput['logosBane'];
