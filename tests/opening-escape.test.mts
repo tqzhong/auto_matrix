@@ -427,6 +427,47 @@ test('isolated opening sets render their own cast and hide distant actors during
   }
 });
 
+test('the live 303 escape reports each moving footfall and stays quiet when the gait stops', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const originalDocument = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  t.after(() => { globalThis.document = originalDocument; });
+
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const renderer = new AgentRenderer(new THREE.Scene()); t.after(() => renderer.dispose());
+  const scene = FILM_SCENE_BY_ID.m1_room303, position = filmEntry(scene);
+  const trinity = { ...world.agents.get('trinity')!, position, currentLocation: scene.set, isInMatrix: true };
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: trinity.id, step: 3, completed: [], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: position,
+    openingHotel: { phase: 'corridor', elapsed: 0, lastTick: 20, attempts: 0, disarmed: true, ammo: 2, shots: 0 } };
+  renderer.updateAgent(trinity.id, trinity, journey);
+  renderer.setPlayer(trinity.id);
+  const gait = renderer['agents'].get(trinity.id)!.rig.motion;
+  const moving = { speed: 8.4, grounded: true, verticalVelocity: 0, turn: 0 };
+  const draw = (rate = 1, scene = journey) => renderer.update(.05, undefined, rate, 20, scene) === true;
+  assert.equal(draw(), false, 'cold entry makes no step while standing');
+  renderer.setPlayerMotion(moving);
+  let steps = 0;
+  for (let i = 0; i < 32; i++) {
+    const before = gait.phase, heard = draw();
+    const planted = [0, .5].some(offset => Math.floor(before + offset) < Math.floor(gait.phase + offset));
+    assert.equal(heard, planted, 'each half of the displayed gait should make one sound');
+    steps += Number(heard);
+  }
+  assert.ok(steps >= 3);
+  for (let i = 0; i < 24; i++) assert.equal(draw(0), false, 'pausing makes no steps');
+  renderer.setPlayerMotion({ ...moving, speed: 0 });
+  for (let i = 0; i < 24; i++) assert.equal(draw(), false, 'standing or blocked movement makes no steps');
+  renderer.setPlayerMotion({ ...moving, grounded: false });
+  for (let i = 0; i < 24; i++) assert.equal(draw(), false, 'the feet are airborne');
+  renderer.setPlayerMotion(moving);
+  for (let i = 0; i < 24; i++) assert.equal(draw(1, { ...journey, visiting: scene.id }), false, 'journal views stay quiet');
+  for (let i = 0; i < 24; i++) assert.equal(draw(1, { ...journey, openingHotel: { ...journey.openingHotel!, phase: 'combat' } }), false, 'other phases keep their own cues');
+});
+
 test('the caller disappears from the booth after the line connects and returns on retry', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const originalDocument = globalThis.document;
