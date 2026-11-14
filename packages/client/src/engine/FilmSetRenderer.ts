@@ -477,7 +477,7 @@ export class FilmSetRenderer {
   private architectRoom?: ArchitectRoomRenderer;
   private architectState?: AgentState;
 
-  constructor(private scene: THREE.Scene, private streetAsphalt?: THREE.MeshStandardMaterial) {
+  constructor(private scene: THREE.Scene, private streetAsphalt?: THREE.MeshStandardMaterial, private streetPavement?: THREE.MeshStandardMaterial) {
     scene.add(this.root);
     this.marker = new THREE.Mesh(new THREE.TorusGeometry(1.2, .035, 8, 48), new THREE.MeshBasicMaterial({ color: 0xeac987, transparent: true, opacity: .8, depthWrite: false }));
     this.marker.rotation.x = -Math.PI / 2; this.marker.visible = false; scene.add(this.marker);
@@ -1577,7 +1577,7 @@ export class FilmSetRenderer {
   }
   private openingRoom(scene: OpeningVisitScene, camera: THREE.Camera) {
     const next = FILM_SCENE_BY_ID[scene], set = FILM_SETS[next.set], { x, y, z } = set.center;
-    const room = new FilmSetRenderer(new THREE.Scene(), this.streetAsphalt), eye = camera.clone(), entry = filmEntry(next);
+    const room = new FilmSetRenderer(new THREE.Scene(), this.streetAsphalt, this.streetPavement), eye = camera.clone(), entry = filmEntry(next);
     room.current = set; room.currentScene = scene; room.root.position.set(x, y - 1, z);
     if (scene === 'm1_roofs' && this.currentScene === 'm1_room303' && this.current?.id === 'film_heart_hotel'
       && this.materials.has(this.metal) && this.materials.has(this.wood) && this.materials.has(this.plaster)) {
@@ -3980,8 +3980,11 @@ export class FilmSetRenderer {
   }
   private *buildSteps(set: FilmSet, preparedLights?: LafayetteRoomLights, staged = false): Generator<void> {
     if (set.id === 'film_wells_phone') {
-      this.wellsStreet = new WellsStreetRenderer(this.root, set);
-      if (staged) yield;
+      this.wellsStreet = new WellsStreetRenderer(this.root, set, staged, this.streetAsphalt, this.streetPavement);
+      if (staged) {
+        while (!this.wellsStreet.prepareStep()) yield;
+        yield;
+      }
       this.buildWellsBooth();
       return;
     }

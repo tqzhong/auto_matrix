@@ -58,6 +58,7 @@ export class VoxelRenderer {
   readonly real = new VisibleGroup();
   interiors!: LifeInteriors;
   streetAsphalt?: THREE.MeshPhysicalMaterial;
+  streetPavement?: THREE.MeshPhysicalMaterial;
   private officeShell?: THREE.Mesh;
   private textures: THREE.Texture[] = [];
   private traffic: THREE.InstancedMesh | null = null;
@@ -81,7 +82,8 @@ export class VoxelRenderer {
   }
 
   init(): void {
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), this.materials.surface('concrete_pavement_03', 4000, 4000, 12));
+    this.streetPavement = this.materials.surface('concrete_pavement_03', 4000, 4000, 12);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), this.streetPavement);
     floor.rotation.x = -Math.PI / 2;
     floor.position.set(1280, -0.15, 1280);
     floor.receiveShadow = true;

@@ -6,14 +6,20 @@ export class UrbanMaterials {
   private facades = new Map<number, THREE.MeshStandardMaterial>();
   private surfaces: THREE.MeshPhysicalMaterial[] = [];
 
-  surface(id: 'asphalt_02' | 'concrete_pavement_03', width: number, height: number, tile = 10): THREE.MeshPhysicalMaterial {
-    const load = (kind: string) => {
-      const texture = new THREE.TextureLoader().load(`/assets/surfaces/${id}-${kind}.jpg`);
+  surface(id: 'asphalt_02' | 'concrete_pavement_03', width: number, height: number, tile = 10,
+    source?: THREE.MeshStandardMaterial): THREE.MeshPhysicalMaterial {
+    const load = (kind: string, map?: THREE.Texture | null) => {
+      const shared = map?.image && map.image.complete !== false ? map.source : undefined;
+      const texture = shared ? new THREE.Texture() : new THREE.TextureLoader().load(`/assets/surfaces/${id}-${kind}.jpg`);
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(width / tile, height / tile); texture.anisotropy = 8;
       if (kind === 'color') texture.colorSpace = THREE.SRGBColorSpace;
+      if (shared) {
+        // The surface has its own UV transform and does not invalidate the shared image.
+        texture.needsUpdate = true; texture.source = shared;
+      }
       this.textures.push(texture); return texture;
     };
-    const material = new THREE.MeshPhysicalMaterial({ map: load('color'), normalMap: load('normal'), roughnessMap: load('roughness'),
+    const material = new THREE.MeshPhysicalMaterial({ map: load('color', source?.map), normalMap: load('normal', source?.normalMap), roughnessMap: load('roughness', source?.roughnessMap),
       color: id === 'asphalt_02' ? 0xa4a7aa : 0xc4bcaa, normalScale: new THREE.Vector2(.6, .6),
       roughness: .65, metalness: .03, clearcoat: .4, clearcoatRoughness: id === 'asphalt_02' ? .25 : .4 });
     this.surfaces.push(material); return material;

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test, { type TestContext } from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_HOTEL, filmEntry, type FilmJourney, type OpeningPhoneEncounter, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_HOTEL, WELLS_STREET, filmEntry, type FilmJourney, type OpeningPhoneEncounter, type SandboxState } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
@@ -9,7 +9,7 @@ import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
 function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', deferRoofMaps = false, visiting = false,
-  streetAsphalt?: THREE.MeshStandardMaterial) {
+  streetAsphalt?: THREE.MeshStandardMaterial, streetPavement?: THREE.MeshStandardMaterial) {
   const roofs = destination === 'm1_roofs', next = FILM_SCENE_BY_ID[destination];
   const landmark = roofs ? 'opening-roof-window-glass' : 'wells-asphalt';
   const previous = globalThis.document;
@@ -23,7 +23,7 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
     else ready();
     return texture;
   });
-  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene, streetAsphalt), camera = new THREE.PerspectiveCamera();
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene, streetAsphalt, streetPavement), camera = new THREE.PerspectiveCamera();
   scene.environment = new THREE.Texture(); scene.fog = new THREE.FogExp2();
   const sun = new THREE.DirectionalLight(); sun.castShadow = true;
   scene.add(sun, new THREE.DirectionalLight(), new THREE.HemisphereLight());
@@ -161,6 +161,7 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   return { film, journey, gpu, skin, shadow, material, actors, work, meshes, roots, depths, mapped, programs, prepare, drain, enter, nextMesh, livePointSlots,
     bufferMeshes, bufferTargets,
     hotelOverlays,
+    openingRoom: () => (film as unknown as { preparedOpening?: { room: FilmSetRenderer } }).preparedOpening?.room,
     requestVisit: () => {
       hero.visible = skin.visible = true;
       return film.beginOpeningVisit(gpu, camera, destination, player.id, [hero], lighting, sun);
@@ -473,6 +474,85 @@ test('the roof prepares the opaque Wells truck shadow before entering the street
   h.enter();
   assert.equal(h.film.root.getObjectById(truck.id), truck);
   assert.ok(truck.castShadow);
+});
+
+test('Wells builds the street and truck on separate roof frames and finishes the same set on early entry', t => {
+  const h = fixture(t, 'm1_phone_escape');
+  let road: THREE.Object3D | undefined;
+  for (let frame = 0; frame < 12 && !road; frame++) {
+    h.prepare();
+    road = h.openingRoom()?.root.getObjectByName('wells-asphalt');
+  }
+  const room = h.openingRoom();
+  assert.ok(road && room, 'the staged road is available before the truck is built');
+  assert.ok(!room.root.getObjectByName('wells-truck-chassis'), 'the truck waits for another roof frame');
+  assert.ok(!h.film.root.getObjectByName('wells-asphalt'), 'the unfinished street stays offstage');
+  h.enter();
+  assert.ok(h.film.root.getObjectByName('wells-asphalt') === road, 'early entry adopts the already constructed street');
+  assert.ok(h.film.root.getObjectByName('wells-truck-chassis'));
+  assert.ok(h.film.root.getObjectByName('opening-booth-intact-pane'));
+});
+
+test('a roof failure releases the unfinished Wells street before preparing another attempt', t => {
+  const h = fixture(t, 'm1_phone_escape');
+  let road: THREE.Mesh | undefined;
+  for (let frame = 0; frame < 12 && !road; frame++) {
+    h.prepare();
+    const object = h.openingRoom()?.root.getObjectByName('wells-asphalt');
+    if (object instanceof THREE.Mesh) road = object;
+  }
+  assert.ok(road);
+  const room = h.openingRoom();
+  assert.ok(room && !room.root.getObjectByName('wells-truck-chassis'), 'fail before the truck is built');
+  let disposals = 0;
+  road.geometry.addEventListener('dispose', () => disposals++);
+  h.journey.openingRoof!.phase = 'failed'; h.prepare(); h.prepare();
+  assert.ok(!h.openingRoom(), 'discard the unfinished set');
+  assert.equal(disposals, 1);
+  h.journey.openingRoof!.phase = 'running'; h.drain(); h.enter();
+  assert.ok(h.film.root.getObjectByName('wells-asphalt') !== road, 'the new attempt builds its own street');
+  assert.ok(h.film.root.getObjectByName('opening-booth-intact-pane'));
+  assert.equal(disposals, 1);
+});
+
+test('Wells reuses the city pavement images while keeping its own tiling and texture lifetimes', t => {
+  const kinds = ['color', 'normal', 'roughness'] as const;
+  const surface = (name: string) => {
+    const maps = kinds.map(kind => {
+      const texture = new THREE.Texture({ width: 1024, height: 1024, complete: true, currentSrc: `/assets/surfaces/${name}-${kind}.jpg` });
+      texture.repeat.set(2, 3); texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.anisotropy = 8;
+      if (kind === 'color') texture.colorSpace = THREE.SRGBColorSpace;
+      texture.needsUpdate = true;
+      return texture;
+    });
+    const material = new THREE.MeshPhysicalMaterial({ map: maps[0], normalMap: maps[1], roughnessMap: maps[2] });
+    t.after(() => { material.dispose(); maps.forEach(map => map.dispose()); });
+    return material;
+  };
+  const asphalt = surface('asphalt_02'), concrete = surface('concrete_pavement_03');
+  const h = fixture(t, 'm1_phone_escape', false, false, asphalt, concrete);
+  const maps = (material: THREE.MeshStandardMaterial) => [material.map!, material.normalMap!, material.roughnessMap!];
+  const city = [...maps(asphalt), ...maps(concrete)], versions = city.map(map => map.source.version);
+  let cityDisposals = 0;
+  for (const map of city) map.addEventListener('dispose', () => cityDisposals++);
+  h.drain(); h.enter();
+  const wells = ['wells-asphalt', 'wells-booth-sidewalk'].flatMap(name => {
+    const mesh = h.film.root.getObjectByName(name) as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+    return maps(mesh.material);
+  });
+  const { width, depth } = FILM_SETS.film_wells_phone;
+  const repeats = [[(width + 34) / 8, (depth + 120) / 8], [(width * WELLS_STREET.sidewalkWidth - .44) / 6, (depth + 78) / 6]];
+  let wellsDisposals = 0;
+  for (const [index, map] of wells.entries()) {
+    assert.ok(map !== city[index] && map.source === city[index].source, 'Wells has its own texture and shares the original image source');
+    assert.deepEqual(map.repeat.toArray(), repeats[Math.floor(index / 3)]);
+    assert.deepEqual(city[index].repeat.toArray(), [2, 3]);
+    map.addEventListener('dispose', () => wellsDisposals++);
+  }
+  assert.deepEqual(city.map(map => map.source.version), versions);
+  h.film.update(undefined, undefined, 0);
+  assert.equal(wellsDisposals, 6);
+  assert.equal(cityDisposals, 0);
 });
 
 test('the roof prepares the actual Wells street, cab and intact booth buffers before the cut', t => {

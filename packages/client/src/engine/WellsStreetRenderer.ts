@@ -22,17 +22,33 @@ export class WellsStreetRenderer {
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
   private lights: (THREE.PointLight | THREE.SpotLight)[] = [];
+  private construction?: Generator<void>;
 
-  constructor(parent: THREE.Group, private set: FilmSet) {
+  constructor(parent: THREE.Group, private set: FilmSet, staged = false, asphalt?: THREE.MeshStandardMaterial, pavement?: THREE.MeshStandardMaterial) {
     // The enclosing film set must leave this renderer's resource batches intact.
     this.root.userData.dynamic = true;
     this.truck.name = 'opening-garbage-truck';
     this.street.add(this.curbside); this.root.add(this.street, this.truck); parent.add(this.root);
-    this.buildStreet(set.width, set.depth);
+    this.construction = this.build(asphalt, pavement);
+    if (!staged) while (!this.prepareStep()) { /* Finish the set on direct entry. */ }
+  }
+
+  prepareStep(): boolean {
+    if (this.construction && !this.construction.next().done) return false;
+    this.construction = undefined;
+    return true;
+  }
+
+  private *build(asphalt?: THREE.MeshStandardMaterial, pavement?: THREE.MeshStandardMaterial): Generator<void> {
+    this.buildStreet(this.set.width, this.set.depth, asphalt, pavement);
+    yield;
     this.buildTruck();
+    yield;
     const fixed = new Set<THREE.Mesh>();
-    for (const group of [this.street, ...this.wheels])
-      for (const geometry of batchStaticGeometry(group, fixed)) this.geometries.add(geometry);
+    for (const geometry of batchStaticGeometry(this.street, fixed)) this.geometries.add(geometry);
+    yield;
+    for (const wheel of this.wheels)
+      for (const geometry of batchStaticGeometry(wheel, fixed)) this.geometries.add(geometry);
     const live = new Set<THREE.BufferGeometry>();
     this.root.traverse(object => { if (object instanceof THREE.Mesh) live.add(object.geometry); });
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
@@ -55,11 +71,11 @@ export class WellsStreetRenderer {
     }
   }
 
-  private buildStreet(width: number, depth: number): void {
+  private buildStreet(width: number, depth: number, asphalt?: THREE.MeshStandardMaterial, pavement?: THREE.MeshStandardMaterial): void {
     const halfWidth = width / 2, halfDepth = depth / 2, span = depth + 120;
     const curbWidth = .44, pavingWidth = width * WELLS_STREET.sidewalkWidth - curbWidth, walkwayLength = depth + 78;
-    const road = this.urban.surface('asphalt_02', width + 34, span, 8);
-    const concrete = this.urban.surface('concrete_pavement_03', pavingWidth, walkwayLength, 6);
+    const road = this.urban.surface('asphalt_02', width + 34, span, 8, asphalt);
+    const concrete = this.urban.surface('concrete_pavement_03', pavingWidth, walkwayLength, 6, pavement);
     this.urban.setWet(true);
     road.color.setHex(0x647670); road.normalScale.setScalar(.36); road.clearcoat = .28; road.clearcoatRoughness = .38;
     concrete.color.setHex(0x8c9281); concrete.clearcoat = .13;
@@ -311,6 +327,7 @@ export class WellsStreetRenderer {
     return light;
   }
   dispose(): void {
+    this.construction = undefined;
     this.root.removeFromParent(); this.root.clear();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());
     this.textures.forEach(texture => texture.dispose()); this.urban.dispose();
