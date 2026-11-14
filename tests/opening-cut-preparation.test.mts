@@ -476,6 +476,66 @@ test('the roof prepares the opaque Wells truck shadow before entering the street
   assert.ok(truck.castShadow);
 });
 
+function openingMetalMaps(root: THREE.Group): THREE.Texture[] {
+  let maps: THREE.Texture[] = [];
+  root.traverse(object => {
+    if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
+    const { map, normalMap, roughnessMap } = object.material;
+    if (map?.image?.currentSrc?.endsWith('/metal_plate-color.jpg') && normalMap && roughnessMap)
+      maps = [map, normalMap, roughnessMap];
+  });
+  return maps;
+}
+
+test('the Wells booth shares the active roof metal maps through cancellation and entry', t => {
+  const h = fixture(t, 'm1_phone_escape');
+  const roof = openingMetalMaps(h.film.root), versions = roof.map(map => map.source.version);
+  const verify = (maps: THREE.Texture[]) => {
+    assert.equal(maps.length, 3);
+    for (const [i, map] of maps.entries()) {
+      assert.ok(map !== roof[i] && map.source === roof[i].source, 'the booth shares the roof metal image');
+      assert.deepEqual(map.repeat.toArray(), [2, 2]);
+      assert.deepEqual(roof[i].repeat.toArray(), [3, 3]);
+      assert.equal(map.source.version, versions[i]);
+    }
+  };
+  assert.equal(roof.length, 3);
+  let roofDisposals = 0, cancelledDisposals = 0, liveDisposals = 0;
+  roof.forEach(map => map.addEventListener('dispose', () => roofDisposals++));
+  h.drain();
+  const cancelled = openingMetalMaps(h.openingRoom()!.root);
+  verify(cancelled);
+  cancelled.forEach(map => map.addEventListener('dispose', () => cancelledDisposals++));
+  h.journey.openingRoof!.phase = 'failed'; h.prepare();
+  assert.equal(cancelledDisposals, 3); assert.equal(roofDisposals, 0);
+  h.journey.openingRoof!.phase = 'running'; h.drain();
+  const prepared = openingMetalMaps(h.openingRoom()!.root);
+  verify(prepared);
+  prepared.forEach(map => map.addEventListener('dispose', () => liveDisposals++));
+  h.enter();
+  assert.deepEqual(openingMetalMaps(h.film.root), prepared);
+  assert.equal(roofDisposals, 3); assert.equal(liveDisposals, 0);
+  h.film.update(undefined, undefined, 0);
+  assert.equal(liveDisposals, 3);
+});
+
+test('a roof adopted from 303 can share its metal maps with the Wells booth', t => {
+  const h = fixture(t, 'm1_roofs');
+  h.drain(); h.enter();
+  const roof = openingMetalMaps(h.film.root);
+  assert.equal(roof.length, 3);
+  h.journey.step = 2;
+  h.journey.openingRoof = { phase: 'running', lastTick: 0, attempts: 0, crossed: true };
+  let booth: THREE.Texture[] = [];
+  for (let frame = 0; frame < 12 && !booth.length; frame++) {
+    h.prepare();
+    const room = h.openingRoom();
+    if (room) booth = openingMetalMaps(room.root);
+  }
+  assert.equal(booth.length, 3);
+  assert.ok(booth.every((map, i) => map.source === roof[i].source), 'carry the live roof metal source across the second cut');
+});
+
 test('Wells builds the street and truck on separate roof frames and finishes the same set on early entry', t => {
   const h = fixture(t, 'm1_phone_escape');
   let road: THREE.Object3D | undefined;

@@ -272,7 +272,7 @@ export class FilmSetRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
-  private roofSurfaceSources?: ReadonlyMap<string, THREE.MeshStandardMaterial>;
+  private openingSurfaceSources?: ReadonlyMap<string, THREE.MeshStandardMaterial>;
   private hotelSurfaceSources = new Map<string, { texture: THREE.Texture; onLoad: (() => void)[] }>();
   private materialCache = new Map<string, THREE.MeshStandardMaterial>();
   private marker: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
@@ -1581,7 +1581,10 @@ export class FilmSetRenderer {
     room.current = set; room.currentScene = scene; room.root.position.set(x, y - 1, z);
     if (scene === 'm1_roofs' && this.currentScene === 'm1_room303' && this.current?.id === 'film_heart_hotel'
       && this.materials.has(this.metal) && this.materials.has(this.wood) && this.materials.has(this.plaster)) {
-      room.roofSurfaceSources = new Map([['metal_plate', this.metal], ['old_wood_floor', this.wood], ['damaged_plaster', this.plaster]]);
+      room.openingSurfaceSources = new Map([['metal_plate', this.metal], ['old_wood_floor', this.wood], ['damaged_plaster', this.plaster]]);
+    } else if (scene === 'm1_phone_escape' && this.currentScene === 'm1_roofs' && this.current?.id === 'film_hotel_roofs'
+      && this.materials.has(this.metal)) {
+      room.openingSurfaceSources = new Map([['metal_plate', this.metal]]);
     }
     eye.position.set(entry.x, entry.y + 6, entry.z + 11); eye.lookAt(entry.x, entry.y + 2, entry.z - 2);
     return { room, eye, steps: room.prepareRoomSteps(set) };
@@ -2327,6 +2330,7 @@ export class FilmSetRenderer {
   }
   private adoptOpeningRoom(room: FilmSetRenderer): void {
     this.adoptRoomGeometry(room);
+    this.metal = room.metal;
     this.hotel303Door = room.hotel303Door; this.hotel303Glass = room.hotel303Glass; this.hotel303Shards = room.hotel303Shards;
     this.hotel303Pistol = room.hotel303Pistol; this.hotel303DeskLight = room.hotel303DeskLight;
     this.hotel303HallLight = room.hotel303HallLight; this.hotel303Beam = room.hotel303Beam;
@@ -3553,7 +3557,7 @@ export class FilmSetRenderer {
       }
       if (onLoad) hotelSurfaces?.set(name, { texture: map, onLoad });
     };
-    const shared = directory === 'film-materials' ? this.roofSurfaceSources?.get(id)
+    const shared = directory === 'film-materials' ? this.openingSurfaceSources?.get(id)
       : directory === 'surfaces' && id === 'asphalt_02' && this.current?.id === 'film_hotel_roofs' ? this.streetAsphalt : undefined;
     texture('color', shared?.map); texture('normal', shared?.normalMap); texture('roughness', shared?.roughnessMap);
     return material;
@@ -3805,6 +3809,7 @@ export class FilmSetRenderer {
   }
   private buildWellsBooth(): void {
     this.metal = this.pbr('metal_plate', 0x87948c, 2, .68, .25);
+    this.openingSurfaceSources = undefined;
     this.black = this.mat(0x1c241f, .7);
     this.white = this.mat(0xaeb6a4, .76);
     this.glass = new THREE.MeshPhysicalMaterial({ color: 0xa0b7a6, metalness: .12, roughness: .13,
@@ -3992,7 +3997,7 @@ export class FilmSetRenderer {
     this.metal = this.pbr('metal_plate', 0x9caaa9, 3, .7, .28);
     this.wood = this.pbr('old_wood_floor', lafayette ? 0x7d7968 : 0x96826b, lafayette ? 1 : 3, lafayette ? .88 : .85); this.marble = this.pbr('marble_01', 0xbdcbd1, 4, .25);
     this.plaster = this.pbr(lafayette ? 'white_plaster_02' : 'damaged_plaster', lafayette ? 0x737b67 : set.id === 'film_hotel_roofs' ? 0x716c5e : 0xadae9c, lafayette ? 1 : 5, lafayette ? .95 : .85); this.leather = this.pbr('leather_red_03', lafayette ? 0xb48b79 : 0x71413a, 1, lafayette ? .74 : .48);
-    this.roofSurfaceSources = undefined;
+    this.openingSurfaceSources = undefined;
     if (lafayette) this.plaster.normalScale.set(.1, .1);
     this.white = this.pbr('white_plaster_02', 0xd8d9ce, 3); this.black = this.mat(0x161b1a, .44); this.brass = this.mat(0x8e7951, .32, .8);
     this.glass = new THREE.MeshPhysicalMaterial({ color: 0xb3c9c7, metalness: .12, roughness: .12, transparent: true, opacity: .3, side: THREE.DoubleSide, depthWrite: false }); this.materials.add(this.glass);
