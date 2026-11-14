@@ -3,6 +3,7 @@ import test, { type TestContext } from 'node:test';
 import * as THREE from 'three';
 import { FILM_SETS, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { SentinelSetRenderer } from '../packages/client/src/engine/SentinelSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -20,13 +21,24 @@ function fixture(t: TestContext) {
   const parent = new THREE.Group(), actor = new THREE.Group(), geometry = new THREE.BoxGeometry(); parent.visible = false; parent.add(actor); scene.add(parent);
   const texture = new THREE.Texture({ width: 2048, height: 2048 }); texture.needsUpdate = true;
   const material = new THREE.MeshStandardMaterial({ map: texture }), skin = new THREE.SkinnedMesh(geometry, material); actor.add(skin); const sweater = new THREE.SkinnedMesh(geometry, material); sweater.userData.logosCostume = true; sweater.visible = false; actor.add(sweater);
+  skin.name = 'Anatomical_head_and_hands';
   const actors = new Map([['neo', actor]]), work: string[] = [], batches: THREE.Object3D[][] = [], decks = new Set<THREE.Object3D>();
+  const buffers = new Set<THREE.Object3D>();
   const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   let ready = false, target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
   const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
   const gpu = { properties: properties(), info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
-    getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
+    getRenderTarget: () => target, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
+    setRenderTarget: (value: typeof target) => { target = value; },
+    render(view: THREE.Scene) {
+      assert.ok(target?.width === 1 && view.children.length <= 4 && view.children.length > 0);
+      view.children.forEach(object => {
+        assert.ok(object instanceof THREE.Mesh && !Array.isArray(object.material) && !object.material.visible);
+        buffers.add(object);
+      });
+      work.push('buffer');
+    },
     compile(subject: THREE.Object3D, eye: THREE.Camera, lights: THREE.Scene) {
       assert.notEqual(lights, scene); assert.equal(lights.environment, scene.environment); assert.equal(lights.fog, scene.fog); assert.equal(eye, camera); assert.equal(target?.width, 1);
       let slots = 0; lights.traverseVisible(object => { if (object instanceof THREE.PointLight) slots++; }); assert.equal(slots, 6);
@@ -43,14 +55,16 @@ function fixture(t: TestContext) {
     },
     initTexture(map: THREE.Texture) { work.push('texture'); uploaded.set(map, map.version); },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = () => {
-    const count = work.length; film.prepareSentinel(gpu, camera, journey, id => actors.get(id), sun);
-    assert.ok(work.length - count <= 1, 'prepare one batch, completed binding or texture per frame');
+  const prepare = (resume = false) => {
+    const count = work.length; film.prepareSentinel(gpu, camera, journey, id => ({ model: actors.get(id) }), sun, undefined, resume);
+    const frame = work.slice(count);
+    assert.ok(frame.filter(kind => kind === 'compile' || kind === 'bindings').length <= 1, 'prepare at most one shader batch or completed binding per frame');
+    assert.ok(frame.filter(kind => kind === 'texture' || kind === 'buffer').length <= 1, 'upload one texture or small set of buffers per frame');
     assert.equal(target, null); assert.equal(parent.visible, false); assert.equal(actor.parent, parent); assert.equal(skin.parent, actor); assert.equal(sweater.visible,false); assert.equal(sun.castShadow,false); assert.equal(gpu.debug.checkShaderErrors, true);
   };
   const drain = () => { for (let i = 0; i < 450; i++) prepare(); };
   t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previousDocument; });
-  return { film, gpu, scene, journey, actor, actors, geometry, material, skin, sweater, work, batches, decks, prepare, drain,
+  return { film, gpu, scene, journey, actor, actors, geometry, material, skin, sweater, work, batches, decks, buffers, prepare, drain,
     ready: () => { ready = true; }, replaceGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
 
@@ -84,3 +98,55 @@ test('entering the service tunnel takes the prepared cockpit with the same world
 
 
 test('preparation cannot begin before Neo discovers the gunman and the explanation freezes',t=>{const h=fixture(t);h.journey.training!.attention!.phase='turning';h.prepare();assert.equal(h.work.length,0);assert.equal(h.scene.getObjectByName('sentinel-cockpit'),undefined);});
+
+test('a paused red dress save prepares the same cockpit before and after taking control', t => {
+  const h = fixture(t); Object.assign(h.film, { current: undefined, currentScene: undefined });
+  h.ready(); for (let i = 0; i < 12; i++) h.prepare(true);
+  assert.equal(h.decks.size, 1);
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!;
+  Object.assign(neo, { position: { ...FILM_SETS.film_red_dress_plaza.center }, isInMatrix: true, currentLocation: 'film_red_dress_plaza' });
+  h.film.update(neo, { structures: [], neoLife: { journey: h.journey } } as unknown as SandboxState, 0);
+  h.drain();
+  assert.equal(h.decks.size, 1, 'taking control does not discard pending cockpit work');
+  assert.equal(h.film.root.getObjectByName('sentinel-cockpit'), undefined);
+});
+
+test('large skin textures from an offstage crew member upload while cockpit shaders are still linking', t => {
+  const h = fixture(t); h.actor.visible = false;
+  for (let i = 0; i < 5; i++) h.prepare();
+  assert.ok(h.work.includes('texture'));
+  assert.ok(h.batches.length > 0 && !h.work.includes('bindings'));
+  h.ready(); h.drain();
+  assert.ok(h.batches.flat().includes(h.skin));
+  assert.equal(h.actor.visible, false);
+});
+
+test('crew entry vertex buffers use the same mesh before its first cockpit draw', t => {
+  const h = fixture(t); h.actor.visible = false; h.ready(); h.drain();
+  assert.ok(h.buffers.has(h.skin)); assert.equal(h.skin.material, h.material);
+  assert.equal(h.actor.visible, false);
+  assert.equal(h.skin.parent, h.actor);
+});
+
+test('cockpit metal shares decoded images between distinct hull and grate UV repeats', t => {
+  const textures = new Map<string, { texture: THREE.Texture; onLoad: (texture: THREE.Texture) => void }>();
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string, onLoad: (texture: THREE.Texture) => void) => {
+    assert.ok(!textures.has(url)); const texture = new THREE.Texture();
+    textures.set(url, { texture, onLoad }); return texture;
+  });
+  const original = globalThis.document; globalThis.document = {} as Document;
+  t.after(() => { globalThis.document = original; });
+  const root = new THREE.Group(), cockpit = new SentinelSetRenderer(root); t.after(() => cockpit.dispose());
+  const deck = root.getObjectByName('sentinel-cockpit-deck') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  const grate = root.getObjectByName('sentinel-floor-grate') as typeof deck;
+  for (const [suffix, field] of [['color','map'], ['normal','normalMap'], ['roughness','roughnessMap']] as const) {
+    const { texture, onLoad } = textures.get(`/assets/film-materials/metal_plate-${suffix}.jpg`)!;
+    const first = deck.material[field]!, second = grate.material[field]!;
+    assert.notEqual(first, second); assert.equal(first.source, second.source);
+    assert.deepEqual(first.repeat.toArray(), [5, 5]); assert.deepEqual(second.repeat.toArray(), [4, 4]);
+    assert.equal(second.version, 0);
+    const image = { width: 1024, height: 1024 };
+    texture.image = image; texture.needsUpdate = true; onLoad(texture);
+    assert.equal(first.image, image); assert.equal(second.image, image); assert.equal(second.version, 1);
+  }
+});

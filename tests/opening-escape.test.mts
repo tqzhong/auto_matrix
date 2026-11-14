@@ -400,31 +400,34 @@ test('isolated opening and training sets render their own cast and hide distant 
   const scene = new THREE.Scene(), renderer = new AgentRenderer(scene);
   t.after(() => renderer.dispose());
   const oracle = world.agents.get('oracle')!, trinity = world.agents.get('trinity')!, neo = world.agents.get('neo')!, brown = world.agents.get('agent_brown')!;
+  const distantCrew = world.agents.get('switch')!;
   renderer.updateAgent(oracle.id, oracle);
-  const outsideShadow = renderer.getAgentShadow(oracle.id)!;
+  renderer.updateAgent(distantCrew.id, { ...distantCrew, isInMatrix: false, position: FILM_SETS.film_neb_deck.center, currentLocation: 'film_neb_deck' });
   const visible = (mesh: THREE.Object3D) => {
     let drawn = false;
     scene.traverseVisible(object => { if (object === mesh) drawn = true; });
     return drawn;
   };
-  for (const id of ['m1_room303', 'm1_roofs', 'm1_phone_escape', 'm1_jump', 'm1_red_dress']) {
-    const film = FILM_SCENE_BY_ID[id], position = filmEntry(film);
+  for (const id of ['m1_room303', 'm1_roofs', 'm1_phone_escape', 'm1_jump', 'm1_red_dress', 'm1_sentinels']) {
+    const film = FILM_SCENE_BY_ID[id], position = filmEntry(film), isInMatrix = FILM_SETS[film.set].world === 'matrix';
+    const outsideShadow = renderer.getAgentShadow(isInMatrix ? oracle.id : distantCrew.id)!;
+    renderer.setWorld(isInMatrix);
     const player = film.actor === 'neo' ? neo : trinity;
     const journey: FilmJourney = { version: 1, scene: id, actor: player.id, step: 0, completed: [], enteredAt: 0,
       reflections: {}, lastText: '', checkpoint: position };
-    renderer.updateAgent(player.id, { ...player, position, currentLocation: film.set, isInMatrix: true }, journey);
-    renderer.updateAgent(brown.id, { ...brown, position: { ...position, x: position.x + 2 }, currentLocation: 'downtown', isInMatrix: true }, journey);
+    renderer.updateAgent(player.id, { ...player, position, currentLocation: film.set, isInMatrix }, journey);
+    renderer.updateAgent(brown.id, { ...brown, position: { ...position, x: position.x + 2 }, currentLocation: 'downtown', isInMatrix }, journey);
     renderer.setPlayer(player.id);
     renderer.update(0, undefined, 0, 0, journey);
     assert.equal(visible(renderer.getAgent(player.id)!), true);
     assert.equal(visible(renderer.getAgentShadow(brown.id)!), true, 'the on-set pursuer must survive a stale saved location label');
-    assert.equal(visible(outsideShadow), false, `the distant Oracle apartment must not draw into ${id}`);
+    assert.equal(visible(outsideShadow), false, `actors in distant sets must not draw into ${id}`);
 
-    const after: FilmJourney = { ...journey, scene: 'm1_wake_up', actor: 'neo' };
+    const after: FilmJourney = { ...journey, scene: isInMatrix ? 'm1_wake_up' : 'm1_cypher_console', actor: 'neo' };
     renderer.update(0, undefined, 0, 0, { ...after, visiting: id });
     assert.equal(visible(outsideShadow), false, 'the journal view uses the same isolated set');
     renderer.update(0, undefined, 0, 0, after);
-    assert.equal(visible(outsideShadow), true, 'returning to the city restores its actors');
+    assert.equal(visible(outsideShadow), true, 'leaving the isolated set restores its actors');
   }
 });
 

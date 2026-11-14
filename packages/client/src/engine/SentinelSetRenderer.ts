@@ -34,7 +34,7 @@ export class SentinelSetRenderer {
     const rubber = this.material(new THREE.MeshStandardMaterial({ color: 0x0e1414, roughness: .92 }));
     const wet = this.material(new THREE.MeshStandardMaterial({ color: 0x17201f, roughness: .25, metalness: .48 }));
     const red = this.material(new THREE.MeshStandardMaterial({ color: 0x702323, emissive: 0x3b0707, emissiveIntensity: 1.2, metalness: .45, roughness: .28 }));
-    this.surface(hull, 'metal_plate', 5); this.surface(steel, 'metal_plate', 4);
+    this.metalSurfaces(hull, steel);
 
     this.box(this.root, wet, 0, -.32, 0, 55, .56, 145, 'sentinel-tunnel-floor');
     for (let z = -66; z <= 66; z += 4.8) this.box(this.root, steel, 0, .035, z, 18.5, .04, .09, 'sentinel-floor-grate');
@@ -138,16 +138,25 @@ export class SentinelSetRenderer {
 
   private material<T extends THREE.Material>(material: T): T { this.materials.add(material); return material; }
   private geometry<T extends THREE.BufferGeometry>(geometry: T): T { this.geometries.add(geometry); return geometry; }
-  private surface(material: THREE.MeshStandardMaterial, name: string, repeat: number): void {
+  private metalSurfaces(hull: THREE.MeshStandardMaterial, steel: THREE.MeshStandardMaterial): void {
     if (typeof document === 'undefined') return;
     const loader = new THREE.TextureLoader();
     for (const [suffix, field] of [['color', 'map'], ['normal', 'normalMap'], ['roughness', 'roughnessMap']] as const) {
-      const texture = loader.load(`/assets/film-materials/${name}-${suffix}.jpg`, loaded => { if (this.disposed || !this.materials.has(material)) loaded.dispose(); });
-      texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(repeat, repeat); texture.anisotropy = 4;
-      if (field === 'map') texture.colorSpace = THREE.SRGBColorSpace;
-      material[field] = texture; this.textures.add(texture);
+      const grate = new THREE.Texture();
+      const plate = loader.load(`/assets/film-materials/metal_plate-${suffix}.jpg`, loaded => {
+        if (this.disposed) { loaded.dispose(); return; }
+        grate.needsUpdate = true;
+      });
+      // Use the same GPU image with an independent UV transform on the grates.
+      grate.source = plate.source;
+      for (const [material, texture, repeat] of [[hull, plate, 5], [steel, grate, 4]] as const) {
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(repeat, repeat); texture.anisotropy = 4;
+        if (field === 'map') texture.colorSpace = THREE.SRGBColorSpace;
+        material[field] = texture; this.textures.add(texture);
+      }
     }
-    material.normalScale.set(.28, .28); material.needsUpdate = true;
+    hull.normalScale.set(.28, .28); hull.needsUpdate = true;
+    steel.normalScale.set(.28, .28); steel.needsUpdate = true;
   }
   private exteriorMatte(parent: THREE.Object3D): void {
     const material = this.material(new THREE.MeshBasicMaterial({ color: 0x31534f, fog: false, side: THREE.DoubleSide }));

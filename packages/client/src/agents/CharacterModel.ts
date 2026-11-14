@@ -987,6 +987,8 @@ export class CharacterModels {
     this.heroes.animate(hero, advanceMotion(motion, input, 0), motion, input, 0);
   }
 
+  prepareEarlyShipGarments(hero: HeroRig) { return this.heroes.prepareEarlyShipGarments(hero); }
+
   animate(rig: CharacterRig, delta: number, input: MotionInput, distance: number): void {
     if (rig.smithProjection) {
       const projection = rig.smithProjection;

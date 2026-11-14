@@ -4,6 +4,24 @@ import * as THREE from 'three';
 import { newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { shipKnit } from './helpers/ship-knit.mjs';
 
+test('the ship entry prepares the fitted knit and its actual maps without touching the Matrix costume', async t => {
+  const h = await shipKnit(t);
+  h.pose({ realWorld: false, nebCrew: undefined, nebCrewEarly: false });
+  const material = h.sweater.material as THREE.MeshStandardMaterial;
+  const before = { geometry: h.sweater.geometry, map: material.map, bumpMap: material.bumpMap, version: material.version, visible: h.sweater.visible };
+  const garments = h.models.prepareEarlyShipGarments(h.rig);
+  t.after(() => garments.forEach(garment => garment.material.dispose()));
+  const ready = garments.find(garment => garment.name === h.sweater.name)!;
+  assert.ok(ready && ready.parent === null && ready.castShadow);
+  assert.notEqual(ready.material, material);
+  assert.deepEqual({ geometry: h.sweater.geometry, map: material.map, bumpMap: material.bumpMap, version: material.version, visible: h.sweater.visible }, before);
+  h.pose();
+  assert.equal(h.sweater.geometry, ready.geometry);
+  assert.equal(material.map, ready.material.map);
+  assert.equal(material.bumpMap, ready.material.bumpMap);
+  assert.equal(h.sweater.visible, true);
+});
+
 test('Morpheus ship knit bridges the chest instead of preserving two anatomical pectoral lobes', async t => {
   const h = await shipKnit(t); h.pose();
   const material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }); t.after(() => material.dispose());

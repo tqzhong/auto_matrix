@@ -382,8 +382,9 @@ export class Engine {
     this.filmSets.prepareRedDress(this.renderer, this.camera, trainingJourney,
       id => ({ model: this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), shadow: this.agentRenderer.getAgentShadow(id) }),
       this.lightCulling, resumeTraining);
-    this.filmSets.prepareSentinel(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
-      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
+    const resumeSentinel = resumeOnLanding && meeting?.scene === 'm1_red_dress';
+    this.filmSets.prepareSentinel(this.renderer, this.camera, player?.id === meeting?.actor || resumeSentinel ? meeting : undefined,
+      id => this.agentRenderer.getSentinelCast(id), this.lightingSystem.directionalLight, this.lightCulling, resumeSentinel);
     this.filmSets.prepareConsole(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareRestaurant(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,

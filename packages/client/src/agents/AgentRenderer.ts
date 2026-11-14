@@ -235,6 +235,10 @@ export class AgentRenderer {
   getAgentShadow(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.shadow; }
   getAgentDetail(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.detail; }
   getAgentDistant(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.rig.distant; }
+  getSentinelCast(id: string) {
+    const entry = this.agents.get(id), hero = entry?.rig.hero;
+    return { model: hero?.root ?? entry?.body, shadow: entry?.shadow, garments: hero && (() => this.models.prepareEarlyShipGarments(hero)) };
+  }
   getDesertEntryCast(): THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial | THREE.MeshBasicMaterial>[] {
     const meshes = new Set<THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial | THREE.MeshBasicMaterial>>();
     const include = (object: THREE.Object3D) => {
@@ -616,10 +620,11 @@ export class AgentRenderer {
       ? filmSetAt(player.position, true) : undefined;
     const adamsStreet = adamsSet?.architecture === 'bridge' || adamsSet?.architecture === 'car' || adamsSet?.architecture === 'lafayette';
     const playerSet = player && this.playerId === journey?.actor && player.isInMatrix === this.matrix
-      && (scene === 'm1_pod' && !this.matrix || (scene === 'm1_construct' || scene === 'm1_truth_exit' || scene === 'm1_jump' || scene === 'm1_red_dress') && this.matrix)
+      && ((scene === 'm1_pod' || scene === 'm1_sentinels') && !this.matrix
+        || (scene === 'm1_construct' || scene === 'm1_truth_exit' || scene === 'm1_jump' || scene === 'm1_red_dress') && this.matrix)
       ? filmSetAt(player.position, this.matrix)?.id : undefined;
     const isolatedSet = playerSet === 'film_power_plant_pods' || playerSet === 'film_white_construct'
-      || playerSet === 'film_jump_roofs' || playerSet === 'film_red_dress_plaza' ? playerSet : undefined;
+      || playerSet === 'film_jump_roofs' || playerSet === 'film_red_dress_plaza' || playerSet === 'film_service_tunnels' ? playerSet : undefined;
     const roof = journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     const roofExit = player?.currentAction?.parameters.roofExit as MotionInput['roofExit'];
     const rooftopRun = openingSet === 'film_hotel_roofs' && roof?.phase === 'running' && !roofExit

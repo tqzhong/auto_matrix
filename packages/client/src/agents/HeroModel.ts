@@ -1917,6 +1917,8 @@ export class HeroModels {
 
   trainingPistolHands(rig: HeroRig): void { this.fightingHands.get(rig)?.posePistol(); }
 
+  prepareEarlyShipGarments(rig: HeroRig) { return this.farewellAppearances.get(rig)?.prepareEarlyShipGarments() ?? []; }
+
   poseFace(rig: HeroRig): void { this.jaws.get(rig)?.update(); this.eyelids.get(rig)?.update(); }
 
   private release(): void {
