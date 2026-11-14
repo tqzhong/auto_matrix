@@ -615,9 +615,11 @@ export class AgentRenderer {
       && (scene === 'm1_bridge' || scene === 'm1_bug' || scene === 'm1_pills' || scene === 'm1_mirror')
       ? filmSetAt(player.position, true) : undefined;
     const adamsStreet = adamsSet?.architecture === 'bridge' || adamsSet?.architecture === 'car' || adamsSet?.architecture === 'lafayette';
-    const awakeningSet = player && this.playerId === journey?.actor && player.isInMatrix === this.matrix
-      && (scene === 'm1_pod' && !this.matrix || (scene === 'm1_construct' || scene === 'm1_truth_exit') && this.matrix)
+    const playerSet = player && this.playerId === journey?.actor && player.isInMatrix === this.matrix
+      && (scene === 'm1_pod' && !this.matrix || (scene === 'm1_construct' || scene === 'm1_truth_exit' || scene === 'm1_jump' || scene === 'm1_red_dress') && this.matrix)
       ? filmSetAt(player.position, this.matrix)?.id : undefined;
+    const isolatedSet = playerSet === 'film_power_plant_pods' || playerSet === 'film_white_construct'
+      || playerSet === 'film_jump_roofs' || playerSet === 'film_red_dress_plaza' ? playerSet : undefined;
     const roof = journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     const roofExit = player?.currentAction?.parameters.roofExit as MotionInput['roofExit'];
     const rooftopRun = openingSet === 'film_hotel_roofs' && roof?.phase === 'running' && !roofExit
@@ -762,8 +764,7 @@ export class AgentRenderer {
         && (!insideStairwell || id === journey?.actor)
         && (!openingSet || filmSetAt(state.position, state.isInMatrix)?.id === openingSet)
         && (!adamsStreet || streetSet?.architecture === 'bridge' || streetSet?.architecture === 'car' || streetSet?.architecture === 'lafayette')
-        && (awakeningSet !== 'film_power_plant_pods' && awakeningSet !== 'film_white_construct'
-          || filmSetAt(state.position, this.matrix)?.id === awakeningSet)
+        && (!isolatedSet || filmSetAt(state.position, this.matrix)?.id === isolatedSet)
         && (wellsGesture?.role !== 'smith' || wellsGesture.elapsed >= WELLS_AFTERMATH.firstFoot);
       const doorActor = journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.actor === id && state.status === 'alive' && state.currentLocation === 'film_club_hel';
       const fastDoor = doorActor ? (id === this.playerId ? this.playerMotion?.helDoorPush : undefined)

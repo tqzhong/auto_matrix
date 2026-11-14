@@ -387,7 +387,7 @@ test('roof retries draw the pursuit at its checkpoint on the first frame and the
   }
 });
 
-test('isolated opening sets render their own cast and hide distant actors during play and visits', t => {
+test('isolated opening and training sets render their own cast and hide distant actors during play and visits', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
   const originalDocument = globalThis.document;
@@ -399,7 +399,7 @@ test('isolated opening sets render their own cast and hide distant actors during
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const scene = new THREE.Scene(), renderer = new AgentRenderer(scene);
   t.after(() => renderer.dispose());
-  const oracle = world.agents.get('oracle')!, trinity = world.agents.get('trinity')!, brown = world.agents.get('agent_brown')!;
+  const oracle = world.agents.get('oracle')!, trinity = world.agents.get('trinity')!, neo = world.agents.get('neo')!, brown = world.agents.get('agent_brown')!;
   renderer.updateAgent(oracle.id, oracle);
   const outsideShadow = renderer.getAgentShadow(oracle.id)!;
   const visible = (mesh: THREE.Object3D) => {
@@ -407,17 +407,18 @@ test('isolated opening sets render their own cast and hide distant actors during
     scene.traverseVisible(object => { if (object === mesh) drawn = true; });
     return drawn;
   };
-  for (const id of ['m1_room303', 'm1_roofs', 'm1_phone_escape']) {
+  for (const id of ['m1_room303', 'm1_roofs', 'm1_phone_escape', 'm1_jump', 'm1_red_dress']) {
     const film = FILM_SCENE_BY_ID[id], position = filmEntry(film);
-    const journey: FilmJourney = { version: 1, scene: id, actor: trinity.id, step: 0, completed: [], enteredAt: 0,
+    const player = film.actor === 'neo' ? neo : trinity;
+    const journey: FilmJourney = { version: 1, scene: id, actor: player.id, step: 0, completed: [], enteredAt: 0,
       reflections: {}, lastText: '', checkpoint: position };
-    renderer.updateAgent(trinity.id, { ...trinity, position, currentLocation: film.set, isInMatrix: true }, journey);
+    renderer.updateAgent(player.id, { ...player, position, currentLocation: film.set, isInMatrix: true }, journey);
     renderer.updateAgent(brown.id, { ...brown, position: { ...position, x: position.x + 2 }, currentLocation: 'downtown', isInMatrix: true }, journey);
-    renderer.setPlayer(trinity.id);
+    renderer.setPlayer(player.id);
     renderer.update(0, undefined, 0, 0, journey);
-    assert.equal(visible(renderer.getAgent(trinity.id)!), true);
+    assert.equal(visible(renderer.getAgent(player.id)!), true);
     assert.equal(visible(renderer.getAgentShadow(brown.id)!), true, 'the on-set pursuer must survive a stale saved location label');
-    assert.equal(visible(outsideShadow), false, 'the distant Oracle apartment must not draw into the opening set');
+    assert.equal(visible(outsideShadow), false, `the distant Oracle apartment must not draw into ${id}`);
 
     const after: FilmJourney = { ...journey, scene: 'm1_wake_up', actor: 'neo' };
     renderer.update(0, undefined, 0, 0, { ...after, visiting: id });

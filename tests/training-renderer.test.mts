@@ -12,6 +12,30 @@ const journey = (scene: string, training?: FilmJourney['training']): FilmJourney
   reflections: {}, lastText: '', training,
 });
 
+test('the jump buildings reuse the plaster images while keeping separate UV scales', t => {
+  const savedDocument = globalThis.document;
+  globalThis.document = {} as Document;
+  const loading: (() => void)[] = [];
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (_url, onLoad) => {
+    const texture = new THREE.Texture();
+    loading.push(() => { texture.image = { width: 2048, height: 2048 }; texture.needsUpdate = true; onLoad?.(texture); });
+    return texture;
+  });
+  const root = new THREE.Group(), renderer = new TrainingSetRenderer(root, 'm1_jump');
+  t.after(() => { renderer.dispose(); globalThis.document = savedDocument; });
+  const parapet = (root.getObjectByName('jump-parapet-left--13') as THREE.Mesh).material as THREE.MeshStandardMaterial;
+  const tower = (root.getObjectByName('jump-tower-body') as THREE.Mesh).material as THREE.MeshStandardMaterial;
+  for (const slot of ['map', 'normalMap', 'roughnessMap'] as const) {
+    assert.notEqual(parapet[slot], tower[slot]);
+    assert.equal(parapet[slot]?.source === tower[slot]?.source, true, slot);
+    assert.equal(tower[slot]?.version, 0, 'an unfilled source must not be marked for GPU upload');
+    assert.deepEqual(parapet[slot]?.repeat.toArray(), [5, 5]);
+    assert.deepEqual(tower[slot]?.repeat.toArray(), [4, 4]);
+  }
+  loading.forEach(loaded => loaded());
+  assert.ok(tower.map?.version === 1 && tower.map.image === parapet.map?.image);
+});
+
 test('red-dress pedestrian lanes leave body clearance beside the actual benches and fountain', () => {
   const root = new THREE.Group(), renderer = new TrainingSetRenderer(root, 'm1_red_dress');
   try {

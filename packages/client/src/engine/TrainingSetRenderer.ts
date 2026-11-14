@@ -11,6 +11,7 @@ export class TrainingSetRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
+  private surfaceImages = new Map<string, { texture: THREE.Texture; waiting: THREE.Texture[] }>();
   private impactDepth = { value: 0 };
   private impactCenter = { value: new THREE.Vector2() };
   private lights = new Set<THREE.Light>();
@@ -43,9 +44,21 @@ export class TrainingSetRenderer {
     if (typeof document === 'undefined') return;
     const loader = new THREE.TextureLoader();
     for (const [suffix, field] of [['color', 'map'], ['normal', 'normalMap'], ['roughness', 'roughnessMap']] as const) {
-      const texture = loader.load(`/assets/${folder}/${name}-${suffix}.jpg`, loaded => { if (this.disposed || !this.materials.has(material)) loaded.dispose(); });
+      const url = `/assets/${folder}/${name}-${suffix}.jpg`, image = this.surfaceImages.get(url);
+      const waiting: THREE.Texture[] = [];
+      const texture = image ? new THREE.Texture() : loader.load(url, loaded => {
+        if (this.disposed || !this.materials.has(material)) { loaded.dispose(); return; }
+        for (const variant of waiting) variant.needsUpdate = true;
+        waiting.length = 0;
+      });
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(repeat, repeat); texture.anisotropy = 4;
       if (field === 'map') texture.colorSpace = THREE.SRGBColorSpace;
+      if (image) {
+        // Each surface keeps its own UV scale without allocating another GPU image.
+        texture.source = image.texture.source;
+        if (texture.image) texture.needsUpdate = true;
+        else image.waiting.push(texture);
+      } else this.surfaceImages.set(url, { texture, waiting });
       material[field] = texture; this.textures.add(texture);
     }
     material.normalScale.set(.32, .32); material.needsUpdate = true;
@@ -497,6 +510,6 @@ export class TrainingSetRenderer {
 
   dispose(): void {
     this.disposed = true; this.pedestrians?.dispose(); this.root.clear(); this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose()); this.textures.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());
-    this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear(); this.crowd = []; this.skylineLights = [];
+    this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.surfaceImages.clear(); this.lights.clear(); this.crowd = []; this.skylineLights = [];
   }
 }

@@ -45,9 +45,12 @@ function fixture(t: TestContext) {
     },
     initTexture(map: THREE.Texture) { work.push('texture'); uploaded.set(map, map.version); },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = () => {
-    const count = work.length; film.prepareJump(gpu, camera, journey, id => actors.get(id), sun);
-    assert.ok(work.length - count <= 1, 'prepare one batch, completed binding or texture per frame');
+  const prepare = (resume = false) => {
+    const count = work.length;
+    film.prepareJump(gpu, camera, journey, id => ({ model: actors.get(id) }), sun, undefined, resume);
+    const frame = work.slice(count);
+    assert.ok(frame.filter(item => item === 'compile' || item === 'bindings').length <= 1);
+    assert.ok(frame.filter(item => item === 'texture').length <= 1);
     assert.equal(target, null); assert.equal(parent.visible, false); assert.equal(actor.parent, parent); assert.equal(skin.parent, actor); assert.equal(coat.visible, false); assert.equal(sun.castShadow, false); assert.equal(gpu.debug.checkShaderErrors, true);
   };
   const drain = () => { for (let i = 0; i < 450; i++) prepare(); };
@@ -62,6 +65,22 @@ test('a completed dojo prepares the existing rooftops and future ordinary clothe
   const late = new THREE.Group(), face = new THREE.Mesh(h.geometry, h.material); late.add(face); h.actors.set('morpheus', late);
   const before = h.batches.length; h.drain(); assert.ok(h.batches.slice(before).flat().includes(face)); assert.equal(h.decks.size, 1);
   const count = h.work.length; h.drain(); assert.equal(h.work.length, count, 'completed preparation stops compiling and uploading');
+});
+
+test('a completed dojo save prepares rooftop programs and transfers maps while still on the landing screen', t => {
+  const h = fixture(t); Object.assign(h.film, { current: undefined, currentScene: undefined });
+  for (let i = 0; i < 8; i++) h.prepare(true);
+  assert.ok(h.work.includes('texture'), 'transfer a ready image while the colour queue still has pending bindings');
+  assert.ok(h.batches.some(batch => batch.some(mesh => mesh.name === 'jump-tower-windows')),
+    'prioritise the actual instanced windows for the cold cut');
+  assert.ok(h.batches.flat().includes(h.skin), 'the arriving actor must link before repeated roof meshes consume the lead time');
+  assert.ok(!h.work.includes('bindings'));
+  const root = [...h.decks][0];
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!;
+  neo.position = { ...FILM_SETS.film_kungfu_dojo.center }; neo.isInMatrix = true; h.journey.actor = 'neo';
+  h.film.update(neo, { structures: [], neoLife: { journey: h.journey } } as unknown as SandboxState, 0);
+  h.ready(); h.drain();
+  assert.ok(h.decks.size === 1 && h.decks.has(root), 'entering the saved dojo must retain the prepared rooftops');
 });
 
 test('jump preparation waits for the completed lesson, rebuilds for a new GPU and releases cancellation resources', t => {

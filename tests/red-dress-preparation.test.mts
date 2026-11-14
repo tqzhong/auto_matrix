@@ -10,7 +10,7 @@ import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
 function fixture(t: TestContext) {
   let finishAssets!: ()=>void; const loaded = new Promise<void>(resolve=>{finishAssets=resolve;});
-  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => { await loaded; const scene=new THREE.Group(), geometry=new THREE.BoxGeometry(); geometry.morphAttributes.position=[geometry.attributes.position.clone()]; geometry.morphAttributes.normal=[geometry.attributes.normal.clone()]; const mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial()); mesh.name='future-crowd'; scene.add(mesh); return {scene,parser:{json:{extras:{phases:[0],cycleDistance:2.8}}}} as never; });
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => { await loaded; const scene=new THREE.Group(), geometry=new THREE.BoxGeometry(); geometry.morphAttributes.position=[geometry.attributes.position.clone()]; geometry.morphAttributes.normal=[geometry.attributes.normal.clone()]; const mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({ map: new THREE.Texture(), alphaTest: .5 })); mesh.name='future-crowd'; scene.add(mesh); return {scene,parser:{json:{extras:{phases:[0],cycleDistance:2.8}}}} as never; });
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const previousDocument = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {},
@@ -25,12 +25,15 @@ function fixture(t: TestContext) {
   const texture = new THREE.Texture({ width: 2048, height: 2048 }); texture.needsUpdate = true;
   const material = new THREE.MeshStandardMaterial({ map: texture }), skin = new THREE.SkinnedMesh(geometry, material); actor.add(skin);
   const coat = new THREE.SkinnedMesh(geometry, material); coat.visible = false; actor.add(coat); const costume = new THREE.SkinnedMesh(geometry, material); costume.userData.reloadedHidden = true; costume.visible = false; actor.add(costume);
-  const actors = new Map([['neo', actor]]), work: string[] = [], batches: THREE.Object3D[][] = [], decks = new Set<THREE.Object3D>();
+  const shadow = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial()); parent.add(shadow);
+  const actors = new Map([['neo', actor]]), work: string[] = [], batches: THREE.Object3D[][] = [], decks = new Set<THREE.Object3D>(), buffered = new Set<THREE.Object3D>();
   const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   let ready = false, target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
   const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
   const gpu = { properties: properties(), info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
+    render(view: THREE.Scene) { assert.ok(view.children.length <= 4); view.children.forEach(mesh => buffered.add(mesh)); },
     getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
     compile(subject: THREE.Object3D, eye: THREE.Camera, lights: THREE.Scene) {
       assert.notEqual(lights, scene); assert.equal(lights.environment, scene.environment); assert.equal(lights.fog, scene.fog); assert.equal(eye, camera); assert.equal(target?.width, 1);
@@ -48,25 +51,59 @@ function fixture(t: TestContext) {
     },
     initTexture(map: THREE.Texture) { work.push('texture'); uploaded.set(map, map.version); },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = () => {
-    const count = work.length; film.prepareRedDress(gpu, camera, journey, id => actors.get(id));
+  const prepare = (sourceLights?: LightCulling) => {
+    const count = work.length;
+    film.prepareRedDress(gpu, camera, journey, id => ({ model: actors.get(id), shadow: id === 'neo' ? shadow : undefined }), sourceLights);
     const frame = work.slice(count);
     assert.ok(frame.filter(item => item === 'compile' || item === 'bindings').length <= 1);
-    assert.ok(frame.filter(item => item === 'texture').length <= 1 && frame.filter(item => item === 'strip').length <= 4);
+    assert.ok(frame.filter(item => item === 'texture').length <= 1 && frame.filter(item => item === 'strip').length <= 1);
     assert.equal(target, null); assert.equal(parent.visible, false); assert.equal(actor.parent, parent); assert.equal(skin.parent, actor); assert.equal(coat.visible, false); assert.equal(sun.castShadow, false); assert.equal(gpu.debug.checkShaderErrors, true);
   };
   const drain = () => { for (let i = 0; i < 450; i++) prepare(); };
-  t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previousDocument; });
-  return { film, gpu, scene, journey, actor, actors, geometry, material, texture, skin, coat, costume, work, batches, decks, prepare, drain,
+  t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); shadow.material.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previousDocument; });
+  return { film, gpu, scene, journey, actor, actors, geometry, material, texture, skin, coat, costume, shadow, work, batches, decks, buffered, prepare, drain,
     assets: async () => { finishAssets(); await new Promise(resolve=>setImmediate(resolve)); }, ready: () => { ready = true; }, replaceGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
 
 test('the real ship explanation prepares the plaza only after its crowd loads and keeps future clothes hidden', async t => {
   const h = fixture(t); h.prepare(); assert.equal(h.batches.length,0); await h.assets(); for (let i = 0; i < 4; i++) h.prepare(); assert.ok(h.batches.length); assert.ok(!h.work.includes('bindings'));
   h.ready(); h.drain(); assert.ok(h.batches.flat().includes(h.skin)); assert.ok(h.batches.flat().some(object=>object instanceof THREE.InstancedMesh && object.name.includes('future-crowd')), 'prepare the loaded crowd, not only its temporary mannequins'); assert.ok(h.batches.flat().includes(h.coat), 'ordinary clothes hidden by the ship outfit must prepare without becoming visible'); assert.equal(h.work.filter(v => v === 'texture').length, 1); assert.ok(!h.batches.flat().includes(h.costume), 'unrelated hidden costumes stay out of the preparation');
+  assert.ok(h.batches.flat().includes(h.shadow));
+  assert.ok(h.buffered.has(h.skin) && [...h.buffered].some(mesh => mesh instanceof THREE.InstancedMesh && mesh.name.includes('future-crowd')));
   const late = new THREE.Group(), face = new THREE.Mesh(h.geometry, h.material); late.add(face); h.actors.set('morpheus', late);
   const before = h.batches.length; h.drain(); assert.ok(h.batches.slice(before).flat().includes(face)); assert.equal(h.decks.size, 1);
   const count = h.work.length; h.drain(); assert.equal(h.work.length, count, 'completed preparation stops compiling and uploading');
+});
+
+test('the plaza links crowd and ground shadows under both the preceding ship and the plaza lights', async t => {
+  const h = fixture(t), sourceLights = new LightCulling(h.scene), layouts = new Map<number, THREE.Mesh[]>();
+  sourceLights.minimumPointSlots = 16; t.after(() => sourceLights.dispose());
+  const compile = h.gpu.compile.bind(h.gpu);
+  Object.assign(h.gpu, { shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
+    compile(subject: THREE.Object3D, eye: THREE.Camera, view: THREE.Scene) {
+      const casters: THREE.Mesh[] = [];
+      subject.traverse(object => { if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial) casters.push(object); });
+      if (!casters.length) return compile(subject, eye, view);
+      let pointSlots = 0;
+      view.traverseVisible(light => { if (light instanceof THREE.PointLight) pointSlots++; });
+      const previous = layouts.get(pointSlots) ?? [];
+      previous.push(...casters); layouts.set(pointSlots, previous);
+    } });
+  h.prepare(sourceLights); await h.assets(); h.ready();
+  for (let frame = 0; frame < 430; frame++) h.prepare(sourceLights);
+  const root = [...h.decks][0], paving = root.getObjectByName('red-dress-paving') as THREE.Mesh;
+  for (const slots of [16, 1]) {
+    const casters = layouts.get(slots);
+    assert.ok(casters?.some(mesh => mesh.geometry === paving.geometry));
+    const crowd = casters?.find(mesh => mesh instanceof THREE.InstancedMesh && mesh.geometry.morphAttributes.position.length);
+    assert.ok(crowd);
+    assert.doesNotMatch((crowd.material as THREE.MeshDepthMaterial).customProgramCacheKey(), /actor-local-skin/,
+      'instanced alpha cutouts use the renderer’s stock per-material depth program');
+  }
+  const material = layouts.get(1)![0].material as THREE.MeshDepthMaterial;
+  let disposed = 0; material.addEventListener('dispose', () => disposed++);
+  h.journey.scene = 'm1_download'; h.prepare(sourceLights);
+  assert.equal(disposed, 1);
 });
 
 test('plaza texture preparation starts while the program queue still has meshes and bindings', async t => {
@@ -111,7 +148,7 @@ test('a partially staged plaza map is released when the player enters before it 
     },
   });
   h.prepare(); await h.assets(); h.prepare();
-  assert.deepEqual(rows, [0, 256, 512, 768], 'stage a bounded batch of plaza rows before first draw');
+  assert.deepEqual(rows, [0], 'transfer one strip to spread out first-use work');
   assert.equal(h.texture.source, source); assert.equal(residency.has(h.texture), false);
   const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!;
   neo.position = { ...FILM_SETS.film_red_dress_plaza.center }; neo.currentLocation = 'film_red_dress_plaza'; neo.isInMatrix = true;
