@@ -100,6 +100,28 @@ test('releasing the tracker preserves its actual held position and orientation',
   assert.ok(rotation.angleTo(tracker.getWorldQuaternion(new THREE.Quaternion())) < 1e-5, 'the tracker rotates discontinuously when it leaves the wrist');
 });
 
+test('Smith supports the tracker case without his left hand cutting through either solid panel', async t => {
+  const h = await actor('smith');
+  t.after(() => h.models.dispose());
+  const surface = handSurface(h.rig, 'L');
+  for (const elapsed of [13.85, 15.5, 17.6, 19.85, 21.4]) {
+    draw(h, elapsed);
+    const box = h.rig.root.getObjectByName('interrogation-device-case')!;
+    const points = [...surface.posePoints().values()];
+    const wrist = h.rig.bones.get('wrist_L')!;
+    for (const panel of box.children as THREE.Mesh<THREE.BoxGeometry>[]) {
+      const space = panel.matrixWorld.clone().invert().multiply(wrist.matrixWorld);
+      const { width, height, depth } = panel.geometry.parameters;
+      const clearance = points.map(point => point.clone().applyMatrix4(space))
+        .filter(point => Math.abs(point.x) < width / 2 - .003 && Math.abs(point.z) < depth / 2 - .003);
+      assert.ok(clearance.every(point => Math.abs(point.y) >= height / 2 - .003),
+        `${elapsed}s: the actual left hand penetrates the ${height > .04 ? 'tray' : 'lid'}`);
+      if (height > .04) assert.ok(clearance.some(point => Math.abs(point.y + height / 2) < .005),
+        `${elapsed}s: the bottom of the box must meet the actual palm`);
+    }
+  }
+});
+
 test('the tracker shell and moving legs stay outside Smith’s actual head while he presents it', async t => {
   const h = await actor('smith'); t.after(() => h.models.dispose());
   const skin = h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;

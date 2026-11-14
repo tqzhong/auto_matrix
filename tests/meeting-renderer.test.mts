@@ -4,6 +4,37 @@ import * as THREE from 'three';
 import { bridgeArrivalPose, meetingCarPose, meetingRollRoadTime, MEETING_ROAD_WIDTH, MEETING_CAR, type FilmJourney } from '@auto_matrix/shared';
 import { MeetingSetRenderer } from '../packages/client/src/engine/MeetingSetRenderer.js';
 
+test('bridge preparation builds the street over several steps and adopts the same scenery on entry', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const parent = new THREE.Group(), prepared = new MeetingSetRenderer(undefined, false);
+  t.after(() => prepared.dispose());
+  assert.equal(prepared.root.parent, null);
+  assert.equal(prepared.prepareStep(), false);
+  const lamps = (prepared as unknown as { streetLamps: THREE.Vector3[] }).streetLamps;
+  const first = lamps.length;
+  assert.equal(prepared.prepareStep(), false);
+  assert.ok(lamps.length > first, 'street construction continues on the second frame');
+  let ready = false;
+  for (let i = 0; i < 200 && !ready; i++) ready = prepared.prepareStep();
+  assert.equal(ready, true, 'all scenery is constructed before the camera cuts to the bridge');
+  const mesh = prepared.root.getObjectByProperty('isMesh', true) as THREE.Mesh;
+  assert.ok(mesh);
+  let disposed = 0;
+  mesh.geometry.addEventListener('dispose', () => disposed++);
+  prepared.attach(parent);
+  assert.deepEqual(parent.children, [prepared.root]);
+  assert.ok(parent.getObjectById(mesh.id), 'the real geometry is adopted when the bridge appears');
+  assert.equal(disposed, 0);
+
+  const cancelled = new MeetingSetRenderer(undefined, false);
+  assert.equal(cancelled.prepareStep(), false);
+  const source = cancelled.root.getObjectByProperty('isMesh', true) as THREE.Mesh;
+  let released = false;
+  source.geometry.addEventListener('dispose', () => { released = true; });
+  cancelled.dispose();
+  assert.equal(released, true, 'leaving the apartment releases unfinished bridge geometry');
+});
+
 test('the bridge and car retain only drawn geometry and keep the indexed wheel batches', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const parent = new THREE.Group(), renderer = new MeetingSetRenderer(parent, false);

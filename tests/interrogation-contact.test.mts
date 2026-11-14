@@ -109,9 +109,8 @@ test('Smith presents an upright tracker and supports the open case on his other 
         assert.ok(position.distanceTo(held!.position) < .005, 'letting go must not teleport the tracker');
         assert.ok(axis.distanceTo(held!.axis) < .005, 'letting go must not flip the tracker sideways');
       }
-      const box = rig.root.getObjectByName('interrogation-device-case')!, palm = rig.bones.get('wrist_L')!.localToWorld(new THREE.Vector3(-.065, -.17, .01));
-      const bottom = box.localToWorld(new THREE.Vector3(0, -.035, 0));
-      assert.ok(Math.abs(bottom.y - palm.y) < .025 && Math.hypot(bottom.x - palm.x, bottom.z - palm.z) < .025, `${elapsed}s: the case bottom must rest on the palm`);
+      const box = rig.root.getObjectByName('interrogation-device-case')!;
+      assert.equal(box.parent, rig.bones.get('wrist_L'), `${elapsed}s: the case follows the supporting hand`);
       assert.ok(box.getWorldPosition(new THREE.Vector3()).y > 3, `${elapsed}s: the case is raised for Smith to take the device`);
     }
   } finally { models.dispose(); }

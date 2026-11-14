@@ -8,7 +8,7 @@ import { LafayetteApproachRenderer } from './LafayetteApproachRenderer.js';
 // The occupants and vehicle share the server's saved route. The street and
 // car body are separate material batches, so no scenery moves with the car.
 export class MeetingSetRenderer {
-  private root = new THREE.Group();
+  readonly root = new THREE.Group();
   private static = new THREE.Group();
   private vehicle = new THREE.Group();
   private door = new THREE.Group();
@@ -29,8 +29,22 @@ export class MeetingSetRenderer {
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
   private disposed = false;
-  constructor(parent: THREE.Group, includeHotel = true) {
-    parent.add(this.root); this.root.add(this.static);
+  private construction?: Generator<void>;
+  constructor(parent?: THREE.Group, includeHotel = true) {
+    this.construction = this.build(includeHotel);
+    if (parent) this.attach(parent);
+  }
+  prepareStep(): boolean {
+    if (this.construction && !this.construction.next().done) return false;
+    this.construction = undefined;
+    return true;
+  }
+  attach(parent: THREE.Group): void {
+    while (!this.prepareStep()) { /* Finish construction after a cold load. */ }
+    parent.add(this.root);
+  }
+  private *build(includeHotel: boolean): Generator<void> {
+    this.root.add(this.static);
     const material = (color: number, roughness = .6, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
     const paint = new THREE.MeshPhysicalMaterial({ color: 0x090f10, roughness: .31, metalness: .28, clearcoat: 1, clearcoatRoughness: .2 });
     const chrome = material(0x9aa8a6, .27, .93); const black = material(0x080b0c, .85);
@@ -48,8 +62,9 @@ export class MeetingSetRenderer {
     stone.map = load('damaged_plaster-color', 2); stone.map.colorSpace = THREE.SRGBColorSpace; stone.normalMap = load('damaged_plaster-normal', 2); stone.normalScale.set(.38, .38);
     leather.normalMap = load('leather_red_03-normal', 2); leather.normalScale.set(.35, .35);
     const glow = new THREE.MeshBasicMaterial({ color: 0xfbeed0 });
-    this.buildStreet(road, pavement, stone, black, chrome, glow);
+    yield* this.buildStreet(road, pavement, stone, black, chrome, glow);
     if (includeHotel) this.hotel = new LafayetteApproachRenderer(this.root, new THREE.Vector3(MEETING_DESTINATION.x, 0, 0), true);
+    yield;
     this.buildPuddles();
     for (const x of [-23, 23]) {
       this.box(x, .22, 0, 2, .46, 108, stone);
@@ -72,15 +87,19 @@ export class MeetingSetRenderer {
     bridge.position.z = -25;
     const mortar = material(0x252e28, .98);
     const archStone = [0x6f7265, 0x808073, 0x747a6d].map(color => { const m = stone.clone(); m.color.setHex(color); return m; });
-    for (const z of [-25.3, -2.99]) for (let i = 0; i < 29; i++) {
-      const a = i / 29 * Math.PI + .002; const b = (i + 1) / 29 * Math.PI - .002;
-      const block = new THREE.Shape();
-      for (let j = 0; j <= 4; j++) { const t = a + (b - a) * j / 4; const x = Math.cos(t) * 21.2; const y = 5.8 + Math.sin(t) * 7.8; if (j) block.lineTo(x, y); else block.moveTo(x, y); }
-      for (let j = 4; j >= 0; j--) { const t = a + (b - a) * j / 4; block.lineTo(Math.cos(t) * 22.6, 5.8 + Math.sin(t) * 9.2); }
-      block.closePath();
-      const geometry = new THREE.ExtrudeGeometry(block, { depth: .3, bevelEnabled: false, steps: 1 });
-      const blockUv = geometry.getAttribute('uv'); for (let j = 0; j < blockUv.count; j++) blockUv.setXY(j, blockUv.getX(j) * .09, blockUv.getY(j) * .09);
-      this.mesh(this.static, geometry, archStone[i % 3]).position.z = z;
+    yield;
+    for (const z of [-25.3, -2.99]) {
+      for (let i = 0; i < 29; i++) {
+        const a = i / 29 * Math.PI + .002; const b = (i + 1) / 29 * Math.PI - .002;
+        const block = new THREE.Shape();
+        for (let j = 0; j <= 4; j++) { const t = a + (b - a) * j / 4; const x = Math.cos(t) * 21.2; const y = 5.8 + Math.sin(t) * 7.8; if (j) block.lineTo(x, y); else block.moveTo(x, y); }
+        for (let j = 4; j >= 0; j--) { const t = a + (b - a) * j / 4; block.lineTo(Math.cos(t) * 22.6, 5.8 + Math.sin(t) * 9.2); }
+        block.closePath();
+        const geometry = new THREE.ExtrudeGeometry(block, { depth: .3, bevelEnabled: false, steps: 1 });
+        const blockUv = geometry.getAttribute('uv'); for (let j = 0; j < blockUv.count; j++) blockUv.setXY(j, blockUv.getX(j) * .09, blockUv.getY(j) * .09);
+        this.mesh(this.static, geometry, archStone[i % 3]).position.z = z;
+      }
+      yield;
     }
     for (const z of [-25.02, -17.7, -10.3, -2.98]) {
       const curve = new THREE.CatmullRomCurve3(Array.from({ length: 65 }, (_, i) => { const a = Math.PI - i / 64 * Math.PI; return new THREE.Vector3(Math.cos(a) * 21.18, 5.78 + Math.sin(a) * 7.8, z); }));
@@ -103,6 +122,7 @@ export class MeetingSetRenderer {
       for (let y = 4; y < h - 2; y += 3.5) for (let column = 0; column < 3; column++) this.box(x + (x < 0 ? 7.02 : -7.02), y, z - 3 + column * 3, .03, 1.5, 1, i % 2 ? black : glow);
     }
     const car = new THREE.Group(); this.vehicle.add(car); this.root.add(this.vehicle);
+    yield;
     this.box(0, .67, 0, 5.1, .35, 12.8, black, car);
     this.box(0, .96, .3, 4.9, .18, 7.2, black, car);
     this.box(0, 1.68, -4.85, 4.5, 1.35, 3.6, black, car, .1);
@@ -183,6 +203,7 @@ export class MeetingSetRenderer {
         this.window = this.panel(this.leftDoor, glass, rearWindow.map(([x, y, z]) => [x, y - 3.28, z])); this.window.position.y = 3.28;
         this.trim(this.leftDoor, chrome, [...rearWindow, rearWindow[0]], .03);
       }
+      yield;
     }
     this.trim(car, chrome, [[-2.57, 2.6, -3.14], [-2.84, 2.87, -3.23]], .04);
     const mirror = this.cylinder(-2.87, 2.96, -3.23, .22, .09, chrome, car); mirror.rotation.x = Math.PI / 2;
@@ -236,7 +257,8 @@ export class MeetingSetRenderer {
     const rainMaterial = new THREE.LineBasicMaterial({ color: 0xb1cfc8, transparent: true, opacity: .19, depthWrite: false }); this.materials.add(rainMaterial);
     this.rain = new THREE.LineSegments(geometry, rainMaterial); this.root.add(this.rain);
     for (let i = 0; i < 2; i++) { const light = new THREE.PointLight(0xe5d6ae, 180, 36, 2); this.root.add(light); this.lightPool.push(light); }
-    this.batch(); this.batch(car);
+    yield* this.batchParts(this.static);
+    this.batch(car);
   }
   private panel(parent: THREE.Object3D, material: THREE.Material, points: number[][]): THREE.Mesh {
     const geometry = new THREE.BufferGeometry();
@@ -436,7 +458,7 @@ export class MeetingSetRenderer {
     water.transparent = true; water.depthWrite = false; water.fog = true;
     this.reflection.rotation.x = -Math.PI / 2; this.reflection.position.set(0, -.005, -15); this.root.add(this.reflection);
   }
-  private buildStreet(road: THREE.Material, pavement: THREE.Material, stone: THREE.MeshStandardMaterial, dark: THREE.Material, metal: THREE.Material, glow: THREE.Material): void {
+  private *buildStreet(road: THREE.Material, pavement: THREE.Material, stone: THREE.MeshStandardMaterial, dark: THREE.Material, metal: THREE.Material, glow: THREE.Material): Generator<void> {
     const samples = MEETING_ROAD_SAMPLES;
     const strip = (from: number, to: number, y: number, material: THREE.Material) => {
       const vertices: number[] = []; const uv: number[] = []; const indices: number[] = []; let distance = 0;
@@ -506,9 +528,11 @@ export class MeetingSetRenderer {
           building(x, z, p.yaw - side * Math.PI / 2, seed++);
         }
         lastBuilding = distance;
+        yield;
       }
     }
     building(MEETING_DESTINATION.x, 65, Math.PI, 2);
+    yield;
   }
   private mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material): THREE.Mesh {
     this.geometries.add(geometry); this.materials.add(material); const mesh = new THREE.Mesh(geometry, material); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh;
@@ -520,6 +544,9 @@ export class MeetingSetRenderer {
     const mesh = this.mesh(parent, new THREE.CylinderGeometry(radius, radius, height, 32), material); mesh.position.set(x, y, z); return mesh;
   }
   private batch(root = this.static): void {
+    for (const _ of this.batchParts(root)) { /* Small vehicle batches build together. */ }
+  }
+  private *batchParts(root: THREE.Group): Generator<void> {
     root.updateWorldMatrix(true, true);
     const inverse = root.matrixWorld.clone().invert(), transform = new THREE.Matrix4();
     const batches = new Map<THREE.Material, THREE.Mesh[]>();
@@ -540,6 +567,7 @@ export class MeetingSetRenderer {
       });
       const geometry = mergeGeometries(parts); parts.forEach(part => part.dispose());
       if (geometry) this.mesh(root, geometry, material);
+      yield;
     }
   }
   update(journey: FilmJourney | undefined, elapsed: number, occupant?: MeetingGesture): void {
@@ -582,9 +610,10 @@ export class MeetingSetRenderer {
   }
   dispose(): void {
     this.disposed = true;
+    this.construction?.return(undefined); this.construction = undefined;
     this.hotel?.dispose();
-    this.runoff.dispose();
-    this.reflection.dispose(); this.reflection.geometry.dispose();
+    this.runoff?.dispose();
+    if (this.reflection) { this.reflection.dispose(); this.reflection.geometry.dispose(); }
     this.root.traverse(object => { if (object instanceof THREE.Light) object.dispose(); });
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.root.removeFromParent();
   }

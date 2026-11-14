@@ -280,7 +280,8 @@ export class InterrogationPerformance {
         this.hands?.pose('R', .65, true);
         this.posePinch(pinch);
         if (this.case.parent !== this.bone('wrist_L')) this.bone('wrist_L').add(this.case);
-        this.case.position.set(-.115, -.17, .01); this.case.rotation.set(0, 0, Math.PI / 2); this.case.visible = true;
+        // The underside meets the skinned palm at wrist X = -.25.
+        this.case.position.set(-.285, -.17, .01); this.case.rotation.set(0, 0, Math.PI / 2); this.case.visible = true;
         this.tracker.visible = pose.implant < 1;
         if (!pose.release) {
           hand.add(this.tracker); this.tracker.position.copy(held);

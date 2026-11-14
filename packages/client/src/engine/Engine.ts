@@ -347,6 +347,9 @@ export class Engine {
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareInterrogation(this.renderer, this.camera, liveMatrixJourney,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
+    this.filmSets.prepareBridge(this.renderer, this.camera, liveMatrixJourney,
+      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id),
+      this.lightingSystem.directionalLight, this.agentRenderer.getAgentShadow('neo'));
     this.filmSets.prepareGovernment(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
     if (this.running && (meeting?.scene === 'm1_rooftop_rescue' || meeting?.scene === 'm1_subway' || meeting?.scene === 'm1_city_chase') && player?.id === meeting.actor)

@@ -386,6 +386,8 @@ export class FilmSetRenderer {
   private interrogation?: InterrogationSetRenderer;
   private preparedInterrogation?: { renderer: InterrogationSetRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private meeting?: MeetingSetRenderer;
+  private preparedBridge?: { renderer: MeetingSetRenderer; gpu: THREE.WebGLRenderer['properties']; bufferUpload?: Generator<void>;
+    drawing?: { eye: THREE.PerspectiveCamera; colors: CastColorPreparation; lighting: LightCulling }; textureUpload?: Generator<void, boolean> };
   private hotel?: LafayetteApproachRenderer;
   private approach?: { root: THREE.Group; renderer: MeetingSetRenderer };
   private sentinel?: SentinelSetRenderer;
@@ -775,6 +777,59 @@ export class FilmSetRenderer {
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     }
     this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+  }
+  prepareBridge(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, journey: FilmJourney | undefined,
+    actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight, shadow?: THREE.Mesh): void {
+    const call = journey?.wakeCall;
+    if (journey?.scene !== 'm1_wake_again' || journey.visiting || !call || ['waking', 'ringing'].includes(call.phase)) {
+      this.cancelBridgePreparation(); return;
+    }
+    if (this.preparedBridge?.gpu !== renderer.properties) this.cancelBridgePreparation();
+    const prepared = this.preparedBridge ??= { renderer: new MeetingSetRenderer(), gpu: renderer.properties };
+    const hairMaps = new Set<THREE.Texture>();
+    for (const id of journey.office?.bugged ? ['trinity', 'agent_jones'] : ['trinity']) {
+      const mesh = actor(id)?.getObjectByName('short04');
+      if (mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshStandardMaterial && mesh.material.map?.image)
+        hairMaps.add(mesh.material.map);
+    }
+    const stagingHair = this.prepareStagedColorTexture(renderer, prepared, hairMaps, 2);
+    if (!prepared.renderer.prepareStep()) return;
+    if (!prepared.drawing) {
+      const set = FILM_SETS.film_adams_bridge, entry = filmEntry(FILM_SCENE_BY_ID.m1_bridge);
+      const eye = camera.clone();
+      eye.position.set(entry.x, entry.y + 5.6, entry.z + 8);
+      eye.lookAt(entry.x, entry.y + 2.2, set.center.z);
+      prepared.renderer.root.position.set(set.center.x, set.center.y - 1, set.center.z);
+      prepared.renderer.update({ ...journey, scene: 'm1_bridge', bridgeArrival: { phase: 'approaching', elapsed: 0 } }, 0);
+      const colors = { ...this.colorPreparation(prepared.renderer.root, [], { includeBasic: true, shadowSun }), actors: new Set<THREE.Group>() };
+      const meshes: (THREE.Mesh | THREE.Line)[] = [], geometries = new Set<THREE.BufferGeometry>();
+      prepared.renderer.root.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh || object instanceof THREE.Line) || geometries.has(object.geometry)) return;
+        meshes.push(object); geometries.add(object.geometry);
+      });
+      prepared.bufferUpload = prepareMeshBuffers(renderer, eye, meshes);
+      const lighting = new LightCulling(colors.scene); lighting.stablePointSlots = true;
+      prepared.drawing = { eye, colors, lighting };
+      colors.meshes.push(this.marker);
+      if (shadow) colors.meshes.push(...this.colorMeshes([shadow], true));
+    }
+    const { eye, colors, lighting } = prepared.drawing;
+    for (const id of [journey.actor, ...FILM_SCENE_BY_ID.m1_bridge.cast, ...(journey.office?.bugged ? ['agent_jones'] : [])]) {
+      const group = actor(id);
+      if (!group || colors.actors.has(group)) continue;
+      const meshes = this.colorMeshes(group.children, true);
+      if (id === 'neo') for (const name of ['Black_crew_neck', 'Tailored_coat_upper', 'Tailored_coat_skirt']) {
+        const mesh = group.getObjectByName(name);
+        if (mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshStandardMaterial && !meshes.includes(mesh))
+          meshes.push(mesh);
+      }
+      if (!meshes.length) continue;
+      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    }
+    if (renderer.extensions.has('KHR_parallel_shader_compile'))
+      this.prepareColorProgram(renderer, eye, colors, lighting, 'isolated', true, [this.marker, shadow]);
+    if (prepared.bufferUpload?.next().done) prepared.bufferUpload = undefined;
+    if (!stagingHair) this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2);
   }
   prepareMatrixEscape(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
@@ -2679,6 +2734,11 @@ export class FilmSetRenderer {
       const preparedInterrogation = set?.id === 'film_agent_interrogation' && sceneId === 'm1_interrogation' && !journey?.visiting
         ? this.preparedInterrogation : undefined;
       if (preparedInterrogation) { this.preparedInterrogation = undefined; preparedInterrogation.lighting?.dispose(); }
+      const preparedBridge = set?.id === 'film_adams_bridge' && sceneId === 'm1_bridge' && !journey?.visiting ? this.preparedBridge : undefined;
+      if (preparedBridge) {
+        this.preparedBridge = undefined;
+        preparedBridge.bufferUpload?.return(undefined); preparedBridge.textureUpload?.return(false); preparedBridge.drawing?.lighting.dispose();
+      }
       const lafayetteRoom = set?.id === 'film_lafayette' ? this.preparedLafayette : undefined;
       if (lafayetteRoom) this.preparedLafayette = undefined;
       const preparedPods = set?.architecture === 'pods' && sceneId === 'm1_pod' && !journey?.visiting ? this.preparedPods : undefined;
@@ -2900,7 +2960,11 @@ export class FilmSetRenderer {
           this.interrogation = preparedInterrogation?.renderer ?? new InterrogationSetRenderer();
           this.interrogation.attach(this.root);
         }
-        else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') this.meeting = new MeetingSetRenderer(this.root);
+        else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') {
+          this.meeting = preparedBridge?.renderer ?? new MeetingSetRenderer();
+          if (preparedBridge) this.meeting.root.position.set(0, 0, 0);
+          this.meeting.attach(this.root);
+        }
         else if (sceneId === 'm2_stop_sentinels' && set.id === 'film_service_tunnels') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
         else if (sceneId === 'm2_medical' && set.id === 'film_hammer_deck') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
         else {
@@ -5835,6 +5899,11 @@ export class FilmSetRenderer {
     this.preparedInterrogation?.lighting?.dispose();
     this.preparedInterrogation?.renderer.dispose(); this.preparedInterrogation = undefined;
   }
+  private cancelBridgePreparation(): void {
+    const prepared = this.preparedBridge; if (!prepared) return;
+    prepared.bufferUpload?.return(undefined); prepared.textureUpload?.return(false);
+    prepared.drawing?.lighting.dispose(); prepared.renderer.dispose(); this.preparedBridge = undefined;
+  }
   private cancelAmbushPreparation(): void {
     this.preparedAmbush?.lighting?.dispose(); this.preparedAmbush?.renderer.dispose(); this.preparedAmbush = undefined;
   }
@@ -5895,6 +5964,7 @@ export class FilmSetRenderer {
     this.cancelLobbyPreparation();
     this.cancelGovernmentPreparation();
     this.cancelInterrogationPreparation();
+    this.cancelBridgePreparation();
     this.cancelZionPreparation();
     this.cancelBaneCopyPreparation();
     this.cancelSecondOraclePreparation();
