@@ -598,6 +598,9 @@ export class AgentRenderer {
     const playerEntry = this.playerId ? this.agents.get(this.playerId) : undefined;
     const player = playerEntry?.state;
     const openingSet = this.matrix && opening && player?.isInMatrix && filmSetAt(player.position, true)?.id === opening.set ? opening.set : undefined;
+    const drivingSet = this.matrix && player?.isInMatrix && this.playerId === journey?.actor && (scene === 'm1_bridge' || scene === 'm1_bug')
+      ? filmSetAt(player.position, true) : undefined;
+    const adamsStreet = drivingSet?.architecture === 'bridge' || drivingSet?.architecture === 'car';
     const roof = journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     const roofExit = player?.currentAction?.parameters.roofExit as MotionInput['roofExit'];
     const rooftopRun = openingSet === 'film_hotel_roofs' && roof?.phase === 'running' && !roofExit
@@ -736,9 +739,12 @@ export class AgentRenderer {
       const rescueBystander = journey?.scene === 'm2_catch' && !journey.visiting && state.currentLocation === 'film_trinity_roof'
         && !['neo', 'trinity', 'agent_thompson'].includes(id) && !state.controller;
       const bodyPresent = this.bodyPresent(state);
+      // This street is rendered on its own. Keep the entire route and the adjacent hotel cast.
+      const streetSet = adamsStreet && state.isInMatrix ? filmSetAt(state.position, true) : undefined;
       entry.group.visible = state.isInMatrix === this.matrix && bodyPresent && !phoneExit && !rescueBystander
         && (!insideStairwell || id === journey?.actor)
         && (!openingSet || filmSetAt(state.position, state.isInMatrix)?.id === openingSet)
+        && (!adamsStreet || streetSet?.architecture === 'bridge' || streetSet?.architecture === 'car' || streetSet?.architecture === 'lafayette')
         && (wellsGesture?.role !== 'smith' || wellsGesture.elapsed >= WELLS_AFTERMATH.firstFoot);
       const doorActor = journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.actor === id && state.status === 'alive' && state.currentLocation === 'film_club_hel';
       const fastDoor = doorActor ? (id === this.playerId ? this.playerMotion?.helDoorPush : undefined)

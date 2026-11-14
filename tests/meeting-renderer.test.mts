@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { bridgeArrivalPose, meetingCarPose, meetingRollRoadTime, MEETING_ROAD_WIDTH, MEETING_CAR, type FilmJourney } from '@auto_matrix/shared';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { bridgeArrivalPose, filmEntry, filmPosition, FILM_SCENE_BY_ID, meetingCarPose, meetingRollRoadTime, MEETING_ROAD_WIDTH, MEETING_CAR, type FilmJourney } from '@auto_matrix/shared';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { MeetingSetRenderer } from '../packages/client/src/engine/MeetingSetRenderer.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
 
 test('bridge preparation builds the street over several steps and adopts the same scenery on entry', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
@@ -37,7 +41,7 @@ test('bridge preparation builds the street over several steps and adopts the sam
   assert.equal(released, true, 'leaving the apartment releases unfinished bridge geometry');
 });
 
-test('the bridge prepares both shadow layouts and the real rain programs before entry', t => {
+test('the bridge prepares cast buffers, both shadow layouts and the rain programs before entry', t => {
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
   t.after(() => { globalThis.document = document; });
@@ -51,15 +55,26 @@ test('the bridge prepares both shadow layouts and the real rain programs before 
   const actor = new THREE.Group(), geometry = new THREE.BoxGeometry(), surface = new THREE.MeshStandardMaterial();
   t.after(() => { geometry.dispose(); surface.dispose(); });
   const jacket = new THREE.SkinnedMesh(geometry, surface); jacket.name = 'Tailored_coat_upper'; jacket.visible = false; jacket.castShadow = true; actor.add(jacket);
+  jacket.bind(new THREE.Skeleton(), new THREE.Matrix4());
+  const tail = new THREE.Group(), tailGeometry = new THREE.BoxGeometry(), tailMesh = new THREE.Mesh(tailGeometry, surface); tail.add(tailMesh);
+  t.after(() => tailGeometry.dispose());
   const journey = { scene: 'm1_wake_again', actor: 'neo', wakeCall: { phase: 'leaving' } } as FilmJourney;
   let target: THREE.WebGLRenderTarget | null = null;
   const depth = new Map<THREE.MeshDepthMaterial, Set<string>>(), effects = new Map<string, THREE.Object3D>();
+  const uploaded = new Map<THREE.BufferGeometry, number>();
   const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   const renderer = {
     properties: { get: () => ({}) }, info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
     shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
     getRenderTarget: () => target, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
-    setRenderTarget: (value: typeof target) => { target = value; }, render() {},
+    setRenderTarget: (value: typeof target) => { target = value; },
+    render(bufferScene: THREE.Scene) {
+      assert.ok(bufferScene.children.length <= 4);
+      for (const object of bufferScene.children) if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
+        assert.equal((object.material as THREE.Material).visible, false);
+        uploaded.set(object.geometry, (uploaded.get(object.geometry) ?? 0) + 1);
+      }
+    },
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
     compile(subject: THREE.Object3D, _eye: THREE.Camera, view: THREE.Scene) {
       let points = 0, spots = 0;
@@ -81,16 +96,53 @@ test('the bridge prepares both shadow layouts and the real rain programs before 
     },
   } as unknown as THREE.WebGLRenderer;
   let reflected = 0;
-  for (let frame = 0; frame < 100; frame++) film.prepareBridge(renderer, camera, journey, id => id === 'neo' ? actor : undefined, sun, undefined, lighting);
+  for (let frame = 0; frame < 120; frame++) film.prepareBridge(renderer, camera, journey, id => id === 'neo' ? actor : undefined, sun, undefined, lighting,
+    frame >= 92 ? tail : undefined);
   assert(depth.size >= 3);
   assert([...depth.values()].every(layouts => layouts.has('4/1') && layouts.has('12/7')));
   assert.deepEqual([...effects.keys()].sort(), ['meeting-bridge-runoff', 'meeting-bridge-spray', 'meeting-road-puddles', 'rain']);
+  assert.equal(uploaded.get(geometry), 1, 'prepare the coat while it is still hidden in the apartment');
+  assert.equal(uploaded.get(tailGeometry), 1, 'a late pursuer reopens the finished buffer queue');
   assert.equal(reflected, programs.length);
   assert.equal(target, null); assert.equal(jacket.visible, false); assert.deepEqual(actor.children, [jacket]);
   let released = 0;
   for (const material of depth.keys()) material.addEventListener('dispose', () => released++);
   film.prepareBridge(renderer, camera, undefined, () => undefined, sun, undefined, lighting);
   assert.equal(released, depth.size);
+});
+
+test('Adams Street renders the local cast while the separate city is hidden', t => {
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  const context = { fillRect() {}, fillText() {}, strokeRect() {}, putImageData() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }) };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const renderer = new AgentRenderer(new THREE.Scene()), camera = new THREE.PerspectiveCamera();
+  t.after(() => { renderer.dispose(); globalThis.document = document; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const entry = filmEntry(FILM_SCENE_BY_ID.m1_bridge);
+  camera.position.set(entry.x, entry.y + 5, entry.z + 8);
+  const neo = world.agents.get('neo')!, trinity = world.agents.get('trinity')!, guest = world.agents.get('citizen_1')!;
+  const guide = world.agents.get('morpheus')!, remote = world.agents.get('agent_jones')!;
+  Object.assign(neo, { currentLocation: 'film_adams_bridge', position: entry });
+  Object.assign(trinity, { currentLocation: 'film_adams_bridge', position: filmPosition('film_adams_bridge', -1, 32), isInMatrix: true });
+  Object.assign(guest, { currentLocation: 'downtown', controller: 'other', position: filmPosition('film_extraction_car', 95, -110) });
+  Object.assign(guide, { currentLocation: 'film_lafayette', position: filmPosition('film_lafayette'), isInMatrix: true });
+  for (const agent of [neo, trinity, guest, guide, remote]) renderer.updateAgent(agent.id, agent);
+  renderer.setPlayer('neo');
+  const journey = { scene: 'm1_bridge', actor: 'neo', step: 0 } as FilmJourney;
+  const visible = (id: string) => renderer.getAgent(id)!.visible;
+  renderer.update(0, camera, 1, 0, journey);
+  assert.equal(visible(remote.id), false, 'actors from the hidden city should not enter draw lists');
+  for (const agent of [neo, trinity, guest, guide]) assert.equal(visible(agent.id), true, agent.id);
+
+  neo.currentLocation = 'film_extraction_car'; renderer.updateAgent('neo', neo);
+  journey.scene = 'm1_bug'; renderer.update(0, camera, 1, 0, journey);
+  assert.equal(visible(remote.id), false);
+  assert.equal(visible(guest.id), true, 'a second player on the road remains visible');
+  renderer.setPlayer(null); renderer.update(0, camera, 1, 0, journey);
+  assert.equal(visible(remote.id), true, 'returning to the overview restores normal visibility');
 });
 
 test('the bridge and car retain only drawn geometry and keep the indexed wheel batches', t => {
