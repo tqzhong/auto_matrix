@@ -125,9 +125,9 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
       work.push('buffers');
     },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = (resumeRoof = false) => {
+  const prepare = (resumeRoof = false, frameSeconds = 0) => {
     const before = work.length, live = film.root.children.slice();
-    film.prepareOpening(gpu, camera, journey, id => actors.get(id), shadow, lighting, undefined, resumeRoof);
+    film.prepareOpening(gpu, camera, journey, id => actors.get(id), shadow, lighting, undefined, resumeRoof, frameSeconds);
     assert.ok(work.length - before <= (roofRetry() || resumeRoof ? 2 : 1), 'preparation budgets GPU work per frame');
     assert.deepEqual(film.root.children, live); assert.equal(target, null); assert.equal(gpu.debug.checkShaderErrors, true);
     assert.ok(gpu.autoClear && gpu.sortObjects);
@@ -474,6 +474,20 @@ test('the roof prepares the opaque Wells truck shadow before entering the street
   h.enter();
   assert.equal(h.film.root.getObjectById(truck.id), truck);
   assert.ok(truck.castShadow);
+});
+
+test('slow rooftop frames link Wells programs and upload buffers without reading uniform locations', t => {
+  const h = fixture(t, 'm1_phone_escape');
+  const saved = structuredClone(h.journey);
+  for (let frame = 0; frame < 250; frame++) h.prepare(false, .075);
+  assert.ok(h.work.includes('compile') && h.work.includes('texture') && h.work.includes('buffers'));
+  assert.ok(!h.work.includes('bindings'), 'optional uniform reads must wait for spare frame time');
+  assert.deepEqual(h.journey, saved);
+  const street = h.nextMesh()!;
+  for (let frame = 0; frame < 250; frame++) h.prepare(false, 1 / 60);
+  assert.equal(h.work.filter(task => task === 'bindings').length, h.programs.length);
+  h.enter();
+  assert.equal(h.film.root.getObjectByName('wells-asphalt'), street);
 });
 
 function openingMetalMaps(root: THREE.Group): THREE.Texture[] {

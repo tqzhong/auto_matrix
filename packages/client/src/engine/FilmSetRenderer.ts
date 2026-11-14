@@ -1674,7 +1674,8 @@ export class FilmSetRenderer {
     }
   }
   prepareOpening(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
-    actor: (id: string) => THREE.Group | undefined, shadow?: THREE.Mesh, lighting?: LightCulling, distantNeo?: THREE.Mesh, resumeRoof = false): void {
+    actor: (id: string) => THREE.Group | undefined, shadow?: THREE.Mesh, lighting?: LightCulling, distantNeo?: THREE.Mesh,
+    resumeRoof = false, frameSeconds = 0): void {
     const roof = this.current?.id === 'film_hotel_roofs' && this.currentScene === 'm1_roofs'
       && journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     if (!this.preparedOpeningVisit && lighting && roof?.phase === 'failed')
@@ -1782,7 +1783,10 @@ export class FilmSetRenderer {
     if (scene === 'm1_phone_escape' && shadowLayouts && this.prepareOpeningShadows(renderer, camera, prepared, colors, ...shadowLayouts)) return;
     if (!resumeRoof && this.prepareStagedColorTexture(renderer, prepared, colors.textures)) return;
     if (scene === 'm1_roofs' && shadowLayouts && this.prepareOpeningShadows(renderer, camera, prepared, colors, ...shadowLayouts)) return;
-    const compiling = this.prepareColorProgram(renderer, prepared.eye, colors, prepared.lighting, 'isolated', scene === 'm1_roofs' && !resumeRoof, liveOverlays);
+    // Even after linking, reading uniform locations can wait for the busy rooftop GPU.
+    const compiling = scene === 'm1_phone_escape' && frameSeconds > 1 / 30
+      ? this.linkColorBatch(renderer, prepared.eye, colors, prepared.lighting, 'isolated', liveOverlays)
+      : this.prepareColorProgram(renderer, prepared.eye, colors, prepared.lighting, 'isolated', scene === 'm1_roofs' && !resumeRoof, liveOverlays);
     if (!compiling && scene === 'm1_phone_escape') this.prepareWellsEntryBuffers(renderer, prepared);
   }
   private prepareWellsEntryBuffers(renderer: THREE.WebGLRenderer, prepared: OpeningPreparation): void {
