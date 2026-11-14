@@ -636,6 +636,53 @@ test('Wells links the real cast materials and holds the packed depth variants th
   assert.equal(disposed, 1);
 });
 
+test('Wells prepares the live fragment program when resuming before the booth breaks', t => {
+  const h = fixture(t, 'm1_phone_escape');
+  h.enter();
+  const glass = h.film.root.getObjectByName('opening-shattered-glass')!;
+  const fragment = glass.children[0] as THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial>;
+  const material = fragment.material;
+  const work: string[] = [];
+  const programs: { isReady(): boolean; getUniforms(): void }[] = [];
+  t.mock.method(h.gpu, 'compile', (subject: THREE.Object3D) => {
+    const meshes: THREE.Object3D[] = [];
+    subject.traverse(object => meshes.push(object));
+    assert.deepEqual(meshes, [fragment]);
+    assert.equal(fragment.material, material);
+    work.push('link');
+    programs.push({
+      isReady() { work.push('ready'); return true; },
+      getUniforms() { work.push('reflect'); },
+    });
+  });
+  h.gpu.info.programs = programs as unknown as typeof h.gpu.info.programs;
+  const scene = h.film.root.parent as THREE.Scene, lighting = new LightCulling(scene);
+  t.after(() => lighting.dispose());
+  lighting.stablePointSlots = true;
+  const camera = new THREE.PerspectiveCamera();
+  const phone: OpeningPhoneEncounter = { phase: 'running', remaining: 6, lastTick: 0, attempts: 0 };
+  const prepare = () => h.film.prepareWellsCastPrograms(h.gpu, camera, lighting, phone);
+  prepare();
+  assert.deepEqual(work, ['link']);
+  phone.phase = 'answering';
+  prepare();
+  assert.deepEqual(work, ['link', 'ready']);
+  phone.phase = 'connected';
+  prepare(); prepare();
+  assert.deepEqual(work, ['link', 'ready', 'reflect']);
+  assert.equal(glass.visible, false);
+  assert.equal(fragment.parent, glass);
+  assert.equal(material.side, THREE.DoubleSide);
+  assert.equal(h.gpu.getRenderTarget(), null);
+
+  h.replaceGpu();
+  prepare();
+  assert.deepEqual(work, ['link', 'ready', 'reflect', 'link']);
+  h.film.update(undefined, undefined, 0);
+  prepare();
+  assert.deepEqual(work, ['link', 'ready', 'reflect', 'link']);
+});
+
 test('Wells prepares the investigating cast maps and buffers during the answer and releases a failed attempt', t => {
   class Bitmap { width = 2048; height = 2048; }
   const previous = globalThis.ImageBitmap;

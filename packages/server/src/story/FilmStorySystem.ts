@@ -851,7 +851,7 @@ export class FilmStorySystem {
       return [id, structuredClone({ position, rotation, velocity, currentLocation, isInMatrix, targetPosition, currentPath, currentAction })];
     })) as Record<typeof roles[number], WellsAgentPlacement> };
     take.elapsed = Math.min(WELLS_AFTERMATH.seconds, take.elapsed + dt);
-    if (dt > 0) state.lastText = wellsAftermathCaption(take.elapsed);
+    if (dt > 0) state.lastText = take.elapsed < WELLS_AFTERMATH.bootShot ? wellsConnectionCaption(phone) : wellsAftermathCaption(take.elapsed);
     for (const role of roles) {
       const member = this.world.agents.get(role)!;
       const gesture: WellsAftermathGesture = { elapsed: take.elapsed, role, ...(phone.curbside ? { curbside: true } : {}) };
@@ -2864,7 +2864,10 @@ export class FilmStorySystem {
     const state = this.state;
     if (state?.scene === 'm1_phone_escape' && state.actor === agent.id) {
       this.restoreWellsSpace();
-      if (!state.visiting && state.openingPhone?.phase === 'connected') state.lastText = wellsConnectionCaption(state.openingPhone);
+      const phone = state.openingPhone;
+      if (!state.visiting && phone && (phone.phase === 'connected'
+        || phone.phase === 'done' && phone.aftermath && phone.aftermath.elapsed < WELLS_AFTERMATH.bootShot))
+        state.lastText = wellsConnectionCaption(phone);
     }
     if (this.openingPhoneFrame(agent, 0, tick)) return true;
     const phone = state && heldPhone(state);

@@ -443,6 +443,7 @@ export class FilmSetRenderer {
     gpu: THREE.WebGLRenderer['properties']; cast: readonly THREE.Mesh[];
     shadowMeshes: THREE.Mesh[]; shadowMaterials: Set<THREE.MeshDepthMaterial>;
   };
+  private preparedWellsGlass?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties'] };
   private wellsStreet?: WellsStreetRenderer;
   private openingBooth?: THREE.Group;
   private openingReceiver?: HardlineHandset;
@@ -1501,8 +1502,20 @@ export class FilmSetRenderer {
   }
   prepareWellsCastPrograms(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
     phone?: OpeningPhoneEncounter, cast?: readonly THREE.Mesh[]): void {
-    if (this.currentScene !== 'm1_phone_escape' || !phone || phone.phase === 'running' || phone.phase === 'failed'
-      || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+    if (this.currentScene !== 'm1_phone_escape' || !phone || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+      this.preparedWellsGlass = undefined;
+      this.cancelWellsCastPrograms();
+      return;
+    }
+    const fragment = this.openingGlassPieces[0]?.mesh;
+    if (fragment && !this.openingGlass?.visible && phone.phase !== 'done') {
+      if (this.preparedWellsGlass?.gpu !== renderer.properties) {
+        // The detached roof preparation is unavailable when Wells is loaded directly.
+        this.preparedWellsGlass = { gpu: renderer.properties, scene: this.scene, meshes: [fragment], programs: [], textures: new Set() };
+      }
+      if (this.prepareColorProgram(renderer, camera, this.preparedWellsGlass, lighting, 'isolated', true)) return;
+    }
+    if (phone.phase === 'running' || phone.phase === 'failed') {
       this.cancelWellsCastPrograms();
       return;
     }
@@ -5694,6 +5707,7 @@ export class FilmSetRenderer {
     this.cancelOpeningPreparation();
     this.cancelOpeningRoofRetry();
     this.cancelOpeningVisit();
+    this.preparedWellsGlass = undefined;
     this.cancelWellsCastPrograms();
     this.cancelPodPreparation();
     this.cancelMatrixEscapePreparation();

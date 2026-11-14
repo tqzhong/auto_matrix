@@ -112,6 +112,34 @@ test('Wells aftermath: a paused or released take cold-restores the current pose 
   assert.ok(h.phone().aftermath!.elapsed > phone.aftermath.elapsed);
 });
 
+test('Wells aftermath: the impact caption holds until the camera leaves the booth', () => {
+  const h = setup();
+  h.crash();
+  assert.equal(h.phone().phase, 'done');
+  assert.match(h.state().lastText, /撞进.*电话亭/);
+  h.frame();
+  const phone = structuredClone(h.phone()), impact = h.state().lastText;
+  assert.ok(phone.aftermath && phone.aftermath.elapsed < WELLS_AFTERMATH.bootShot);
+  assert.match(impact, /撞进.*电话亭/);
+
+  h.frame(8, false);
+  h.players.release('caller', 0);
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state));
+  saved.neoLife.journey.lastText = 'Smith 推开卡车驾驶室的门。';
+  h.sandbox.restore(saved);
+  h.players.possess('caller', 'trinity', 0);
+  assert.deepEqual(h.phone(), phone);
+  assert.equal(h.state().lastText, impact);
+
+  while (h.phone().aftermath!.elapsed + .05 < WELLS_AFTERMATH.bootShot) {
+    h.frame();
+    assert.equal(h.state().lastText, impact);
+  }
+  h.frame();
+  assert.ok(h.phone().aftermath!.elapsed >= WELLS_AFTERMATH.bootShot);
+  assert.match(h.state().lastText, /Smith 推开卡车驾驶室/);
+});
+
 test('Wells aftermath: an old completed crash starts on resume, without taking a controlled role', () => {
   const h = setup(); h.crash();
   delete h.phone().aftermath;
