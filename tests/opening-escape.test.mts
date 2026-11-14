@@ -427,7 +427,7 @@ test('isolated opening sets render their own cast and hide distant actors during
   }
 });
 
-test('Trinity’s live 303 and rooftop escapes report footfalls only on a moving gait', t => {
+test('Trinity’s live 303, rooftop and Wells escapes report footfalls only on a moving gait', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
   const originalDocument = globalThis.document;
@@ -496,6 +496,28 @@ test('Trinity’s live 303 and rooftop escapes report footfalls only on a moving
   renderer.updateAgent(trinity.id, { ...runner, currentAction: { type: 'move_to', startedAt: 20, duration: 1e9, progress: 0,
     parameters: { roofExit: { elapsed: .7, origin: roofPosition, stairwell: true } } } }, chase);
   assert.equal(draw(1, chase), false, 'the saved window performance owns its cues');
+
+  const wells = FILM_SCENE_BY_ID.m1_phone_escape, streetPosition = filmEntry(wells);
+  const openingPhone = { phase: 'running' as const, remaining: 8, lastTick: 20, attempts: 1 };
+  const escape = { ...journey, scene: wells.id, checkpoint: streetPosition, openingHotel: undefined, openingPhone };
+  const caller = { ...trinity, position: streetPosition, currentLocation: wells.set };
+  renderer.updateAgent(trinity.id, caller, escape);
+  let streetSteps = 0;
+  for (let i = 0; i < 24; i++) {
+    const before = gait.phase, heard = draw(1, escape);
+    assert.equal(heard, Math.floor(gait.phase * 2) > Math.floor(before * 2), 'Wells boot contacts follow the running gait');
+    streetSteps += Number(heard);
+  }
+  assert.ok(streetSteps >= 3);
+  for (const phase of ['answering', 'connected', 'done', 'failed'] as const) {
+    for (let i = 0; i < 12; i++) assert.equal(draw(1, { ...escape, openingPhone: { ...openingPhone, phase } }), false, phase);
+  }
+  for (let i = 0; i < 12; i++) {
+    assert.equal(draw(0, escape), false, 'paused Wells cannot produce steps');
+    assert.equal(draw(1, { ...escape, visiting: wells.id }), false, 'journal views stay quiet');
+  }
+  renderer.updateAgent(trinity.id, { ...caller, velocity: { x: 0, y: 0, z: 0 } }, escape);
+  for (let i = 0; i < 12; i++) assert.equal(draw(1, escape), false, 'stationary Wells stays quiet even as the client reconciles');
 });
 
 test('the caller disappears from the booth after the line connects and returns on retry', t => {

@@ -602,7 +602,8 @@ export class AgentRenderer {
     const roofExit = player?.currentAction?.parameters.roofExit as MotionInput['roofExit'];
     const rooftopRun = openingSet === 'film_hotel_roofs' && roof?.phase === 'running' && !roofExit
       && player?.position.y === FILM_SETS.film_hotel_roofs.center.y && player.velocity.y === 0;
-    const escapeGait = openingSet === 'film_heart_hotel' && journey?.openingHotel?.phase === 'corridor' || rooftopRun;
+    const wellsRun = openingSet === 'film_wells_phone' && journey?.openingPhone?.phase === 'running';
+    const escapeGait = openingSet === 'film_heart_hotel' && journey?.openingHotel?.phase === 'corridor' || rooftopRun || wellsRun;
     const footstepActor = escapeGait
       && !journey?.visiting && journey?.actor === this.playerId && player?.status === 'alive' && speed > 0
       && this.playerMotion?.grounded && this.playerMotion.speed > .1
