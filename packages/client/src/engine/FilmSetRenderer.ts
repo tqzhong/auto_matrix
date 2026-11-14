@@ -1466,7 +1466,7 @@ export class FilmSetRenderer {
       prepared.cord = cord;
       prepared.meshes.push(cord);
     }
-    const prepareShadows = stage === 'pursuit' && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap;
+    const prepareShadows = stage !== undefined && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap;
     for (const group of groups ?? []) {
       if (prepared.actors.has(group)) continue;
       const meshes = this.colorMeshes(stage ? group.children : [group], Boolean(stage));
