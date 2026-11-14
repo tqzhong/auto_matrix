@@ -140,7 +140,7 @@ test('303 door trim has one visible surface across the door frame and wall', t =
   }
 });
 
-test('303 shares the decoded plaster maps while preserving each surface’s tiling', t => {
+test('303 shares the decoded plaster and wood maps while preserving each surface’s tiling', t => {
   const requests: string[] = [], pending: (() => void)[] = [];
   const h = setup(t, (url, loaded) => {
     const texture = new THREE.Texture();
@@ -149,13 +149,14 @@ test('303 shares the decoded plaster maps while preserving each surface’s tili
       texture.needsUpdate = true;
       loaded?.(texture);
     };
-    if (url.includes('/damaged_plaster-')) {
+    if (url.includes('/damaged_plaster-') || url.includes('/old_wood_floor-')) {
       requests.push(url);
       pending.push(finish);
     } else finish();
     return texture;
   });
-  const repeats = new Map([[0xadae9c, 5], [0x3b4540, 4], [0x6a7066, 5], [0x73746e, 6], [0x414942, 9]]);
+  const repeats = new Map([[0xadae9c, 5], [0x3b4540, 4], [0x6a7066, 5], [0x73746e, 6], [0x414942, 9],
+    [0x96826b, 3], [0x897f72, 5]]);
   h.pose('phone');
   const surfaces = new Map<THREE.MeshStandardMaterial, number>();
   h.sets.root.traverse(object => {
@@ -169,26 +170,30 @@ test('303 shares the decoded plaster maps while preserving each surface’s tili
 
   const views = new Set<THREE.Texture>();
   for (const channel of ['map', 'normalMap', 'roughnessMap'] as const) {
-    const sources = new Set<THREE.Source>();
+    const wood = new Set<THREE.Source>(), plaster = new Set<THREE.Source>();
     for (const [material, repeat] of surfaces) {
       const texture = material[channel];
       assert.ok(texture && texture.version > 0);
       assert.deepEqual(texture.repeat.toArray(), [repeat, repeat]);
       assert.equal(texture.colorSpace, channel === 'map' ? THREE.SRGBColorSpace : THREE.NoColorSpace);
+      const sources = material.color.getHex() === 0x96826b || material.color.getHex() === 0x897f72 ? wood : plaster;
       sources.add(texture.source);
       views.add(texture);
     }
-    assert.equal(sources.size, 1, `${channel} should have one GPU image source`);
-    assert.equal([...sources][0].version, 1);
+    for (const [surface, sources] of [['wood', wood], ['plaster', plaster]] as const) {
+      assert.equal(sources.size, 1, `${surface} ${channel} should have one GPU image source`);
+      assert.equal([...sources][0].version, 1);
+    }
+    assert.notEqual([...wood][0], [...plaster][0]);
   }
-  assert.equal(views.size, 15, 'each material owns its texture transforms');
-  assert.equal(requests.length, 3);
+  assert.equal(views.size, 21, 'each material owns its texture transforms');
+  assert.equal(requests.length, 6);
   let disposed = 0;
   for (const texture of views) texture.addEventListener('dispose', () => disposed++);
   h.sets.update(undefined, undefined, 0);
   assert.equal(disposed, views.size);
   h.pose('phone');
-  assert.equal(requests.length, 6, 'reentering 303 starts with fresh scene-owned images');
+  assert.equal(requests.length, 12, 'reentering 303 starts with fresh scene-owned images');
 });
 
 test('303 prepares the real flashlight material while the corridor is still hidden', t => {
