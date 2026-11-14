@@ -195,6 +195,7 @@ type ClubPreparation = {
   textureTurn?: boolean;
   textureUpload?: Generator<void, boolean>;
   crowdQueued?: boolean;
+  shadows?: { materials: Set<THREE.MeshDepthMaterial>; seen: Set<string>; apartment: THREE.Mesh[]; room: THREE.Mesh[] };
 };
 const OPENING_VISITS = ['m1_room303', 'm1_roofs', 'm1_phone_escape'] as const;
 type OpeningVisitScene = typeof OPENING_VISITS[number];
@@ -928,7 +929,7 @@ export class FilmSetRenderer {
     this.preparedDownloadWalk = undefined;
   }
   prepareClub(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
-    actor: (id: string) => THREE.Group | undefined, shadows: (THREE.Mesh | undefined)[] = [], resume = false): void {
+    actor: (id: string) => THREE.Group | undefined, shadows: (THREE.Mesh | undefined)[] = [], resume = false, sourceLights?: LightCulling): void {
     const onLanding = resume && !this.current && journey?.contact?.phase === 'accepted';
     if ((!onLanding && this.current?.id !== 'film_anderson_flat') || journey?.scene !== 'm1_wake_up' || journey.visiting
       || !['handover', 'invitation', 'inspecting', 'noticed', 'accepted'].includes(journey.contact?.phase ?? '')) {
@@ -940,10 +941,18 @@ export class FilmSetRenderer {
       void club.ready.catch(error => console.error('夜店人群加载失败', error));
     }
     const prepared = this.preparedClub;
+    const parallel = renderer.extensions.has('KHR_parallel_shader_compile');
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose(); prepared.gpu = renderer.properties;
+      prepared.shadows?.materials.forEach(material => material.dispose());
+      prepared.shadows = undefined;
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, playerView: onLanding }), actors: new Set(), preserveStockSkinning: true };
+      if (parallel && sourceLights && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+        const materials = new Set<THREE.MeshDepthMaterial>(), seen = new Set<string>();
+        const casters = shadowCasterProxies(prepared.colors.meshes, materials, seen);
+        prepared.shadows = { materials, seen, apartment: casters.slice(), room: casters };
+      }
       const room = prepared.root.getObjectByName('white-rabbit-club')!;
       prepared.roomTextures = new Set();
       this.queueColorTextures(prepared.roomTextures, this.colorMeshes(room.children.filter(child => child instanceof THREE.Mesh), true));
@@ -968,6 +977,11 @@ export class FilmSetRenderer {
       });
       if (!meshes.length) continue;
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+      const depth = prepared.shadows;
+      if (depth) {
+        const casters = shadowCasterProxies(meshes, depth.materials, depth.seen);
+        depth.apartment.push(...casters); depth.room.push(...casters);
+      }
       if (id === 'trinity') for (const mesh of meshes) {
         if ((mesh.userData.club || mesh.name === 'Anatomical_head_and_hands') && mesh.material.map)
           entryTextures.add(mesh.material.map);
@@ -989,10 +1003,17 @@ export class FilmSetRenderer {
     const roomTextures = prepared.roomTextures!;
     const textureTurn = prepared.textureTurn;
     prepared.textureTurn = !textureTurn;
-    const parallel = renderer.extensions.has('KHR_parallel_shader_compile');
-    if (!textureTurn && parallel && this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated')) return;
+    const apartmentLights = onLanding ? undefined : sourceLights;
+    if (!textureTurn && parallel && this.prepareClubProgram(renderer, camera, prepared, apartmentLights)) return;
     if (this.prepareColorTexture(renderer, roomTextures) || this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) return;
-    if (textureTurn && parallel) this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated');
+    if (textureTurn && parallel) this.prepareClubProgram(renderer, camera, prepared, apartmentLights);
+  }
+  private prepareClubProgram(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ClubPreparation, apartmentLights?: LightCulling): boolean {
+    const colors = prepared.colors!, shadows = prepared.shadows;
+    // The first club shadow draw still uses the apartment's previous light counts.
+    if (shadows && (apartmentLights && this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.apartment }, apartmentLights, 'depth')
+      || this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.room }, prepared.lighting, 'depth'))) return true;
+    return this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated');
   }
   prepareDojo(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
     if (this.current?.id !== 'film_neb_deck' || this.currentScene !== 'm1_download' || journey?.scene !== 'm1_download' || journey.visiting
@@ -2635,7 +2656,10 @@ export class FilmSetRenderer {
         }
         else if (set.id === 'film_white_rabbit_club') {
           this.club = preparedClub?.renderer ?? new ClubSetRenderer(this.root);
-          if (preparedClub) this.root.add(preparedClub.root);
+          if (preparedClub) {
+            this.root.add(preparedClub.root);
+            for (const material of preparedClub.shadows?.materials ?? []) this.materials.add(material);
+          }
           else void this.club.ready.catch(error => console.error('夜店人群加载失败', error));
         }
         else if (set.id === 'film_government_office' || set.id === 'film_government_roof') {
@@ -5634,6 +5658,7 @@ export class FilmSetRenderer {
   private cancelClubPreparation(): void {
     const prepared = this.preparedClub; if (!prepared) return;
     this.preparedClub = undefined; prepared.textureUpload?.return(false); prepared.lighting?.dispose();
+    prepared.shadows?.materials.forEach(material => material.dispose());
     prepared.root.removeFromParent(); prepared.renderer.dispose();
   }
   private cancelDojoPreparation(): void {

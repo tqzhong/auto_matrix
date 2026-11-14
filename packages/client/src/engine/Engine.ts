@@ -362,7 +362,7 @@ export class Engine {
       id => this.agentRenderer.getAgentHero(id));
     const resumeClub = resumeApartment && meeting.contact?.phase === 'accepted';
     this.filmSets.prepareClub(this.renderer, this.camera, liveMatrixJourney ?? (resumeClub ? meeting : undefined), id => this.agentRenderer.getAgentHero(id),
-      [this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentShadow('trinity')], resumeClub);
+      [this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentShadow('trinity')], resumeClub, this.lightCulling);
     this.filmSets.prepareDojo(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id));
     this.filmSets.prepareJump(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SCENE_BY_ID, filmEntry, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -30,16 +31,19 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   scene.fog = new THREE.FogExp2(); scene.environment = new THREE.Texture();
   const sun = new THREE.DirectionalLight(); sun.castShadow = true;
   const fill = new THREE.DirectionalLight(); fill.visible = false;
-  scene.add(sun, fill, new THREE.HemisphereLight());
+  const landing = new THREE.SpotLight(); landing.castShadow = true;
+  scene.add(sun, fill, new THREE.HemisphereLight(), landing);
+  const lights = new LightCulling(scene); lights.minimumPointSlots = 10;
   const actor = new THREE.Group(), bitmap = new Bitmap(), faceBitmap = new Bitmap();
   const skinMap = new THREE.Texture(bitmap), faceMap = new THREE.Texture(faceBitmap);
   for (const map of [skinMap, faceMap]) { map.flipY = false; map.needsUpdate = true; }
   const skin = new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ map: skinMap }));
   const face = new THREE.SkinnedMesh(skin.geometry, new THREE.MeshStandardMaterial({ map: faceMap }));
+  face.castShadow = true; face.material.alphaTest = .5;
   skin.name = 'Club_upper_body'; skin.userData.club = true; skin.visible = false;
   face.name = 'Anatomical_head_and_hands'; actor.add(skin, face);
   t.after(() => {
-    film.dispose(); skin.geometry.dispose(); skin.material.dispose(); face.material.dispose();
+    film.dispose(); lights.dispose(); skin.geometry.dispose(); skin.material.dispose(); face.material.dispose();
     skinMap.dispose(); faceMap.dispose(); scene.environment!.dispose(); globalThis.document = document;
     if (previousBitmap) globalThis.ImageBitmap = previousBitmap;
     else Reflect.deleteProperty(globalThis, 'ImageBitmap');
@@ -54,6 +58,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   let target: THREE.WebGLRenderTarget | null = null, work = 0;
   const rooms = new Set<THREE.Object3D>(), compiled = new Set<THREE.Object3D>();
   const materialsAtCompile = new Map<THREE.Mesh, string>();
+  const depths: { mesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshDepthMaterial>; points: number; spots: number }[] = [];
   type Allocation = { image: Bitmap; rows: number; mipmaps: boolean };
   const uploads: THREE.Texture[] = [], allocations = new Map<THREE.Source, Allocation>();
   const firstRows = new Map<Bitmap, number>();
@@ -72,22 +77,25 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     generateMipmap() { assert.equal(bound?.rows, 2048); bound!.mipmaps = true; },
   };
   const gpu = { properties: { get: (texture: THREE.Texture) => uploaded.get(texture) ?? {} }, info: { programs },
-    shadowMap: { enabled: false }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
     capabilities: { maxTextureSize: 4096 }, getContext: () => gl, getRenderTarget: () => target,
     state: { bindTexture(_target: number, texture: Allocation) { bound = texture; }, unbindTexture() { bound = undefined; } },
     setRenderTarget: (value: typeof target) => { target = value; },
     compile(subject: THREE.Object3D, _eye: THREE.Camera, view: THREE.Scene) {
       assert.equal(target?.width, 1);
-      let directionalLights = 0;
+      let directionalLights = 0, points = 0, spots = 0;
       view.traverseVisible(object => {
         if (object.name === 'white-rabbit-club') rooms.add(object);
         if (object instanceof THREE.DirectionalLight) directionalLights++;
+        if (object instanceof THREE.PointLight) points++;
+        if (object instanceof THREE.SpotLight) spots++;
       });
       assert.equal(directionalLights, 2, 'use the two directional light slots from the possessed player view');
       assert.notEqual(view, scene); assert.equal(scene.getObjectByName('white-rabbit-club'), undefined);
       subject.traverse(object => {
         compiled.add(object);
         if (object instanceof THREE.Mesh && !Array.isArray(object.material)) materialsAtCompile.set(object, object.material.customProgramCacheKey());
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial) depths.push({ mesh: object, points, spots });
       });
       programs.push({ program: {}, isReady: () => true, getUniforms() { work++; } });
       work++;
@@ -106,7 +114,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   } as unknown as THREE.WebGLRenderer;
   const prepare = (resume = false) => {
     const before = work;
-    film.prepareClub(gpu, camera, journey, id => id === 'trinity' ? actor : undefined, [], resume);
+    film.prepareClub(gpu, camera, journey, id => id === 'trinity' ? actor : undefined, [], resume, lights);
     for (const { image, rows } of allocations.values()) if (!firstRows.has(image)) firstRows.set(image, rows);
     assert.ok(work - before <= 1, 'spread program reflection and uploads across different frames');
     assert.equal(target, null); assert.equal(skin.visible, false);
@@ -134,6 +142,17 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   assert.equal(first.children.filter(child => child.name.startsWith('club-dancer-')).length, 16);
   assert.ok(compiled.has(crowd));
   assert.equal([...compiled].filter(mesh => mesh.name === 'crowd-surface').length, 2);
+  const clubDepths = () => new Set(depths.map(({ mesh }) => mesh.material));
+  await t.test('prepare real room and actor shadows for the apartment and club light layouts', () => {
+    const roomGeometries = first.children.filter(object => object instanceof THREE.Mesh).map(mesh => mesh.geometry);
+    for (const [points, spots] of [[10, 1], [5, 3]]) {
+      const meshes = depths.filter(depth => depth.points === points && depth.spots === spots).map(depth => depth.mesh);
+      assert.ok(meshes.some(mesh => roomGeometries.includes(mesh.geometry)), 'prepare a real room caster');
+      assert.ok(meshes.some(mesh => mesh instanceof THREE.SkinnedMesh && mesh.geometry === face.geometry
+        && mesh.material.map === faceMap && mesh.material.alphaTest === .5), 'prepare the skinned caster with its alpha mask');
+      assert.ok(meshes.every(mesh => mesh.material.depthPacking === THREE.RGBADepthPacking));
+    }
+  });
   await t.test('the room maps are ready before the crowd maps', () => {
     const roomMaps = uploads.filter(map => map.name.startsWith('/assets/film-materials/'));
     assert.equal(roomMaps.length, 12);
@@ -151,19 +170,26 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     assert.ok(surfaces.every((mesh, index) => mesh.material.customProgramCacheKey() === materialsAtCompile.get(surfaces[index % 2])));
     assert.ok(!materialsAtCompile.get(surfaces[0])?.includes('actor-local-skin-v1'));
   });
-  let cancelled = 0; crowd.geometry.addEventListener('dispose', () => cancelled++);
+  let cancelled = 0, cancelledDepths = 0; crowd.geometry.addEventListener('dispose', () => cancelled++);
+  const abandoned = clubDepths();
+  for (const material of abandoned) material.addEventListener('dispose', () => cancelledDepths++);
   journey.visiting = apartment.id; prepare(); assert.equal(cancelled, 1);
+  assert.equal(cancelledDepths, abandoned.size);
   delete journey.visiting;
   await drain();
   const room = [...rooms].at(-1)!;
   assert.notEqual(room, first);
   const floor = room.children.find(object => object instanceof THREE.Mesh) as THREE.Mesh;
-  let disposed = 0; floor.geometry.addEventListener('dispose', () => disposed++);
+  let disposed = 0, disposedDepths = 0; floor.geometry.addEventListener('dispose', () => disposed++);
+  const adopted = [...clubDepths()].filter(material => !abandoned.has(material));
+  for (const material of adopted) material.addEventListener('dispose', () => disposedDepths++);
   Object.assign(neo, { position: filmEntry(club), currentLocation: club.set });
   Object.assign(journey, { scene: club.id, step: 0, club: { phase: 'crowd', elapsed: 0 } });
   film.update(neo, sandbox, 0);
   assert.equal(film.root.getObjectByName('white-rabbit-club'), room);
   assert.equal(disposed, 0);
+  assert.equal(disposedDepths, 0);
   film.update(undefined, undefined, 0);
   assert.equal(disposed, 1);
+  assert.equal(disposedDepths, adopted.length);
 });
