@@ -326,6 +326,25 @@ test('travel survives pause, disconnect and retry without returning the car or p
   h.frames(1); assert.notDeepEqual(h.neo.position, before[0].position);
 });
 
+test('Apoc announces Lafayette at the same approach on both scan routes', () => {
+  for (const bugged of [true, false]) {
+    const h = setup(bugged);
+    h.board(); h.command('meeting:stay'); h.frames(10);
+    if (bugged) h.frames(12, true);
+    h.command(bugged ? 'reflect:trust' : 'reflect:agency'); h.command('act');
+    assert.match(h.state().lastText, /APOC · 检查结束/);
+    h.frames(9); assert.match(h.state().lastText, /TRINITY · 他会回答/);
+
+    const remaining = MEETING_DRIVE_SECONDS - h.state().meeting!.roadTime!;
+    h.frames(remaining - 7.75);
+    const turn = h.state().meeting!;
+    assert.equal(turn.phase, 'driving');
+    assert(meetingCarPose(turn).speed > 0);
+    assert.match(h.state().lastText, /APOC · 前面就是 Lafayette/,
+      `${bugged ? 'extracted' : 'clear'} scan should announce the approach before parking`);
+  }
+});
+
 test('arrival waits for the player to get out, then requires walking to the hotel entrance', () => {
   const h = setup(false); h.board(); h.command('meeting:stay'); h.frames(10); h.command('reflect:trust'); h.command('next'); h.frames(80);
   assert.equal(h.state().meeting?.phase, 'parked'); assert.equal(h.state().scene, 'm1_bug');

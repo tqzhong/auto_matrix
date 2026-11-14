@@ -2588,9 +2588,10 @@ export class FilmStorySystem {
       : encounter.phase === 'reconsidering' ? 'Neo 看了 Trinity 一眼，把右后门关上。Switch 放低枪口；检查即将开始。'
       : encounter.phase === 'leaving' ? '你打开车门，退回雨中的桥下。Trinity 没有拉住你。'
       : encounter.phase === 'ready' ? 'Trinity 在身旁准备装置。按 G 开始检查。'
-      : encounter.phase === 'driving' ? encounter.elapsed < 8 ? 'APOC · 检查结束。我们继续去见 Morpheus。'
-        : encounter.elapsed < 39 ? 'TRINITY · 他会回答你的问题。先想清楚：你愿意知道多少？雨中的街灯从车窗旁退去。'
-        : 'APOC · 前面就是 Lafayette。车辆减速，驶向旧楼后巷。'
+      : encounter.phase === 'driving' ? (encounter.roadTime ?? encounter.elapsed) >= MEETING_DRIVE_SECONDS - 8
+        ? 'APOC · 前面就是 Lafayette。车辆转向旧楼后巷。'
+        : encounter.elapsed < 8 ? 'APOC · 检查结束。我们继续去见 Morpheus。'
+        : 'TRINITY · 他会回答你的问题。先想清楚：你愿意知道多少？雨中的街灯从车窗旁退去。'
       : encounter.phase === 'parked' ? '已经抵达 Lafayette。车完全停稳了，按 G 打开右后门下车。'
       : encounter.phase === 'exiting' ? '你打开车门，俯身走出后座，站到旧楼旁。'
       : encounter.phase === 'scanning' ? encounter.elapsed < 3 ? '车重新开动。你向后靠，露出腹部；Trinity 把扫描装置移到身体上方。' : '街灯掠过车窗。探头贴在腹部，微弱的脉冲出现在监视器上。'
