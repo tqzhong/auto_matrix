@@ -44,12 +44,15 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   for (const map of [skinMap, faceMap]) { map.flipY = false; map.needsUpdate = true; }
   const skin = new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ map: skinMap }));
   const face = new THREE.SkinnedMesh(skin.geometry, new THREE.MeshStandardMaterial({ map: faceMap }));
+  const neoActor = new THREE.Group();
+  const patientNeck = new THREE.SkinnedMesh(skin.geometry, new THREE.MeshPhysicalMaterial());
+  patientNeck.name = 'patient-first-person-neck'; patientNeck.visible = false; neoActor.add(patientNeck);
   face.castShadow = true; face.material.alphaTest = .5;
   skin.name = 'Club_upper_body'; skin.userData.club = true; skin.visible = false;
   face.name = 'Anatomical_head_and_hands'; actor.add(skin, face);
   t.after(() => {
     film.dispose(); lights.dispose(); skin.geometry.dispose(); skin.material.dispose(); face.material.dispose();
-    skinMap.dispose(); faceMap.dispose(); scene.environment!.dispose(); globalThis.document = document;
+    skinMap.dispose(); faceMap.dispose(); patientNeck.material.dispose(); scene.environment!.dispose(); globalThis.document = document;
     if (previousBitmap) globalThis.ImageBitmap = previousBitmap;
     else Reflect.deleteProperty(globalThis, 'ImageBitmap');
   });
@@ -60,7 +63,8 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   const journey = { scene: apartment.id, actor: neo.id, step: 5, contact: { phase: 'noticed', elapsed: 1 }, completed: [] } as unknown as FilmJourney;
   const sandbox = { structures: [], neoLife: { deferredContact: journey } } as unknown as SandboxState;
   film.update(undefined, sandbox, 0);
-  let target: THREE.WebGLRenderTarget | null = null, work = 0;
+  let target: THREE.WebGLRenderTarget | null = null, work = 0, preparationFrame = 0;
+  const reads: { ready: number | undefined; frame: number }[] = [];
   const rooms = new Set<THREE.Object3D>(), compiled = new Set<THREE.Object3D>();
   const bounded = new Set<THREE.SkinnedMesh>();
   const computeBounds = THREE.SkinnedMesh.prototype.computeBoundingSphere;
@@ -109,7 +113,12 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
         if (object instanceof THREE.Mesh && !Array.isArray(object.material)) materialsAtCompile.set(object, object.material.customProgramCacheKey());
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial) depths.push({ mesh: object, points, spots });
       });
-      programs.push({ program: {}, isReady: () => true, getUniforms() { work++; } });
+      for (let variant = 0; variant < 2; variant++) {
+        let readyFrame: number | undefined;
+        programs.push({ program: {}, isReady() { readyFrame ??= preparationFrame; return true; }, getUniforms() {
+          reads.push({ ready: readyFrame, frame: preparationFrame }); work++;
+        } });
+      }
       work++;
     },
     initTexture(texture: THREE.Texture) {
@@ -125,8 +134,9 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     },
   } as unknown as THREE.WebGLRenderer;
   const prepare = (resume = false) => {
+    preparationFrame++;
     const before = work, beforeBounds = bounded.size;
-    film.prepareClub(gpu, camera, journey, id => id === 'trinity' ? actor : undefined, [], resume, lights);
+    film.prepareClub(gpu, camera, journey, id => id === 'trinity' ? actor : neoActor, [], resume, lights);
     for (const { image, rows } of allocations.values()) if (!firstRows.has(image)) firstRows.set(image, rows);
     assert.ok(work - before <= 1, 'spread program reflection and uploads across different frames');
     assert.ok(bounded.size - beforeBounds <= 1, 'prepare at most one mock dancer per frame');
@@ -196,6 +206,18 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     const surfaces = dancers.map(dancer => dancer.getObjectByName('crowd-surface') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>);
     assert.ok(surfaces.every((mesh, index) => mesh.material.customProgramCacheKey() === materialsAtCompile.get(surfaces[index % 2])));
     assert.ok(!materialsAtCompile.get(surfaces[0])?.includes('actor-local-skin-v1'));
+  });
+  await t.test('the club never links the neckline used only by the exposed patient', () => {
+    assert.ok(!compiled.has(patientNeck));
+  });
+  await t.test('club shader binding reads wait a frame after completion without leaving the queue pending', () => {
+    assert.equal(reads.length, programs.length);
+    assert.ok(reads.length > 1);
+    assert.ok(reads.every(({ ready, frame }) => ready !== undefined && ready < frame));
+    assert.ok(reads.some(({ ready, frame }, index) => {
+      const previous = reads[index - 1];
+      return previous?.ready === ready && frame - previous.frame <= 2;
+    }), 'poll every completed variant in a batch while textures alternate with reads');
   });
   let cancelled = 0, cancelledDepths = 0; crowd.geometry.addEventListener('dispose', () => cancelled++);
   const abandoned = clubDepths();

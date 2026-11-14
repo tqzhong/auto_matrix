@@ -190,6 +190,7 @@ type ClubPreparation = {
   gpu?: THREE.WebGLRenderer['properties'];
   colors?: CastColorPreparation;
   lighting?: LightCulling;
+  readyPrograms?: Set<ColorProgram>;
   roomTextures?: Set<THREE.Texture>;
   entryTextures?: Set<THREE.Texture>;
   textureTurn?: boolean;
@@ -948,6 +949,7 @@ export class FilmSetRenderer {
       prepared.shadows?.materials.forEach(material => material.dispose());
       prepared.shadows = undefined;
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, playerView: onLanding }), actors: new Set(), preserveStockSkinning: true };
+      prepared.readyPrograms = new Set();
       if (parallel && sourceLights && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
         const materials = new Set<THREE.MeshDepthMaterial>(), seen = new Set<string>();
         const casters = shadowCasterProxies(prepared.colors.meshes, materials, seen);
@@ -972,7 +974,7 @@ export class FilmSetRenderer {
       group.traverse(object => {
         if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial || object.material instanceof THREE.MeshBasicMaterial)) return;
         const { office, tracking, patientBody, reloadedHidden, clubJacket, wristSkin } = object.userData;
-        if (office || tracking || patientBody || reloadedHidden || id === 'trinity' && (clubJacket || wristSkin)) return;
+        if (office || tracking || patientBody || object.name === 'patient-first-person-neck' || reloadedHidden || id === 'trinity' && (clubJacket || wristSkin)) return;
         meshes.push(object);
       });
       if (!meshes.length) continue;
@@ -999,6 +1001,15 @@ export class FilmSetRenderer {
     }
     // Prepare one dancer per frame even while the GPU queues are busy.
     prepared.renderer.prepareCrowdBounds();
+    const readyPrograms = prepared.readyPrograms!;
+    const ready = readyPrograms.values().next().value;
+    // Poll even on texture frames, then give newly completed links a frame before reading.
+    if (colors.programs.length) colors.programs = colors.programs.filter(program => {
+      if (!program.program) return false;
+      if (!program.isReady()) return true;
+      readyPrograms.add(program);
+      return false;
+    });
     // Start the entrance costume before the crowd and scenery can exhaust a short resume window.
     if (entryTextures.size && this.prepareStagedColorTexture(renderer, prepared, entryTextures, 2)) return;
     // Advance the room and crowd textures while the shader queue is still active.
@@ -1006,16 +1017,24 @@ export class FilmSetRenderer {
     const textureTurn = prepared.textureTurn;
     prepared.textureTurn = !textureTurn;
     const apartmentLights = onLanding ? undefined : sourceLights;
-    if (!textureTurn && parallel && this.prepareClubProgram(renderer, camera, prepared, apartmentLights)) return;
+    if (!textureTurn && parallel && this.prepareClubProgram(renderer, camera, prepared, apartmentLights, ready)) return;
     if (this.prepareColorTexture(renderer, roomTextures) || this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) return;
-    if (textureTurn && parallel) this.prepareClubProgram(renderer, camera, prepared, apartmentLights);
+    if (textureTurn && parallel) this.prepareClubProgram(renderer, camera, prepared, apartmentLights, ready);
   }
-  private prepareClubProgram(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ClubPreparation, apartmentLights?: LightCulling): boolean {
+  private prepareClubProgram(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ClubPreparation,
+    apartmentLights?: LightCulling, ready?: ColorProgram): boolean {
     const colors = prepared.colors!, shadows = prepared.shadows;
     // The first club shadow draw still uses the apartment's previous light counts.
     if (shadows && (apartmentLights && this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.apartment }, apartmentLights, 'depth')
       || this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.room }, prepared.lighting, 'depth'))) return true;
-    return this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated');
+    if (ready) {
+      prepared.readyPrograms!.delete(ready);
+      if (ready.program) {
+        cacheReadyProgramLocations(renderer, ready);
+        return true;
+      }
+    }
+    return this.linkColorBatch(renderer, camera, colors, prepared.lighting, 'isolated');
   }
   prepareDojo(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
     if (this.current?.id !== 'film_neb_deck' || this.currentScene !== 'm1_download' || journey?.scene !== 'm1_download' || journey.visiting
