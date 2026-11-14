@@ -12,16 +12,18 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   class Bitmap { width = 2048; height = 2048; }
   globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
-  t.mock.method(THREE.TextureLoader.prototype, 'load', () => {
-    const map = new THREE.Texture({ width: 1024, height: 1024 }); map.needsUpdate = true; return map;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string) => {
+    const map = new THREE.Texture({ width: 1024, height: 1024 }); map.name = url; map.needsUpdate = true; return map;
   });
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => {
     const scene = new THREE.Group();
     const names = ['pelvis', 'spine', 'chest', 'head', ...['R', 'L'].flatMap(side => ['shoulder', 'elbow', 'hip', 'knee'].map(joint => `${joint}_${side}`))];
     for (const name of names) { const bone = new THREE.Bone(); bone.name = name; scene.add(bone); }
-    const map = new THREE.Texture({ width: 1024, height: 1024 }); map.needsUpdate = true;
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ map }));
+    const map = new THREE.Texture(new Bitmap()); map.flipY = false; map.needsUpdate = true;
+    const material = new THREE.MeshStandardMaterial({ map }); material.name = 'Trousers';
+    const mesh = new THREE.SkinnedMesh(new THREE.BoxGeometry(), material);
     mesh.name = 'crowd-surface'; scene.add(mesh);
+    mesh.bind(new THREE.Skeleton([scene.getObjectByName('pelvis') as THREE.Bone]));
     return { scene };
   });
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), camera = new THREE.PerspectiveCamera();
@@ -50,8 +52,10 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   film.update(neo, sandbox, 0);
   let target: THREE.WebGLRenderTarget | null = null, work = 0;
   const rooms = new Set<THREE.Object3D>(), compiled = new Set<THREE.Object3D>();
+  const materialsAtCompile = new Map<THREE.Mesh, string>();
   type Allocation = { image: Bitmap; rows: number; mipmaps: boolean };
   const uploads: THREE.Texture[] = [], allocations = new Map<THREE.Source, Allocation>();
+  const firstRows = new Map<Bitmap, number>();
   const uploaded = new WeakMap<THREE.Texture, { __version: number; __webglTexture?: Allocation }>();
   let bound: Allocation | undefined, skippedRows = 0;
   const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
@@ -75,7 +79,10 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
       assert.equal(target?.width, 1);
       view.traverseVisible(object => { if (object.name === 'white-rabbit-club') rooms.add(object); });
       assert.notEqual(view, scene); assert.equal(scene.getObjectByName('white-rabbit-club'), undefined);
-      subject.traverse(object => compiled.add(object));
+      subject.traverse(object => {
+        compiled.add(object);
+        if (object instanceof THREE.Mesh && !Array.isArray(object.material)) materialsAtCompile.set(object, object.material.customProgramCacheKey());
+      });
       programs.push({ program: {}, isReady: () => true, getUniforms() { work++; } });
       work++;
     },
@@ -94,6 +101,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   const prepare = () => {
     const before = work;
     film.prepareClub?.(gpu, camera, journey, id => id === 'trinity' ? actor : undefined);
+    for (const { image, rows } of allocations.values()) if (!firstRows.has(image)) firstRows.set(image, rows);
     assert.ok(work - before <= 1, 'spread program reflection and uploads across different frames');
     assert.equal(target, null); assert.equal(skin.visible, false);
   };
@@ -110,10 +118,28 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     'finish the entrance costume before uploading the waiting room and crowd maps');
   assert.equal(rooms.size, 1, 'prepare the club before the player leaves the apartment');
   assert.ok(compiled.has(skin), 'prepare Trinity’s actual hidden club costume');
-  const first = [...rooms][0], crowd = first.getObjectByName('club-dancer-0')!.getObjectByName('crowd-surface') as THREE.Mesh;
+  const first = [...rooms][0];
+  const crowd = first.getObjectByName('club-dancer-0')!.getObjectByName('crowd-surface') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
   assert.equal(first.children.filter(child => child.name.startsWith('club-dancer-')).length, 16);
   assert.ok(compiled.has(crowd));
   assert.equal([...compiled].filter(mesh => mesh.name === 'crowd-surface').length, 2);
+  await t.test('the room maps are ready before the crowd maps', () => {
+    const roomMaps = uploads.filter(map => map.name.startsWith('/assets/film-materials/'));
+    assert.equal(roomMaps.length, 12);
+    const crowdStart = uploads.findIndex(map => map.image === crowd.material.map!.image);
+    assert.ok(roomMaps.every(map => uploads.indexOf(map) < crowdStart));
+  });
+  await t.test('the crowd maps upload two strips per preparation frame', () => {
+    const allocation = uploaded.get(crowd.material.map!)?.__webglTexture;
+    assert.ok(allocation?.mipmaps);
+    assert.equal(firstRows.get(allocation.image), 512);
+  });
+  await t.test('the crowd uses the two prepared shader variants across all sixteen tinted clones', () => {
+    const dancers = first.children.filter(child => child.name.startsWith('club-dancer-'));
+    const surfaces = dancers.map(dancer => dancer.getObjectByName('crowd-surface') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>);
+    assert.ok(surfaces.every((mesh, index) => mesh.material.customProgramCacheKey() === materialsAtCompile.get(surfaces[index % 2])));
+    assert.ok(!materialsAtCompile.get(surfaces[0])?.includes('actor-local-skin-v1'));
+  });
   let cancelled = 0; crowd.geometry.addEventListener('dispose', () => cancelled++);
   journey.visiting = apartment.id; prepare(); assert.equal(cancelled, 1);
   delete journey.visiting;

@@ -174,6 +174,7 @@ type ColorPreparation = {
   programs: ColorProgram[];
   readyProgram?: ColorProgram;
   textures: Set<THREE.Texture>;
+  preserveStockSkinning?: boolean;
 };
 type CastColorPreparation = ColorPreparation & { actors: Set<THREE.Group> };
 const DOWNLOAD_WALK_CAST = {
@@ -189,7 +190,9 @@ type ClubPreparation = {
   gpu?: THREE.WebGLRenderer['properties'];
   colors?: CastColorPreparation;
   lighting?: LightCulling;
+  roomTextures?: Set<THREE.Texture>;
   entryTextures?: Set<THREE.Texture>;
+  roomTextureTurn?: boolean;
   textureUpload?: Generator<void, boolean>;
   crowdQueued?: boolean;
 };
@@ -936,7 +939,11 @@ export class FilmSetRenderer {
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose(); prepared.gpu = renderer.properties;
-      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true }), actors: new Set() };
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true }), actors: new Set(), preserveStockSkinning: true };
+      const room = prepared.root.getObjectByName('white-rabbit-club')!;
+      prepared.roomTextures = new Set();
+      this.queueColorTextures(prepared.roomTextures, this.colorMeshes(room.children.filter(child => child instanceof THREE.Mesh), true));
+      prepared.roomTextureTurn = true;
       prepared.entryTextures = new Set();
       prepared.colors.meshes.push(this.marker, ...shadows.filter((mesh): mesh is THREE.Mesh => mesh !== undefined));
       prepared.lighting = new LightCulling(prepared.colors.scene);
@@ -974,9 +981,15 @@ export class FilmSetRenderer {
     }
     // Start the entrance costume before the crowd and scenery can exhaust a short resume window.
     if (entryTextures.size && this.prepareStagedColorTexture(renderer, prepared, entryTextures, 2)) return;
+    // The room maps upload as whole images, so interleave them with shader work.
+    const roomTextures = prepared.roomTextures!;
+    const roomTextureTurn = prepared.roomTextureTurn;
+    prepared.roomTextureTurn = !roomTextureTurn;
+    if (roomTextureTurn && this.prepareColorTexture(renderer, roomTextures)) return;
     if (renderer.extensions.has('KHR_parallel_shader_compile')
       && this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated')) return;
-    this.prepareStagedColorTexture(renderer, prepared, colors.textures);
+    if (!roomTextureTurn && this.prepareColorTexture(renderer, roomTextures)) return;
+    this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2);
   }
   prepareDojo(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
     if (this.current?.id !== 'film_neb_deck' || this.currentScene !== 'm1_download' || journey?.scene !== 'm1_download' || journey.visiting
@@ -1875,7 +1888,7 @@ export class FilmSetRenderer {
       this.compileColorBatch(renderer, batch, subject => {
         if (lighting) lighting.compileSubject(renderer, camera, subject, undefined, undefined, colorState);
         else renderer.compile(subject, camera, prepared.scene);
-      });
+      }, prepared.preserveStockSkinning);
     } finally { restore(); }
     if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
     return true;
@@ -2409,11 +2422,13 @@ export class FilmSetRenderer {
     });
     return meshes;
   }
-  private compileColorBatch(renderer: THREE.WebGLRenderer, batch: ColorSubject[], compile: (subject: THREE.Group) => void): void {
+  private compileColorBatch(renderer: THREE.WebGLRenderer, batch: ColorSubject[], compile: (subject: THREE.Group) => void,
+    preserveStockSkinning = false): void {
     if (!batch.length) return;
     const subject = new THREE.Group();
     subject.traverse = visit => batch.forEach(visit);
-    for (const object of batch) if (object instanceof THREE.SkinnedMesh) {
+    // The club crowd uses stock skinning. Only the principal rigs pack local bone matrices.
+    for (const object of batch) if (object instanceof THREE.SkinnedMesh && (!preserveStockSkinning || object.geometry.hasAttribute('skinWeightResidual'))) {
       if (Array.isArray(object.material)) object.material.forEach(prepareSkinnedMaterial);
       else prepareSkinnedMaterial(object.material);
     }
