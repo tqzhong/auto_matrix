@@ -17,11 +17,14 @@ test('the first Construct keeps the screen and objective slots through locked an
   const renderer = { compile: (_subject: THREE.Object3D, _camera: THREE.Camera, view: THREE.Scene) => {
     let count = 0; view.traverseVisible(object => { if (object instanceof THREE.PointLight) count++; }); counts.push(count);
   } } as unknown as THREE.WebGLRenderer;
-  for (const shown of [false, true, false]) {
-    lighting.stablePointSlots = sets.stablePointSlots; marker.visible = shown || sets.stablePointSlots; marker.intensity = shown ? 5 : 0;
-    lighting.compileSubject(renderer, camera, subject); assert.equal(marker.intensity, shown ? 5 : 0); assert.equal(screen.intensity, 18);
+  for (const sceneId of ['m1_construct', 'm1_truth_exit']) {
+    Object.assign(sets, { currentScene: sceneId });
+    for (const shown of [false, true, false]) {
+      lighting.stablePointSlots = sets.stablePointSlots; marker.visible = shown || sets.stablePointSlots; marker.intensity = shown ? 5 : 0;
+      lighting.compileSubject(renderer, camera, subject); assert.equal(marker.intensity, shown ? 5 : 0); assert.equal(screen.intensity, 18);
+    }
   }
-  assert.deepEqual(counts, [2, 2, 2], 'opening the objective cue must not change every colour program');
+  assert.deepEqual(counts, [2, 2, 2, 2, 2, 2], 'opening the objective cue must not change every colour program');
 });
 
 test('detached program preparation restores the live shadow uniforms and lets a cold material bind on first draw', () => {
@@ -44,16 +47,20 @@ test('detached program preparation restores the live shadow uniforms and lets a 
   } finally { geometry.dispose(); material.dispose(); cold.dispose(); }
 });
 
-test('the first Construct prepares its actual props and actors from the connection chair', t => {
+for (const [source, destination, set, kind] of [
+  ['m1_cabin', 'm1_construct', 'film_neb_deck', 'core'],
+  ['m1_desert', 'm1_truth_exit', 'film_real_desert', 'desert'],
+] as const) test(`${destination} prepares its actual props and cast while still in ${source}`, t => {
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {},
-    beginPath() {}, moveTo() {}, lineTo() {}, arc() {}, stroke() {}, fill() {} }) }) } as unknown as Document;
+    beginPath() {}, moveTo() {}, lineTo() {}, arc() {}, stroke() {}, fill() {},
+    createLinearGradient: () => ({ addColorStop() {} }) }) }) } as unknown as Document;
   t.after(() => { globalThis.document = document; });
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), camera = new THREE.PerspectiveCamera();
   const sun = new THREE.DirectionalLight(); const fill = new THREE.DirectionalLight(); const ambient = new THREE.HemisphereLight();
   scene.add(sun, fill, ambient);
-  Object.assign(film, { current: FILM_SETS.film_neb_deck, currentScene: 'm1_cabin' });
-  const journey = { scene: 'm1_cabin', actor: 'neo', awakening: { kind: 'core', elapsed: 4 } } as FilmJourney;
+  Object.assign(film, { current: FILM_SETS[set], currentScene: source });
+  const journey = { scene: source, actor: 'neo', awakening: { kind, elapsed: 4, started: true } } as FilmJourney;
   const neoHero = new THREE.Group(), actorParent = new THREE.Group(), surfaces = new THREE.Group();
   const geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial({ name: 'Skin' });
   geometry.setAttribute('skinWeightResidual', new THREE.Float32BufferAttribute(new Float32Array(geometry.attributes.position.count), 1));
@@ -86,7 +93,58 @@ test('the first Construct prepares its actual props and actors from the connecti
   assert.equal(film.root.getObjectByName('construct-chair-neo'), undefined);
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const neo = world.agents.get('neo')!; neo.position = filmPosition('film_white_construct', 0, 0); neo.isInMatrix = true;
-  Object.assign(journey, { scene: 'm1_construct', step: 0, constructArrival: { phase: 'ready', elapsed: 0 }, awakening: undefined });
+  Object.assign(journey, { scene: destination, step: 0, awakening: undefined });
   film.update(neo, { structures: [], neoLife: { journey } } as unknown as SandboxState, 0);
   assert.ok(film.root.getObjectByName('construct-chair-neo') === props, 'the construct must attach its prepared props');
+});
+
+test('the real terrain prepares its CRT and playable programs and uploads its maps before showing the CRT', async t => {
+  const savedDocument = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {},
+    beginPath() {}, moveTo() {}, lineTo() {}, arc() {}, stroke() {}, fill() {}, ellipse() {},
+    createLinearGradient: () => ({ addColorStop() {} }) }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (url, onLoad) => {
+    const texture = new THREE.Texture({ width: 2048, height: 2048 }); texture.name = url; texture.needsUpdate = true;
+    queueMicrotask(() => onLoad?.(texture)); return texture;
+  });
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), eye = new THREE.PerspectiveCamera();
+  const sun = new THREE.DirectionalLight(); sun.castShadow = true;
+  scene.add(sun, new THREE.DirectionalLight(), new THREE.HemisphereLight()); scene.fog = new THREE.FogExp2();
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!; neo.position = filmPosition('film_white_construct'); neo.isInMatrix = true;
+  const journey = { scene: 'm1_construct', actor: 'neo', step: 0, awakening: { kind: 'construct', elapsed: 4, started: true } } as FilmJourney;
+  const sandbox = { structures: [], neoLife: { journey } } as unknown as SandboxState;
+  const compiled = new Map<number, THREE.Mesh>(), ashSlots = new Set<number>(), uploaded = new WeakMap<THREE.Texture, { __version: number }>();
+  let markerPrepared = false;
+  let target: THREE.WebGLRenderTarget | null = null, draws = 0, terrain: THREE.Mesh | undefined;
+  const gpu = { info: { programs: [] }, extensions: { has: () => true }, shadowMap: { enabled: true },
+    properties: { get: (value: THREE.Texture) => uploaded.get(value) ?? {} },
+    getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
+    initTexture: (texture: THREE.Texture) => uploaded.set(texture, { __version: texture.version }),
+    readRenderTargetPixelsAsync: async () => null,
+    render: (view: THREE.Scene) => { draws++; terrain = view.getObjectByName('desert-cracked-ground') as THREE.Mesh; },
+    compile(subject: THREE.Object3D, _camera: THREE.Camera, lights: THREE.Scene) {
+      let points = 0; lights.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
+      subject.traverse(object => {
+        if (object instanceof THREE.Mesh && object.name === 'desert-cracked-ground') compiled.set(points, object);
+        if (object instanceof THREE.Points && object.name === 'desert-falling-ash') ashSlots.add(points);
+        if (object === film.goalMarker && points === 2) markerPrepared = true;
+      });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const renderPreview = () => film.renderTelevisionPreview(gpu, eye, () => [], sun);
+  t.after(() => { film.dispose(); globalThis.document = savedDocument; });
+  film.update(neo, sandbox, 0);
+  for (let frame = 0; frame < 260; frame++) { renderPreview(); await Promise.resolve(); }
+  assert.equal(draws, 0, 'preparation must leave the CRT on its authored lead-in');
+  const ground = compiled.get(1)!;
+  assert.ok(ground && compiled.get(2) === ground, 'the same actual ground must link under both light layouts before drawing');
+  assert.ok(uploaded.has((ground.material as THREE.MeshStandardMaterial).map!), 'the original large ground map is already on the GPU');
+  assert.deepEqual(ashSlots, new Set([1, 2]), 'the CRT and the live scene must each prepare the ash program');
+  assert.ok(markerPrepared, 'the first walk objective must prepare under the desert layout');
+  journey.awakening!.elapsed = 8; film.update(neo, sandbox, 0); renderPreview();
+  assert.equal(draws, 1); assert.equal(terrain, ground); assert.equal(target, null);
+  neo.isInMatrix = false; neo.position = filmPosition('film_real_desert'); journey.scene = 'm1_desert';
+  film.update(neo, sandbox, 0);
+  assert.equal(film.root.getObjectByName('desert-cracked-ground'), ground);
 });

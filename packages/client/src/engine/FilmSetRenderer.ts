@@ -157,7 +157,7 @@ const palettes = {
 
 type LafayetteRoomLights = { shell: THREE.Group; fixtures: THREE.Group };
 type ColorMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial | THREE.MeshBasicMaterial>;
-type ColorSubject = THREE.Mesh | THREE.Sprite | THREE.Line;
+type ColorSubject = THREE.Mesh | THREE.Sprite | THREE.Line | THREE.Points;
 type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 type LafayettePreparation = {
   lights: LafayetteRoomLights;
@@ -178,11 +178,18 @@ type ColorPreparation = {
 };
 type CastColorPreparation = ColorPreparation & { actors: Set<THREE.Group> };
 type AwakeningSetPreparation = {
-  root: THREE.Group; deck?: NebDeckRenderer; construct?: ConstructRenderer;
+  scene: 'm1_recovery' | 'm1_construct' | 'm1_truth_exit'; root: THREE.Group; deck?: NebDeckRenderer; construct?: ConstructRenderer;
   gpu?: THREE.WebGLRenderer['properties']; colors?: ColorPreparation; lighting?: LightCulling;
   queued: WeakMap<THREE.Mesh, number>; buffers?: Generator<void>; bufferMeshes: THREE.Mesh[];
   textureUpload?: Generator<void, boolean>;
   shadows?: { materials: Set<THREE.MeshDepthMaterial>; variants: Set<string>; source: THREE.Mesh[]; destination: THREE.Mesh[] };
+};
+type DesertPreparation = {
+  gpu: THREE.WebGLRenderer['properties']; preview: ColorPreparation; entry: ColorPreparation;
+  previewLights: LightCulling; entryLights: LightCulling; queued: WeakMap<THREE.Mesh, number>;
+  ash?: THREE.Points;
+  shadows: THREE.Mesh[]; shadowMaterials: Set<THREE.MeshDepthMaterial>; shadowVariants: Set<string>;
+  textureUpload?: Generator<void, boolean>;
 };
 const RECOVERY_POINT_SLOTS = 8;
 const DOWNLOAD_WALK_CAST = {
@@ -341,13 +348,15 @@ export class FilmSetRenderer {
   private preparedPods?: PodSetRenderer;
   private neb?: NebDeckRenderer;
   private preparedAwakening?: AwakeningSetPreparation;
-  private preparedTruthReturn?: { scene: 'm1_truth_return' | 'm1_jump_return'; root: THREE.Group; deck: NebDeckRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
+  private preparedTruthReturn?: { scene: 'm1_truth_return' | 'm1_jump_return'; root: THREE.Group; deck: NebDeckRenderer;
+    ready: boolean; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedDownloadWalk?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties']; textureUpload?: Generator<void, boolean> };
   private sourceBriefing?: SourceBriefingRenderer;
   private primaryDemolition?: PrimaryDemolitionRenderer;
   private trinityTerminal?: TrinityTerminalRenderer;
   private construct?: ConstructRenderer;
   private desert?: DesertRenderer;
+  private preparedDesert?: DesertPreparation;
   private mountain?: MountainSetRenderer;
   private preparedMountain?: { root: THREE.Group; renderer: MountainSetRenderer; colors?: CastColorPreparation };
   private training?: TrainingSetRenderer;
@@ -539,7 +548,7 @@ export class FilmSetRenderer {
     return id === 'film_wells_phone' || id === 'film_power_plant_pods' || id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.club || this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
       || Boolean(this.basement || this.tvRepair || this.architectRoom || this.catchSet || this.trainmanChase)
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
-      || id === 'film_white_construct' && this.currentScene === 'm1_construct'
+      || id === 'film_white_construct' && (this.currentScene === 'm1_construct' || this.currentScene === 'm1_truth_exit')
       || id === 'film_heart_hotel' && this.currentScene === 'm1_room303'
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.reloaded?.set === 'film_captains_meeting' || this.reloaded?.set === 'film_trinity_roof'
@@ -568,7 +577,11 @@ export class FilmSetRenderer {
   setRecoverySubject(subject?: THREE.Object3D): void { this.recoverySubject = subject; }
   setArchitectState(state?: AgentState): void { this.architectState = state; }
   setCrosscutSubjects(bodies: (id: string) => THREE.Object3D | undefined, avatars: (id: string) => THREE.Object3D | undefined): void { this.crosscutBodies = bodies; this.phoneBodies = avatars; }
-  renderTelevisionPreview(renderer: THREE.WebGLRenderer): void { this.construct?.renderPreview(renderer, this.scene.environment); }
+  renderTelevisionPreview(renderer: THREE.WebGLRenderer, camera: THREE.Camera,
+    cast: () => ColorMesh[], sun: THREE.DirectionalLight): void {
+    this.construct?.renderPreview(renderer, this.scene.environment,
+      (preview, root, eye) => this.prepareDesertHandoff(renderer, camera, cast, sun, preview, root, eye));
+  }
   prepareDockEmp(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey?: FilmJourney): void {
     if (this.currentScene !== 'm3_emp' || journey?.scene !== 'm3_emp' || journey.visiting || !journey.empOperator || journey.emp || this.empDock
       || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
@@ -959,20 +972,22 @@ export class FilmSetRenderer {
     actor: (id: string) => THREE.Group | undefined, sun: THREE.DirectionalLight, sourceLights?: LightCulling): void {
     const rescue = this.current?.id === 'film_power_plant_pods' && journey?.scene === 'm1_pod' && journey.awakening?.kind === 'rescue';
     const connecting = this.current?.id === 'film_neb_deck' && journey?.scene === 'm1_cabin' && journey.awakening?.kind === 'core';
-    if (!journey || journey.visiting || !rescue && !connecting) { this.cancelAwakeningPreparation(); return; }
+    const leavingDesert = this.current?.id === 'film_real_desert' && journey?.scene === 'm1_desert' && journey.awakening?.kind === 'desert';
+    const scene = rescue ? 'm1_recovery' : connecting ? 'm1_construct' : leavingDesert ? 'm1_truth_exit' : undefined;
+    if (!journey || journey.visiting || !scene) { this.cancelAwakeningPreparation(); return; }
     let prepared = this.preparedAwakening;
-    if (!prepared || Boolean(prepared.deck) !== rescue) {
+    if (prepared?.scene !== scene) {
       this.cancelAwakeningPreparation();
       const root = new THREE.Group();
-      this.preparedAwakening = prepared = { root, deck: rescue ? new NebDeckRenderer(root, true) : undefined,
-        construct: connecting ? new ConstructRenderer(root, 'm1_construct', true) : undefined, queued: new WeakMap(), bufferMeshes: [] };
+      this.preparedAwakening = prepared = { scene, root, deck: rescue ? new NebDeckRenderer(root, true) : undefined,
+        construct: rescue ? undefined : new ConstructRenderer(root, scene, true), queued: new WeakMap(), bufferMeshes: [] };
     }
     if (!(prepared.deck ?? prepared.construct)!.prepareStep() || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       this.releaseAwakeningPreparation(prepared);
       if (rescue) prepared.deck!.update({ ...journey, scene: 'm1_recovery', awakening: { kind: 'recovery', elapsed: 0, started: false } }, 0);
       prepared.gpu = renderer.properties; prepared.queued = new WeakMap(); prepared.bufferMeshes = [];
-      const colors = this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun: connecting ? sun : undefined });
+      const colors = this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun: rescue ? undefined : sun });
       if (rescue) {
         // Reserve the first room's eight point slots. The fixture shadows come from the real deck.
         const lights: THREE.PointLight[] = [];
@@ -1036,6 +1051,48 @@ export class FilmSetRenderer {
       if (prepared.buffers.next().done) prepared.buffers = undefined;
     }
   }
+  private prepareDesertHandoff(renderer: THREE.WebGLRenderer, camera: THREE.Camera,
+    cast: () => ColorMesh[], sun: THREE.DirectionalLight,
+    preview: THREE.Scene, root: THREE.Group, eye: THREE.PerspectiveCamera): void {
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    let prepared = this.preparedDesert;
+    if (prepared?.preview.scene !== preview || prepared.gpu !== renderer.properties) {
+      this.cancelDesertPreparation();
+      const entry = this.colorPreparation(new THREE.Group(), [], { shadowSun: sun });
+      // The CRT uses its own view. The playable set uses the world lights,
+      // the objective and the desert's two real fixtures.
+      for (const light of root.children) if (light instanceof THREE.Light) entry.scene.add(light.clone());
+      const previewLights = new LightCulling(preview), entryLights = new LightCulling(entry.scene);
+      previewLights.enabled = entryLights.enabled = false;
+      const ash = root.getObjectByName('desert-falling-ash');
+      this.preparedDesert = prepared = { gpu: renderer.properties, entry, previewLights, entryLights, queued: new WeakMap(),
+        ash: ash instanceof THREE.Points ? ash : undefined, preview: { scene: preview, meshes: [], programs: [], textures: new Set() },
+        shadows: [], shadowMaterials: new Set(), shadowVariants: new Set() };
+      entry.preserveStockSkinning = true; entry.meshes.push(this.marker);
+      if (prepared.ash) { prepared.preview.meshes.push(prepared.ash); entry.meshes.push(prepared.ash); }
+    }
+    const terrain = this.colorMeshes([root], true), actors = cast();
+    const changed = (mesh: ColorMesh) => {
+      if (prepared.queued.get(mesh) === mesh.material.version) return false;
+      prepared.queued.set(mesh, mesh.material.version);
+      return true;
+    };
+    const terrainChanges = terrain.filter(changed), castChanges = actors.filter(changed);
+    const { previewLights, entry, entryLights, ash } = prepared;
+    prepared.preview.meshes.push(...terrainChanges); entry.meshes.push(...terrainChanges, ...castChanges);
+    this.queueColorTextures(prepared.preview.textures, terrainChanges);
+    if (renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap)
+      prepared.shadows.push(...shadowCasterProxies([...terrainChanges, ...castChanges], prepared.shadowMaterials, prepared.shadowVariants));
+    if (this.prepareStagedColorTexture(renderer, prepared, prepared.preview.textures)) return;
+    if (this.prepareColorProgram(renderer, eye, prepared.preview, previewLights, 'isolated', true, [ash, ...terrain])) return;
+    if (prepared.shadows.length) {
+      const batch = prepared.shadows.splice(0, 4), programs = renderer.info.programs, start = programs?.length ?? 0;
+      this.compileColorBatch(renderer, batch, subject => entryLights.compileSubject(renderer, camera, subject, undefined, undefined, 'depth'));
+      if (programs) entry.programs.push(...programs.slice(start) as ColorProgram[]);
+      return;
+    }
+    this.prepareColorProgram(renderer, camera, entry, entryLights, 'isolated', true, [this.marker, ash, ...terrain, ...actors]);
+  }
   prepareTruthReturn(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
     const truthReturn = this.current?.id === 'film_white_construct' && this.currentScene === 'm1_truth_exit' && journey?.scene === 'm1_truth_exit';
     const jumpReturn = this.current?.id === 'film_jump_roofs' && this.currentScene === 'm1_jump' && journey?.scene === 'm1_jump'
@@ -1046,13 +1103,18 @@ export class FilmSetRenderer {
     const scene = jumpReturn ? 'm1_jump_return' : 'm1_truth_return';
     if (this.preparedTruthReturn && this.preparedTruthReturn.scene !== scene) this.cancelTruthReturnPreparation();
     if (!this.preparedTruthReturn) {
-      const root = new THREE.Group(), deck = new NebDeckRenderer(root);
-      deck.update(jumpReturn ? { ...journey, scene, training: { kind: 'jump_return', elapsed: 0, started: false } }
+      const root = new THREE.Group(), deck = new NebDeckRenderer(root, true);
+      this.preparedTruthReturn = { scene, root, deck, ready: false };
+      return;
+    }
+    const prepared = this.preparedTruthReturn;
+    if (!prepared.ready) {
+      if (!prepared.deck.prepareStep()) return;
+      prepared.deck.update(jumpReturn ? { ...journey, scene, training: { kind: 'jump_return', elapsed: 0, started: false } }
         : { ...journey, scene, truthRecovery: { phase: 'unplug', elapsed: 0 } }, 0);
-      this.preparedTruthReturn = { scene, root, deck };
+      prepared.ready = true;
     }
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    const prepared = this.preparedTruthReturn;
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       prepared.lighting?.dispose();
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true }), actors: new Set() };
@@ -2133,7 +2195,7 @@ export class FilmSetRenderer {
     if (!this.prepareColorProgram(renderer, camera, prepared, lighting, colorState)) this.prepareColorTexture(renderer, prepared.textures);
   }
   private prepareColorProgram(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting: LightCulling | undefined,
-    colorState: 'live' | 'isolated', deferBindings = false, liveOverlays?: readonly (THREE.Mesh | undefined)[]): boolean {
+    colorState: 'live' | 'isolated', deferBindings = false, liveOverlays?: readonly (THREE.Mesh | THREE.Points | undefined)[]): boolean {
     const programs = renderer.info.programs;
     let program = prepared.readyProgram;
     if (program) {
@@ -2155,7 +2217,7 @@ export class FilmSetRenderer {
     return true;
   }
   private linkColorBatch(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting: LightCulling | undefined,
-    colorState: 'live' | 'isolated' | 'depth', liveOverlays: readonly (THREE.Mesh | undefined)[] = []): boolean {
+    colorState: 'live' | 'isolated' | 'depth', liveOverlays: readonly (THREE.Mesh | THREE.Points | undefined)[] = []): boolean {
     const batch = prepared.meshes.splice(0, 4);
     if (!batch.length) return false;
     const programs = renderer.info.programs, start = programs?.length ?? 0;
@@ -2890,8 +2952,8 @@ export class FilmSetRenderer {
       const preparedPods = set?.architecture === 'pods' && sceneId === 'm1_pod' && !journey?.visiting ? this.preparedPods : undefined;
       if (preparedPods) this.preparedPods = undefined;
       const awakening = this.preparedAwakening;
-      const preparedAwakening = !journey?.visiting && (set?.id === 'film_neb_deck' && sceneId === 'm1_recovery' && awakening?.deck
-        || set?.id === 'film_white_construct' && sceneId === 'm1_construct' && awakening?.construct) ? awakening : undefined;
+      const preparedAwakening = awakening && !journey?.visiting && sceneId === awakening.scene
+        && set?.id === FILM_SCENE_BY_ID[awakening.scene].set ? awakening : undefined;
       if (preparedAwakening) {
         this.preparedAwakening = undefined;
         preparedAwakening.buffers?.return(undefined); preparedAwakening.textureUpload?.return(false);
@@ -2969,6 +3031,7 @@ export class FilmSetRenderer {
       const preparedFreeway = set?.id === 'film_freeway_101' && sceneId === 'm2_freeway' && !journey?.visiting ? this.preparedFreeway?.renderer : undefined;
       if (preparedFreeway) this.preparedFreeway = undefined;
       const previewDesert = set?.id === 'film_real_desert' && sceneId === 'm1_desert' && !journey?.visiting ? this.construct?.takePreviewDesert() : undefined;
+      const desertShadows = previewDesert && this.cancelDesertPreparation(true);
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       const transferredHotel = approach?.renderer.moveStreet(approach.root);
       if (approach) this.meeting = undefined;
@@ -3049,6 +3112,7 @@ export class FilmSetRenderer {
           if (preparedAwakening?.deck) {
             preparedAwakening.deck.finishPreparation(); this.root.add(preparedAwakening.root); this.neb = preparedAwakening.deck;
           } else if (preparedTruthReturn) {
+            preparedTruthReturn.deck.finishPreparation();
             this.root.add(preparedTruthReturn.root); this.neb = preparedTruthReturn.deck;
           } else if (preparedConsole) {
             this.root.add(preparedConsole.root); this.neb = preparedConsole.deck;
@@ -3168,6 +3232,7 @@ export class FilmSetRenderer {
         if (sceneId === 'm3_neo_carried') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'neo_carried');
       }
       if (preparedAwakening?.shadows) for (const material of preparedAwakening.shadows.materials) this.materials.add(material);
+      if (desertShadows) for (const material of desertShadows) this.materials.add(material);
     }
     if (this.mirror) {
       const healing = journey?.scene === 'm1_mirror' && !journey.visiting;
@@ -6007,6 +6072,15 @@ export class FilmSetRenderer {
     const prepared = this.preparedTruthReturn; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.deck.dispose(); this.preparedTruthReturn = undefined;
   }
+  private cancelDesertPreparation(retainShadows = false): Set<THREE.MeshDepthMaterial> | undefined {
+    const prepared = this.preparedDesert;
+    if (!prepared) return;
+    this.preparedDesert = undefined;
+    prepared.textureUpload?.return(false);
+    prepared.previewLights.dispose(); prepared.entryLights.dispose();
+    if (!retainShadows) prepared.shadowMaterials.forEach(material => material.dispose());
+    return prepared.shadowMaterials;
+  }
   private releaseAwakeningPreparation(prepared: AwakeningSetPreparation): void {
     prepared.buffers?.return(undefined); prepared.buffers = undefined;
     prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
@@ -6125,6 +6199,7 @@ export class FilmSetRenderer {
     this.cancelMatrixEscapePreparation();
     this.cancelOneDeckPreparation();
     this.cancelAwakeningPreparation();
+    this.cancelDesertPreparation();
     this.cancelTruthReturnPreparation();
     this.cancelDownloadWalkPreparation();
     this.cancelClubPreparation();

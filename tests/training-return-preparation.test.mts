@@ -55,7 +55,8 @@ function fixture(t: TestContext) {
 }
 
 test('the actual jump fall prepares the return deck, hidden ship clothes and late actors in bounded batches', t => {
-  const h = fixture(t); for (let i = 0; i < 4; i++) h.prepare(); assert.ok(h.batches.length); assert.ok(!h.work.includes('bindings'));
+  const h = fixture(t); h.prepare(); assert.equal(h.batches.length, 0);
+  for (let i = 0; i < 12; i++) h.prepare(); assert.ok(h.batches.length); assert.ok(!h.work.includes('bindings'));
   h.ready(); h.drain(); assert.ok(h.batches.flat().includes(h.skin)); assert.ok(h.batches.flat().includes(h.sweater)); assert.equal(h.work.filter(v => v === 'texture').length, 1);
   const late = new THREE.Group(), face = new THREE.Mesh(h.geometry, h.material); late.add(face); h.actors.set('morpheus', late);
   const before = h.batches.length; h.drain(); assert.ok(h.batches.slice(before).flat().includes(face)); assert.equal(h.decks.size, 1);

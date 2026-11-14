@@ -29,8 +29,9 @@ export class DesertRenderer {
     if (!incremental) this.finishPreparation();
   }
 
-  prepareStep(): void {
+  prepareStep(): boolean {
     if (this.construction?.next().done) this.construction = undefined;
+    return this.construction === undefined;
   }
 
   finishPreparation(): void {
@@ -54,7 +55,7 @@ export class DesertRenderer {
     yield* this.city();
     this.overpass(); this.harvesters();
     yield;
-    this.furniture();
+    yield* this.furniture();
     this.ash = this.createAsh();
     const ambient = new THREE.HemisphereLight(0x8099b3, 0x15191f, 1.45); ambient.name = 'desert-dead-sky-fill'; this.root.add(ambient); this.lights.add(ambient);
     this.flash = new THREE.PointLight(0xaac7c5, 0, 150, 1.5); this.flash.name = 'desert-cloud-flash'; this.flash.position.set(-28, 37, -58); this.root.add(this.flash); this.lights.add(this.flash);
@@ -84,7 +85,7 @@ export class DesertRenderer {
     };
     const map = load('color'); const normalMap = load('normal'); const roughnessMap = load('roughness');
   }
-  private furniture(): void {
+  private *furniture(): Generator<void> {
     const leather = this.material(new THREE.MeshStandardMaterial({ color: 0xdec6b8, roughness: .94, metalness: .03 }));
     const wood = this.material(new THREE.MeshStandardMaterial({ color: 0x593a29, roughness: .56 }));
     const black = this.material(new THREE.MeshStandardMaterial({ color: 0x111313, roughness: .36, metalness: .4 }));
@@ -92,19 +93,24 @@ export class DesertRenderer {
     if (typeof document !== 'undefined' && typeof document.createElementNS === 'function') {
       this.surface([leather], 'film-materials', 'leather_red_03'); this.surface([wood], 'film-materials', 'old_wood_floor');
     }
+    const attach = (object: THREE.Group) => {
+      this.root.add(object);
+      object.traverse(part => {
+        if (part instanceof THREE.Mesh) {
+          this.geometries.add(part.geometry); this.materials.add(part.material);
+          const map = (part.material as THREE.MeshStandardMaterial).map;
+          if (map instanceof THREE.CanvasTexture) this.textures.add(map);
+        }
+      });
+    };
     for (const [role, point] of Object.entries(DESERT_FURNITURE.chairs)) {
       const chair = createLoungeChair(leather); chair.name = `desert-chair-${role}`;
-      chair.position.set(point.x, 0, point.z); chair.rotation.y = point.yaw; this.root.add(chair);
+      chair.position.set(point.x, 0, point.z); chair.rotation.y = point.yaw; attach(chair);
+      yield;
     }
     const tv = createConstructTelevision(wood, black, screen); tv.name = 'desert-television';
-    tv.position.set(DESERT_FURNITURE.television.x, 0, DESERT_FURNITURE.television.z); this.root.add(tv);
-    for (const object of [...this.root.children].filter(object => object.name.startsWith('desert-chair-') || object === tv)) object.traverse(part => {
-      if (part instanceof THREE.Mesh) {
-        this.geometries.add(part.geometry); this.materials.add(part.material);
-        const map = (part.material as THREE.MeshStandardMaterial).map;
-        if (map instanceof THREE.CanvasTexture) this.textures.add(map);
-      }
-    });
+    tv.position.set(DESERT_FURNITURE.television.x, 0, DESERT_FURNITURE.television.z); attach(tv);
+    yield;
   }
   private mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material, name?: string): THREE.Mesh {
     const mesh = new THREE.Mesh(this.geometry(geometry), material); mesh.castShadow = mesh.receiveShadow = true;

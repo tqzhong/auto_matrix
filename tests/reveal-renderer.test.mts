@@ -128,6 +128,20 @@ test('the Construct has physical red chairs, an authored CRT reveal and a separa
   } finally { armoury.dispose(); globalThis.document = savedDocument; }
 });
 
+test('cancelling the staged desert releases the first chair before the second chair or CRT is built', () => {
+  const root = new THREE.Group(), renderer = new DesertRenderer(root, true);
+  try {
+    for (let frame = 0; frame < 180 && !root.getObjectByName('desert-chair-morpheus'); frame++) renderer.prepareStep();
+    const chair = root.getObjectByName('desert-chair-morpheus');
+    assert.ok(chair);
+    assert.ok(!root.getObjectByName('desert-chair-neo'), 'the second chair must wait for a later preparation step');
+    const mesh = chair.getObjectByProperty('isMesh', true) as THREE.Mesh;
+    let disposed = 0; mesh.geometry.addEventListener('dispose', () => disposed++);
+    renderer.dispose();
+    assert.equal(disposed, 1); assert.equal(root.children.length, 0);
+  } finally { renderer.dispose(); }
+});
+
 test('the desert reconstruction retains the physical Construct furniture beside its seated guide', () => {
   const root = new THREE.Group(), renderer = new DesertRenderer(root); root.updateMatrixWorld(true);
   try {

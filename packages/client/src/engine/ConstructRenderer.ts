@@ -53,7 +53,8 @@ export class ConstructRenderer {
   private revealActive = false;
   private disposed = false;
   private previewImage?: string;
-  private preview?: { scene: THREE.Scene; camera: THREE.PerspectiveCamera; target: THREE.WebGLRenderTarget; desert: DesertRenderer; captures: number; capturedAt: number; imageCapture: number };
+  private preview?: { scene: THREE.Scene; root: THREE.Group; camera: THREE.PerspectiveCamera; target: THREE.WebGLRenderTarget;
+    desert: DesertRenderer; captures: number; capturedAt: number; imageCapture: number };
   private white = this.material(new THREE.MeshBasicMaterial({ color: 0xeeeeea, toneMapped: false }));
   private leather = this.material(new THREE.MeshStandardMaterial({ color: 0xdec6b8, roughness: .94, metalness: .03 }));
   private wood = this.material(new THREE.MeshStandardMaterial({ color: 0x593a29, roughness: .56 }));
@@ -286,7 +287,8 @@ export class ConstructRenderer {
 
   /** Capture the real wasteland set for the final CRT image. The preview is
    * refreshed briefly for local textures, then held while Neo makes his choice. */
-  renderPreview(renderer: THREE.WebGLRenderer, environment?: THREE.Texture | null): boolean {
+  renderPreview(renderer: THREE.WebGLRenderer, environment?: THREE.Texture | null,
+    prepare?: (scene: THREE.Scene, root: THREE.Group, camera: THREE.PerspectiveCamera) => void): boolean {
     if (this.sceneId !== 'm1_construct' || !this.revealActive || !this.screenMaterial) return false;
     if (!this.preview) {
       const scene = new THREE.Scene(); scene.background = new THREE.Color(0x303b3e); scene.fog = new THREE.FogExp2(0x303b3e, .0055);
@@ -297,11 +299,13 @@ export class ConstructRenderer {
       const sun = new THREE.DirectionalLight(0xb4c7c6, .48); sun.position.set(30, 80, 60); scene.add(sun);
       const camera = new THREE.PerspectiveCamera(61, 1280 / 800, .1, 300);
       camera.position.set(1.8, 2.8, 41); camera.lookAt(0, 14, -65);
-      this.preview = { scene, camera, target: new THREE.WebGLRenderTarget(1280, 800), desert, captures: 0, capturedAt: -Infinity, imageCapture: -1 };
+      this.preview = { scene, root, camera, target: new THREE.WebGLRenderTarget(1280, 800), desert, captures: 0, capturedAt: -Infinity, imageCapture: -1 };
     }
-    const preview = this.preview; const now = performance.now();
-    if (this.revealElapsed < 7.65) { preview.desert.prepareStep(); return false; }
-    preview.desert.finishPreparation();
+    const preview = this.preview;
+    if (this.revealElapsed >= 7.65) preview.desert.finishPreparation();
+    if (preview.desert.prepareStep()) prepare?.(preview.scene, preview.root, preview.camera);
+    if (this.revealElapsed < 7.65) return false;
+    const now = performance.now();
     if (preview.captures >= 4 || now - preview.capturedAt < 750) return false;
     const previousTarget = renderer.getRenderTarget();
     try {

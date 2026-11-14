@@ -453,7 +453,7 @@ export class Engine {
       openingNormals ?? podNormals ?? apartmentNormals, podNormals !== undefined || wellsCast !== undefined || resumeApartment || apartmentNormals !== undefined || officeNormals !== undefined);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0, openingHotel !== undefined);
-    this.filmSets.renderTelevisionPreview(this.renderer);
+    this.filmSets.renderTelevisionPreview(this.renderer, this.camera, () => this.agentRenderer.getDesertEntryCast(), this.lightingSystem.directionalLight);
     if (this.filmSets.televisionPreviewImage) this.lastTelevisionPreviewImage = this.filmSets.televisionPreviewImage;
     for (let i = 0; i < this.rainPositions.length; i += 6) {
       const drop = delta * 95;

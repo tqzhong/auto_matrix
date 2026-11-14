@@ -235,6 +235,19 @@ export class AgentRenderer {
   getAgentShadow(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.shadow; }
   getAgentDetail(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.detail; }
   getAgentDistant(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.rig.distant; }
+  getDesertEntryCast(): THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial | THREE.MeshBasicMaterial>[] {
+    const meshes = new Set<THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial | THREE.MeshBasicMaterial>>();
+    const include = (object: THREE.Object3D) => {
+      if (object instanceof THREE.Mesh && (object.material instanceof THREE.MeshStandardMaterial || object.material instanceof THREE.MeshBasicMaterial))
+        meshes.add(object);
+    };
+    for (const id of ['neo', 'morpheus']) this.getAgentDetail(id)?.children.forEach(part => part.traverseVisible(include));
+    // The first outdoor walking pose can reveal Neo's glasses and coat tails.
+    const neo = this.agents.get('neo')?.rig.hero;
+    neo?.glasses.traverse(include);
+    neo?.panels.forEach(({ mesh }) => include(mesh));
+    return [...meshes];
+  }
   requestApartmentGuest(id: 'choi' | 'dujour'): THREE.Group | undefined {
     const guest = this.agents.get(id);
     if (!guest || guest.state.controller) return undefined;
