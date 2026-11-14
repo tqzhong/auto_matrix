@@ -17,6 +17,7 @@ export class SandboxRenderer {
   private enemies = new Map<string, Enemy>();
   private pool: Enemy[] = [];
   private posedHotelPolice = new WeakSet<Enemy>();
+  private posedBridgeTail = new WeakSet<Enemy>();
   private hotelHallActors = new Set<Enemy>();
   private models = new CharacterModels();
   private geometries: THREE.BufferGeometry[] = [];
@@ -293,6 +294,24 @@ export class SandboxRenderer {
       if (enemy) this.pool.push(enemy);
       return;
     }
+  }
+  prepareBridgeTail(): THREE.Group | undefined {
+    const journey = this.state?.neoLife?.journey;
+    if (journey?.scene !== 'm1_wake_again' || journey.visiting || !journey.wakeCall
+      || ['waking', 'ringing'].includes(journey.wakeCall.phase) || !(journey.office?.bugged ?? journey.office?.outcome === 'captured')) return;
+    let tail = this.pool.find(enemy => enemy.scene === 'm1_bridge' && enemy.kind === 'agent' && !enemy.character);
+    if (!tail) {
+      tail = this.createEnemy('agent', this.actors, undefined, 'm1_bridge');
+      if (!tail) return;
+      this.pool.push(tail);
+    }
+    const rig = tail.rig, hero = rig?.hero;
+    if (!rig || !hero) return;
+    if (!this.posedBridgeTail.has(tail)) {
+      this.models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 }, 4);
+      this.posedBridgeTail.add(tail);
+    }
+    return hero.root;
   }
   getOfficeSmithHero(): THREE.Group | undefined {
     return this.enemies.get(`office:${OFFICE_AGENT_ROLES.indexOf('smith')}`)?.rig?.hero?.root;

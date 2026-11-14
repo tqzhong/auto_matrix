@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { bridgeArrivalPose, meetingCarPose, meetingRollRoadTime, MEETING_ROAD_WIDTH, MEETING_CAR, type FilmJourney } from '@auto_matrix/shared';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { MeetingSetRenderer } from '../packages/client/src/engine/MeetingSetRenderer.js';
 
 test('bridge preparation builds the street over several steps and adopts the same scenery on entry', t => {
@@ -33,6 +35,62 @@ test('bridge preparation builds the street over several steps and adopts the sam
   source.geometry.addEventListener('dispose', () => { released = true; });
   cancelled.dispose();
   assert.equal(released, true, 'leaving the apartment releases unfinished bridge geometry');
+});
+
+test('the bridge prepares both shadow layouts and the real rain programs before entry', t => {
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.after(() => { globalThis.document = document; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(), sun = new THREE.DirectionalLight(), roomLamp = new THREE.SpotLight();
+  sun.castShadow = roomLamp.castShadow = true; scene.add(sun, roomLamp);
+  scene.fog = new THREE.FogExp2(0x18231e, .01);
+  const lighting = new LightCulling(scene); lighting.minimumPointSlots = 4;
+  const film = new FilmSetRenderer(scene);
+  t.after(() => { film.dispose(); lighting.dispose(); });
+  const actor = new THREE.Group(), geometry = new THREE.BoxGeometry(), surface = new THREE.MeshStandardMaterial();
+  t.after(() => { geometry.dispose(); surface.dispose(); });
+  const jacket = new THREE.SkinnedMesh(geometry, surface); jacket.name = 'Tailored_coat_upper'; jacket.visible = false; jacket.castShadow = true; actor.add(jacket);
+  const journey = { scene: 'm1_wake_again', actor: 'neo', wakeCall: { phase: 'leaving' } } as FilmJourney;
+  let target: THREE.WebGLRenderTarget | null = null;
+  const depth = new Map<THREE.MeshDepthMaterial, Set<string>>(), effects = new Map<string, THREE.Object3D>();
+  const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  const renderer = {
+    properties: { get: () => ({}) }, info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
+    getRenderTarget: () => target, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
+    setRenderTarget: (value: typeof target) => { target = value; }, render() {},
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    compile(subject: THREE.Object3D, _eye: THREE.Camera, view: THREE.Scene) {
+      let points = 0, spots = 0;
+      view.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; if (object instanceof THREE.SpotLight) spots++; });
+      let entersProgram = false;
+      subject.traverse(object => {
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial) {
+          assert.equal(view.fog, null);
+          const layouts = depth.get(object.material) ?? new Set();
+          layouts.add(`${points}/${spots}`); depth.set(object.material, layouts);
+          entersProgram = true;
+        } else if (object instanceof THREE.Line || object instanceof THREE.Mesh && object.material instanceof THREE.ShaderMaterial) {
+          assert.equal(view.fog, scene.fog);
+          assert.deepEqual([points, spots], [12, 7]);
+          effects.set(object.name || 'rain', object); entersProgram = true;
+        }
+      });
+      if (entersProgram) programs.push({ program: {}, isReady: () => true, getUniforms() { reflected++; } });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  let reflected = 0;
+  for (let frame = 0; frame < 100; frame++) film.prepareBridge(renderer, camera, journey, id => id === 'neo' ? actor : undefined, sun, undefined, lighting);
+  assert(depth.size >= 3);
+  assert([...depth.values()].every(layouts => layouts.has('4/1') && layouts.has('12/7')));
+  assert.deepEqual([...effects.keys()].sort(), ['meeting-bridge-runoff', 'meeting-bridge-spray', 'meeting-road-puddles', 'rain']);
+  assert.equal(reflected, programs.length);
+  assert.equal(target, null); assert.equal(jacket.visible, false); assert.deepEqual(actor.children, [jacket]);
+  let released = 0;
+  for (const material of depth.keys()) material.addEventListener('dispose', () => released++);
+  film.prepareBridge(renderer, camera, undefined, () => undefined, sun, undefined, lighting);
+  assert.equal(released, depth.size);
 });
 
 test('the bridge and car retain only drawn geometry and keep the indexed wheel batches', t => {

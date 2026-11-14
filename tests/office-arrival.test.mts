@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, OFFICE_AGENT_ROLES, filmStepPosition, officeOccluded, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_AGENT_ROLES, filmStepPosition, officeOccluded, playerBlocked, type SandboxThreat, type WorldEvent } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import type { CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
@@ -116,6 +116,49 @@ test('the office prepares one patrol rig at a time and activates those same rigs
   enemies.sync(waiting, agents); enemies.prepareOfficePatrols();
   enemies.sync(answering, agents);
   assert.equal(created.length, OFFICE_AGENT_ROLES.length, 'removing and reintroducing the patrol keeps the pool bounded');
+});
+
+test('the captured route prepares the actual bridge pursuer while Neo is still in the apartment', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  const context = { fillRect() {}, fillText() {}, putImageData() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }) };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const h = setup(), scene = new THREE.Scene(), enemies = new SandboxRenderer(scene);
+  t.after(() => { enemies.dispose(); globalThis.document = document; });
+  const rig = { root: new THREE.Group(), motion: newMotion(), hero: { root: new THREE.Group() } } as CharacterRig;
+  rig.root.add(rig.hero!.root);
+  const models = (enemies as unknown as { models: { create(): CharacterRig; animate(): void; dispose(): void } }).models;
+  const create = t.mock.method(models, 'create', () => rig);
+  const animate = t.mock.method(models, 'animate', () => {});
+  const agents = Object.fromEntries(h.world.agents), waiting = structuredClone(h.sandbox.state);
+  waiting.neoLife!.journey!.scene = 'm1_wake_again';
+  waiting.neoLife!.journey!.wakeCall = { phase: 'leaving', elapsed: 2, nightmare: true };
+  const clear = structuredClone(waiting);
+  clear.neoLife!.journey!.office = { alert: 0, suspicion: [], waypoints: [], lastTick: 0, guide: '', outcome: 'escaped', bugged: false };
+  enemies.sync(clear, agents);
+  assert.equal(enemies.prepareBridgeTail(), undefined);
+  assert.equal(create.mock.callCount(), 0);
+
+  waiting.neoLife!.journey!.office = { ...clear.neoLife!.journey!.office!, outcome: 'captured', bugged: true };
+  enemies.sync(waiting, agents);
+  assert.equal(enemies.prepareBridgeTail(), rig.hero!.root);
+  assert.equal(enemies.prepareBridgeTail(), rig.hero!.root);
+  assert.equal(animate.mock.callCount(), 1);
+  const group = rig.root.parent!;
+  assert.equal(group.parent, null);
+  const bridge = structuredClone(waiting);
+  bridge.neoLife!.journey!.scene = 'm1_bridge';
+  const threat: SandboxThreat = { id: 'bridge:tail', scene: 'm1_bridge', kind: 'agent', patrol: true, yaw: Math.PI,
+    position: FILM_SETS.film_adams_bridge.center, matrix: true, health: 80, maxHealth: 80, target: 'neo', stunUntil: 0, lastStrike: -10 };
+  bridge.threats.push(threat);
+  enemies.sync(bridge, agents);
+  assert.equal(group.parent, scene);
+  enemies.sync({ ...bridge, threats: [] }, agents);
+  assert.equal(group.parent, null);
+  enemies.sync(bridge, agents);
+  assert.equal(group.parent, scene);
+  assert.equal(create.mock.callCount(), 1);
 });
 
 test('arrival keeps its positions across pause, disconnect, save and the start of patrol', () => {

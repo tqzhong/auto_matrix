@@ -387,7 +387,9 @@ export class FilmSetRenderer {
   private preparedInterrogation?: { renderer: InterrogationSetRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private meeting?: MeetingSetRenderer;
   private preparedBridge?: { renderer: MeetingSetRenderer; gpu: THREE.WebGLRenderer['properties']; bufferUpload?: Generator<void>;
-    drawing?: { eye: THREE.PerspectiveCamera; colors: CastColorPreparation; lighting: LightCulling }; textureUpload?: Generator<void, boolean> };
+    drawing?: { eye: THREE.PerspectiveCamera; colors: CastColorPreparation; lighting: LightCulling;
+      shadows?: { materials: Set<THREE.MeshDepthMaterial>; seen: Set<string>; apartment: THREE.Mesh[]; bridge: THREE.Mesh[] } };
+    textureUpload?: Generator<void, boolean> };
   private hotel?: LafayetteApproachRenderer;
   private approach?: { root: THREE.Group; renderer: MeetingSetRenderer };
   private sentinel?: SentinelSetRenderer;
@@ -779,16 +781,18 @@ export class FilmSetRenderer {
     this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
   }
   prepareBridge(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, journey: FilmJourney | undefined,
-    actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight, shadow?: THREE.Mesh): void {
+    actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight, shadow?: THREE.Mesh, apartmentLights?: LightCulling,
+    tail?: THREE.Group): void {
     const call = journey?.wakeCall;
     if (journey?.scene !== 'm1_wake_again' || journey.visiting || !call || ['waking', 'ringing'].includes(call.phase)) {
       this.cancelBridgePreparation(); return;
     }
     if (this.preparedBridge?.gpu !== renderer.properties) this.cancelBridgePreparation();
     const prepared = this.preparedBridge ??= { renderer: new MeetingSetRenderer(), gpu: renderer.properties };
+    const parallel = renderer.extensions.has('KHR_parallel_shader_compile');
     const hairMaps = new Set<THREE.Texture>();
-    for (const id of journey.office?.bugged ? ['trinity', 'agent_jones'] : ['trinity']) {
-      const mesh = actor(id)?.getObjectByName('short04');
+    for (const group of [tail, actor('trinity')]) {
+      const mesh = group?.getObjectByName('short04');
       if (mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshStandardMaterial && mesh.material.map?.image)
         hairMaps.add(mesh.material.map);
     }
@@ -802,31 +806,49 @@ export class FilmSetRenderer {
       prepared.renderer.root.position.set(set.center.x, set.center.y - 1, set.center.z);
       prepared.renderer.update({ ...journey, scene: 'm1_bridge', bridgeArrival: { phase: 'approaching', elapsed: 0 } }, 0);
       const colors = { ...this.colorPreparation(prepared.renderer.root, [], { includeBasic: true, shadowSun }), actors: new Set<THREE.Group>() };
-      const meshes: (THREE.Mesh | THREE.Line)[] = [], geometries = new Set<THREE.BufferGeometry>();
-      prepared.renderer.root.traverseVisible(object => {
-        if (!(object instanceof THREE.Mesh || object instanceof THREE.Line) || geometries.has(object.geometry)) return;
-        meshes.push(object); geometries.add(object.geometry);
-      });
-      prepared.bufferUpload = prepareMeshBuffers(renderer, eye, meshes);
       const lighting = new LightCulling(colors.scene); lighting.stablePointSlots = true;
       prepared.drawing = { eye, colors, lighting };
+      if (parallel && apartmentLights && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+        const materials = new Set<THREE.MeshDepthMaterial>(), seen = new Set<string>();
+        const casters = shadowCasterProxies(colors.meshes, materials, seen);
+        prepared.drawing.shadows = { materials, seen, apartment: casters.slice(), bridge: casters };
+      }
+      const meshes: (THREE.Mesh | THREE.Line)[] = [], geometries = new Set<THREE.BufferGeometry>();
+      const rain: ColorSubject[] = [];
+      prepared.renderer.root.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh || object instanceof THREE.Line)) return;
+        if (object instanceof THREE.Line || object.material instanceof THREE.ShaderMaterial) rain.push(object);
+        if (geometries.has(object.geometry)) return;
+        meshes.push(object); geometries.add(object.geometry);
+      });
+      colors.meshes.unshift(...rain);
+      prepared.bufferUpload = prepareMeshBuffers(renderer, eye, meshes);
       colors.meshes.push(this.marker);
       if (shadow) colors.meshes.push(...this.colorMeshes([shadow], true));
     }
-    const { eye, colors, lighting } = prepared.drawing;
-    for (const id of [journey.actor, ...FILM_SCENE_BY_ID.m1_bridge.cast, ...(journey.office?.bugged ? ['agent_jones'] : [])]) {
-      const group = actor(id);
+    const { eye, colors, lighting, shadows } = prepared.drawing;
+    const cast = [journey.actor, ...FILM_SCENE_BY_ID.m1_bridge.cast].map(actor);
+    const arriving: ColorMesh[] = [];
+    for (const group of [tail, ...cast]) {
       if (!group || colors.actors.has(group)) continue;
       const meshes = this.colorMeshes(group.children, true);
-      if (id === 'neo') for (const name of ['Black_crew_neck', 'Tailored_coat_upper', 'Tailored_coat_skirt']) {
+      if (group === cast[0]) for (const name of ['Black_crew_neck', 'Tailored_coat_upper', 'Tailored_coat_skirt']) {
         const mesh = group.getObjectByName(name);
         if (mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshStandardMaterial && !meshes.includes(mesh))
           meshes.push(mesh);
       }
       if (!meshes.length) continue;
-      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+      colors.actors.add(group); arriving.push(...meshes);
+      if (shadows) {
+        const casters = shadowCasterProxies(meshes, shadows.materials, shadows.seen);
+        shadows.apartment.push(...casters); shadows.bridge.push(...casters);
+      }
     }
-    if (renderer.extensions.has('KHR_parallel_shader_compile'))
+    colors.meshes.unshift(...arriving); this.queueColorTextures(colors.textures, arriving);
+    // The first shadow pass still uses the apartment lights. Later passes use the bridge lights.
+    if (parallel && !(shadows && apartmentLights && (
+      this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.apartment }, apartmentLights, 'depth')
+      || this.linkColorBatch(renderer, eye, { ...colors, meshes: shadows.bridge }, lighting, 'depth'))))
       this.prepareColorProgram(renderer, eye, colors, lighting, 'isolated', true, [this.marker, shadow]);
     if (prepared.bufferUpload?.next().done) prepared.bufferUpload = undefined;
     if (!stagingHair) this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2);
@@ -2963,6 +2985,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') {
           this.meeting = preparedBridge?.renderer ?? new MeetingSetRenderer();
           if (preparedBridge) this.meeting.root.position.set(0, 0, 0);
+          for (const material of preparedBridge?.drawing?.shadows?.materials ?? []) this.materials.add(material);
           this.meeting.attach(this.root);
         }
         else if (sceneId === 'm2_stop_sentinels' && set.id === 'film_service_tunnels') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
@@ -5902,6 +5925,7 @@ export class FilmSetRenderer {
   private cancelBridgePreparation(): void {
     const prepared = this.preparedBridge; if (!prepared) return;
     prepared.bufferUpload?.return(undefined); prepared.textureUpload?.return(false);
+    prepared.drawing?.shadows?.materials.forEach(material => material.dispose());
     prepared.drawing?.lighting.dispose(); prepared.renderer.dispose(); this.preparedBridge = undefined;
   }
   private cancelAmbushPreparation(): void {
