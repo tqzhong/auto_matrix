@@ -2812,6 +2812,7 @@ export class FilmStorySystem {
       const next = FILM_SCENE_BY_ID.m1_ledge;
       state.scene = next.id; state.step = 0;
       this.enter(next, tick, position); agent.rotation = pose.yaw;
+      this.restorePhoneFrame(agent, tick);
     }
     return true;
   }

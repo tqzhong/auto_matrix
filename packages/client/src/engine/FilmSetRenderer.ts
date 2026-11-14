@@ -2009,7 +2009,8 @@ export class FilmSetRenderer {
     return false;
   }
   prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState,
-    sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group, distantActor?: THREE.Mesh, manager?: THREE.Group, streetCaster?: THREE.Group): boolean {
+    sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group, distantActor?: THREE.Mesh, manager?: THREE.Group, streetCaster?: THREE.Group,
+    actorShadow?: THREE.Mesh): boolean {
     const journey = sandbox?.neoLife?.journey, lift = sandbox?.neoLife?.lift;
     const live = player?.isInMatrix && player.id === journey?.actor && !journey.visiting;
     if (this.office || !live || journey.scene !== 'm1_commute'
@@ -2049,6 +2050,7 @@ export class FilmSetRenderer {
         visit(this.marker);
         // One resident mesh covers the vertex-colored program shared by distant characters.
         if (distantActor) visit(distantActor);
+        if (actorShadow) visit(actorShadow);
       };
     } else if (cleaners && cleaners !== prepared.cleaners) {
       prepared.cleaners = subject = cleaners;

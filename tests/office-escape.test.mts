@@ -342,6 +342,24 @@ test('Neo crosses the sill before reaching the ledge, with continuous position a
   assert.equal(h.sandbox.state.threats.filter(t => t.patrol).length, 0);
 });
 
+test('the first frame on the ledge keeps the connected phone across pause and re-entry', () => {
+  const h = setup(); h.office(); h.finish(); h.command('next');
+  for (let i = 0; i < 130 && h.scene().id === 'm1_office_escape'; i++) h.players.step(.05, true, h.tick());
+  assert.equal(h.scene().id, 'm1_ledge');
+  assert.equal(h.state().step, 0);
+  const neo = h.neo();
+  const snapshot = () => structuredClone({ position: neo.position, rotation: neo.rotation, action: neo.currentAction });
+  const landing = snapshot();
+  assert.equal(h.state().phone?.phase, 'connected');
+  assert.deepEqual(landing.action?.parameters.phone, h.state().phone, 'the handset must stay at his ear when his feet reach the ledge');
+  h.players.step(.05, false, h.tick());
+  h.players.release('neo-player', h.tick() + 1);
+  assert.deepEqual(snapshot(), landing);
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  h.players.possess('neo-player', 'neo', h.tick() + 2);
+  assert.deepEqual(snapshot(), landing);
+});
+
 test('an agent reaching Neo before he clears the window interrupts the crossing', () => {
   const h = setup(); h.office(); h.finish(); h.command('next'); h.players.step(.1, true, h.tick());
   const guard = h.sandbox.state.threats.find(t => t.id === 'office:0')!;

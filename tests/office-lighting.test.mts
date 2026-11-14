@@ -173,7 +173,10 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
   camera.position.set(position.x, position.y + 4, position.z - 2);
   let target: THREE.WebGLRenderTarget | null = null;
   const windows: THREE.Mesh[] = [];
-  const neo = new THREE.Group(); scene.add(neo);
+  const neo = new THREE.Group(), neoRoot = new THREE.Group();
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), new THREE.MeshBasicMaterial({ map: new THREE.Texture(), transparent: true, depthWrite: false, toneMapped: false }));
+  shadow.visible = false; neoRoot.add(neo, shadow); scene.add(neoRoot);
+  t.after(() => { shadow.geometry.dispose(); shadow.material.map!.dispose(); shadow.material.dispose(); });
   const unlit = new THREE.MeshBasicMaterial(), lit = new THREE.MeshStandardMaterial();
   const mixed = new THREE.Mesh(new THREE.BoxGeometry(), [unlit, lit]); neo.add(mixed);
   t.after(() => { mixed.geometry.dispose(); unlit.dispose(); lit.dispose(); });
@@ -184,11 +187,12 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
   const hiddenSkin = new THREE.SkinnedMesh(trousersGeometry, skinSurface); hiddenSkin.castShadow = true; hiddenSkin.visible = false;
   neo.add(head, trousers, hiddenSkin);
   t.after(() => { headGeometry.dispose(); trousersGeometry.dispose(); skinSurface.dispose(); });
-  const versionsBefore = [unlit.version, lit.version, marker.material.version, sign.material.version];
+  const versionsBefore = [unlit.version, lit.version, marker.material.version, sign.material.version, shadow.material.version];
   const manager = new THREE.Group(), managerParent = new THREE.Group();
   managerParent.visible = false; managerParent.add(manager); scene.add(managerParent);
   let managerLoaded = false;
   let neoCompiles = 0, cityCompiles = 0, cleanerCompiles = 0, managerCompiles = 0;
+  let shadowProgramLinked = false;
   const shadowCompiles: { points: number; spots: number }[] = [];
   const depthPrograms = new Set<string>();
   let ready = false;
@@ -287,8 +291,10 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
       const materials: THREE.Object3D[] = [];
       root.traverse(object => { if (object instanceof THREE.Mesh || object instanceof THREE.Sprite) materials.push(object); });
       if (materials.includes(street)) {
-        assert.deepEqual(materials.map(object => object.id), [street.id, sign.id, marker.id, distant.id],
-          'the city batch includes one sign, the exit marker, and the shared distant-character color program');
+        assert.deepEqual(materials.map(object => object.id), [street.id, sign.id, marker.id, distant.id, shadow.id],
+          'the city batch includes the exit overlays and the existing ground shadow');
+        assert.equal(shadow.parent, neoRoot); assert.equal(shadow.visible, false);
+        if (!shadowProgramLinked) { programs.push(program('ground shadow')); shadowProgramLinked = true; }
         assert.equal(street.parent, city);
         assert.equal(sign.parent, city);
         assert.equal(sign.visible, false);
@@ -308,7 +314,7 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
     },
   } as unknown as THREE.WebGLRenderer;
   film.update(player, sandbox, 0);
-  const prepare = () => film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city, distant, managerLoaded ? manager : undefined, streetCast);
+  const prepare = () => film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city, distant, managerLoaded ? manager : undefined, streetCast, shadow);
   assert.equal(prepare(), true, 'building the detached floor uses this frame');
   assert.deepEqual(cleanerLoad.mock.calls.map(call => call.arguments), [['/assets/characters/club-male.glb']],
     'request the window cleaners during the lift before the floor attaches');
@@ -321,6 +327,7 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
   assert.equal(lit.version, versionsBefore[1], 'lit materials already reselect on light-state changes');
   assert.ok(marker.material.version > versionsBefore[2], 'the live marker must reselect its street program');
   assert.ok(sign.material.version > versionsBefore[3], 'the city sprite must reselect its street program');
+  assert.ok(shadow.material.version > versionsBefore[4], 'the ground shadow must reselect its live program after preparation');
   assert.deepEqual(uniformQueries, [], 'an unfinished program must not stall the lift');
   programs.splice(1, 1);
   ready = true;
@@ -331,6 +338,8 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
   assert.equal(prepare(), true);
   assert.deepEqual(uniformQueries, ['glass', 'carpet'], 'a released program is skipped');
   assert.deepEqual(uniformChecks, [false, true], 'failed links keep the normal error reporting');
+  assert.equal(prepare(), true);
+  assert.equal(uniformQueries.at(-1), 'ground shadow', 'cache the ground-shadow program while Neo is still in the shaft');
   for (const light of ['zero-light', 'office', 'street']) for (const key of ['depth', 'fixed depth', 'face depth', 'pants depth', 'street skin', 'street depth']) {
     assert.equal(prepare(), true);
     assert.equal(uniformQueries.at(-1), `${light} ${key}`, 'cache the locations of one ready shadow program per frame');

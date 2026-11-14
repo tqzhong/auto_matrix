@@ -388,9 +388,10 @@ export class Engine {
     this.filmSets.prepareCommuteOutfit(this.renderer, this.camera, this.lightCulling, liveMatrixJourney, neoAtHome);
     const preparingStreetPhone = liveMatrixJourney?.scene === 'm1_commute' && !filmSet && !lift?.passenger
       && this.filmSets.prepareOfficeStreetPhone(this.renderer, this.camera, this.lightCulling, this.sandboxRenderer.getPhoneColorMesh());
+    const officeManager = this.agentRenderer.getAgentHero('rhineheart');
     const preparingOffice = preparingStreetPhone || this.filmSets.prepareOffice(this.renderer, this.camera, this.lightCulling, player ?? undefined, this.sandbox,
       this.agentRenderer.getAgentHero('neo'), this.voxelRenderer.matrix, this.agentRenderer.getAgentDistant('neo'),
-      this.agentRenderer.getAgentHero('rhineheart'), this.agentRenderer.getAgentBody('citizen_1'));
+      officeManager, this.agentRenderer.getAgentBody('citizen_1'), this.agentRenderer.getAgentShadow('neo'));
     if (meeting && player?.id === meeting.actor) {
       const neo = this.agentRenderer.getAgentHero('neo');
       this.filmSets.prepareLafayette(this.renderer, this.camera, this.lightCulling, meeting, neo,
@@ -440,8 +441,9 @@ export class Engine {
     const openingNormals = this.filmSets.openingRoofRetryNormalMeshes ?? hotelNormals ?? wellsCast;
     const apartmentNormals = openingNormals ? undefined : this.voxelRenderer.interiors.apartmentReturnNormalMeshes;
     const neoNormals = preparingLafayetteNormals || resumeApartment || openingHandoff && !preparingApartment || apartmentNormals ? neoAtHome : undefined;
-    this.postProcessing.prepareNormals(this.renderer, openingNormals ? this.filmSets.root : neoNormals,
-      openingNormals ?? apartmentNormals, wellsCast !== undefined || resumeApartment || apartmentNormals !== undefined);
+    const officeNormals = liveMatrixJourney?.scene === 'm1_commute' && lift?.passenger && lift.target === 1 ? officeManager : undefined;
+    this.postProcessing.prepareNormals(this.renderer, openingNormals ? this.filmSets.root : neoNormals ?? officeNormals,
+      openingNormals ?? apartmentNormals, wellsCast !== undefined || resumeApartment || apartmentNormals !== undefined || officeNormals !== undefined);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0, openingHotel !== undefined);
     this.filmSets.renderTelevisionPreview(this.renderer);
