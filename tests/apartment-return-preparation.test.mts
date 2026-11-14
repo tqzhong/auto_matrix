@@ -145,6 +145,63 @@ test('the nightclub return prepares the morning apartment, actual home clothes a
   assert.equal(h.apartment.returnNormalMeshes, undefined);
 });
 
+test('the nightclub return prepares both shadow layouts before drawing the morning apartment', t => {
+  const h = fixture(), { renderer, scene, root, street, journey } = h;
+  const clubLights = new LightCulling(scene), room = root.children[0] as THREE.Mesh;
+  t.after(() => { h.dispose(); clubLights.dispose(); });
+  room.castShadow = street.castShadow = true;
+  for (let i = 0; i < 3; i++) scene.add(new THREE.SpotLight());
+  Object.assign(renderer, { shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap } });
+  const compile = renderer.compile, layouts = new Map<number, Set<number>>();
+  const materials = new Set<THREE.MeshDepthMaterial>(), disposed = new Set<THREE.MeshDepthMaterial>();
+  const signal = new THREE.InstancedMesh(street.geometry, street.material, 1);
+  signal.position.copy(street.position); signal.position.z += 1000;
+  signal.setColorAt(0, new THREE.Color(0xffffff)); signal.castShadow = true;
+  street.parent!.add(signal);
+  t.after(() => { signal.dispose(); signal.removeFromParent(); });
+  t.mock.method(renderer, 'compile', (subject: THREE.Object3D, eye: THREE.Camera, lights: THREE.Scene) => {
+    const casters: THREE.Mesh<THREE.BufferGeometry, THREE.MeshDepthMaterial>[] = [];
+    subject.traverse(mesh => { if (mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshDepthMaterial) casters.push(mesh); });
+    if (!casters.length) return compile.call(renderer, subject, eye, lights);
+    let spots = 0;
+    lights.traverseVisible(light => { if (light instanceof THREE.SpotLight) spots++; });
+    const variants = layouts.get(spots) ?? new Set<number>();
+    layouts.set(spots, variants);
+    for (const caster of casters) {
+      assert.equal(caster.geometry, room.geometry);
+      assert.equal(caster.material.depthPacking, THREE.RGBADepthPacking);
+      variants.add(caster instanceof THREE.InstancedMesh ? caster.instanceColor ? 2 : 1 : 0);
+      if (materials.has(caster.material)) continue;
+      materials.add(caster.material);
+      caster.material.addEventListener('dispose', () => {
+        assert.ok(!disposed.has(caster.material));
+        disposed.add(caster.material);
+      });
+    }
+    h.work.push('depth');
+  });
+  delete journey.pills;
+  journey.scene = 'm1_club';
+  journey.club = { phase: 'done', elapsed: 0 };
+  h.ready();
+  assert.equal(h.prepare([], clubLights), true);
+  const firstNormals = h.apartment.returnNormalMeshes?.slice(0, 4);
+  assert.ok(firstNormals?.includes(street) && firstNormals.includes(signal), 'prepare the two city normal variants before completing the color queue');
+  for (let frame = 0; frame < 120 && h.prepare([], clubLights); frame++) { /* One preparation step per frame. */ }
+  assert.deepEqual(layouts, new Map([[3, new Set([0, 1, 2])], [1, new Set([0, 1, 2])]]));
+  assert.ok(h.work.indexOf('texture') < h.work.lastIndexOf('depth'), 'prepare the room texture while the shadow queue is still active');
+  assert.ok(h.work.lastIndexOf('depth') < h.work.lastIndexOf('compile'), 'link both shadow layouts before finishing the colors');
+  const colors = h.batches.flat();
+  assert.ok(colors.indexOf(street) < colors.indexOf(root.children[4]), 'link the street surface before repeated room meshes');
+  assert.equal(disposed.size, 0);
+  journey.scene = 'm1_morning';
+  assert.equal(h.prepare(), false);
+  assert.equal(h.prepare(), false);
+  assert.equal(disposed.size, 0);
+  assert.equal(h.prepare(), false);
+  assert.deepEqual(disposed, materials);
+});
+
 test('a deferred invitation prepares the two visitors before their actual entrance', t => {
   const h = fixture(); t.after(h.dispose);
   const choi = new THREE.Group(), dujour = new THREE.Group();
