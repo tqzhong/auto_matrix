@@ -67,7 +67,6 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   t.mock.method(THREE.SkinnedMesh.prototype, 'computeBoundingSphere', function (this: THREE.SkinnedMesh) {
     assert.ok(!bounded.has(this), 'prepare each dancer mesh only once');
     bounded.add(this);
-    work++;
     computeBounds.call(this);
   });
   const materialsAtCompile = new Map<THREE.Mesh, string>();
@@ -143,6 +142,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   await new Promise(resolve => setImmediate(resolve));
   for (let frame = 0; frame < 12; frame++) prepare(true);
   assert.equal(rooms.size, 1, 'link the offstage room while still on the landing screen');
+  const landingBounds = bounded.size;
   fill.visible = true;
   film.update(neo, sandbox, 0);
   await drain();
@@ -156,6 +156,9 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   assert.equal(first.children.filter(child => child.name.startsWith('club-dancer-')).length, 16);
   assert.ok(compiled.has(crowd));
   assert.equal([...compiled].filter(mesh => mesh.name === 'crowd-surface').length, 2);
+  await t.test('dancer bounds advance while the room programs and texture uploads are pending', () => {
+    assert.equal(landingBounds, 12, 'prepare one dancer on each frame after the crowd loads');
+  });
   await t.test('each dancer has posed bounds before the first live draw', () => {
     const dancers = first.children.filter(child => child.name.startsWith('club-dancer-'));
     for (const dancer of dancers) {

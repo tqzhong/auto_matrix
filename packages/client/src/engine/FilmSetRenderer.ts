@@ -997,6 +997,8 @@ export class FilmSetRenderer {
         colors.textures = new Set([...crowdTextures, ...colors.textures]);
       }
     }
+    // Prepare one dancer per frame even while the GPU queues are busy.
+    prepared.renderer.prepareCrowdBounds();
     // Start the entrance costume before the crowd and scenery can exhaust a short resume window.
     if (entryTextures.size && this.prepareStagedColorTexture(renderer, prepared, entryTextures, 2)) return;
     // Advance the room and crowd textures while the shader queue is still active.
@@ -1006,8 +1008,7 @@ export class FilmSetRenderer {
     const apartmentLights = onLanding ? undefined : sourceLights;
     if (!textureTurn && parallel && this.prepareClubProgram(renderer, camera, prepared, apartmentLights)) return;
     if (this.prepareColorTexture(renderer, roomTextures) || this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) return;
-    if (textureTurn && parallel && this.prepareClubProgram(renderer, camera, prepared, apartmentLights)) return;
-    prepared.renderer.prepareCrowdBounds();
+    if (textureTurn && parallel) this.prepareClubProgram(renderer, camera, prepared, apartmentLights);
   }
   private prepareClubProgram(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ClubPreparation, apartmentLights?: LightCulling): boolean {
     const colors = prepared.colors!, shadows = prepared.shadows;
