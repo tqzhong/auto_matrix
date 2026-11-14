@@ -10,11 +10,12 @@ import type { GameAudio } from '../packages/client/src/engine/GameAudio.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-function setup(t: test.TestContext) {
+function setup(t: test.TestContext, loadTexture: typeof THREE.TextureLoader.prototype.load =
+  () => new THREE.Texture({ width: 1, height: 1, complete: true })) {
   const previous = globalThis.document;
   const ctx = { fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }) };
   globalThis.document = { createElement: () => ({ getContext: () => ctx }) } as unknown as Document;
-  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture({ width: 1, height: 1, complete: true }));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', loadTexture);
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
   const sets = new FilmSetRenderer(scene), culling = new LightCulling(scene);
   const gunfire = new GunfireEffects(scene, { effects: () => undefined } as unknown as GameAudio);
@@ -134,6 +135,57 @@ test('303 door trim has one visible surface across the door frame and wall', t =
     assert.ok(hits.length > 0);
     assert.equal(hits.filter(hit => hit.distance - hits[0].distance < .001).length, 1, `overlapping faces at ${x}/${y}`);
   }
+});
+
+test('303 shares the decoded plaster maps while preserving each surface’s tiling', t => {
+  const requests: string[] = [], pending: (() => void)[] = [];
+  const h = setup(t, (url, loaded) => {
+    const texture = new THREE.Texture();
+    const finish = () => {
+      texture.image = { width: 1024, height: 1024, complete: true, currentSrc: url };
+      texture.needsUpdate = true;
+      loaded?.(texture);
+    };
+    if (url.includes('/damaged_plaster-')) {
+      requests.push(url);
+      pending.push(finish);
+    } else finish();
+    return texture;
+  });
+  const repeats = new Map([[0xadae9c, 5], [0x3b4540, 4], [0x6a7066, 5], [0x73746e, 6], [0x414942, 9]]);
+  h.pose('phone');
+  const surfaces = new Map<THREE.MeshStandardMaterial, number>();
+  h.sets.root.traverse(object => {
+    if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
+    const repeat = repeats.get(object.material.color.getHex());
+    if (repeat !== undefined) surfaces.set(object.material, repeat);
+  });
+  assert.equal(surfaces.size, repeats.size);
+  for (const material of surfaces.keys()) assert.equal(material.map, null);
+  pending.splice(0).forEach(finish => finish());
+
+  const views = new Set<THREE.Texture>();
+  for (const channel of ['map', 'normalMap', 'roughnessMap'] as const) {
+    const sources = new Set<THREE.Source>();
+    for (const [material, repeat] of surfaces) {
+      const texture = material[channel];
+      assert.ok(texture && texture.version > 0);
+      assert.deepEqual(texture.repeat.toArray(), [repeat, repeat]);
+      assert.equal(texture.colorSpace, channel === 'map' ? THREE.SRGBColorSpace : THREE.NoColorSpace);
+      sources.add(texture.source);
+      views.add(texture);
+    }
+    assert.equal(sources.size, 1, `${channel} should have one GPU image source`);
+    assert.equal([...sources][0].version, 1);
+  }
+  assert.equal(views.size, 15, 'each material owns its texture transforms');
+  assert.equal(requests.length, 3);
+  let disposed = 0;
+  for (const texture of views) texture.addEventListener('dispose', () => disposed++);
+  h.sets.update(undefined, undefined, 0);
+  assert.equal(disposed, views.size);
+  h.pose('phone');
+  assert.equal(requests.length, 6, 'reentering 303 starts with fresh scene-owned images');
 });
 
 test('303 prepares the real flashlight material while the corridor is still hidden', t => {

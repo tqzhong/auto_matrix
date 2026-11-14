@@ -272,6 +272,7 @@ export class FilmSetRenderer {
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
   private roofSurfaceSources?: ReadonlyMap<string, THREE.MeshStandardMaterial>;
+  private hotelPlasterSources = new Map<string, { texture: THREE.Texture; onLoad: (() => void)[] }>();
   private materialCache = new Map<string, THREE.MeshStandardMaterial>();
   private marker: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   private markerLight: THREE.PointLight;
@@ -3465,6 +3466,7 @@ export class FilmSetRenderer {
     const loader = new THREE.TextureLoader();
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness, normalScale: new THREE.Vector2(.4, .4) });
     const materials = this.materials; materials.add(material);
+    const hotelPlaster = this.currentScene === 'm1_room303' && directory === 'film-materials' && id === 'damaged_plaster' ? this.hotelPlasterSources : undefined;
     const maps: Partial<Record<'color' | 'normal' | 'roughness', THREE.Texture>> = {};
     const texture = (kind: 'color' | 'normal' | 'roughness', source?: THREE.Texture | null) => {
       const loadedMap = (loaded: THREE.Texture) => {
@@ -3475,16 +3477,23 @@ export class FilmSetRenderer {
           material.needsUpdate = true;
         }
       };
-      const sharedSource = source?.image && source.image.complete !== false ? source.source : undefined;
-      const map = sharedSource ? new THREE.Texture() : loader.load(`/assets/${directory}/${id}-${kind}.jpg`, loadedMap);
+      const cached = hotelPlaster?.get(kind);
+      const sharedSource = cached?.texture.source ?? (source?.image && source.image.complete !== false ? source.source : undefined);
+      const onLoad: (() => void)[] | undefined = hotelPlaster && !sharedSource ? [] : undefined;
+      const map = sharedSource ? new THREE.Texture() : loader.load(`/assets/${directory}/${id}-${kind}.jpg`, onLoad ? loaded => {
+        loadedMap(loaded);
+        onLoad.splice(0).forEach(ready => ready());
+      } : loadedMap);
       map.wrapS = map.wrapT = THREE.RepeatWrapping; map.repeat.set(repeat, repeat); map.anisotropy = 8;
       if (kind === 'color') map.colorSpace = THREE.SRGBColorSpace; this.textures.add(map);
       if (sharedSource) {
-        // Mark the new texture before sharing the already uploaded source.
+        // Each surface keeps its UV transform without invalidating the shared image.
         map.needsUpdate = true;
         map.source = sharedSource;
-        loadedMap(map);
+        if (cached && !cached.texture.image) cached.onLoad.push(() => { if (materials.has(material)) loadedMap(map); });
+        else loadedMap(map);
       }
+      if (onLoad) hotelPlaster?.set(kind, { texture: map, onLoad });
     };
     const shared = directory === 'film-materials' ? this.roofSurfaceSources?.get(id)
       : directory === 'surfaces' && id === 'asphalt_02' && this.current?.id === 'film_hotel_roofs' ? this.streetAsphalt : undefined;
@@ -5793,7 +5802,7 @@ export class FilmSetRenderer {
     this.lobby?.dispose(); this.lobby = undefined;
     this.root.traverse(object => { if (object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.dispose(); });
     this.root.clear(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
-    this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.materialCache.clear(); this.moving = [];
+    this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.hotelPlasterSources.clear(); this.materialCache.clear(); this.moving = [];
   }
   dispose(): void { this.clear(); this.root.removeFromParent(); this.marker.removeFromParent(); this.markerLight.removeFromParent(); this.marker.geometry.dispose(); (this.marker.material as THREE.Material).dispose(); this.markerLight.dispose(); this.officeTowerDepth?.dispose(); this.officeStreetDepth?.dispose(); }
 }
