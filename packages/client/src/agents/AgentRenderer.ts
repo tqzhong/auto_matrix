@@ -598,9 +598,10 @@ export class AgentRenderer {
     const playerEntry = this.playerId ? this.agents.get(this.playerId) : undefined;
     const player = playerEntry?.state;
     const openingSet = this.matrix && opening && player?.isInMatrix && filmSetAt(player.position, true)?.id === opening.set ? opening.set : undefined;
-    const drivingSet = this.matrix && player?.isInMatrix && this.playerId === journey?.actor && (scene === 'm1_bridge' || scene === 'm1_bug')
+    const adamsSet = this.matrix && player?.isInMatrix && this.playerId === journey?.actor
+      && (scene === 'm1_bridge' || scene === 'm1_bug' || scene === 'm1_pills' || scene === 'm1_mirror')
       ? filmSetAt(player.position, true) : undefined;
-    const adamsStreet = drivingSet?.architecture === 'bridge' || drivingSet?.architecture === 'car';
+    const adamsStreet = adamsSet?.architecture === 'bridge' || adamsSet?.architecture === 'car' || adamsSet?.architecture === 'lafayette';
     const roof = journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     const roofExit = player?.currentAction?.parameters.roofExit as MotionInput['roofExit'];
     const rooftopRun = openingSet === 'film_hotel_roofs' && roof?.phase === 'running' && !roofExit

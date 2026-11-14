@@ -33,21 +33,39 @@ test('Lafayette prepares the visible actor in batches with the room lights that 
   skin.needsUpdate = true;
   const skinMaterial = new THREE.MeshStandardMaterial({ map: skin });
   const face = new THREE.Mesh(geometry, skinMaterial); face.name = 'Anatomical_head_and_hands'; morpheus.add(face);
-  t.after(() => { skin.dispose(); skinMaterial.dispose(); });
+  const eyeMaterial = new THREE.MeshStandardMaterial({ map: skin, alphaTest: .42, side: THREE.DoubleSide });
+  const eyes = new THREE.SkinnedMesh(geometry, eyeMaterial); morpheus.add(eyes); morpheus.visible = false;
+  t.after(() => { skin.dispose(); skinMaterial.dispose(); eyeMaterial.dispose(); });
   const eye = new THREE.PerspectiveCamera(), batches: THREE.Object3D[][] = [];
   const children = [...scene.children];
   let key: THREE.SpotLight | undefined;
   let firstReady = false;
   const bindings: number[] = [];
   const uploads: THREE.Texture[] = [];
+  const depthMaterials: THREE.MeshDepthMaterial[] = [];
   const programs: { isReady: () => boolean; getUniforms: () => void }[] = [];
   const webgl = {
-    info: { programs },
+    info: { programs }, debug: { checkShaderErrors: false },
     properties: {},
     extensions: { has: () => true }, getRenderTarget: () => null, setRenderTarget() {},
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
     initTexture: (texture: THREE.Texture) => uploads.push(texture),
     compile(subject: THREE.Object3D, _eye: THREE.Camera, target: THREE.Scene) {
-      const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object)); batches.push(batch);
+      const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object));
+      if (batch[0] instanceof THREE.Mesh && batch[0].material instanceof THREE.MeshDepthMaterial) {
+        assert.equal(batch.length, 1);
+        assert.ok(batch[0] instanceof THREE.SkinnedMesh);
+        assert.equal(batch[0].geometry, eyes.geometry);
+        const depth = batch[0].material;
+        assert.equal(depth.depthPacking, THREE.RGBADepthPacking);
+        assert.equal(depth.map, skin); assert.equal(depth.alphaTest, .42); assert.equal(depth.side, THREE.DoubleSide);
+        assert.equal(lighting.minimumPointSlots, 16);
+        assert.equal(target.fog, null);
+        depthMaterials.push(depth);
+        programs.push({ isReady: () => true, getUniforms: () => { bindings.push(3); } });
+        return;
+      }
+      batches.push(batch);
       target.traverseVisible(object => { if (object instanceof THREE.SpotLight && object.intensity === 1900) key = object; });
       assert.ok(key, 'the room shadow light must be present in the program variant');
       assert.equal(key.getWorldPosition(new THREE.Vector3()).y, FILM_SETS.film_lafayette.center.y - 1 + 9.4);
@@ -79,6 +97,17 @@ test('Lafayette prepares the visible actor in batches with the room lights that 
   assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_lafayette');
   assert.ok(key && renderer.root.getObjectByProperty('uuid', key.uuid) === key);
   assert.equal(key.getWorldPosition(new THREE.Vector3()).y, FILM_SETS.film_lafayette.center.y - 1 + 9.4);
+  assert.equal(depthMaterials.length, 0);
+  eyes.castShadow = true;
+  const interiorChildren = [...scene.children];
+  prepare(); prepare(); prepare();
+  assert.equal(depthMaterials.length, 1, 'link the alpha-cut shadow while Neo is still outside');
+  assert.deepEqual(bindings, [2, 1, 3]);
+  assert.equal(lighting.minimumPointSlots, 0);
+  assert.deepEqual(scene.children.filter(object => object.visible), interiorChildren.filter(object => object.visible));
+  assert.equal(eyes.parent, morpheus); assert.equal(morpheus.visible, false); assert.equal(eyes.material, eyeMaterial);
+  let released = 0; depthMaterials[0].addEventListener('dispose', () => released++);
+  renderer.update(undefined, undefined, 0); assert.equal(released, 1);
 });
 
 test('Lafayette prepares the ground and third-floor light layouts without changing the active street', t => {

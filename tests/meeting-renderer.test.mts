@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { bridgeArrivalPose, filmEntry, filmPosition, FILM_SCENE_BY_ID, meetingCarPose, meetingRollRoadTime, MEETING_ROAD_WIDTH, MEETING_CAR, type FilmJourney } from '@auto_matrix/shared';
+import { bridgeArrivalPose, filmEntry, filmPosition, FILM_SCENE_BY_ID, meetingCarPose, meetingRollRoadTime, LAFAYETTE, MEETING_ROAD_WIDTH, MEETING_CAR, type FilmJourney } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
@@ -141,6 +141,16 @@ test('Adams Street renders the local cast while the separate city is hidden', t 
   journey.scene = 'm1_bug'; renderer.update(0, camera, 1, 0, journey);
   assert.equal(visible(remote.id), false);
   assert.equal(visible(guest.id), true, 'a second player on the road remains visible');
+  neo.position = filmPosition('film_lafayette', 0, 29); neo.position.y -= LAFAYETTE.upper;
+  renderer.updateAgent('neo', neo); renderer.update(0, camera, 1, 0, journey);
+  assert.equal(visible(remote.id), false, 'Lafayette curb keeps the same city boundary');
+  assert.equal(visible(guest.id), true); assert.equal(visible(guide.id), true);
+  neo.currentLocation = 'film_lafayette'; renderer.updateAgent('neo', neo);
+  for (const scene of ['m1_pills', 'm1_mirror']) {
+    journey.scene = scene; renderer.update(0, camera, 1, 0, journey);
+    assert.equal(visible(remote.id), false);
+    assert.equal(visible(guide.id), true);
+  }
   renderer.setPlayer(null); renderer.update(0, camera, 1, 0, journey);
   assert.equal(visible(remote.id), true, 'returning to the overview restores normal visibility');
 });

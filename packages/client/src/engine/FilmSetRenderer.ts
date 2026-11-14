@@ -312,6 +312,7 @@ export class FilmSetRenderer {
   private officeTowerDepth?: THREE.MeshDepthMaterial;
   private officeStreetDepth?: THREE.MeshDepthMaterial;
   private preparedLafayette?: LafayettePreparation;
+  private preparedLafayetteEntryShadow?: { actor: THREE.Group; gpu: THREE.WebGLRenderer['properties']; programs: ColorProgram[] };
   private preparedSecondOracle?: {
     scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation;
     gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling; textureUpload?: Generator<void, boolean>;
@@ -2445,7 +2446,12 @@ export class FilmSetRenderer {
     this.preparedOffice = undefined;
   }
   prepareLafayette(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey?: FilmJourney, actor?: THREE.Group, morpheus?: THREE.Group): void {
-    if (!this.meeting || journey?.scene !== 'm1_bug' || journey.visiting || journey.meeting?.phase !== 'outside') return;
+    if (journey?.scene !== 'm1_bug' || journey.visiting || journey.meeting?.phase !== 'outside') return;
+    if (this.hotel && this.approach?.root.visible) {
+      this.prepareLafayetteEntryShadow(renderer, camera, lighting, morpheus);
+      return;
+    }
+    if (!this.meeting) return;
     const prepared = this.preparedLafayette ??= { lights: this.lafayetteRoomLights(), meshes: [], programs: [] };
     const set = FILM_SETS.film_lafayette, { x, y, z } = set.center;
     if (!prepared.room && renderer.extensions.has('KHR_parallel_shader_compile')) {
@@ -2488,6 +2494,26 @@ export class FilmSetRenderer {
       renderer.initTexture(texture);
       prepared.skin = { texture, version: texture.version, gpu: renderer.properties };
     }
+  }
+  private prepareLafayetteEntryShadow(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, morpheus?: THREE.Group): void {
+    if (!morpheus || !renderer.extensions.has('KHR_parallel_shader_compile') || !renderer.shadowMap.enabled || renderer.shadowMap.type === THREE.VSMShadowMap) return;
+    const programs = renderer.info.programs, prepared = this.preparedLafayetteEntryShadow;
+    if (prepared?.actor === morpheus && prepared.gpu === renderer.properties) {
+      const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
+      if (ready >= 0) cacheReadyProgramLocations(renderer, prepared.programs.splice(ready, 1)[0]);
+      return;
+    }
+    // The stairwell lights are already present at the curb. Pressing G brings in Morpheus and reserves 16 point slots.
+    const materials = new Set<THREE.MeshDepthMaterial>();
+    const casters = shadowCasterProxies(this.colorMeshes(morpheus.children).filter(mesh => mesh.material.alphaTest > 0), materials);
+    if (!casters.length) return;
+    materials.forEach(material => this.materials.add(material));
+    const slots = lighting.minimumPointSlots, start = programs?.length ?? 0;
+    try {
+      lighting.minimumPointSlots = LAFAYETTE_STREET_POINT_SLOTS;
+      this.compileColorBatch(renderer, casters, subject => lighting.compileSubject(renderer, camera, subject, undefined, undefined, 'depth'));
+    } finally { lighting.minimumPointSlots = slots; }
+    this.preparedLafayetteEntryShadow = { actor: morpheus, gpu: renderer.properties, programs: (programs?.slice(start) ?? []) as ColorProgram[] };
   }
   private *prepareRoomSteps(set: FilmSet, lights?: LafayetteRoomLights): Generator<void> {
     if (set.id === 'film_source_corridor') {
@@ -6005,6 +6031,7 @@ export class FilmSetRenderer {
     this.preparedLafayetteGround = undefined;
     this.preparedLafayetteLanding = undefined;
     this.preparedLafayetteUpper = undefined;
+    this.preparedLafayetteEntryShadow = undefined;
     this.helPerformers?.dispose(); this.helPerformers = undefined;
     this.club?.dispose(); this.club = undefined; this.clubExitColors = undefined;
     this.approach?.renderer.dispose(); this.approach = undefined;
