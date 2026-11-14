@@ -427,7 +427,7 @@ test('isolated opening sets render their own cast and hide distant actors during
   }
 });
 
-test('the live 303 escape reports each moving footfall and stays quiet when the gait stops', t => {
+test('Trinity’s live 303 and rooftop escapes report footfalls only on a moving gait', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
   const originalDocument = globalThis.document;
@@ -473,6 +473,29 @@ test('the live 303 escape reports each moving footfall and stays quiet when the 
   renderer.setPlayerMotion(moving);
   for (let i = 0; i < 24; i++) assert.equal(draw(1, { ...journey, visiting: scene.id }), false, 'journal views stay quiet');
   for (let i = 0; i < 24; i++) assert.equal(draw(1, { ...journey, openingHotel: { ...journey.openingHotel!, phase: 'combat' } }), false, 'other phases keep their own cues');
+
+  const roof = FILM_SCENE_BY_ID.m1_roofs, roofPosition = filmEntry(roof);
+  const chase = { ...journey, scene: roof.id, checkpoint: roofPosition, openingHotel: undefined,
+    openingRoof: { phase: 'running' as const, attempts: 0, lastTick: 20 } };
+  const runner = { ...trinity, position: roofPosition, currentLocation: roof.set };
+  renderer.updateAgent(trinity.id, runner, chase);
+  let roofSteps = 0;
+  for (let i = 0; i < 24; i++) {
+    const before = gait.phase;
+    const heard = draw(1, chase);
+    assert.equal(heard, Math.floor(gait.phase * 2) > Math.floor(before * 2), 'roof boots sound at the planted gait');
+    roofSteps += Number(heard);
+  }
+  assert.ok(roofSteps >= 3);
+  for (let i = 0; i < 12; i++) assert.equal(draw(0, chase), false, 'pausing the chase makes no steps');
+  renderer.setPlayerMotion({ ...moving, grounded: false });
+  for (let i = 0; i < 12; i++) assert.equal(draw(1, chase), false, 'crossing in the air makes no steps');
+  renderer.setPlayerMotion(moving);
+  for (let i = 0; i < 12; i++) assert.equal(draw(1, { ...chase, openingRoof: { ...chase.openingRoof, phase: 'failed' } }), false);
+  for (let i = 0; i < 12; i++) assert.equal(draw(1, { ...chase, visiting: roof.id }), false);
+  renderer.updateAgent(trinity.id, { ...runner, currentAction: { type: 'move_to', startedAt: 20, duration: 1e9, progress: 0,
+    parameters: { roofExit: { elapsed: .7, origin: roofPosition, stairwell: true } } } }, chase);
+  assert.equal(draw(1, chase), false, 'the saved window performance owns its cues');
 });
 
 test('the caller disappears from the booth after the line connects and returns on retry', t => {

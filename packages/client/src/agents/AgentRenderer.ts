@@ -590,13 +590,16 @@ export class AgentRenderer {
     const playerEntry = this.playerId ? this.agents.get(this.playerId) : undefined;
     const player = playerEntry?.state;
     const openingSet = this.matrix && opening && player?.isInMatrix && filmSetAt(player.position, true)?.id === opening.set ? opening.set : undefined;
-    const hallWalker = openingSet === 'film_heart_hotel' && journey?.openingHotel?.phase === 'corridor'
-      && !journey.visiting && journey.actor === this.playerId && player?.status === 'alive' && speed > 0
-      && this.playerMotion?.grounded && this.playerMotion.speed > .1
-      && Math.hypot(player.velocity.x, player.velocity.z) > .1 ? playerEntry : undefined;
-    const previousStep = Math.floor((hallWalker?.rig.motion.phase ?? 0) * 2);
     const roof = journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     const roofExit = player?.currentAction?.parameters.roofExit as MotionInput['roofExit'];
+    const rooftopRun = openingSet === 'film_hotel_roofs' && roof?.phase === 'running' && !roofExit
+      && player?.position.y === FILM_SETS.film_hotel_roofs.center.y && player.velocity.y === 0;
+    const escapeGait = openingSet === 'film_heart_hotel' && journey?.openingHotel?.phase === 'corridor' || rooftopRun;
+    const footstepActor = escapeGait
+      && !journey?.visiting && journey?.actor === this.playerId && player?.status === 'alive' && speed > 0
+      && this.playerMotion?.grounded && this.playerMotion.speed > .1
+      && Math.hypot(player.velocity.x, player.velocity.z) > .1 ? playerEntry : undefined;
+    const previousStep = Math.floor((footstepActor?.rig.motion.phase ?? 0) * 2);
     const insideStairwell = roof && roofExit?.stairwell && roofExit.elapsed >= OPENING_ROOF_EXIT.land;
     const roofRestarted = roof?.phase === 'running' && roof.attempts > 0 && roof.attempts !== this.openingRoofAttempt;
     this.openingRoofAttempt = roof?.attempts;
@@ -1526,7 +1529,7 @@ export class AgentRenderer {
       }
     }
     // The two feet plant half a gait cycle apart.
-    return hallWalker !== undefined && Math.floor(hallWalker.rig.motion.phase * 2) > previousStep;
+    return footstepActor !== undefined && Math.floor(footstepActor.rig.motion.phase * 2) > previousStep;
   }
 
   showSpeechBubble(id: string, _name: string, text: string): void {

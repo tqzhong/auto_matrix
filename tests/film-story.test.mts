@@ -1301,7 +1301,7 @@ test('a legacy rooftop save from before the pursuit restores a supported runway'
   assert.deepEqual(h.sandbox.life.film.state!.completed, ['m1_room303']);
 });
 
-test('a straight run across the wide opening alley advances past the runway', () => {
+test('a straight run across the wide opening alley counts the landing and reaches the window', () => {
   const h = setup(); h.command('start');
   const roofs = FILM_SCENE_BY_ID.m1_roofs, { center } = FILM_SETS[roofs.set], state = h.sandbox.life.film.state!, actor = h.actor();
   Object.assign(state, { scene: roofs.id, step: 0, completed: ['m1_room303'], checkpoint: filmEntry(roofs),
@@ -1310,18 +1310,30 @@ test('a straight run across the wide opening alley advances past the runway', ()
   actor.currentLocation = roofs.set; actor.position = filmEntry(roofs); actor.currentAction = null;
   const brown = h.world.agents.get('agent_brown')!;
   brown.currentLocation = roofs.set; brown.position = filmPosition(roofs.set, 0, 43);
-  let jumped = false;
-  for (let frame = 1; frame <= 40; frame++) {
-    const jump = !jumped && actor.position.z - center.z <= OPENING_ESCAPE.roofGapNear + 1.8;
-    jumped ||= jump;
-    h.players.receiveInput('film-player', { x: 0, z: -1, yaw: Math.PI, sprint: true, jump, sequence: frame });
+  let jumped = false, frame = 0;
+  const sprint = (jump = false) => {
+    h.players.receiveInput('film-player', { x: 0, z: -1, yaw: Math.PI, sprint: true, jump, sequence: ++frame });
     h.players.step(.1, true, h.tick());
     if (frame % 5 === 0) h.advance();
+  };
+  while (frame < 40) {
+    const jump = !jumped && actor.position.z - center.z <= OPENING_ESCAPE.roofGapNear + 1.8;
+    jumped ||= jump;
+    sprint(jump);
+    if (actor.position.y > center.y) assert.equal(state.step, 1, 'a midair crossing must wait for touchdown');
     if (jumped && actor.position.y === center.y && actor.position.z < center.z + OPENING_ESCAPE.roofGapFar) break;
   }
   assert.ok(jumped && actor.position.y === center.y && actor.position.z < center.z + OPENING_ESCAPE.roofGapFar, 'Trinity must actually land across the alley');
+  h.advance();
   assert.equal(state.openingRoof?.phase, 'running');
-  assert.equal(state.step, 1, 'the open runway must count when crossing straight without touching the side marker');
+  assert.equal(state.step, 2, 'a grounded landing in the center advances to the window');
+  assert.equal(actor.position.x, center.x);
+  const exit = filmStepPosition(roofs, roofs.steps[2]);
+  while (frame < 75 && actor.position.z > exit.z + 3) sprint();
+  assert.equal(state.openingRoof?.phase, 'running');
+  assert.ok(actor.position.z <= exit.z + 3);
+  h.command('act');
+  assert.ok(actor.currentAction?.parameters.roofExit, 'the window accepts the player who landed without a detour');
 });
 
 test('Trinity can walk from 303 through the roof gap and answer the phone without a player-position shortcut', () => {

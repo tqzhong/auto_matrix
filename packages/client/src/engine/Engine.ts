@@ -214,8 +214,8 @@ export class Engine {
         garageCar = { x: position.x - center.x - seat.x, z: position.z - center.z - seat.z, yaw };
       }
     }
-    const hallStep = this.agentRenderer.update(delta, this.camera, this.simulationSpeed, this.tick, meeting, garageCar);
-    if (hallStep && this.running) this.audio.governmentSound('trinity-step');
+    const escapeStep = this.agentRenderer.update(delta, this.camera, this.simulationSpeed, this.tick, meeting, garageCar);
+    if (escapeStep && this.running) this.audio.governmentSound('trinity-step');
     if (this.playerControls?.id) {
       const group = this.agentRenderer.getAgent(this.playerControls.id);
       if (group) {
