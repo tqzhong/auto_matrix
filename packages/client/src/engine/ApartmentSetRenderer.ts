@@ -286,16 +286,18 @@ export class ApartmentSetRenderer {
     const previous = this.returnPreparation;
     const phone = journey?.scene === 'm1_phone_escape' ? journey.openingPhone : undefined;
     const opening = phone?.phase === 'connected' || phone?.phase === 'done';
-    const resuming = !deferred && journey?.scene === 'm1_wake_up' && (resume || Boolean(actor && previous?.arrivals));
+    const invitation = deferred && journey?.scene === 'm1_wake_up' && journey.contact?.phase === 'noticed';
+    const resuming = !deferred && journey?.scene === 'm1_wake_up'
+      && (resume || Boolean(actor && previous?.destination === 'm1_wake_up' && previous.arrivals));
     const blue = journey?.scene === 'm1_pills' && journey.pills?.phase === 'taking' && journey.pills.choice === 'blue';
     const club = journey?.scene === 'm1_club' && ['whisper', 'question', 'reply', 'departing', 'done'].includes(journey.club?.phase ?? '');
-    const invitation = deferred && journey?.scene === 'm1_wake_up' && journey.contact?.phase === 'noticed';
     const destination = opening || resuming ? 'm1_wake_up' : club ? 'm1_morning' : blue ? 'neo_apartment' : invitation ? 'deferred_contact' : undefined;
-    if (!destination || journey?.visiting || (!actor && !resuming) || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+    if (!destination || journey?.visiting || (!actor && !resuming && !invitation) || !renderer.extensions.has('KHR_parallel_shader_compile')) {
       const shadows = previous?.shadows;
-      if (journey?.scene === 'm1_wake_up' && !journey.visiting && !previous?.arrivals && previous?.gpu === renderer.properties
+      if (journey?.scene === 'm1_wake_up' && !journey.visiting && (previous?.destination === 'deferred_contact' || !previous?.arrivals)
+        && previous?.gpu === renderer.properties
         && shadows?.materials.size && shadows.entryFrames < 2) {
-        // The first shadow draw still sees Wells' light counts. Keep both programs through the next draw.
+        // Three still uses the previous frame's light counts for the first shadow draw.
         previous.steps?.return(undefined); previous.steps = undefined; previous.normalMeshes = undefined;
         shadows.entryFrames++;
       } else this.cancelReturnPreparation();
@@ -305,18 +307,21 @@ export class ApartmentSetRenderer {
     const subjects = invitation || !actor ? arriving : destination === 'neo_apartment' ? [actor] : [actor, ...arriving];
     if (!subjects.length && !resuming) { this.cancelReturnPreparation(); return false; }
     const points = this.roomLights.reduce((count, light) => count + Number(light instanceof THREE.PointLight && light.intensity > 0), 0);
-    if (resuming && previous?.arrivals && previous.gpu === renderer.properties && previous.points === points && previous.steps
+    const incremental = resuming || invitation;
+    if (incremental && previous?.arrivals && previous.destination === destination
+      && previous.gpu === renderer.properties && previous.points === points && previous.steps
       && previous.subjects.every(object => subjects.includes(object))) {
-      previous.arrivals.actor = actor;
+      previous.arrivals.actor = invitation ? undefined : actor;
       previous.arrivals.subjects.push(...subjects.filter(object => !previous.subjects.includes(object)));
       previous.subjects = subjects;
     }
-    if (previous?.gpu !== renderer.properties || previous.points !== points || previous.destination !== destination || (previous.arrivals !== undefined) !== resuming || previous.subjects.length !== subjects.length
+    if (previous?.gpu !== renderer.properties || previous.points !== points || previous.destination !== destination
+      || (previous.arrivals !== undefined) !== incremental || previous.subjects.length !== subjects.length
       || subjects.some((object, index) => previous.subjects[index] !== object)) {
       this.cancelReturnPreparation();
       const normalMeshes: THREE.Mesh[] | undefined = destination === 'neo_apartment' ? undefined : [];
-      const arrivals = resuming ? { actor, subjects: [] } : undefined;
-      const shadows: ReturnShadows | undefined = (opening || resuming) && openingLights && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
+      const arrivals = incremental ? { actor: resuming ? actor : undefined, subjects: [] } : undefined;
+      const shadows: ReturnShadows | undefined = (opening || incremental) && openingLights && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
         ? { lighting: openingLights, materials: new Set(), entryFrames: 0 } : undefined;
       this.returnPreparation = { gpu: renderer.properties, subjects, points, destination, normalMeshes, shadows, arrivals,
         steps: this.prepareReturnSteps(renderer, camera, scene, subjects, destination, normalMeshes, shadows, arrivals) };
@@ -334,15 +339,15 @@ export class ApartmentSetRenderer {
   private *prepareReturnSteps(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene,
     subjects: ReturnSubject[], destination: ApartmentReturn, normalMeshes?: THREE.Mesh[], shadows?: ReturnShadows, arrivals?: ReturnArrivals): Generator<void> {
     const opening = destination === 'm1_wake_up';
-    const resume = arrivals !== undefined;
     const sharedOverlays: THREE.Mesh[] = [];
     const invitation = destination === 'deferred_contact';
+    const resume = opening && arrivals !== undefined;
     const entryScene = destination === 'neo_apartment' ? undefined : FILM_SCENE_BY_ID[invitation ? 'm1_wake_up' : destination];
     const lights = new THREE.Scene(); lights.environment = scene.environment; lights.fog = scene.fog;
     for (const light of scene.children) {
       if (!(light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) continue;
       // The landing screen keeps the player's camera fill disabled until possession.
-      if (light.visible || resume && light instanceof THREE.DirectionalLight) {
+      if (light.visible || arrivals && light instanceof THREE.DirectionalLight) {
         const copy = light.clone(); copy.visible = true; lights.add(copy);
       }
     }
@@ -386,7 +391,7 @@ export class ApartmentSetRenderer {
       for (const object of objects) {
         if (object instanceof THREE.Mesh) {
           collect(object, batch);
-          if (opening && object.material instanceof THREE.MeshBasicMaterial && !sharedOverlays.includes(object)) sharedOverlays.push(object);
+          if ((opening || invitation) && object.material instanceof THREE.MeshBasicMaterial && !sharedOverlays.includes(object)) sharedOverlays.push(object);
           continue;
         }
         const player = object === arrivals?.actor, playerMeshes: ReturnMesh[] = [];
@@ -397,7 +402,7 @@ export class ApartmentSetRenderer {
         }
         object.traverseVisible(mesh => collect(mesh, colors));
         if (player) entryColors.unshift(...playerMeshes);
-        if (resume) for (const name of player ? ['Tracking_arms', 'Anatomical_head_and_hands'] : ['short04', 'Anatomical_head_and_hands']) {
+        if (arrivals) for (const name of player ? ['Tracking_arms', 'Anatomical_head_and_hands'] : ['short04', 'Anatomical_head_and_hands']) {
           const mesh = object.getObjectByName(name);
           if (!(mesh instanceof THREE.Mesh) || !(mesh.material instanceof THREE.MeshStandardMaterial)) continue;
           for (const map of [mesh.material.map, mesh.material.normalMap]) if (map) (player ? actorMaps : priorityMaps).add(map);
@@ -482,7 +487,7 @@ export class ApartmentSetRenderer {
           compile(depth.meshes.splice(0, 4), depth.lights, depth.eye, 'depth');
         } else if (buffers.length) uploadBuffers.next();
         // These uploads can run while the independently submitted colour programs are linking.
-        if ((resume || (ready < 0 && textureTurn)) && (textures.size || priorityMaps.size || actorMaps.size)) uploadTextures.next();
+        if ((arrivals || (ready < 0 && textureTurn)) && (textures.size || priorityMaps.size || actorMaps.size)) uploadTextures.next();
         yield;
       }
     } finally { uploadTextures.return(undefined); uploadBuffers.return(undefined); culling.dispose(); target.dispose(); }

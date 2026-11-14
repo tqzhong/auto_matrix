@@ -78,7 +78,7 @@ function fixture() {
   const prepare = (objects?: readonly (THREE.Group | THREE.Mesh | undefined)[], openingLights?: LightCulling, deferred = false, resume = false) => {
     resuming = journey.scene === 'm1_wake_up' && !journey.visiting && !deferred && (resume || resuming);
     const before = work.length, pending = apartment.prepareReturn(renderer, camera, scene, journey, actor, objects, openingLights, deferred, resume);
-    assert.ok(work.length - before <= (resuming ? 2 : 1), 'at most one shader batch and one texture upload during a cold entry');
+    assert.ok(work.length - before <= (resuming || deferred ? 2 : 1), 'at most one shader batch and one texture upload during an entry');
     assert.equal(renderer.getRenderTarget(), null); assert.equal(renderer.debug.checkShaderErrors, true);
     assert.equal(city.visible, false); assert.ok(roomLights.every(light => !light.visible));
     assert.equal(landingLight.visible, false); assert.equal(landingLight.intensity, 0);
@@ -164,6 +164,47 @@ test('a deferred invitation prepares the two visitors before their actual entran
   const before = h.work.length;
   assert.equal(h.prepare([choi, dujour]), false); assert.equal(h.work.length, before);
   assert.equal(h.apartment.returnNormalMeshes, undefined);
+});
+
+test('a deferred invitation prepares priority maps and retains visitor shadow programs through the handoff', t => {
+  const h = fixture(), { renderer, scene, actor, arms, journey } = h;
+  const source = new LightCulling(scene), choi = new THREE.Group(), dujour = new THREE.Group();
+  const hair = new THREE.SkinnedMesh(arms.geometry, arms.material), skin = new THREE.SkinnedMesh(arms.geometry, arms.material);
+  hair.name = 'short04'; skin.name = 'Anatomical_head_and_hands';
+  hair.castShadow = skin.castShadow = true; prepareOpaqueShadowDepth(skin);
+  choi.add(hair); dujour.add(skin);
+  journey.scene = 'm1_wake_up'; journey.contact = { phase: 'noticed', elapsed: 0, paid: true };
+  Object.assign(renderer, { shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap } });
+  const prepared = new Set<THREE.MeshDepthMaterial>(), disposed = new Set<THREE.MeshDepthMaterial>();
+  const compile = renderer.compile;
+  t.mock.method(renderer, 'compile', (subject: THREE.Object3D, camera: THREE.PerspectiveCamera, lights: THREE.Scene) => {
+    const casters: THREE.MeshDepthMaterial[] = [];
+    subject.traverse(mesh => {
+      if (mesh instanceof THREE.SkinnedMesh && mesh.material instanceof THREE.MeshDepthMaterial) casters.push(mesh.material);
+    });
+    if (!casters.length) return compile.call(renderer, subject, camera, lights);
+    assert.equal(lights.fog, null);
+    for (const caster of casters) {
+      prepared.add(caster);
+      caster.addEventListener('dispose', () => disposed.add(caster));
+    }
+    h.work.push('depth');
+  });
+  t.after(() => { h.dispose(); source.dispose(); });
+  assert.equal(h.prepare([choi], source, true), true);
+  assert.deepEqual(h.work, ['compile', 'texture'], 'start the ready map while the first color programs link');
+  assert.equal(h.prepare([choi, dujour], source, true), true);
+  assert.equal(h.batches.flat().filter(mesh => mesh === hair).length, 1, 'a late visitor appends work without relinking the first visitor');
+  h.ready();
+  for (let frame = 0; frame < 64; frame++) h.prepare([choi, dujour], source, true);
+  assert.ok(prepared.size >= 2);
+  assert.equal(disposed.size, 0);
+  assert.equal(h.prepare([actor, choi, dujour], source), false);
+  assert.equal(disposed.size, 0, 'keep the prelinked depth programs through the first draw');
+  assert.equal(h.prepare([actor, choi, dujour], source), false);
+  assert.equal(disposed.size, 0, 'retain the variants while Three adopts the destination light layout');
+  h.prepare([actor, choi, dujour], source);
+  assert.deepEqual(disposed, prepared);
 });
 
 test('a successful Wells connection prepares the apartment and the guests before Neo takes over', t => {
