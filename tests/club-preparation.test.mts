@@ -107,7 +107,11 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
         if (object instanceof THREE.SpotLight) spots++;
       });
       assert.equal(directionalLights, 2, 'use the two directional light slots from the possessed player view');
-      assert.notEqual(view, scene); assert.equal(scene.getObjectByName('white-rabbit-club'), undefined);
+      assert.notEqual(view, scene);
+      if (journey.scene === club.id) {
+        assert.ok(scene.getObjectByName('white-rabbit-club'), 'keep the live club in place while compiling');
+        assert.deepEqual([points, spots], [5, 3]);
+      } else assert.equal(scene.getObjectByName('white-rabbit-club'), undefined);
       subject.traverse(object => {
         compiled.add(object);
         if (object instanceof THREE.Mesh && !Array.isArray(object.material)) materialsAtCompile.set(object, object.material.customProgramCacheKey());
@@ -254,6 +258,35 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   film.update(undefined, undefined, 0);
   assert.equal(disposed, 1);
   assert.equal(disposedDepths, adopted.length);
+
+  await t.test('a cold whisper save prepares both offscreen boots and the exit marker before departure', () => {
+    const boots = [neoActor, actor].map(group => {
+      const boot = new THREE.SkinnedMesh(skin.geometry, new THREE.MeshStandardMaterial());
+      boot.name = 'shoes01'; boot.visible = false; group.add(boot);
+      return boot;
+    });
+    try {
+      landing.visible = false; lights.stablePointSlots = true; lights.minimumPointSlots = 5;
+      Object.assign(journey, { step: 1, club: { phase: 'whisper', elapsed: 9 } });
+      film.update(neo, sandbox, 0);
+      assert.notEqual(film.root.getObjectByName('white-rabbit-club'), room);
+      compiled.delete(film.goalMarker);
+      const firstRead = reads.length;
+      for (let frame = 0; frame < 12; frame++) prepare();
+      assert.ok(compiled.has(film.goalMarker), 'the marker appears when the player can leave');
+      for (const boot of boots) {
+        assert.ok(compiled.has(boot));
+        assert.match(materialsAtCompile.get(boot) ?? '', /actor-local-skin-v1/);
+        assert.equal(boot.visible, false);
+      }
+      assert.equal(reads.length - firstRead, 2, 'a single batch is linked and read once');
+      assert.equal(film.goalMarker.visible, false);
+    } finally {
+      film.update(undefined, undefined, 0);
+      landing.visible = true; lights.stablePointSlots = false; lights.minimumPointSlots = 10;
+      for (const boot of boots) { boot.removeFromParent(); boot.material.dispose(); }
+    }
+  });
 
   Object.assign(neo, { position: filmEntry(apartment), currentLocation: apartment.set });
   Object.assign(journey, { scene: apartment.id, step: 5, contact: { phase: 'noticed', elapsed: 1 } });

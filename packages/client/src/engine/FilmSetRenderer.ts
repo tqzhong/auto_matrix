@@ -323,6 +323,7 @@ export class FilmSetRenderer {
   };
   private club?: ClubSetRenderer;
   private preparedClub?: ClubPreparation;
+  private clubExitColors?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; queued: Set<THREE.Mesh> };
   private freeway?: FreewaySetRenderer;
   private preparedFreeway?: { renderer: FreewaySetRenderer; colors?: CastColorPreparation };
   private pods?: PodSetRenderer;
@@ -931,6 +932,10 @@ export class FilmSetRenderer {
   }
   prepareClub(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, shadows: (THREE.Mesh | undefined)[] = [], resume = false, sourceLights?: LightCulling): void {
+    if (this.club && journey?.scene === 'm1_club' && !journey.visiting) {
+      if (sourceLights && renderer.extensions.has('KHR_parallel_shader_compile')) this.prepareClubExit(renderer, camera, actor, sourceLights);
+      return;
+    }
     const onLanding = resume && !this.current && (journey?.contact?.phase === 'accepted' || journey?.contact?.phase === 'noticed');
     if ((!onLanding && this.current?.id !== 'film_anderson_flat') || journey?.scene !== 'm1_wake_up' || journey.visiting
       || !['handover', 'invitation', 'inspecting', 'noticed', 'accepted'].includes(journey.contact?.phase ?? '')) {
@@ -1020,6 +1025,19 @@ export class FilmSetRenderer {
     if (!textureTurn && parallel && this.prepareClubProgram(renderer, camera, prepared, apartmentLights, ready)) return;
     if (this.prepareColorTexture(renderer, roomTextures) || this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) return;
     if (textureTurn && parallel) this.prepareClubProgram(renderer, camera, prepared, apartmentLights, ready);
+  }
+  private prepareClubExit(renderer: THREE.WebGLRenderer, camera: THREE.Camera, actor: (id: string) => THREE.Group | undefined,
+    lighting: LightCulling): void {
+    if (this.clubExitColors?.gpu !== renderer.properties)
+      this.clubExitColors = { gpu: renderer.properties, scene: this.scene, meshes: [this.marker], programs: [], textures: new Set(), queued: new Set() };
+    const prepared = this.clubExitColors;
+    // A restored close-up may never draw the boots until the player turns to leave.
+    for (const id of ['neo', 'trinity']) {
+      const boots = actor(id)?.getObjectByName('shoes01');
+      if (!(boots instanceof THREE.SkinnedMesh) || prepared.queued.has(boots)) continue;
+      prepared.queued.add(boots); prepared.meshes.push(boots);
+    }
+    this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true, [this.marker]);
   }
   private prepareClubProgram(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ClubPreparation,
     apartmentLights?: LightCulling, ready?: ColorProgram): boolean {
@@ -5819,7 +5837,7 @@ export class FilmSetRenderer {
     this.preparedLafayetteLanding = undefined;
     this.preparedLafayetteUpper = undefined;
     this.helPerformers?.dispose(); this.helPerformers = undefined;
-    this.club?.dispose(); this.club = undefined;
+    this.club?.dispose(); this.club = undefined; this.clubExitColors = undefined;
     this.approach?.renderer.dispose(); this.approach = undefined;
     this.hotel?.dispose(); this.hotel = undefined;
     this.meeting?.dispose(); this.meeting = undefined;
