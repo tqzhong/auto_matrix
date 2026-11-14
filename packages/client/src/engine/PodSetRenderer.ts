@@ -3,6 +3,7 @@ import { FILM_SETS, POD_WATER_DROP, POD_RESCUE, POD_BREATHER, AWAKENING_SECONDS,
 import { podThirdPersonCamera } from '../player/PodCamera.js';
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { LightCulling } from './LightCulling.js';
+import { cacheReadyProgramLocations, preserveProgramBindings, shadowCasterProxies } from './PrepareShaderProgram.js';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import { PodMembraneRenderer } from './PodMembraneRenderer.js';
 import { PodMaintenanceRenderer } from './PodMaintenanceRenderer.js';
@@ -27,6 +28,10 @@ export class PodSetRenderer {
   private colorProgramsReady = false;
   private colorActor?: THREE.Group;
   private colorGpu?: THREE.WebGLRenderer['properties'];
+  private colorFirstPerson = false;
+  private normalMeshes?: THREE.Mesh[];
+  private shadowMeshes: THREE.Mesh[] = [];
+  private shadowVariants = new Set<string>();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Map<string, THREE.Texture>();
@@ -77,14 +82,16 @@ export class PodSetRenderer {
     this.stopPreparingColors();
     parent.add(this.root);
   }
-  prepareColorPrograms(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, actor?: THREE.Group): void {
+  get entryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.normalMeshes; }
+  prepareColorPrograms(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, actor?: THREE.Group,
+    sourceLights?: LightCulling, firstPerson = false): void {
     if (this.construction || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    if (this.colorActor !== actor || this.colorGpu !== renderer.properties) {
+    if (this.colorActor !== actor || this.colorGpu !== renderer.properties || this.colorFirstPerson !== firstPerson) {
       this.stopPreparingColors(); this.colorProgramsReady = false;
-      this.colorActor = actor; this.colorGpu = renderer.properties;
+      this.colorActor = actor; this.colorGpu = renderer.properties; this.colorFirstPerson = firstPerson;
     }
     if (this.colorProgramsReady) return;
-    this.colorPreparation ??= this.prepareColors(renderer, camera, scene, actor);
+    this.colorPreparation ??= this.prepareColors(renderer, camera, scene, actor, sourceLights, firstPerson);
     if (this.colorPreparation.next().done) {
       this.colorPreparation = undefined;
       this.colorProgramsReady = true;
@@ -93,7 +100,8 @@ export class PodSetRenderer {
   private stopPreparingColors(): void {
     this.colorPreparation?.return(undefined); this.colorPreparation = undefined;
   }
-  private *prepareColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, actor?: THREE.Group): Generator<void> {
+  private *prepareColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, actor: THREE.Group | undefined,
+    sourceLights: LightCulling | undefined, firstPerson: boolean): Generator<void> {
     const lights = new THREE.Scene(); lights.environment = scene.environment; lights.fog = scene.fog?.clone() ?? null;
     for (const light of scene.children) {
       if (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight) lights.add(light.clone());
@@ -106,42 +114,84 @@ export class PodSetRenderer {
     this.update({ scene: 'm1_pod' }, 0, false, undefined, eye);
     this.root.updateMatrixWorld(true);
     const frustum = new THREE.Frustum().setFromProjectionMatrix(eye.projectionMatrix.clone().multiply(eye.matrixWorldInverse));
-    const meshes: THREE.Object3D[] = [];
+    const meshes: (THREE.Mesh | THREE.Points)[] = [], patient: THREE.Mesh[] = [];
     // The patient body is still hidden during the mirror; compile its next view without changing that pose.
     actor?.traverse(object => {
       if (object instanceof THREE.Mesh && (object.userData.patientBody || object.userData.oralSurface
         || /^neo-(teeth|tongue)/.test(object.name) || !Array.isArray(object.material) && ['Skin', 'Eyes', 'Eyes cornea'].includes(object.material.name))) {
         if (object instanceof THREE.SkinnedMesh && !Array.isArray(object.material)) prepareSkinnedMaterial(object.material);
-        meshes.push(object);
+        patient.push(object); meshes.push(object);
       }
     });
     this.root.traverseVisible(object => {
       if (object instanceof THREE.Light) {
         const light = object.clone(); object.getWorldPosition(light.position); lights.add(light);
-      } else if ((object instanceof THREE.Mesh || object instanceof THREE.Points) && (!object.frustumCulled || frustum.intersectsObject(object))) {
+      } else if ((object instanceof THREE.Mesh || object instanceof THREE.Points) && (firstPerson || !object.frustumCulled || frustum.intersectsObject(object))) {
         meshes.push(object);
       }
     });
+    if (!this.normalMeshes) {
+      // Match the instanced normal variant used by the near bank and pipe collars.
+      let instanced: THREE.InstancedMesh | undefined;
+      this.root.traverseVisible(object => {
+        if (!instanced && object instanceof THREE.InstancedMesh && object.parent !== this.distant
+          && !Array.isArray(object.material) && object.material.depthWrite) instanced = object;
+      });
+      this.normalMeshes = instanced ? [instanced] : [];
+    }
+    const textures = new Set<THREE.Texture>();
+    for (const { material } of meshes) if (material instanceof THREE.MeshStandardMaterial) {
+      for (const map of [material.map, material.normalMap, material.roughnessMap]) if (map) textures.add(map);
+    }
+    const shadows = renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap;
+    if (shadows) {
+      const materials = new Set<THREE.MeshDepthMaterial>();
+      this.shadowMeshes.push(...shadowCasterProxies([...this.basinLeaves, ...patient], materials, this.shadowVariants));
+      materials.forEach(material => this.materials.add(material));
+    }
     const culling = new LightCulling(lights), target = new THREE.WebGLRenderTarget(1, 1);
     culling.stablePointSlots = true;
     target.texture.name = 'pod-color-preparation';
     const pending: ColorProgram[] = [];
     try {
       yield;
-      while (meshes.length || pending.length) {
+      const compile = (batch: THREE.Object3D[], layout: LightCulling, view: THREE.Camera, depthPass = false) => {
+        const subject = new THREE.Group(); subject.traverse = visit => batch.forEach(visit);
+        const previous = renderer.getRenderTarget(), programs = renderer.info.programs, start = programs?.length ?? 0;
+        const restore = preserveProgramBindings(renderer, patient.filter(mesh => batch.includes(mesh)));
+        try {
+          renderer.setRenderTarget(target);
+          layout.compileSubject(renderer, view, subject, undefined, undefined, depthPass ? 'depth' : 'live');
+        } finally { renderer.setRenderTarget(previous); restore(); }
+        if (programs) pending.push(...programs.slice(start) as ColorProgram[]);
+      };
+      if (shadows && this.shadowMeshes.length) {
+        // Three draws the first shadow map before updating the reused light counts.
+        const [basin] = this.shadowMeshes;
+        if (sourceLights) { compile([basin], sourceLights, camera, true); yield; }
+        for (let start = 0; start < this.shadowMeshes.length; start += 4) {
+          compile(this.shadowMeshes.slice(start, start + 4), culling, eye, true); yield;
+        }
+      }
+      for (const texture of textures) {
+        const image = texture.image as { width?: number; complete?: boolean } | null;
+        if ((image?.width ?? 0) < 1024 || image?.complete === false || !texture.version
+          || (renderer.properties.get(texture) as { __version?: number }).__version === texture.version) continue;
+        renderer.initTexture(texture); yield;
+      }
+      let readyProgram: ColorProgram | undefined;
+      while (meshes.length || pending.length || readyProgram) {
         const programs = renderer.info.programs;
-        const ready = pending.findIndex(program => programs?.includes(program) && program.isReady());
-        if (ready >= 0) {
-          const [program] = pending.splice(ready, 1); program.getUniforms();
-        } else if (meshes.length) {
-          const batch = meshes.splice(0, 4), subject = new THREE.Group();
-          subject.traverse = visit => batch.forEach(visit);
-          const previous = renderer.getRenderTarget(), start = programs?.length ?? 0;
-          try {
-            renderer.setRenderTarget(target);
-            culling.compileSubject(renderer, eye, subject);
-          } finally { renderer.setRenderTarget(previous); }
-          if (programs) pending.push(...programs.slice(start) as ColorProgram[]);
+        if (readyProgram) {
+          if (programs?.includes(readyProgram)) cacheReadyProgramLocations(renderer, readyProgram);
+          readyProgram = undefined;
+        } else {
+          for (let index = pending.length - 1; index >= 0; index--) {
+            if (!programs?.includes(pending[index])) pending.splice(index, 1);
+          }
+          const ready = pending.findIndex(program => program.isReady());
+          if (ready >= 0) [readyProgram] = pending.splice(ready, 1);
+          else if (meshes.length) compile(meshes.splice(0, 4), culling, eye);
         }
         yield;
       }

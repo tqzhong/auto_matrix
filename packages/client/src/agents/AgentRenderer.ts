@@ -602,6 +602,8 @@ export class AgentRenderer {
       && (scene === 'm1_bridge' || scene === 'm1_bug' || scene === 'm1_pills' || scene === 'm1_mirror')
       ? filmSetAt(player.position, true) : undefined;
     const adamsStreet = adamsSet?.architecture === 'bridge' || adamsSet?.architecture === 'car' || adamsSet?.architecture === 'lafayette';
+    const podSet = !this.matrix && this.playerId === journey?.actor && scene === 'm1_pod' && player && !player.isInMatrix
+      && filmSetAt(player.position, false)?.id === 'film_power_plant_pods';
     const roof = journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     const roofExit = player?.currentAction?.parameters.roofExit as MotionInput['roofExit'];
     const rooftopRun = openingSet === 'film_hotel_roofs' && roof?.phase === 'running' && !roofExit
@@ -746,6 +748,7 @@ export class AgentRenderer {
         && (!insideStairwell || id === journey?.actor)
         && (!openingSet || filmSetAt(state.position, state.isInMatrix)?.id === openingSet)
         && (!adamsStreet || streetSet?.architecture === 'bridge' || streetSet?.architecture === 'car' || streetSet?.architecture === 'lafayette')
+        && (!podSet || filmSetAt(state.position, false)?.id === 'film_power_plant_pods')
         && (wellsGesture?.role !== 'smith' || wellsGesture.elapsed >= WELLS_AFTERMATH.firstFoot);
       const doorActor = journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.actor === id && state.status === 'alive' && state.currentLocation === 'film_club_hel';
       const fastDoor = doorActor ? (id === this.playerId ? this.playerMotion?.helDoorPush : undefined)

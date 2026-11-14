@@ -2,19 +2,22 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { POD_RUNOFF, podRunoffHeight } from '@auto_matrix/shared';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 
 test('pod color programs prepare offstage and query only ready programs', () => {
   const pod = new PodSetRenderer(), scene = new THREE.Scene(), parent = new THREE.Group();
   const key = new THREE.DirectionalLight(), camera = new THREE.PerspectiveCamera(58, 16 / 9, .1, 400);
   key.castShadow = true; scene.add(key, new THREE.HemisphereLight());
+  const lighting = new LightCulling(scene);
   scene.fog = new THREE.FogExp2(0x080f14, .005); scene.environment = new THREE.Texture();
   const previous = new THREE.WebGLRenderTarget(12, 16);
   let target = previous, disposals = 0, compiled = 0, queried = 0, supported = false, ready = false;
   const program = { isReady: () => ready, getUniforms: () => { queried++; } };
   const programs: typeof program[] = [];
   const renderer = {
-    extensions: { has: () => supported }, info: { programs }, getRenderTarget: () => target,
+    extensions: { has: () => supported }, info: { programs }, getRenderTarget: () => target, debug: { checkShaderErrors: false },
+    shadowMap: { enabled: false },
     setRenderTarget: (value: THREE.WebGLRenderTarget) => { target = value; },
     compile: (subject: THREE.Group, _camera: THREE.Camera, lights: THREE.Scene) => {
       assert.ok(lights !== scene && lights.environment === scene.environment);
@@ -35,17 +38,19 @@ test('pod color programs prepare offstage and query only ready programs', () => 
     pod.prepareColorPrograms(renderer, camera, scene);
     assert.equal(compiled, 0, 'unsupported drivers use ordinary rendering');
     supported = true;
-    for (let i = 0; i < 5; i++) pod.prepareColorPrograms(renderer, camera, scene);
+    for (let i = 0; i < 5; i++) pod.prepareColorPrograms(renderer, camera, scene, undefined, lighting);
     assert.ok(compiled > 0);
     assert.equal(queried, 0);
     assert.ok(target === previous && key.parent === scene);
     ready = true;
-    pod.prepareColorPrograms(renderer, camera, scene);
+    pod.prepareColorPrograms(renderer, camera, scene, undefined, lighting);
+    assert.equal(queried, 0, 'link completion and binding reflection use different frames');
+    pod.prepareColorPrograms(renderer, camera, scene, undefined, lighting);
     assert.equal(queried, 1);
     pod.attach(parent);
     assert.equal(disposals, 1, 'the scratch target is released when the pod goes live');
     assert.ok(pod.root.parent === parent && target === previous);
-  } finally { pod.dispose(); previous.dispose(); scene.environment.dispose(); }
+  } finally { pod.dispose(); lighting.dispose(); previous.dispose(); scene.environment.dispose(); }
 });
 
 test('pod entry prepares a late patient and hidden body without changing the mirror appearance, and rebuilds for a new GPU', t => {
@@ -59,7 +64,8 @@ test('pod entry prepares a late patient and hidden body without changing the mir
   const previous = new THREE.WebGLRenderTarget(12, 16); let target = previous, actorReady = false;
   const batches: THREE.Object3D[][] = [];
   const renderer = {
-    properties: {}, extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => target,
+    properties: { get: () => ({}) }, extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => target,
+    shadowMap: { enabled: false },
     setRenderTarget: (value: THREE.WebGLRenderTarget) => { target = value; },
     compile(subject: THREE.Group, _camera: THREE.Camera, lights: THREE.Scene) {
       const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object));
@@ -86,7 +92,62 @@ test('pod entry prepares a late patient and hidden body without changing the mir
   assert.equal(batches.filter(batch => batch.includes(patient)).length, 1);
   assert.ok(batches.every(batch => !batch.includes(shirt)));
   const count = batches.length; frames(); assert.equal(batches.length, count, 'completed preparation has bounded work');
-  renderer.properties = {}; frames(); assert.equal(batches.filter(batch => batch.includes(patient)).length, 2);
+  renderer.properties = { get: () => ({}) }; frames(); assert.equal(batches.filter(batch => batch.includes(patient)).length, 2);
+});
+
+test('pod entry prepares the basin shadow, drain textures and instanced normals from the detached set', t => {
+  const document = globalThis.document; globalThis.document = {} as Document;
+  t.after(() => { globalThis.document = document; });
+  const plaster: THREE.Texture[] = [];
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string) => {
+    const texture = new THREE.Texture({ width: 1024, height: 1024, complete: true }); texture.needsUpdate = true;
+    if (url.includes('damaged_plaster')) plaster.push(texture);
+    return texture;
+  });
+  const pod = new PodSetRenderer(), scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(58, 16 / 9, .1, 400);
+  const visibleSpot = new THREE.SpotLight(); scene.add(visibleSpot, new THREE.DirectionalLight());
+  const lighting = new LightCulling(scene); lighting.minimumPointSlots = 8;
+  const previous = new THREE.WebGLRenderTarget(12, 16);
+  let target = previous;
+  const textureVersions = new WeakMap<THREE.Texture, { __version: number }>(), uploaded: THREE.Texture[] = [];
+  const properties = { get: (texture: THREE.Texture) => textureVersions.get(texture) ?? {} };
+  const shadowLayouts: number[][] = [], shadows = new Set<THREE.MeshDepthMaterial>();
+  const renderer = {
+    properties, extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => target,
+    setRenderTarget: (value: THREE.WebGLRenderTarget) => { target = value; },
+    initTexture(texture: THREE.Texture) { uploaded.push(texture); textureVersions.set(texture, { __version: texture.version }); },
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
+    compile(subject: THREE.Group, _camera: THREE.Camera, lights: THREE.Scene) {
+      subject.traverse(object => {
+        if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshDepthMaterial)) return;
+        assert.equal(object.geometry, (pod.root.getObjectByName('pod-basin-leaf--1') as THREE.Mesh).geometry);
+        assert.equal(object.material.side, THREE.DoubleSide); assert.equal(object.material.depthPacking, THREE.RGBADepthPacking);
+        assert.match(object.material.customProgramCacheKey(), /actor-local-skin-v1$/);
+        assert.equal(lights.fog, null);
+        let points = 0, spots = 0;
+        lights.traverseVisible(light => { if (light instanceof THREE.PointLight) points++; if (light instanceof THREE.SpotLight) spots++; });
+        shadowLayouts.push([points, spots]); shadows.add(object.material);
+      });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  t.after(() => { pod.dispose(); lighting.dispose(); previous.dispose(); visibleSpot.dispose(); });
+  for (let i = 0; i < 40; i++) pod.prepareStep();
+  for (let i = 0; i < 160; i++) {
+    const start = uploaded.length;
+    pod.prepareColorPrograms(renderer, camera, scene, undefined, lighting, true);
+    assert.ok(uploaded.length - start <= 1);
+    assert.equal(target, previous); assert.equal(lighting.minimumPointSlots, 8); assert.equal(pod.root.parent, null);
+  }
+  assert.deepEqual(shadowLayouts, [[8, 1], [10, 1]]);
+  assert.equal(shadows.size, 1); assert.equal(plaster.length, 3);
+  assert.equal(new Set(uploaded).size, uploaded.length);
+  assert.deepEqual(uploaded.filter(texture => plaster.includes(texture)), plaster);
+  assert.equal(pod.entryNormalMeshes?.length, 1); assert.ok(pod.entryNormalMeshes[0] instanceof THREE.InstancedMesh);
+  assert.notEqual(pod.entryNormalMeshes[0].parent?.name, 'pod-distant-towers');
+  assert.equal(pod.entryNormalMeshes[0].visible, true);
+  const [depth] = shadows; let disposed = 0; depth.addEventListener('dispose', () => disposed++);
+  pod.attach(new THREE.Group()); assert.equal(disposed, 0);
+  pod.dispose(); assert.equal(disposed, 1);
 });
 
 test('the rescue bay has an open passage for the body and closes below it after boarding', () => {

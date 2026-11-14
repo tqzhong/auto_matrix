@@ -155,6 +155,32 @@ test('Adams Street renders the local cast while the separate city is hidden', t 
   assert.equal(visible(remote.id), true, 'returning to the overview restores normal visibility');
 });
 
+test('the cultivation pod draws its own actors and keeps the boarding crew when they arrive', t => {
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  const context = { fillRect() {}, fillText() {}, strokeRect() {}, putImageData() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }) };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const renderer = new AgentRenderer(new THREE.Scene()), camera = new THREE.PerspectiveCamera();
+  t.after(() => { renderer.dispose(); globalThis.document = document; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, trinity = world.agents.get('trinity')!, tank = world.agents.get('tank')!;
+  const position = filmEntry(FILM_SCENE_BY_ID.m1_pod);
+  Object.assign(neo, { isInMatrix: false, currentLocation: 'film_power_plant_pods', position });
+  Object.assign(trinity, { isInMatrix: false, currentLocation: 'film_power_plant_pods', position: filmPosition('film_power_plant_pods', 3, 17) });
+  for (const agent of [neo, trinity, tank]) renderer.updateAgent(agent.id, agent);
+  renderer.setWorld(false); renderer.setPlayer(neo.id); camera.position.set(position.x + 4, position.y + 5, position.z + 7);
+  const journey = { scene: 'm1_pod', actor: 'neo', step: 1, awakening: { kind: 'rescue', elapsed: 8.8 } } as FilmJourney;
+  renderer.update(0, camera, 0, 0, journey);
+  const visible = (id: string) => renderer.getAgent(id)?.visible;
+  assert.equal(visible(tank.id), false);
+  assert.equal(visible(trinity.id), true);
+  assert.equal(visible(neo.id), true);
+  renderer.setPlayer(null); renderer.update(0, camera, 0, 0, journey);
+  assert.equal(visible(tank.id), true);
+});
+
 test('the bridge and car retain only drawn geometry and keep the indexed wheel batches', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const parent = new THREE.Group(), renderer = new MeetingSetRenderer(parent, false);

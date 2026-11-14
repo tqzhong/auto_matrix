@@ -500,6 +500,7 @@ export class FilmSetRenderer {
     if (prepared && !prepared.meshes.length && !prepared.shadowMeshes.length && !prepared.programs.length && !prepared.readyProgram) return prepared.normalMeshes;
   }
   get openingRoofRetryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedRoofRetry?.normalMeshes; }
+  get podEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedPods?.entryNormalMeshes; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
     // Keep the prepared layout while the shaft and sixth-floor lamps are revealed.
@@ -570,8 +571,8 @@ export class FilmSetRenderer {
     if (['approach', 'entrance', 'building', 'relaunch', 'sky_grapple'].includes(phase) || phase === 'descent' && elapsed < .8)
       this.smithFinale.prepareCrater(renderer, camera, this.scene);
   }
-  preparePodColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, actor?: THREE.Group): void {
-    this.preparedPods?.prepareColorPrograms(renderer, camera, this.scene, actor);
+  preparePodColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, lighting: LightCulling, actor: THREE.Group | undefined, firstPerson: boolean): void {
+    this.preparedPods?.prepareColorPrograms(renderer, camera, this.scene, actor, lighting, firstPerson);
   }
   prepareAmbush(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined): void {
