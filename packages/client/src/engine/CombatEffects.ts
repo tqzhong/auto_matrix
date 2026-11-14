@@ -18,7 +18,8 @@ export class CombatEffects {
   private pulses: { group: THREE.Group; material: THREE.MeshBasicMaterial; age: number; radius: number; duration: number; direction: THREE.Vector3 }[] = [];
   private ring = new THREE.RingGeometry(.94, 1, 64);
   private flashTexture: THREE.CanvasTexture;
-  private spareImpactFlash?: THREE.SpriteMaterial;
+  private spareImpactFlash?: THREE.Sprite;
+  private hotelImpactFlash?: THREE.Sprite;
   private gunfire: GunfireEffects;
 
   constructor(private scene: THREE.Scene, private audio: GameAudio) {
@@ -29,6 +30,17 @@ export class CombatEffects {
     glow.addColorStop(0, '#ffffff'); glow.addColorStop(.18, '#ffffffbb'); glow.addColorStop(1, '#ffffff00');
     ctx.fillStyle = glow; ctx.fillRect(0, 0, 64, 64);
     this.flashTexture = new THREE.CanvasTexture(canvas);
+  }
+
+  openingHotelImpactFlash(): THREE.Sprite {
+    this.hotelImpactFlash ??= (this.spareImpactFlash ??= this.createImpactFlash());
+    return this.hotelImpactFlash;
+  }
+
+  private createImpactFlash(): THREE.Sprite {
+    return new THREE.Sprite(new THREE.SpriteMaterial({
+      map: this.flashTexture, color: '#eff3d8', transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
+    }));
   }
 
   private playSound(heavy: boolean, skill = false): void {
@@ -72,7 +84,7 @@ export class CombatEffects {
 
   impact(hit: CombatImpact, hurtPlayer: boolean, muzzle?: THREE.Vector3): void {
     if (hit.shot) { this.gunfire.shot(hit, muzzle); if (!hit.damage) return; }
-    if (this.bursts.length >= 20) this.remove(this.bursts.shift()!);
+    if (this.bursts.length >= 20) this.remove(this.bursts.shift()!, Boolean(this.hotelImpactFlash));
     const heavy = hit.combo === 2; const count = heavy ? 20 : 12;
     if (hit.damage > 0 && !hit.shot) this.playSound(heavy);
     const group = new THREE.Group(); group.position.set(hit.position.x, hit.position.y, hit.position.z);
@@ -82,10 +94,10 @@ export class CombatEffects {
     const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     const streaks = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: hurtPlayer ? '#e7a18a' : heavy ? '#d7efb1' : '#e8e8d9', transparent: true, depthWrite: false, toneMapped: false }));
     group.add(streaks);
-    const flashMaterial = this.spareImpactFlash ?? new THREE.SpriteMaterial({ map: this.flashTexture, color: '#eff3d8', transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+    const flash = this.spareImpactFlash ?? this.createImpactFlash();
     this.spareImpactFlash = undefined;
-    flashMaterial.opacity = 1;
-    const flash = new THREE.Sprite(flashMaterial);
+    flash.material.opacity = 1;
+    flash.scale.setScalar(1);
     group.add(flash);
     const canvas = document.createElement('canvas'); canvas.width = 192; canvas.height = 80;
     const ctx = canvas.getContext('2d')!; ctx.font = '600 34px "PingFang SC", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -124,24 +136,30 @@ export class CombatEffects {
       burst.label.position.y = .65 + t * 1.25;
       burst.label.material.opacity = Math.min(1, Math.max(0, (.65 - t) / .2));
     }
-    if (!retainImpactFlash) this.disposeSpareImpactFlash();
+    if (!retainImpactFlash) {
+      this.disposeSpareImpactFlash();
+      this.hotelImpactFlash = undefined;
+    }
   }
 
   private remove(burst: Burst, retainImpactFlash = false): void {
     this.scene.remove(burst.group); burst.streaks.geometry.dispose(); burst.streaks.material.dispose();
-    if (retainImpactFlash && !this.spareImpactFlash) this.spareImpactFlash = burst.flash.material;
-    else burst.flash.material.dispose();
+    burst.flash.removeFromParent();
+    if (retainImpactFlash && (!this.spareImpactFlash || burst.flash === this.hotelImpactFlash)) {
+      this.spareImpactFlash?.material.dispose();
+      this.spareImpactFlash = burst.flash;
+    } else burst.flash.material.dispose();
     burst.label.material.map?.dispose(); burst.label.material.dispose();
   }
   private disposeSpareImpactFlash(): void {
-    this.spareImpactFlash?.dispose();
+    this.spareImpactFlash?.material.dispose();
     this.spareImpactFlash = undefined;
   }
   private removePulse(pulse: typeof this.pulses[number]): void { this.scene.remove(pulse.group); pulse.material.dispose(); }
   dispose(): void {
     this.gunfire.dispose();
     this.bursts.forEach(burst => this.remove(burst)); this.bursts = []; this.flashTexture.dispose();
-    this.disposeSpareImpactFlash();
+    this.disposeSpareImpactFlash(); this.hotelImpactFlash = undefined;
     this.pulses.forEach(pulse => this.removePulse(pulse)); this.pulses = []; this.ring.dispose();
   }
 }

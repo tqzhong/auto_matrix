@@ -303,6 +303,8 @@ export class Engine {
     const preparingHotelTextures = this.agentRenderer.prepareOpeningHotelTextures(this.renderer, openingHotel);
     if (!preparingHotelTextures)
       this.filmSets.prepareOpeningHotelPolice(this.renderer, this.camera, this.lightCulling, hotelPolice, hotelPreparation, prepareHotelCord);
+    this.filmSets.prepareOpeningHotelCues(this.renderer, this.camera, this.lightCulling, prepareHotelCord
+      ? [...this.sandboxRenderer.openingHotelTelegraphs(), this.combatEffects.openingHotelImpactFlash()] : undefined);
     this.sandboxRenderer.showOpeningHotelHall(openingHotelHallTime(openingHotel, openingTrace));
     const resumeOnLanding = this.matrix && !this.playerControls?.id && !meeting?.visiting && document.body.classList.contains('landing');
     const resumeRoof = resumeOnLanding && meeting?.scene === 'm1_roofs';

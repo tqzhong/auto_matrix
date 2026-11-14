@@ -242,6 +242,12 @@ export class SandboxRenderer {
     }
     return groups;
   }
+  openingHotelTelegraphs(): (THREE.Mesh | THREE.Line)[] {
+    // Every 303 officer uses the same materials for these two signals.
+    const officer = this.pool.find(enemy => enemy.scene === 'm1_room303')
+      ?? [...this.enemies.values()].find(enemy => enemy.scene === 'm1_room303');
+    return officer ? [officer.telegraph, officer.aimLine] : [];
+  }
   private parkHotelOfficer(character: string): Enemy | undefined {
     if (!this.actors[character]) return;
     const officer = this.createEnemy('soldier', this.actors, character, 'm1_room303');

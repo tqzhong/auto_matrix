@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_HOTEL, filmEntry, filmPosition, openingHotelClimbPose, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { GunfireEffects } from '../packages/client/src/engine/GunfireEffects.js';
 import { CombatEffects } from '../packages/client/src/engine/CombatEffects.js';
+import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.js';
 import type { GameAudio } from '../packages/client/src/engine/GameAudio.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -13,7 +15,8 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 function setup(t: test.TestContext, loadTexture: typeof THREE.TextureLoader.prototype.load =
   () => new THREE.Texture({ width: 1, height: 1, complete: true })) {
   const previous = globalThis.document;
-  const ctx = { fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }) };
+  const ctx = { fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    putImageData() {}, createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }) };
   globalThis.document = { createElement: () => ({ getContext: () => ctx }) } as unknown as Document;
   t.mock.method(THREE.TextureLoader.prototype, 'load', loadTexture);
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
@@ -402,7 +405,7 @@ test('303 reuses the transient impact flash with independent fades and releases 
   effects.update(.12, true);
   assert.equal(first.material.opacity, 0);
   effects.update(.54, true);
-  assert.equal(first.parent?.parent, null, 'an expired flash leaves the scene');
+  assert.ok(!first.parent?.parent, 'an expired flash leaves the scene');
   assert.equal(disposals, 0, 'keep one idle material available for the next 303 hit');
   const next = hit();
   assert.equal(next.material, first.material);
@@ -417,6 +420,62 @@ test('303 reuses the transient impact flash with independent fades and releases 
   assert.equal(disposals, 1, 'only one unused material stays resident');
   effects.update(0);
   assert.equal(disposals, 2, 'leaving 303 releases the idle material');
+});
+
+test('303 links the first combat cues before they are visible', t => {
+  const h = setup(t); h.pose('trace');
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const enemies = new SandboxRenderer(h.scene);
+  const effects = new CombatEffects(h.scene, { effects: () => undefined } as unknown as GameAudio);
+  t.after(() => { enemies.dispose(); effects.dispose(); });
+  const position = filmEntry(FILM_SCENE_BY_ID.m1_room303);
+  const threats = [{ id: 'police', kind: 'soldier', character: 'citizen_4', scene: 'm1_room303',
+    position, matrix: true, health: 100, maxHealth: 100, target: 'trinity', lastStrike: -10 }];
+  enemies.sync({ nodes: [], structures: [], incidents: [], missions: {}, threats } as unknown as SandboxState, Object.fromEntries(world.agents));
+  const enemy = enemies['enemies'].get('police')!;
+  assert.equal(enemy.telegraph.visible || enemy.aimLine.visible, false);
+  const children = h.scene.children.slice(), programs: { isReady(): boolean; getUniforms(): void }[] = [];
+  const compiled: THREE.Object3D[] = [], reflected: object[] = [];
+  let target: THREE.WebGLRenderTarget | null = null;
+  const renderer = { properties: {}, info: { programs }, extensions: { has: () => true }, debug: { checkShaderErrors: false },
+    getRenderTarget: () => target, setRenderTarget: (next: typeof target) => { target = next; },
+    compile(subject: THREE.Group) {
+      assert.equal(target?.width, 1);
+      subject.traverse(object => {
+        compiled.push(object);
+        const program = { isReady: () => true, getUniforms() { reflected.push(program); } };
+        programs.push(program);
+      });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const flash = effects.openingHotelImpactFlash(), cues = [...enemies.openingHotelTelegraphs(), flash];
+  const prepare = (active = true) => h.sets.prepareOpeningHotelCues(renderer, h.camera, h.culling, active ? cues : undefined);
+  prepare();
+  assert.deepEqual(compiled.map(object => object.id), [enemy.telegraph.id, enemy.aimLine.id, flash.id]);
+  assert.deepEqual(reflected, []);
+  for (let frame = 0; frame < 8; frame++) prepare();
+  assert.equal(compiled.length, 3);
+  assert.equal(reflected.length, 3);
+  assert.ok(children.every(child => child.parent === h.scene));
+  const added = h.scene.children.filter(child => !children.includes(child));
+  assert.ok(added.every(child => !child.visible && child.children.every(light => light instanceof THREE.PointLight && light.intensity === 0)));
+  assert.equal(enemy.telegraph.visible || enemy.aimLine.visible, false);
+  assert.equal(flash.parent, null);
+  assert.equal(target, null);
+
+  effects.impact({ source: 'citizen_4', target: 'trinity', position, direction: { x: 0, y: 0, z: 1 },
+    damage: 12, combo: 0, matrix: true, downed: false }, true);
+  const drawn = h.scene.children.at(-1)!.children.find(object => object instanceof THREE.Sprite);
+  assert.ok(drawn === flash, 'the first real hit uses the prepared flash');
+  effects.update(.66, true);
+  assert.equal(effects.openingHotelImpactFlash(), flash);
+  assert.equal(flash.parent, null);
+  let disposed = 0;
+  flash.material.addEventListener('dispose', () => disposed++);
+  prepare(false);
+  effects.update(0);
+  assert.equal(disposed, 1);
 });
 
 test('an additional real flash keeps its energy, and leaving 303 releases the reservation', t => {

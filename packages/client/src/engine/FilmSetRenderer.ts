@@ -439,6 +439,7 @@ export class FilmSetRenderer {
     shadowMeshes: THREE.Mesh[]; shadowMaterials: Set<THREE.MeshDepthMaterial>;
     buffers: ColorMesh[]; bufferGeometries: WeakSet<THREE.BufferGeometry>; bufferUpload?: Generator<void>;
   };
+  private preparedHotelCues?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; materials: Set<THREE.Material> };
   private preparedWellsCast?: ColorPreparation & {
     gpu: THREE.WebGLRenderer['properties']; cast: readonly THREE.Mesh[];
     shadowMeshes: THREE.Mesh[]; shadowMaterials: Set<THREE.MeshDepthMaterial>;
@@ -1499,6 +1500,21 @@ export class FilmSetRenderer {
     this.preparedHotelPolice?.bufferUpload?.return(undefined);
     this.preparedHotelPolice?.shadowMaterials.forEach(material => material.dispose());
     this.preparedHotelPolice = undefined;
+  }
+  prepareOpeningHotelCues(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, cues?: readonly ColorSubject[]): void {
+    if (this.currentScene !== 'm1_room303' || !cues || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+      this.preparedHotelCues = undefined;
+      return;
+    }
+    if (this.preparedHotelCues?.gpu !== renderer.properties)
+      this.preparedHotelCues = { gpu: renderer.properties, scene: this.scene, meshes: [], programs: [], textures: new Set(), materials: new Set() };
+    const prepared = this.preparedHotelCues;
+    for (const cue of cues) {
+      if (Array.isArray(cue.material) || prepared.materials.has(cue.material)) continue;
+      prepared.materials.add(cue.material);
+      prepared.meshes.push(cue);
+    }
+    this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true);
   }
   prepareWellsCastPrograms(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
     phone?: OpeningPhoneEncounter, cast?: readonly THREE.Mesh[]): void {
@@ -5800,6 +5816,7 @@ export class FilmSetRenderer {
     this.hotel303Door = undefined; this.hotel303Glass = undefined; this.hotel303Shards = undefined; this.hotel303Pistol = undefined;
     this.hotel303DeskLight = undefined; this.hotel303HallLight = undefined; this.hotel303Beam = undefined;
     this.hotel303Receiver?.dispose(); this.hotel303Receiver = undefined; this.hotel303Cord = undefined;
+    this.preparedHotelCues = undefined;
     this.cancelOpeningHotelPolice();
     this.openingRoofGlass = undefined; this.openingRoofShards = undefined;
     this.trainmanChase?.dispose(); this.trainmanChase = undefined;
