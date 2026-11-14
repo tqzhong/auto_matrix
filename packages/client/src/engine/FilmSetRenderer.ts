@@ -1006,7 +1006,8 @@ export class FilmSetRenderer {
     const apartmentLights = onLanding ? undefined : sourceLights;
     if (!textureTurn && parallel && this.prepareClubProgram(renderer, camera, prepared, apartmentLights)) return;
     if (this.prepareColorTexture(renderer, roomTextures) || this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) return;
-    if (textureTurn && parallel) this.prepareClubProgram(renderer, camera, prepared, apartmentLights);
+    if (textureTurn && parallel && this.prepareClubProgram(renderer, camera, prepared, apartmentLights)) return;
+    prepared.renderer.prepareCrowdBounds();
   }
   private prepareClubProgram(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ClubPreparation, apartmentLights?: LightCulling): boolean {
     const colors = prepared.colors!, shadows = prepared.shadows;

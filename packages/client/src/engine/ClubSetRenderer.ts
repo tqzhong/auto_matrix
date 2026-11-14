@@ -12,12 +12,24 @@ export class ClubSetRenderer {
   private textures = new Set<THREE.Texture>();
   private skeletons = new Set<THREE.Skeleton>();
   private dancers: { root: THREE.Group; bones: Map<string, THREE.Bone>; pelvis: THREE.Vector3 }[] = [];
+  private preparedDancers = 0;
   private spots: THREE.SpotLight[] = [];
   private disposed = false;
   readonly ready: Promise<void>;
 
   // The two source rigs cover all geometry and maps. The other dancers only change tints.
   get crowdSources(): THREE.Group[] { return this.dancers.slice(0, 2).map(({ root }) => root); }
+
+  prepareCrowdBounds(): void {
+    const dancer = this.dancers[this.preparedDancers];
+    if (!dancer) return;
+    this.preparedDancers++;
+    // Three sorts even uncullable meshes using their sphere. Skin one dancer per preparation frame.
+    dancer.root.updateMatrixWorld(true);
+    dancer.root.traverse(object => {
+      if (object instanceof THREE.SkinnedMesh && object.boundingSphere === null) object.computeBoundingSphere();
+    });
+  }
 
   constructor(parent: THREE.Group) {
     this.root.name = 'white-rabbit-club'; parent.add(this.root);

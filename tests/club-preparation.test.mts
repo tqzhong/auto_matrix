@@ -22,7 +22,12 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     for (const name of names) { const bone = new THREE.Bone(); bone.name = name; scene.add(bone); }
     const map = new THREE.Texture(new Bitmap()); map.flipY = false; map.needsUpdate = true;
     const material = new THREE.MeshStandardMaterial({ map }); material.name = 'Trousers';
-    const mesh = new THREE.SkinnedMesh(new THREE.BoxGeometry(), material);
+    const geometry = new THREE.BoxGeometry(), joints = new Uint16Array(geometry.attributes.position.count * 4);
+    const weights = new Float32Array(joints.length);
+    for (let i = 0; i < weights.length; i += 4) weights[i] = 1;
+    geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(joints, 4));
+    geometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(weights, 4));
+    const mesh = new THREE.SkinnedMesh(geometry, material);
     mesh.name = 'crowd-surface'; scene.add(mesh);
     mesh.bind(new THREE.Skeleton([scene.getObjectByName('pelvis') as THREE.Bone]));
     return { scene };
@@ -57,6 +62,14 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   film.update(undefined, sandbox, 0);
   let target: THREE.WebGLRenderTarget | null = null, work = 0;
   const rooms = new Set<THREE.Object3D>(), compiled = new Set<THREE.Object3D>();
+  const bounded = new Set<THREE.SkinnedMesh>();
+  const computeBounds = THREE.SkinnedMesh.prototype.computeBoundingSphere;
+  t.mock.method(THREE.SkinnedMesh.prototype, 'computeBoundingSphere', function (this: THREE.SkinnedMesh) {
+    assert.ok(!bounded.has(this), 'prepare each dancer mesh only once');
+    bounded.add(this);
+    work++;
+    computeBounds.call(this);
+  });
   const materialsAtCompile = new Map<THREE.Mesh, string>();
   const depths: { mesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshDepthMaterial>; points: number; spots: number }[] = [];
   type Allocation = { image: Bitmap; rows: number; mipmaps: boolean };
@@ -113,10 +126,11 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     },
   } as unknown as THREE.WebGLRenderer;
   const prepare = (resume = false) => {
-    const before = work;
+    const before = work, beforeBounds = bounded.size;
     film.prepareClub(gpu, camera, journey, id => id === 'trinity' ? actor : undefined, [], resume, lights);
     for (const { image, rows } of allocations.values()) if (!firstRows.has(image)) firstRows.set(image, rows);
     assert.ok(work - before <= 1, 'spread program reflection and uploads across different frames');
+    assert.ok(bounded.size - beforeBounds <= 1, 'prepare at most one mock dancer per frame');
     assert.equal(target, null); assert.equal(skin.visible, false);
   };
   const drain = async () => {
@@ -142,6 +156,16 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   assert.equal(first.children.filter(child => child.name.startsWith('club-dancer-')).length, 16);
   assert.ok(compiled.has(crowd));
   assert.equal([...compiled].filter(mesh => mesh.name === 'crowd-surface').length, 2);
+  await t.test('each dancer has posed bounds before the first live draw', () => {
+    const dancers = first.children.filter(child => child.name.startsWith('club-dancer-'));
+    for (const dancer of dancers) {
+      const mesh = dancer.getObjectByName('crowd-surface') as THREE.SkinnedMesh;
+      assert.ok(bounded.has(mesh), dancer.name);
+      assert.ok(mesh.boundingSphere && mesh.boundingSphere.radius > 0);
+      assert.equal(mesh.frustumCulled, false);
+    }
+    assert.equal(bounded.size, 16);
+  });
   const clubDepths = () => new Set(depths.map(({ mesh }) => mesh.material));
   await t.test('prepare real room and actor shadows for the apartment and club light layouts', () => {
     const roomGeometries = first.children.filter(object => object instanceof THREE.Mesh).map(mesh => mesh.geometry);
