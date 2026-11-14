@@ -47,7 +47,7 @@ export class ConstructRenderer {
   private canvas = document.createElement('canvas');
   private screenTexture: THREE.CanvasTexture;
   private screenMaterial?: THREE.MeshBasicMaterial;
-  private screenLight: THREE.PointLight;
+  private screenLight!: THREE.PointLight;
   private lastFrame = -1;
   private revealElapsed = 0;
   private revealActive = false;
@@ -61,17 +61,33 @@ export class ConstructRenderer {
   private steel = this.material(new THREE.MeshStandardMaterial({ color: 0x575d5b, roughness: .28, metalness: .86 }));
   private rackRows: { group: THREE.Group; x: number; z: number; index: number }[] = [];
   private loadouts = new Map<RescueLoadout, { group: THREE.Group; ring: THREE.Mesh; light: THREE.PointLight }>();
+  private construction?: Generator<void>;
 
-  constructor(private root: THREE.Group, private sceneId?: string) {
+  constructor(private root: THREE.Group, private sceneId?: string, staged = false) {
     this.canvas.width = 768; this.canvas.height = 512;
     this.screenTexture = new THREE.CanvasTexture(this.canvas); this.screenTexture.colorSpace = THREE.SRGBColorSpace;
     this.screenTexture.minFilter = THREE.LinearFilter; this.textures.add(this.screenTexture);
+    this.construction = this.build();
+    if (!staged) this.finishPreparation();
+  }
+  prepareStep(): boolean {
+    if (this.construction?.next().done) this.construction = undefined;
+    return this.construction === undefined;
+  }
+  finishPreparation(): void { while (!this.prepareStep()) { /* Attach a partially prepared set on early entry. */ } }
+
+  private *build(): Generator<void> {
+    const sceneId = this.sceneId;
     if (typeof document.createElementNS === 'function' && sceneId !== 'm1_guns') {
       this.surface(this.leather, 'leather_red_03'); this.surface(this.wood, 'old_wood_floor');
     }
     this.floor();
     if (sceneId === 'm1_guns') this.armoury();
-    else this.lesson();
+    else {
+      this.chair(CONSTRUCT.chairX.morpheus, 'construct-chair-morpheus'); yield;
+      this.chair(CONSTRUCT.chairX.neo, 'construct-chair-neo'); yield;
+      this.television(); yield;
+    }
     this.screenLight = new THREE.PointLight(0xdceee3, 85, 20, 2); this.screenLight.name = 'construct-screen-light';
     this.screenLight.position.set(0, 2.2, CONSTRUCT.television.z + 1.4); this.root.add(this.screenLight); this.lights.add(this.screenLight);
     const fill = new THREE.HemisphereLight(0xffffff, 0xd4d5cf, 1.45); fill.name = 'construct-shadowless-fill'; this.root.add(fill); this.lights.add(fill);
@@ -133,12 +149,6 @@ export class ConstructRenderer {
       if (map instanceof THREE.CanvasTexture) this.textures.add(map);
     } });
     this.root.add(tv);
-  }
-
-  private lesson(): void {
-    this.chair(CONSTRUCT.chairX.morpheus, 'construct-chair-morpheus');
-    this.chair(CONSTRUCT.chairX.neo, 'construct-chair-neo');
-    this.television();
   }
 
   private weapon(parent: THREE.Object3D, x: number, y: number, z: number, long = false): void {
@@ -323,6 +333,7 @@ export class ConstructRenderer {
 
   dispose(): void {
     this.disposed = true;
+    this.construction?.return(undefined); this.construction = undefined;
     this.takePreviewDesert()?.dispose();
     this.root.clear(); this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());

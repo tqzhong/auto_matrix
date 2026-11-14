@@ -1137,8 +1137,16 @@ test('the recovery needles stop at the shipped patient skin instead of penetrati
     const journey = { version: 1, scene: 'm1_recovery', step: 0, actor: 'neo', completed: [], enteredAt: 0,
       checkpoint: filmPosition('film_neb_deck', RECOVERY_BED.x, RECOVERY_BED.z), reflections: {}, lastText: '',
       awakening: { kind: 'recovery', elapsed, started: true } } satisfies FilmJourney;
-    medical.update(journey, elapsed, rig.root); set.updateMatrixWorld(true);
     const body = rig.wardrobe.find(part => part.mesh.userData.patientBody)!.mesh as THREE.SkinnedMesh;
+    const vertex = body.getVertexPosition;
+    let samples = 0;
+    body.getVertexPosition = (index, target) => { samples++; return vertex.call(body, index, target); };
+    try {
+      medical.update(journey, elapsed, rig.root); set.updateMatrixWorld(true);
+      assert.equal(samples, body.geometry.attributes.position.count, 'the treatment poses the body once for all needle contacts');
+      medical.update(journey, elapsed, rig.root);
+      assert.equal(samples, body.geometry.attributes.position.count, 'a paused treatment keeps the saved contacts');
+    } finally { body.getVertexPosition = vertex; }
     body.updateMatrixWorld(true); body.skeleton.update(); body.computeBoundingBox(); body.computeBoundingSphere();
     for (let index = 0; index < 12; index++) {
       const tip = set.getObjectByName(`neb-medical-needle-tip-${index}`)!.getWorldPosition(new THREE.Vector3());

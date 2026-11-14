@@ -1,9 +1,34 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { CABIN, CABIN_ROUTE, cabinBodyPose, FILM_SETS, MEDICAL_OPERATOR, RECOVERY_BED, RECOVERY_FRAME, recoveryCrewPose, filmObstacles, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
+import { CABIN, CABIN_ROUTE, cabinBodyPose, FILM_SETS, MEDICAL_OPERATOR, RECOVERY_BED, RECOVERY_FRAME, recoveryCrewPose, filmObstacles, filmPosition, playerBlocked, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 import { LightingSystem } from '../packages/client/src/engine/LightingSystem.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+
+test('the medical handoff keeps the same deck and updates cabin lighting and door state', t => {
+  const film = new FilmSetRenderer(new THREE.Scene()); t.after(() => film.dispose());
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, set = 'film_neb_deck';
+  neo.isInMatrix = false; neo.currentLocation = set; neo.position = filmPosition(set, RECOVERY_BED.x, RECOVERY_BED.z);
+  const journey = { version: 1, actor: 'neo', scene: 'm1_recovery', step: 0, enteredAt: 0, completed: [],
+    checkpoint: neo.position, lastText: '', reflections: {}, awakening: { kind: 'recovery', elapsed: 10, started: true } } satisfies FilmJourney;
+  const sandbox = { structures: [], neoLife: { journey } } as unknown as SandboxState;
+  film.update(neo, sandbox, 0);
+  const hull = film.root.getObjectByName('neb-deck-floor') as THREE.Mesh;
+  let releases = 0; hull.geometry.addEventListener('dispose', () => releases++);
+  Object.assign(journey, { scene: 'm1_cabin', awakening: { kind: 'cabin', elapsed: 0, started: false } });
+  neo.position = filmPosition(set, CABIN.bed.x, CABIN.bed.z);
+  film.update(neo, sandbox, 0);
+  assert.ok(film.root.getObjectByName('neb-deck-floor') === hull, 'the cabin keeps the medical deck geometry');
+  assert.equal((film.root.getObjectByName('neb-cabin-key-light') as THREE.SpotLight).castShadow, true);
+  assert.equal(film.root.getObjectByName('neb-cabin-door')!.position.z, CABIN.door.z);
+  assert.equal(releases, 0);
+  film.update(undefined, undefined, 0);
+  assert.equal(releases, 1);
+});
 
 test('recovery and cabin shadows follow the current room rather than the whole deck', () => {
   const scene = new THREE.Scene(), root = new THREE.Group(), actor = new THREE.Group();

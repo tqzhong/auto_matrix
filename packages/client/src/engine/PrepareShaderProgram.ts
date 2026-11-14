@@ -6,13 +6,23 @@ type Program = NonNullable<THREE.WebGLRenderer['info']['programs']>[number];
 
 /** Keep live material bindings while linking another program on the same material. */
 export function preserveProgramBindings(renderer: THREE.WebGLRenderer, meshes: readonly (THREE.Mesh | undefined)[]): () => void {
-  const saved: { bindings: object; live: object }[] = [];
+  const saved = new Map<THREE.Material, { bindings: Record<string, unknown>; live: Record<string, unknown> }>();
   for (const mesh of meshes) {
-    if (!mesh || Array.isArray(mesh.material)) continue;
-    const bindings = renderer.properties.get(mesh.material) as { currentProgram?: Program };
-    if (bindings.currentProgram) saved.push({ bindings, live: { ...bindings } });
+    if (!mesh || Array.isArray(mesh.material) || saved.has(mesh.material)) continue;
+    const bindings = renderer.properties.get(mesh.material) as Record<string, unknown>;
+    const live = { ...bindings };
+    if (live.uniforms) live.uniforms = Object.fromEntries(Object.entries(live.uniforms).map(([name, uniform]) => [name, { ...uniform }]));
+    saved.set(mesh.material, { bindings, live });
   }
-  return () => { for (const { bindings, live } of saved) Object.assign(bindings, live); };
+  return () => {
+    for (const { bindings, live } of saved.values()) {
+      if (live.currentProgram) Object.assign(bindings, live);
+      else {
+        // Keep the acquired program map, but let the first actual draw bind its own lights.
+        delete bindings.currentProgram; delete bindings.__version;
+      }
+    }
+  };
 }
 
 /** Cache locations after parallel compilation reports completion. */

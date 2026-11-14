@@ -16,6 +16,47 @@ import { CrewMealRenderer } from './CrewMealRenderer.js';
 import { CREW_MEAL } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
+function posedNeedleSurface(source: THREE.SkinnedMesh, geometry = source.geometry): (ray: THREE.Raycaster) => THREE.Vector3 | undefined {
+  const skin = geometry === source.geometry ? source : source.clone(false);
+  skin.geometry = geometry; skin.matrixWorld.copy(source.matrixWorld); skin.skeleton.update();
+  const count = geometry.attributes.position.count, positions = new Float64Array(count * 3), point = new THREE.Vector3();
+  const worldX = new Float64Array(count), worldZ = new Float64Array(count);
+  for (let index = 0; index < count; index++) {
+    skin.getVertexPosition(index, point).toArray(positions, index * 3);
+    point.applyMatrix4(skin.matrixWorld); worldX[index] = point.x; worldZ[index] = point.z;
+  }
+  const indices = geometry.index, length = indices?.count ?? count;
+  const triangles = new THREE.BufferGeometry(), candidates = new Uint32Array(length);
+  triangles.setAttribute('position', geometry.attributes.position);
+  triangles.setIndex(new THREE.BufferAttribute(candidates, 1));
+  const posed = new THREE.SkinnedMesh(triangles, skin.material);
+  posed.layers.mask = skin.layers.mask; posed.matrixWorld.copy(skin.matrixWorld);
+  posed.getVertexPosition = (index, target) => target.fromArray(positions, index * 3);
+  posed.computeBoundingBox(); posed.computeBoundingSphere();
+  skin.boundingBox = posed.boundingBox; skin.boundingSphere = posed.boundingSphere;
+  const { start, count: drawn } = geometry.drawRange;
+  const groups = Array.isArray(skin.material) ? geometry.groups : [{ start: 0, count: length, materialIndex: 0 }];
+  return ray => {
+    const { x, z } = ray.ray.origin, tolerance = 1e-7;
+    let written = 0;
+    triangles.clearGroups();
+    // All needles enter vertically. Reject triangles outside each ray's XZ
+    // projection, then keep Three's material sidedness and nearest-hit order.
+    for (const group of groups) {
+      const first = written, end = Math.min(length, group.start + group.count, start + drawn);
+      for (let i = Math.max(start, group.start); i + 2 < end; i += 3) {
+        const a = indices ? indices.getX(i) : i, b = indices ? indices.getX(i + 1) : i + 1, c = indices ? indices.getX(i + 2) : i + 2;
+        if (x < Math.min(worldX[a], worldX[b], worldX[c]) - tolerance || x > Math.max(worldX[a], worldX[b], worldX[c]) + tolerance
+          || z < Math.min(worldZ[a], worldZ[b], worldZ[c]) - tolerance || z > Math.max(worldZ[a], worldZ[b], worldZ[c]) + tolerance) continue;
+        candidates[written++] = a; candidates[written++] = b; candidates[written++] = c;
+      }
+      triangles.addGroup(first, written - first, group.materialIndex);
+    }
+    triangles.setDrawRange(0, written);
+    return ray.intersectObject(posed, false)[0]?.point;
+  };
+}
+
 /** The Nebuchadnezzar is one continuous deck: medical bay, operator core and mess.
  * The central aisle remains open so recovery hands control back to the player. */
 export class NebDeckRenderer {
@@ -73,21 +114,31 @@ export class NebDeckRenderer {
   private shipRadar!: THREE.ShaderMaterial;
   private sternPlate!: THREE.Mesh;
   private deckRig = new THREE.Group();
-  private escapeExterior: NebEscapeRenderer;
+  private escapeExterior!: NebEscapeRenderer;
+  private construction?: Generator<void>;
 
-  constructor(private root: THREE.Group) {
-    this.hull();
-    this.medicalBay();
-    this.cabin();
-    this.operatorCore();
-    this.mess();
-    this.shipLossScene();
-    for (const child of [...root.children]) this.deckRig.add(child);
-    this.deckRig.name = 'neb-interior-deck'; root.add(this.deckRig);
+  constructor(private root: THREE.Group, staged = false) {
+    this.construction = this.build();
+    if (!staged) this.finishPreparation();
+  }
+  prepareStep(): boolean {
+    if (this.construction?.next().done) this.construction = undefined;
+    return this.construction === undefined;
+  }
+  finishPreparation(): void { while (!this.prepareStep()) { /* Attach a partially prepared deck on early entry. */ } }
+
+  private *build(): Generator<void> {
+    this.hull(); yield;
+    this.medicalBay(); yield;
+    this.cabin(); yield;
+    this.operatorCore(); yield;
+    this.mess(); this.shipLossScene(); yield;
+    for (const child of [...this.root.children]) this.deckRig.add(child);
+    this.deckRig.name = 'neb-interior-deck'; this.root.add(this.deckRig);
     // Only anonymous fixed deck siblings: named controls and child renderers
     // retain their own motion, visibility and contact geometry.
     batchStaticGeometry(this.deckRig, new Set(), false).forEach(geometry => this.geometries.add(geometry));
-    this.escapeExterior = new NebEscapeRenderer(root);
+    this.escapeExterior = new NebEscapeRenderer(this.root);
   }
 
   private material<T extends THREE.Material>(material: T): T { this.materials.add(material); return material; }
@@ -558,20 +609,15 @@ export class NebDeckRenderer {
     if (mounted && skin && this.skinContacts.size === 0 && t < 7) {
       // First person removes the head triangles from the visible skin. Contact
       // sampling still uses the complete delivered geometry without changing that view.
-      const fullHead = head?.userData.contactSkinGeometry ? head.clone() : head;
-      if (fullHead && head) { fullHead.geometry = head.userData.contactSkinGeometry ?? head.geometry; fullHead.matrixWorld.copy(head.matrixWorld); }
-      for (const surface of [skin, fullHead]) if (surface) {
-        surface.skeleton.update(); surface.computeBoundingBox(); surface.computeBoundingSphere();
-      }
+      const body = posedNeedleSurface(skin), fullHead = head && posedNeedleSurface(head, head.userData.contactSkinGeometry);
       // Sample the shipped skin once, then retain contacts in bone space as the body moves.
-      // Retain skin contacts in bone space instead of raycasting every render frame.
       this.needles.forEach((needle, index) => {
         const bone = recoverySubject!.getObjectByName(needle.bone); if (!bone) return;
         const point = bone.localToWorld(needle.offset.clone());
         const ray = new THREE.Raycaster(point.clone().add(new THREE.Vector3(0, 2, 0)), new THREE.Vector3(0, -1, 0), 0, 3);
-        const surface = needle.bone === 'head' ? fullHead : skin;
-        const hit = surface && ray.intersectObject(surface)[0];
-        if (hit) this.skinContacts.set(index, bone.worldToLocal(hit.point.add(new THREE.Vector3(0, -.006, 0))));
+        const surface = needle.bone === 'head' ? fullHead : body;
+        const hit = surface?.(ray);
+        if (hit) this.skinContacts.set(index, bone.worldToLocal(hit.add(new THREE.Vector3(0, -.006, 0))));
       });
     }
     this.needles.forEach((needle, i) => {
@@ -719,13 +765,14 @@ export class NebDeckRenderer {
   }
 
   dispose(): void {
+    this.construction?.return(undefined); this.construction = undefined;
     this.cabinRoom?.dispose(); this.cabinRoom = undefined;
-    this.escapeExterior.dispose();
+    this.escapeExterior?.dispose();
     this.medicalLeads.forEach(leads => leads.dispose()); this.medicalLeads = [];
     this.downloadScreen?.dispose();
     this.consoleScreen?.dispose();
-    this.consoleStation.dispose();
-    this.crewMeal.dispose();
+    this.consoleStation?.dispose();
+    this.crewMeal?.dispose();
     this.root.clear();
     this.geometries.forEach(geometry => geometry.dispose());
     this.materials.forEach(material => material.dispose());

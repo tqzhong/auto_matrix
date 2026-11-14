@@ -337,6 +337,8 @@ export class Engine {
         : clubReturn ? [this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo')] : undefined,
       openingHandoff || resumeApartment || prepareDeferredContact || clubReturn ? this.lightCulling : undefined, prepareDeferredContact, resumeApartment);
     this.filmSets.preparePodColors(this.renderer, this.camera, this.lightCulling, this.agentRenderer.getAgentHero('neo'), this.playerControls?.firstPerson ?? false);
+    this.filmSets.prepareAwakeningHandoff(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
+      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id), this.lightingSystem.directionalLight, this.lightCulling);
     if (meeting?.scene === 'm1_oracle' && player?.id === meeting.actor)
       this.filmSets.prepareAmbush(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
     this.filmSets.prepareBasement(this.renderer, this.camera, this.lightCulling, player?.id === meeting?.actor ? meeting : undefined,

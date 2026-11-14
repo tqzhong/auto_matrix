@@ -177,6 +177,14 @@ type ColorPreparation = {
   preserveStockSkinning?: boolean;
 };
 type CastColorPreparation = ColorPreparation & { actors: Set<THREE.Group> };
+type AwakeningSetPreparation = {
+  root: THREE.Group; deck?: NebDeckRenderer; construct?: ConstructRenderer;
+  gpu?: THREE.WebGLRenderer['properties']; colors?: ColorPreparation; lighting?: LightCulling;
+  queued: WeakMap<THREE.Mesh, number>; buffers?: Generator<void>; bufferMeshes: THREE.Mesh[];
+  textureUpload?: Generator<void, boolean>;
+  shadows?: { materials: Set<THREE.MeshDepthMaterial>; variants: Set<string>; source: THREE.Mesh[]; destination: THREE.Mesh[] };
+};
+const RECOVERY_POINT_SLOTS = 8;
 const DOWNLOAD_WALK_CAST = {
   morpheus: ['Anatomical_head_and_hands', 'Tailored_trousers', 'shoes01', 'high-poly', 'morpheus-hammer-sweater', 'morpheus-hammer-collar'],
   apoc: ['Close-cut_scalp_undercoat', 'Swept_individual_hair_strands'],
@@ -332,6 +340,7 @@ export class FilmSetRenderer {
   private pods?: PodSetRenderer;
   private preparedPods?: PodSetRenderer;
   private neb?: NebDeckRenderer;
+  private preparedAwakening?: AwakeningSetPreparation;
   private preparedTruthReturn?: { scene: 'm1_truth_return' | 'm1_jump_return'; root: THREE.Group; deck: NebDeckRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedDownloadWalk?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties']; textureUpload?: Generator<void, boolean> };
   private sourceBriefing?: SourceBriefingRenderer;
@@ -521,6 +530,7 @@ export class FilmSetRenderer {
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_jump_return') return 16;
     // Keep the console lamp and objective slots when turning toward Cypher.
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_cypher_console') return 17;
+    if (this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_recovery' || this.currentScene === 'm1_cabin')) return RECOVERY_POINT_SLOTS;
     // The training jack and objective can overlap the fifteen deck fixtures.
     return this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_truth_return' || this.currentScene === 'm1_download') ? 17 : 0;
   }
@@ -944,6 +954,87 @@ export class FilmSetRenderer {
     }
     const colors = this.preparedOneDeck.colors;
     if (colors) this.prepareCastColors(renderer, camera, colors, ['neo', 'trinity', 'morpheus', 'tank', 'cypher', 'dozer'], actor);
+  }
+  prepareAwakeningHandoff(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    actor: (id: string) => THREE.Group | undefined, sun: THREE.DirectionalLight, sourceLights?: LightCulling): void {
+    const rescue = this.current?.id === 'film_power_plant_pods' && journey?.scene === 'm1_pod' && journey.awakening?.kind === 'rescue';
+    const connecting = this.current?.id === 'film_neb_deck' && journey?.scene === 'm1_cabin' && journey.awakening?.kind === 'core';
+    if (!journey || journey.visiting || !rescue && !connecting) { this.cancelAwakeningPreparation(); return; }
+    let prepared = this.preparedAwakening;
+    if (!prepared || Boolean(prepared.deck) !== rescue) {
+      this.cancelAwakeningPreparation();
+      const root = new THREE.Group();
+      this.preparedAwakening = prepared = { root, deck: rescue ? new NebDeckRenderer(root, true) : undefined,
+        construct: connecting ? new ConstructRenderer(root, 'm1_construct', true) : undefined, queued: new WeakMap(), bufferMeshes: [] };
+    }
+    if (!(prepared.deck ?? prepared.construct)!.prepareStep() || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      this.releaseAwakeningPreparation(prepared);
+      if (rescue) prepared.deck!.update({ ...journey, scene: 'm1_recovery', awakening: { kind: 'recovery', elapsed: 0, started: false } }, 0);
+      prepared.gpu = renderer.properties; prepared.queued = new WeakMap(); prepared.bufferMeshes = [];
+      const colors = this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun: connecting ? sun : undefined });
+      if (rescue) {
+        // Reserve the first room's eight point slots. The fixture shadows come from the real deck.
+        const lights: THREE.PointLight[] = [];
+        colors.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) lights.push(light); });
+        lights.slice(RECOVERY_POINT_SLOTS).forEach(light => { light.visible = false; });
+        for (const light of colors.scene.children) if (light instanceof THREE.DirectionalLight) light.castShadow = false;
+      }
+      prepared.colors = { ...colors, meshes: [this.marker], preserveStockSkinning: true };
+      prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
+      if (renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap)
+        prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
+    }
+    const colors = prepared.colors, lighting = prepared.lighting!;
+    const setMeshes = this.colorMeshes([prepared.root], true), cast: ColorMesh[] = [];
+    const contactShadow = prepared.root.getObjectByName('construct-contact-shadows');
+    for (const id of rescue ? ['neo', ...FILM_SCENE_BY_ID.m1_recovery.cast] : ['neo', 'morpheus']) {
+      const group = actor(id);
+      group?.traverse(object => {
+        if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial) || object.userData.reloadedHidden) return;
+        if (object.visible || object.userData.patientBody || object.userData.club || object.name.startsWith('morpheus-construct-')
+          || object.name.startsWith('morpheus-glasses-') || object.userData.wristSkin || object.material.name === 'Eyes'
+          || object.name === 'Tailored_coat_upper' || object.name === 'Tailored_trousers' || object.name === 'shoes01'
+          || !rescue && (object.name === 'Close-cut_scalp_undercoat' || object.name === 'Swept_individual_hair_strands')) cast.push(object);
+      });
+    }
+    const subjects: THREE.Mesh[] = [...cast, ...setMeshes];
+    if (contactShadow instanceof THREE.Mesh) subjects.push(contactShadow);
+    const updated = subjects.filter(mesh => {
+      if (Array.isArray(mesh.material)) return false;
+      const version = prepared.queued.get(mesh);
+      if (version === mesh.material.version) return false;
+      prepared.queued.set(mesh, mesh.material.version);
+      if (version === undefined) prepared.bufferMeshes.push(mesh);
+      return true;
+    });
+    if (updated.length) {
+      colors.meshes.push(...updated);
+      this.queueColorTextures(colors.textures, setMeshes.filter(mesh => updated.includes(mesh)));
+      const shadows = prepared.shadows;
+      if (shadows) {
+        const proxies = shadowCasterProxies(updated, shadows.materials, shadows.variants);
+        if (sourceLights) shadows.source.push(...proxies);
+        shadows.destination.push(...proxies);
+      }
+    }
+    const shadows = prepared.shadows;
+    if (shadows?.source.length || shadows?.destination.length) {
+      const onSource = shadows.source.length > 0;
+      const batch = (onSource ? shadows.source : shadows.destination).splice(0, 4);
+      const programs = renderer.info.programs, start = programs?.length ?? 0;
+      this.compileColorBatch(renderer, batch, subject => (onSource ? sourceLights! : lighting).compileSubject(renderer, camera, subject, undefined, undefined, 'depth'));
+      if (programs) colors.programs.push(...programs.slice(start) as ColorProgram[]);
+      return;
+    }
+    // Deck textures can become visible at the cut even when the material was prepared with its fallback.
+    if (rescue && this.prepareStagedColorTexture(renderer, prepared, colors.textures)) return;
+    if (this.prepareColorProgram(renderer, camera, colors, lighting, 'isolated', true, [this.marker, ...subjects])) return;
+    if (!rescue && this.prepareStagedColorTexture(renderer, prepared, colors.textures)) return;
+    if (prepared.bufferMeshes.length) {
+      prepared.buffers ??= prepareMeshBuffers(renderer, camera, prepared.bufferMeshes);
+      if (prepared.buffers.next().done) prepared.buffers = undefined;
+    }
   }
   prepareTruthReturn(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
     const truthReturn = this.current?.id === 'film_white_construct' && this.currentScene === 'm1_truth_exit' && journey?.scene === 'm1_truth_exit';
@@ -2739,7 +2830,8 @@ export class FilmSetRenderer {
     if (this.meeting && set && ['film_adams_bridge', 'film_extraction_car'].includes(set.id)) { this.current = set; this.currentScene = sceneId; }
     if (this.mobil && set?.id === 'film_mobil_station') this.currentScene = sceneId;
     if (this.neb && set?.id === 'film_neb_deck' && !journey?.visiting
-      && this.currentScene === 'm1_truth_return' && sceneId === 'm1_download') this.currentScene = sceneId;
+      && (this.currentScene === 'm1_recovery' && sceneId === 'm1_cabin'
+        || this.currentScene === 'm1_truth_return' && sceneId === 'm1_download')) this.currentScene = sceneId;
     if (this.helStandoff && set?.id === 'film_club_hel' && this.currentScene === 'm3_hel_entry' && sceneId === 'm3_hel_bargain')
       this.currentScene = sceneId;
     // The curb, pill meeting and mirror route use the same hotel.
@@ -2797,6 +2889,14 @@ export class FilmSetRenderer {
       if (lafayetteRoom) this.preparedLafayette = undefined;
       const preparedPods = set?.architecture === 'pods' && sceneId === 'm1_pod' && !journey?.visiting ? this.preparedPods : undefined;
       if (preparedPods) this.preparedPods = undefined;
+      const awakening = this.preparedAwakening;
+      const preparedAwakening = !journey?.visiting && (set?.id === 'film_neb_deck' && sceneId === 'm1_recovery' && awakening?.deck
+        || set?.id === 'film_white_construct' && sceneId === 'm1_construct' && awakening?.construct) ? awakening : undefined;
+      if (preparedAwakening) {
+        this.preparedAwakening = undefined;
+        preparedAwakening.buffers?.return(undefined); preparedAwakening.textureUpload?.return(false);
+        preparedAwakening.lighting?.dispose(); preparedAwakening.root.removeFromParent();
+      }
       const preparedAmbush = set?.id === 'film_ambush_house' && sceneId === 'm1_dejavu' && !journey?.visiting ? this.preparedAmbush?.renderer : undefined;
       if (preparedAmbush) { this.preparedAmbush?.lighting?.dispose(); this.preparedAmbush = undefined; }
       const preparedTvExit = set?.id === 'film_tv_repair' && sceneId === 'm1_tv_exit' && !journey?.visiting ? this.preparedTvExit : undefined;
@@ -2946,7 +3046,9 @@ export class FilmSetRenderer {
           this.pods.attach(this.root);
         }
         else if (set.id === 'film_neb_deck') {
-          if (preparedTruthReturn) {
+          if (preparedAwakening?.deck) {
+            preparedAwakening.deck.finishPreparation(); this.root.add(preparedAwakening.root); this.neb = preparedAwakening.deck;
+          } else if (preparedTruthReturn) {
             this.root.add(preparedTruthReturn.root); this.neb = preparedTruthReturn.deck;
           } else if (preparedConsole) {
             this.root.add(preparedConsole.root); this.neb = preparedConsole.deck;
@@ -2975,7 +3077,10 @@ export class FilmSetRenderer {
           this.restaurant = preparedRestaurant?.renderer ?? new CypherRestaurantRenderer(this.root);
           if (preparedRestaurant) this.root.add(preparedRestaurant.root);
         }
-        else if (set.id === 'film_white_construct') this.construct = new ConstructRenderer(this.root, sceneId);
+        else if (set.id === 'film_white_construct') {
+          this.construct = preparedAwakening?.construct ?? new ConstructRenderer(this.root, sceneId);
+          if (preparedAwakening) { this.construct.finishPreparation(); this.root.add(preparedAwakening.root); }
+        }
         else if (set.id === 'film_real_desert') {
           this.desert = previewDesert ?? new DesertRenderer(this.root);
           previewDesert?.moveTo(this.root);
@@ -3062,6 +3167,7 @@ export class FilmSetRenderer {
         if (sceneId === 'm3_ceasefire') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'ceasefire');
         if (sceneId === 'm3_neo_carried') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'neo_carried');
       }
+      if (preparedAwakening?.shadows) for (const material of preparedAwakening.shadows.materials) this.materials.add(material);
     }
     if (this.mirror) {
       const healing = journey?.scene === 'm1_mirror' && !journey.visiting;
@@ -5901,6 +6007,18 @@ export class FilmSetRenderer {
     const prepared = this.preparedTruthReturn; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.deck.dispose(); this.preparedTruthReturn = undefined;
   }
+  private releaseAwakeningPreparation(prepared: AwakeningSetPreparation): void {
+    prepared.buffers?.return(undefined); prepared.buffers = undefined;
+    prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
+    prepared.lighting?.dispose(); prepared.root.removeFromParent();
+    prepared.shadows?.materials.forEach(material => material.dispose()); prepared.shadows = undefined;
+  }
+  private cancelAwakeningPreparation(): void {
+    const prepared = this.preparedAwakening;
+    if (!prepared) return;
+    this.preparedAwakening = undefined;
+    this.releaseAwakeningPreparation(prepared); prepared.deck?.dispose(); prepared.construct?.dispose();
+  }
   private cancelClubPreparation(): void {
     const prepared = this.preparedClub; if (!prepared) return;
     this.preparedClub = undefined; prepared.textureUpload?.return(false); prepared.lighting?.dispose();
@@ -6006,6 +6124,7 @@ export class FilmSetRenderer {
     this.cancelPodPreparation();
     this.cancelMatrixEscapePreparation();
     this.cancelOneDeckPreparation();
+    this.cancelAwakeningPreparation();
     this.cancelTruthReturnPreparation();
     this.cancelDownloadWalkPreparation();
     this.cancelClubPreparation();
