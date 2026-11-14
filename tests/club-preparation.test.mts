@@ -29,7 +29,8 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), camera = new THREE.PerspectiveCamera();
   scene.fog = new THREE.FogExp2(); scene.environment = new THREE.Texture();
   const sun = new THREE.DirectionalLight(); sun.castShadow = true;
-  scene.add(sun, new THREE.DirectionalLight(), new THREE.HemisphereLight());
+  const fill = new THREE.DirectionalLight(); fill.visible = false;
+  scene.add(sun, fill, new THREE.HemisphereLight());
   const actor = new THREE.Group(), bitmap = new Bitmap(), faceBitmap = new Bitmap();
   const skinMap = new THREE.Texture(bitmap), faceMap = new THREE.Texture(faceBitmap);
   for (const map of [skinMap, faceMap]) { map.flipY = false; map.needsUpdate = true; }
@@ -47,9 +48,9 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const neo = world.agents.get('neo')!, apartment = FILM_SCENE_BY_ID.m1_wake_up, club = FILM_SCENE_BY_ID.m1_club;
   Object.assign(neo, { position: filmEntry(apartment), currentLocation: apartment.set, isInMatrix: true });
-  const journey = { scene: apartment.id, actor: neo.id, step: 3, contact: { phase: 'handover', elapsed: 1 }, completed: [] } as unknown as FilmJourney;
+  const journey = { scene: apartment.id, actor: neo.id, step: 3, contact: { phase: 'accepted', elapsed: 1 }, completed: [] } as unknown as FilmJourney;
   const sandbox = { structures: [], neoLife: { journey } } as unknown as SandboxState;
-  film.update(neo, sandbox, 0);
+  film.update(undefined, sandbox, 0);
   let target: THREE.WebGLRenderTarget | null = null, work = 0;
   const rooms = new Set<THREE.Object3D>(), compiled = new Set<THREE.Object3D>();
   const materialsAtCompile = new Map<THREE.Mesh, string>();
@@ -77,7 +78,12 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     setRenderTarget: (value: typeof target) => { target = value; },
     compile(subject: THREE.Object3D, _eye: THREE.Camera, view: THREE.Scene) {
       assert.equal(target?.width, 1);
-      view.traverseVisible(object => { if (object.name === 'white-rabbit-club') rooms.add(object); });
+      let directionalLights = 0;
+      view.traverseVisible(object => {
+        if (object.name === 'white-rabbit-club') rooms.add(object);
+        if (object instanceof THREE.DirectionalLight) directionalLights++;
+      });
+      assert.equal(directionalLights, 2, 'use the two directional light slots from the possessed player view');
       assert.notEqual(view, scene); assert.equal(scene.getObjectByName('white-rabbit-club'), undefined);
       subject.traverse(object => {
         compiled.add(object);
@@ -98,9 +104,9 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
       uploaded.set(texture, { __version: texture.version, __webglTexture: allocation });
     },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = () => {
+  const prepare = (resume = false) => {
     const before = work;
-    film.prepareClub?.(gpu, camera, journey, id => id === 'trinity' ? actor : undefined);
+    film.prepareClub(gpu, camera, journey, id => id === 'trinity' ? actor : undefined, [], resume);
     for (const { image, rows } of allocations.values()) if (!firstRows.has(image)) firstRows.set(image, rows);
     assert.ok(work - before <= 1, 'spread program reflection and uploads across different frames');
     assert.equal(target, null); assert.equal(skin.visible, false);
@@ -109,14 +115,19 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     prepare(); await new Promise(resolve => setImmediate(resolve));
     for (let frame = 0; frame < 160; frame++) prepare();
   };
-  prepare();
-  assert.equal([...allocations.values()][0]?.image, bitmap, 'start the hidden club skin on the first preparation frame');
+  prepare(true);
+  assert.equal([...allocations.values()][0]?.image, bitmap, 'start the hidden club skin on the landing screen');
   assert.equal([...allocations.values()][0]?.rows, 512, 'limit the transfer to two strips');
+  await new Promise(resolve => setImmediate(resolve));
+  for (let frame = 0; frame < 12; frame++) prepare(true);
+  assert.equal(rooms.size, 1, 'link the offstage room while still on the landing screen');
+  fill.visible = true;
+  film.update(neo, sandbox, 0);
   await drain();
   assert.ok([skinMap, faceMap].every(map => uploaded.get(map)?.__webglTexture?.mipmaps));
   assert.ok(uploads.indexOf(skinMap) < uploads.findIndex(map => !(map.image instanceof Bitmap)),
     'finish the entrance costume before uploading the waiting room and crowd maps');
-  assert.equal(rooms.size, 1, 'prepare the club before the player leaves the apartment');
+  assert.equal(rooms.size, 1, 'keep preparing the same room after the player takes Neo');
   assert.ok(compiled.has(skin), 'prepare Trinity’s actual hidden club costume');
   const first = [...rooms][0];
   const crowd = first.getObjectByName('club-dancer-0')!.getObjectByName('crowd-surface') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;

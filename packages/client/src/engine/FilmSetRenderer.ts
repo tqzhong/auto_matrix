@@ -192,7 +192,7 @@ type ClubPreparation = {
   lighting?: LightCulling;
   roomTextures?: Set<THREE.Texture>;
   entryTextures?: Set<THREE.Texture>;
-  roomTextureTurn?: boolean;
+  textureTurn?: boolean;
   textureUpload?: Generator<void, boolean>;
   crowdQueued?: boolean;
 };
@@ -925,8 +925,9 @@ export class FilmSetRenderer {
     this.preparedDownloadWalk = undefined;
   }
   prepareClub(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
-    actor: (id: string) => THREE.Group | undefined, shadows: (THREE.Mesh | undefined)[] = []): void {
-    if (this.current?.id !== 'film_anderson_flat' || journey?.scene !== 'm1_wake_up' || journey.visiting
+    actor: (id: string) => THREE.Group | undefined, shadows: (THREE.Mesh | undefined)[] = [], resume = false): void {
+    const onLanding = resume && !this.current && journey?.contact?.phase === 'accepted';
+    if ((!onLanding && this.current?.id !== 'film_anderson_flat') || journey?.scene !== 'm1_wake_up' || journey.visiting
       || !['handover', 'invitation', 'inspecting', 'noticed', 'accepted'].includes(journey.contact?.phase ?? '')) {
       this.cancelClubPreparation(); return;
     }
@@ -939,11 +940,11 @@ export class FilmSetRenderer {
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose(); prepared.gpu = renderer.properties;
-      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true }), actors: new Set(), preserveStockSkinning: true };
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, playerView: onLanding }), actors: new Set(), preserveStockSkinning: true };
       const room = prepared.root.getObjectByName('white-rabbit-club')!;
       prepared.roomTextures = new Set();
       this.queueColorTextures(prepared.roomTextures, this.colorMeshes(room.children.filter(child => child instanceof THREE.Mesh), true));
-      prepared.roomTextureTurn = true;
+      prepared.textureTurn = true;
       prepared.entryTextures = new Set();
       prepared.colors.meshes.push(this.marker, ...shadows.filter((mesh): mesh is THREE.Mesh => mesh !== undefined));
       prepared.lighting = new LightCulling(prepared.colors.scene);
@@ -981,15 +982,14 @@ export class FilmSetRenderer {
     }
     // Start the entrance costume before the crowd and scenery can exhaust a short resume window.
     if (entryTextures.size && this.prepareStagedColorTexture(renderer, prepared, entryTextures, 2)) return;
-    // The room maps upload as whole images, so interleave them with shader work.
+    // Advance the room and crowd textures while the shader queue is still active.
     const roomTextures = prepared.roomTextures!;
-    const roomTextureTurn = prepared.roomTextureTurn;
-    prepared.roomTextureTurn = !roomTextureTurn;
-    if (roomTextureTurn && this.prepareColorTexture(renderer, roomTextures)) return;
-    if (renderer.extensions.has('KHR_parallel_shader_compile')
-      && this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated')) return;
-    if (!roomTextureTurn && this.prepareColorTexture(renderer, roomTextures)) return;
-    this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2);
+    const textureTurn = prepared.textureTurn;
+    prepared.textureTurn = !textureTurn;
+    const parallel = renderer.extensions.has('KHR_parallel_shader_compile');
+    if (!textureTurn && parallel && this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated')) return;
+    if (this.prepareColorTexture(renderer, roomTextures) || this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) return;
+    if (textureTurn && parallel) this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated');
   }
   prepareDojo(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
     if (this.current?.id !== 'film_neb_deck' || this.currentScene !== 'm1_download' || journey?.scene !== 'm1_download' || journey.visiting
@@ -1827,13 +1827,14 @@ export class FilmSetRenderer {
     return true;
   }
   private colorPreparation(root: THREE.Group, actors: THREE.Group[],
-    { textureActors = [], includeBasic = false, shadowSun }: { textureActors?: THREE.Group[]; includeBasic?: boolean; shadowSun?: THREE.DirectionalLight } = {}): ColorPreparation {
+    { textureActors = [], includeBasic = false, shadowSun, playerView = false }:
+      { textureActors?: THREE.Group[]; includeBasic?: boolean; shadowSun?: THREE.DirectionalLight; playerView?: boolean } = {}): ColorPreparation {
     const scene = new THREE.Scene();
     scene.environment = this.scene.environment; scene.fog = this.scene.fog;
     // Use the next set's fixtures and the shared world lights without affecting the live set.
     for (const light of this.scene.children) {
-      if (light.visible && (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) {
-        const clone = light.clone(); if (light === shadowSun) clone.castShadow = true; scene.add(clone);
+      if (light instanceof THREE.DirectionalLight ? light.visible || playerView : light.visible && light instanceof THREE.HemisphereLight) {
+        const clone = light.clone(); clone.visible = true; if (light === shadowSun) clone.castShadow = true; scene.add(clone);
       }
     }
     const marker = this.markerLight.clone(); marker.visible = true; scene.add(marker, root);
@@ -2535,10 +2536,13 @@ export class FilmSetRenderer {
       const preparedTruthReturn = set?.id === 'film_neb_deck' && sceneId === this.preparedTruthReturn?.scene && !journey?.visiting ? this.preparedTruthReturn : undefined;
       if (preparedTruthReturn) { this.preparedTruthReturn = undefined; preparedTruthReturn.lighting?.dispose(); preparedTruthReturn.root.removeFromParent(); }
       const preparedClub = set?.id === 'film_white_rabbit_club' && sceneId === 'm1_club' && !journey?.visiting ? this.preparedClub : undefined;
+      const resumingClub = !this.current && set?.id === 'film_anderson_flat' && sceneId === 'm1_wake_up'
+        && !journey?.visiting && journey?.contact?.phase === 'accepted' ? this.preparedClub : undefined;
       if (preparedClub) {
         this.preparedClub = undefined; preparedClub.textureUpload?.return(false);
         preparedClub.lighting?.dispose(); preparedClub.root.removeFromParent();
       }
+      if (resumingClub) this.preparedClub = undefined;
       const preparedDojo = set?.id === 'film_kungfu_dojo' && sceneId === 'm1_dojo' && !journey?.visiting ? this.preparedDojo : undefined;
       if (preparedDojo) { this.preparedDojo = undefined; preparedDojo.lighting?.dispose(); preparedDojo.root.removeFromParent(); }
       const preparedJump = set?.id === 'film_jump_roofs' && sceneId === 'm1_jump' && !journey?.visiting ? this.preparedJump : undefined;
@@ -2590,6 +2594,7 @@ export class FilmSetRenderer {
         this.crosscutDeck.root.removeFromParent(); this.neb = undefined;
       }
       this.clear(keepCrosscut); this.current = set; this.currentScene = sceneId;
+      if (resumingClub) this.preparedClub = resumingClub;
       this.empDock = retainedEmpDock;
       if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
       // LifeInteriors owns the persistent city apartment, even while another actor plays a remote chapter.
