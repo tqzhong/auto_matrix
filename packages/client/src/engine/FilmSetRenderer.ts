@@ -57,7 +57,7 @@ import { RELOADED } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS, LobbySetRenderer } from './LobbySetRenderer.js';
 import { OFFICE_POINT_SLOTS, OfficeSetRenderer } from './OfficeSetRenderer.js';
-import { LightCulling } from './LightCulling.js';
+import { LightCulling, POINT_SLOT_FLOOR } from './LightCulling.js';
 import { cacheReadyProgramLocations, preserveProgramBindings, shadowCasterProxies } from './PrepareShaderProgram.js';
 import { prepareMeshBuffers } from './PrepareMeshBuffers.js';
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
@@ -298,6 +298,7 @@ export class FilmSetRenderer {
     manager?: { root: THREE.Group; gpu: THREE.WebGLRenderer['properties'] };
   };
   private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
+  private morningStreet?: ColorPreparation & { actor: THREE.Group; gpu: THREE.WebGLRenderer['properties']; eye: THREE.PerspectiveCamera; lighting: LightCulling };
   private commuteOutfit?: ColorPreparation & { actor: THREE.Group; gpu: THREE.WebGLRenderer['properties']; textureUpload?: Generator<void, boolean> };
   private preparedOfficeStreetPhone?: { phone: THREE.Mesh; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
   private preparedOfficeStreet?: {
@@ -2130,6 +2131,42 @@ export class FilmSetRenderer {
     const { currentProgram } = gpu.get(canopy.material) as { currentProgram?: ColorProgram };
     this.preparedOfficeCanopy = { city, gpu, program: currentProgram };
     return true;
+  }
+  prepareMorningStreet(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, actor: THREE.Group | undefined, city: THREE.Group): void {
+    if (this.current?.id !== 'film_anderson_flat' || !actor || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+      this.cancelMorningStreet();
+      return;
+    }
+    const gpu = renderer.properties;
+    let prepared = this.morningStreet;
+    if (prepared?.actor !== actor || prepared.gpu !== gpu || prepared.eye.aspect !== camera.aspect) {
+      this.cancelMorningStreet();
+      const { center, depth } = this.current;
+      const eye = camera.clone(), exit = center.z + depth / 2;
+      eye.position.set(center.x, center.y + 5, exit - 10);
+      eye.lookAt(center.x, center.y + 1, exit + 12);
+      eye.updateMatrixWorld();
+      const frustum = new THREE.Frustum().setFromProjectionMatrix(eye.projectionMatrix.clone().multiply(eye.matrixWorldInverse));
+      const meshes = this.colorMeshes([actor]);
+      city.updateMatrixWorld();
+      city.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh) || ![object.material].flat().some(material => material instanceof THREE.MeshStandardMaterial)) return;
+        if (!object.frustumCulled || frustum.intersectsObject(object)) meshes.push(object);
+      });
+      const scene = new THREE.Scene(); scene.fog = this.scene.fog; scene.environment = this.scene.environment;
+      // The street view has the same world lights and landing shadow, with four point slots.
+      for (const light of this.scene.children)
+        if (light.visible && (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) scene.add(light.clone());
+      city.traverseVisible(light => { if (light instanceof THREE.SpotLight && light.castShadow) scene.add(light.clone()); });
+      const lighting = new LightCulling(scene);
+      lighting.minimumPointSlots = POINT_SLOT_FLOOR;
+      this.morningStreet = prepared = { actor, gpu, eye, scene, lighting, meshes, programs: [], textures: new Set() };
+    }
+    this.prepareColorProgram(renderer, prepared.eye, prepared, prepared.lighting, 'isolated', true);
+  }
+  private cancelMorningStreet(): void {
+    this.morningStreet?.lighting.dispose();
+    this.morningStreet = undefined;
   }
   prepareCommuteOutfit(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey?: FilmJourney, actor?: THREE.Group): void {
     const morning = journey?.scene === 'm1_morning' && !journey.visiting && journey.morning;
@@ -5819,6 +5856,7 @@ export class FilmSetRenderer {
     prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedMountain = undefined;
   }
   private clear(keepCrosscut = false): void {
+    this.cancelMorningStreet();
     if (!keepCrosscut) {
       if (this.crosscutTv !== this.tvRepair) this.crosscutTv?.dispose();
       if (this.crosscutDeck?.renderer !== this.neb) this.crosscutDeck?.renderer.dispose();

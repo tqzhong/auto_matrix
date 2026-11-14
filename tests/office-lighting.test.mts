@@ -631,6 +631,55 @@ test('the commute prepares Neo’s hidden office clothes before the first commut
   assert.equal(renderTarget, null); assert.equal(debug.checkShaderErrors, true);
 });
 
+test('the morning exit prepares visible street and Neo programs with the four outdoor point slots', t => {
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), city = new THREE.Group(), actor = new THREE.Group();
+  const liveSun = new THREE.DirectionalLight(), landing = new THREE.SpotLight(), indoor = new THREE.PointLight(0xffffff, 80, 18);
+  liveSun.castShadow = landing.castShadow = true;
+  scene.fog = new THREE.FogExp2(); scene.environment = new THREE.Texture();
+  scene.add(city, actor, liveSun, new THREE.HemisphereLight()); city.add(landing, indoor);
+  const skin = new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshPhysicalMaterial());
+  const material = new THREE.MeshStandardMaterial(), road = new THREE.Mesh(new THREE.BoxGeometry(), material);
+  const tower = new THREE.Mesh(new THREE.BoxGeometry(), [material, new THREE.MeshStandardMaterial()]);
+  const behind = new THREE.Mesh(road.geometry, material);
+  const center = FILM_SETS.film_anderson_flat.center;
+  road.position.set(center.x, 0, center.z + 29); tower.position.copy(road.position).add(new THREE.Vector3(2, 6, 15));
+  behind.position.set(center.x, 1, center.z - 25);
+  actor.add(skin); city.add(road, tower, behind);
+  t.after(() => {
+    film.dispose(); scene.environment!.dispose(); liveSun.dispose(); landing.dispose(); indoor.dispose();
+    for (const mesh of [skin, road, tower]) mesh.geometry.dispose();
+    skin.material.dispose(); tower.material.forEach(surface => surface.dispose());
+  });
+  const camera = new THREE.PerspectiveCamera(), tasks: string[] = [], drawTarget = new THREE.WebGLRenderTarget(6, 4);
+  t.after(() => drawTarget.dispose());
+  let target: THREE.WebGLRenderTarget | null = drawTarget;
+  const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  const gpu = {
+    info: { programs }, properties: { get: () => ({}) }, extensions: { has: () => true }, debug: { checkShaderErrors: true },
+    getRenderTarget: () => target, setRenderTarget: (next: typeof target) => { target = next; },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    compile(subject: THREE.Group, eye: THREE.Camera, lit: THREE.Scene) {
+      assert.notEqual(eye, camera); assert.notEqual(lit, scene); assert.equal(target?.width, 1);
+      assert.equal(lit.fog, scene.fog); assert.equal(lit.environment, scene.environment);
+      const lights: THREE.Light[] = [], meshes: THREE.Object3D[] = [];
+      lit.traverseVisible(object => { if (object instanceof THREE.Light) lights.push(object); });
+      subject.traverse(object => meshes.push(object));
+      assert.deepEqual(meshes, [skin, road, tower]);
+      assert.equal(lights.filter(light => light instanceof THREE.PointLight).length, 4);
+      assert.equal(lights.filter(light => light instanceof THREE.DirectionalLight && light.castShadow).length, 1);
+      assert.equal(lights.filter(light => light instanceof THREE.SpotLight && light.castShadow).length, 1);
+      assert.ok(!lights.includes(indoor) && !lights.includes(landing));
+      tasks.push('link'); programs.push({ program: {}, isReady: () => true, getUniforms() { tasks.push('locations'); } });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const prepare = () => film.prepareMorningStreet?.(gpu, camera, actor, city);
+  film['current'] = FILM_SETS.film_anderson_flat;
+  prepare(); assert.deepEqual(tasks, ['link']);
+  prepare(); assert.deepEqual(tasks, ['link']);
+  prepare(); prepare(); assert.deepEqual(tasks, ['link', 'locations']);
+  assert.equal(target, drawTarget); assert.equal(indoor.intensity, 80); assert.equal(road.parent, city); assert.equal(skin.parent, actor);
+});
+
 test('the commute prepares the three first-draw street programs with the live lights', t => {
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
   const camera = new THREE.PerspectiveCamera(), detail = new THREE.Group(), actor = new THREE.Group();
