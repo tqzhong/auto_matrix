@@ -165,7 +165,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
       const mesh = dancer.getObjectByName('crowd-surface') as THREE.SkinnedMesh;
       assert.ok(bounded.has(mesh), dancer.name);
       assert.ok(mesh.boundingSphere && mesh.boundingSphere.radius > 0);
-      assert.equal(mesh.frustumCulled, false);
+      assert.equal(mesh.frustumCulled, true);
     }
     assert.equal(bounded.size, 16);
   });

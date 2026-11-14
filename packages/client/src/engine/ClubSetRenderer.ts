@@ -24,10 +24,14 @@ export class ClubSetRenderer {
     const dancer = this.dancers[this.preparedDancers];
     if (!dancer) return;
     this.preparedDancers++;
-    // Three sorts even uncullable meshes using their sphere. Skin one dancer per preparation frame.
+    // Use the padded pose for frustum tests while retaining its original sort center.
     dancer.root.updateMatrixWorld(true);
     dancer.root.traverse(object => {
-      if (object instanceof THREE.SkinnedMesh && object.boundingSphere === null) object.computeBoundingSphere();
+      if (!(object instanceof THREE.SkinnedMesh)) return;
+      if (object.boundingSphere === null) object.computeBoundingSphere();
+      // The two club rigs keep their full dance motion within this local-space margin.
+      object.boundingSphere!.radius += .75;
+      object.frustumCulled = true;
     });
   }
 

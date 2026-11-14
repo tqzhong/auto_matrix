@@ -2978,6 +2978,7 @@ export class FilmSetRenderer {
       }
     }
     this.club?.update(elapsed);
+    this.club?.prepareCrowdBounds();
     this.freeway?.update(journey, elapsed, playerPosition, player?.id === 'morpheus' && player.id === journey?.actor
       ? player.currentAction?.parameters.truckRescue as TruckEncounter | undefined : undefined,
       player?.id === 'trinity' && player.id === journey?.actor ? player.currentAction?.parameters.freewayPickup as import('@auto_matrix/shared').FreewayPickup | undefined : undefined,

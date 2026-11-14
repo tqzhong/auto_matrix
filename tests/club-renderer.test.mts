@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SETS, clubRoot, filmPosition, type ClubGesture } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { newMotion } from '../packages/client/src/agents/CharacterMotion.js';
+import { ClubSetRenderer } from '../packages/client/src/engine/ClubSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -20,6 +21,39 @@ async function geometry(id: string) {
   buffer.writeUInt32LE(padded.length, 12); buffer.writeUInt32LE(0x4e4f534a, 16); padded.copy(buffer, 20); bin.copy(buffer, 20 + padded.length);
   return new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
 }
+
+test('offscreen dancers can be culled without clipping their animated meshes', async t => {
+  const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(assets.get(url.split('/').at(-1)!.replace('.glb', ''))!));
+  const root = new THREE.Group(); root.position.set(5376, 0, 4096);
+  const club = new ClubSetRenderer(root); t.after(() => club.dispose());
+  await club.ready;
+  for (let i = 0; i < 16; i++) club.prepareCrowdBounds();
+  const meshes: THREE.SkinnedMesh[] = [];
+  root.traverse(object => { if (object instanceof THREE.SkinnedMesh) meshes.push(object); });
+  assert.equal(meshes.length, 104);
+  assert.ok(meshes.every(mesh => mesh.frustumCulled), 'use the prepared bounds for the crowd draw');
+  const point = new THREE.Vector3();
+  let minimumClearance = Infinity;
+  for (let i = 0; i < 48; i++) {
+    club.update(i * .63);
+    root.updateMatrixWorld(true);
+    for (const mesh of meshes) {
+      const sphere = mesh.boundingSphere!;
+      let farthest = 0;
+      const positions = mesh.geometry.attributes.position;
+      for (let index = 0; index < positions.count; index++)
+        farthest = Math.max(farthest, mesh.getVertexPosition(index, point).distanceToSquared(sphere.center));
+      minimumClearance = Math.min(minimumClearance, sphere.radius - Math.sqrt(farthest));
+    }
+  }
+  assert.ok(minimumClearance >= .15, `the shipped rigs need clearance throughout the dance: ${minimumClearance}`);
+  const eye = new THREE.PerspectiveCamera(57, 16 / 9, .5, 100);
+  eye.position.set(5383, 4.8, 4093); eye.lookAt(5401, 2.5, 4093); eye.updateMatrixWorld();
+  const frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(eye.projectionMatrix, eye.matrixWorldInverse));
+  assert.ok(meshes.filter(mesh => !frustum.intersectsObject(mesh)).length >= 52);
+});
 
 function setup(t: test.TestContext, assets?: Map<string, Awaited<ReturnType<typeof geometry>>>) {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
