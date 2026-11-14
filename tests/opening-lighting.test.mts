@@ -492,12 +492,13 @@ test('303 links the first combat cues before they are visible', t => {
   } as unknown as THREE.WebGLRenderer;
   const flash = effects.openingHotelImpactFlash(), cues = [...enemies.openingHotelTelegraphs(), flash];
   const prepare = (active = true) => h.sets.prepareOpeningHotelCues(renderer, h.camera, h.culling, active ? cues : undefined);
+  const pane = h.sets.root.getObjectByName('hotel-303-window')!.children[0];
   prepare();
-  assert.deepEqual(compiled.map(object => object.id), [enemy.telegraph.id, enemy.aimLine.id, flash.id]);
+  assert.deepEqual(compiled.map(object => object.id), [enemy.telegraph.id, enemy.aimLine.id, flash.id, pane.id]);
   assert.deepEqual(reflected, []);
   for (let frame = 0; frame < 8; frame++) prepare();
-  assert.equal(compiled.length, 3);
-  assert.equal(reflected.length, 3);
+  assert.equal(compiled.length, 4);
+  assert.equal(reflected.length, 4);
   assert.ok(children.every(child => child.parent === h.scene));
   const added = h.scene.children.filter(child => !children.includes(child));
   assert.ok(added.every(child => !child.visible && child.children.every(light => light instanceof THREE.PointLight && light.intensity === 0)));
@@ -523,4 +524,36 @@ test('an additional real flash keeps its energy, and leaving 303 releases the re
   const h=setup(t);h.pose('combat');for(let i=0;i<6;i++)h.shot();
   assert.equal(h.sample(),14,'unexpected extra light must remain visible');h.gunfire.update(.12);assert.equal(h.sample(),13);
   h.sets.update(undefined,undefined,0);assert.equal(h.sets.minimumPointSlots,0);assert.equal(h.sets.stablePointSlots,false);
+});
+
+test('303 prepares both faces of the intact escape pane before the call', t => {
+  const h = setup(t); h.pose('phone');
+  const pane = h.sets.root.getObjectByName('hotel-303-window')?.children[0];
+  assert.ok(pane instanceof THREE.Mesh && pane.material instanceof THREE.MeshPhysicalMaterial);
+  const surface = pane.material, parent = pane.parent;
+  assert.equal(surface.side, THREE.DoubleSide);
+  assert.ok(surface.transparent && !surface.forceSinglePass);
+  const work: string[] = [], litSlots: number[] = [];
+  const programs: { isReady(): boolean; getUniforms(): void }[] = [];
+  const gpu = { properties: { get: () => ({}) }, info: { programs }, extensions: { has: () => true },
+    debug: { checkShaderErrors: false }, getRenderTarget: () => null, setRenderTarget() {},
+    compile(subject: THREE.Object3D, _eye: THREE.Camera, lights: THREE.Scene) {
+      subject.traverse(object => assert.ok(object === pane, 'compile the exact glass that renders in 303'));
+      assert.equal(surface.side, THREE.DoubleSide);
+      let points = 0;
+      lights.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
+      litSlots.push(points);
+      work.push('link');
+      for (const side of ['back', 'front']) programs.push({ isReady: () => true, getUniforms: () => work.push(side) });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const prepare = (active: boolean) => h.sets.prepareOpeningHotelCues(gpu, h.camera, h.culling, active ? [] : undefined);
+  prepare(true);
+  assert.deepEqual(work, ['link']);
+  for (let frame = 0; frame < 6; frame++) prepare(true);
+  assert.deepEqual(work, ['link', 'back', 'front']);
+  assert.deepEqual(litSlots, [13]);
+  assert.ok(pane.parent === parent && pane.material === surface && pane.visible && surface.side === THREE.DoubleSide);
+  h.pose('answering'); prepare(false);
+  assert.equal(work.length, 3);
 });

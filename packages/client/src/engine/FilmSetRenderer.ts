@@ -1531,8 +1531,10 @@ export class FilmSetRenderer {
     if (this.preparedHotelCues?.gpu !== renderer.properties)
       this.preparedHotelCues = { gpu: renderer.properties, scene: this.scene, meshes: [], programs: [], textures: new Set(), materials: new Set() };
     const prepared = this.preparedHotelCues;
-    for (const cue of cues) {
-      if (Array.isArray(cue.material) || prepared.materials.has(cue.material)) continue;
+    // The call turns the camera toward the intact pane before the player reaches the corridor.
+    const pane = this.hotel303Glass?.children[0];
+    for (const cue of [...cues, pane instanceof THREE.Mesh ? pane : undefined]) {
+      if (!cue || Array.isArray(cue.material) || prepared.materials.has(cue.material)) continue;
       prepared.materials.add(cue.material);
       prepared.meshes.push(cue);
     }
