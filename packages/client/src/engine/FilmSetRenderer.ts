@@ -930,7 +930,7 @@ export class FilmSetRenderer {
   }
   prepareClub(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, shadows: (THREE.Mesh | undefined)[] = [], resume = false, sourceLights?: LightCulling): void {
-    const onLanding = resume && !this.current && journey?.contact?.phase === 'accepted';
+    const onLanding = resume && !this.current && (journey?.contact?.phase === 'accepted' || journey?.contact?.phase === 'noticed');
     if ((!onLanding && this.current?.id !== 'film_anderson_flat') || journey?.scene !== 'm1_wake_up' || journey.visiting
       || !['handover', 'invitation', 'inspecting', 'noticed', 'accepted'].includes(journey.contact?.phase ?? '')) {
       this.cancelClubPreparation(); return;
@@ -2588,8 +2588,10 @@ export class FilmSetRenderer {
       const preparedTruthReturn = set?.id === 'film_neb_deck' && sceneId === this.preparedTruthReturn?.scene && !journey?.visiting ? this.preparedTruthReturn : undefined;
       if (preparedTruthReturn) { this.preparedTruthReturn = undefined; preparedTruthReturn.lighting?.dispose(); preparedTruthReturn.root.removeFromParent(); }
       const preparedClub = set?.id === 'film_white_rabbit_club' && sceneId === 'm1_club' && !journey?.visiting ? this.preparedClub : undefined;
-      const resumingClub = !this.current && set?.id === 'film_anderson_flat' && sceneId === 'm1_wake_up'
-        && !journey?.visiting && journey?.contact?.phase === 'accepted' ? this.preparedClub : undefined;
+      const pendingInvitation = !journey && sandbox?.neoLife?.deferredContact?.contact?.phase === 'noticed';
+      const resumingClub = set?.id === 'film_anderson_flat' && player?.id === 'neo' && (pendingInvitation
+        || sceneId === 'm1_wake_up' && !journey?.visiting && (journey?.contact?.phase === 'noticed' || journey?.contact?.phase === 'accepted'))
+        ? this.preparedClub : undefined;
       if (preparedClub) {
         this.preparedClub = undefined; preparedClub.textureUpload?.return(false);
         preparedClub.lighting?.dispose(); preparedClub.root.removeFromParent();

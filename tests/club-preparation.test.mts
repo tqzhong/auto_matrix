@@ -57,8 +57,8 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const neo = world.agents.get('neo')!, apartment = FILM_SCENE_BY_ID.m1_wake_up, club = FILM_SCENE_BY_ID.m1_club;
   Object.assign(neo, { position: filmEntry(apartment), currentLocation: apartment.set, isInMatrix: true });
-  const journey = { scene: apartment.id, actor: neo.id, step: 3, contact: { phase: 'accepted', elapsed: 1 }, completed: [] } as unknown as FilmJourney;
-  const sandbox = { structures: [], neoLife: { journey } } as unknown as SandboxState;
+  const journey = { scene: apartment.id, actor: neo.id, step: 5, contact: { phase: 'noticed', elapsed: 1 }, completed: [] } as unknown as FilmJourney;
+  const sandbox = { structures: [], neoLife: { deferredContact: journey } } as unknown as SandboxState;
   film.update(undefined, sandbox, 0);
   let target: THREE.WebGLRenderTarget | null = null, work = 0;
   const rooms = new Set<THREE.Object3D>(), compiled = new Set<THREE.Object3D>();
@@ -138,7 +138,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     for (let frame = 0; frame < 160; frame++) prepare();
   };
   prepare(true);
-  assert.equal([...allocations.values()][0]?.image, bitmap, 'start the hidden club skin on the landing screen');
+  assert.equal([...allocations.values()][0]?.image, bitmap, 'start the hidden club skin on the deferred invitation landing screen');
   assert.equal([...allocations.values()][0]?.rows, 512, 'limit the transfer to two strips');
   await new Promise(resolve => setImmediate(resolve));
   for (let frame = 0; frame < 12; frame++) prepare(true);
@@ -197,6 +197,19 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   let cancelled = 0, cancelledDepths = 0; crowd.geometry.addEventListener('dispose', () => cancelled++);
   const abandoned = clubDepths();
   for (const material of abandoned) material.addEventListener('dispose', () => cancelledDepths++);
+  sandbox.neoLife!.journey = journey;
+  delete sandbox.neoLife!.deferredContact;
+  film.update(neo, sandbox, 0);
+  prepare();
+  assert.equal(cancelled, 0, 'continuing the invitation keeps the prepared club');
+  assert.equal(cancelledDepths, 0);
+  sandbox.neoLife!.deferredContact = journey;
+  delete sandbox.neoLife!.journey;
+  film.update(neo, sandbox, 0);
+  prepare();
+  assert.equal(cancelled, 0, 'waiting in the apartment keeps the same club');
+  sandbox.neoLife!.journey = journey;
+  delete sandbox.neoLife!.deferredContact;
   journey.visiting = apartment.id; prepare(); assert.equal(cancelled, 1);
   assert.equal(cancelledDepths, abandoned.size);
   delete journey.visiting;
@@ -216,4 +229,18 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   film.update(undefined, undefined, 0);
   assert.equal(disposed, 1);
   assert.equal(disposedDepths, adopted.length);
+
+  Object.assign(neo, { position: filmEntry(apartment), currentLocation: apartment.set });
+  Object.assign(journey, { scene: apartment.id, step: 5, contact: { phase: 'noticed', elapsed: 1 } });
+  sandbox.neoLife!.deferredContact = journey;
+  delete sandbox.neoLife!.journey;
+  film.update(neo, sandbox, 0);
+  await drain();
+  const waitingRoom = [...rooms].at(-1)!;
+  let leftHome = 0;
+  const surface = waitingRoom.children.find(object => object instanceof THREE.Mesh) as THREE.Mesh;
+  surface.geometry.addEventListener('dispose', () => leftHome++);
+  neo.position = { ...neo.position, z: neo.position.z + 100 };
+  film.update(neo, sandbox, 0);
+  assert.equal(leftHome, 1, 'leaving the apartment releases the deferred club');
 });

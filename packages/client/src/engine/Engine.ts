@@ -360,8 +360,9 @@ export class Engine {
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
     this.filmSets.prepareDownloadWalk(this.renderer, this.camera, this.lightCulling, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id));
-    const resumeClub = resumeApartment && meeting.contact?.phase === 'accepted';
-    this.filmSets.prepareClub(this.renderer, this.camera, liveMatrixJourney ?? (resumeClub ? meeting : undefined), id => this.agentRenderer.getAgentHero(id),
+    const clubInvitation = prepareDeferredContact ? this.sandbox?.neoLife?.deferredContact : liveMatrixJourney ?? (resumeApartment ? meeting : undefined);
+    const resumeClub = resumeOnLanding && (prepareDeferredContact || resumeApartment && meeting.contact?.phase === 'accepted');
+    this.filmSets.prepareClub(this.renderer, this.camera, clubInvitation, id => this.agentRenderer.getAgentHero(id),
       [this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentShadow('trinity')], resumeClub, this.lightCulling);
     this.filmSets.prepareDojo(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id));
