@@ -298,6 +298,7 @@ export class FilmSetRenderer {
     manager?: { root: THREE.Group; gpu: THREE.WebGLRenderer['properties'] };
   };
   private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
+  private commuteOutfit?: ColorPreparation & { actor: THREE.Group; gpu: THREE.WebGLRenderer['properties']; textureUpload?: Generator<void, boolean> };
   private preparedOfficeStreetPhone?: { phone: THREE.Mesh; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
   private preparedOfficeStreet?: {
     actor?: THREE.Group; driver?: THREE.Group; gpu: THREE.WebGLRenderer['properties'];
@@ -2129,6 +2130,35 @@ export class FilmSetRenderer {
     const { currentProgram } = gpu.get(canopy.material) as { currentProgram?: ColorProgram };
     this.preparedOfficeCanopy = { city, gpu, program: currentProgram };
     return true;
+  }
+  prepareCommuteOutfit(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey?: FilmJourney, actor?: THREE.Group): void {
+    const morning = journey?.scene === 'm1_morning' && !journey.visiting && journey.morning;
+    if (!actor || !morning || !['alarm', 'stopping', 'rising', 'ready', 'done'].includes(morning.phase)
+      || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+      this.cancelCommuteOutfit();
+      return;
+    }
+    const gpu = renderer.properties;
+    let prepared = this.commuteOutfit;
+    if (prepared?.actor !== actor || prepared.gpu !== gpu) {
+      this.cancelCommuteOutfit();
+      const clothes: ColorMesh[] = [], meshes: ColorMesh[] = [this.marker];
+      actor.traverse(mesh => {
+        if (!(mesh instanceof THREE.SkinnedMesh) || !(mesh.material instanceof THREE.MeshStandardMaterial)) return;
+        if (mesh.userData.office) clothes.push(mesh);
+        // The shirt receives its interrogation shader on first use. These materials keep their keys.
+        if (mesh.name === 'Office_torso' || mesh.name === 'Anatomical_wrist_skin') meshes.push(mesh);
+      });
+      const textures = new Set<THREE.Texture>();
+      this.queueColorTextures(textures, clothes);
+      this.commuteOutfit = prepared = { actor, gpu, scene: this.scene, meshes, programs: [], textures };
+    }
+    if (this.prepareStagedColorTexture(renderer, prepared, prepared.textures)) return;
+    if (!this.current) this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true, [this.marker]);
+  }
+  private cancelCommuteOutfit(): void {
+    this.commuteOutfit?.textureUpload?.return(false);
+    this.commuteOutfit = undefined;
   }
   prepareOfficeStreetPhone(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, phone?: THREE.Mesh): boolean {
     if (!phone || !renderer.extensions.has('KHR_parallel_shader_compile')) return false;
@@ -5918,5 +5948,5 @@ export class FilmSetRenderer {
     this.root.clear(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.hotelSurfaceSources.clear(); this.materialCache.clear(); this.moving = [];
   }
-  dispose(): void { this.clear(); this.root.removeFromParent(); this.marker.removeFromParent(); this.markerLight.removeFromParent(); this.marker.geometry.dispose(); (this.marker.material as THREE.Material).dispose(); this.markerLight.dispose(); this.officeTowerDepth?.dispose(); this.officeStreetDepth?.dispose(); }
+  dispose(): void { this.cancelCommuteOutfit(); this.clear(); this.root.removeFromParent(); this.marker.removeFromParent(); this.markerLight.removeFromParent(); this.marker.geometry.dispose(); (this.marker.material as THREE.Material).dispose(); this.markerLight.dispose(); this.officeTowerDepth?.dispose(); this.officeStreetDepth?.dispose(); }
 }

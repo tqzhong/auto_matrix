@@ -584,6 +584,53 @@ test('the office prepares the city sign and masked Smith shadow before answering
   assert.equal(target, null); assert.equal(debug.checkShaderErrors, true);
 });
 
+test('the commute prepares Neo’s hidden office clothes before the first commute draw', t => {
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  const camera = new THREE.PerspectiveCamera(), actor = new THREE.Group();
+  const map = new THREE.Texture({ width: 2048, height: 2048 }); map.needsUpdate = true;
+  const torso = new THREE.SkinnedMesh(new THREE.BufferGeometry(), new THREE.MeshStandardMaterial({ map }));
+  torso.name = 'Office_torso'; torso.userData.office = true; torso.visible = false;
+  const shirt = new THREE.SkinnedMesh(new THREE.BufferGeometry(), new THREE.MeshStandardMaterial());
+  shirt.name = 'Office_shirt'; shirt.userData.office = true; shirt.visible = false;
+  const wrist = new THREE.SkinnedMesh(new THREE.BufferGeometry(), new THREE.MeshPhysicalMaterial());
+  wrist.name = 'Anatomical_wrist_skin'; wrist.visible = false;
+  const coat = new THREE.SkinnedMesh(); actor.add(torso, shirt, wrist, coat);
+  t.after(() => {
+    film.dispose(); lighting.dispose(); map.dispose();
+    for (const mesh of [torso, shirt, wrist, coat]) { mesh.geometry.dispose(); mesh.material.dispose(); }
+  });
+  const tasks: string[] = [], debug = { checkShaderErrors: true };
+  const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  let renderTarget: THREE.WebGLRenderTarget | null = null, uploaded = false;
+  const gpu = {
+    properties: { get: (object: object) => object === map && uploaded ? { __version: map.version } : {} },
+    info: { programs }, debug, extensions: { has: () => true },
+    getRenderTarget: () => renderTarget,
+    setRenderTarget: (target: typeof renderTarget) => { renderTarget = target; },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    initTexture(texture: THREE.Texture) { assert.equal(texture, map); uploaded = true; tasks.push('upload'); },
+    compile(subject: THREE.Group, eye: THREE.PerspectiveCamera, lights: THREE.Scene) {
+      assert.equal(eye, camera); assert.notEqual(lights, scene); assert.equal(renderTarget?.width, 1);
+      const meshes: THREE.Object3D[] = []; subject.traverse(mesh => meshes.push(mesh));
+      assert.deepEqual(meshes, [film.goalMarker, torso, wrist]);
+      assert.ok(meshes.every(mesh => !mesh.visible));
+      assert.equal(torso.parent, actor); assert.equal(wrist.parent, actor);
+      tasks.push('link');
+      programs.push({ program: {}, isReady: () => true, getUniforms() { tasks.push('locations'); } });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const journey = { scene: 'm1_morning', actor: 'neo', morning: { phase: 'ready', elapsed: 0 } } as FilmJourney;
+  const prepare = (state: FilmJourney) => film.prepareCommuteOutfit?.(gpu, camera, lighting, state, actor);
+  prepare({ ...journey, visiting: 'm1_club' }); assert.deepEqual(tasks, []);
+  film['current'] = FILM_SETS.film_anderson_flat;
+  prepare(journey); prepare(journey); assert.deepEqual(tasks, ['upload']);
+  film['current'] = undefined;
+  prepare(journey); assert.deepEqual(tasks, ['upload', 'link']);
+  prepare(journey); assert.deepEqual(tasks, ['upload', 'link'], 'wait one frame after the driver reports completion');
+  prepare(journey); prepare(journey); assert.deepEqual(tasks, ['upload', 'link', 'locations']);
+  assert.equal(renderTarget, null); assert.equal(debug.checkShaderErrors, true);
+});
+
 test('the commute prepares the three first-draw street programs with the live lights', t => {
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
   const camera = new THREE.PerspectiveCamera(), detail = new THREE.Group(), actor = new THREE.Group();

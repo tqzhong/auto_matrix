@@ -383,6 +383,7 @@ export class Engine {
       id => id === 'seraph' && meeting?.scene === 'm2_departure' ? this.agentRenderer.getAgentDetail(id)
         : this.agentRenderer.getAgentHero(id) ?? (meeting?.scene === 'm2_burly' ? this.agentRenderer.getAgentDetail(id) : this.agentRenderer.getAgentBody(id)));
     if (filmSet?.id === 'film_oracle_courtyard' && player?.id === meeting?.actor) this.sandboxRenderer.prepareBurlyCopies();
+    this.filmSets.prepareCommuteOutfit(this.renderer, this.camera, this.lightCulling, liveMatrixJourney, neoAtHome);
     const preparingStreetPhone = liveMatrixJourney?.scene === 'm1_commute' && !filmSet && !lift?.passenger
       && this.filmSets.prepareOfficeStreetPhone(this.renderer, this.camera, this.lightCulling, this.sandboxRenderer.getPhoneColorMesh());
     const preparingOffice = preparingStreetPhone || this.filmSets.prepareOffice(this.renderer, this.camera, this.lightCulling, player ?? undefined, this.sandbox,
