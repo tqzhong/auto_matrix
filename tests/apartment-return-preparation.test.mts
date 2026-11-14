@@ -148,11 +148,21 @@ test('the nightclub return prepares the morning apartment, actual home clothes a
 test('the nightclub return prepares both shadow layouts before drawing the morning apartment', t => {
   const h = fixture(), { renderer, scene, root, street, journey } = h;
   const clubLights = new LightCulling(scene), room = root.children[0] as THREE.Mesh;
-  t.after(() => { h.dispose(); clubLights.dispose(); });
+  const hairMaterial = new THREE.MeshPhysicalMaterial({ anisotropy: .5 });
+  const hair = new THREE.SkinnedMesh(room.geometry, hairMaterial);
+  hair.name = 'Swept_individual_hair_strands';
+  const eyes = new THREE.SkinnedMesh(room.geometry, new THREE.MeshPhysicalMaterial({ map: h.texture }));
+  eyes.name = 'high-poly'; eyes.material.name = 'Eyes';
+  const teeth = new THREE.SkinnedMesh(room.geometry, new THREE.MeshStandardMaterial({ roughness: .25 }));
+  teeth.name = 'neo-teeth-upper';
+  const marker = new THREE.Mesh(room.geometry, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }));
+  h.actor.add(hair, eyes, teeth);
+  t.after(() => { h.dispose(); clubLights.dispose(); hairMaterial.dispose(); eyes.material.dispose(); teeth.material.dispose(); marker.material.dispose(); });
   room.castShadow = street.castShadow = true;
   for (let i = 0; i < 3; i++) scene.add(new THREE.SpotLight());
   Object.assign(renderer, { shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap } });
   const compile = renderer.compile, layouts = new Map<number, Set<number>>();
+  const reflected: THREE.Object3D[] = [];
   const materials = new Set<THREE.MeshDepthMaterial>(), disposed = new Set<THREE.MeshDepthMaterial>();
   const signal = new THREE.InstancedMesh(street.geometry, street.material, 1);
   signal.position.copy(street.position); signal.position.z += 1000;
@@ -162,7 +172,13 @@ test('the nightclub return prepares both shadow layouts before drawing the morni
   t.mock.method(renderer, 'compile', (subject: THREE.Object3D, eye: THREE.Camera, lights: THREE.Scene) => {
     const casters: THREE.Mesh<THREE.BufferGeometry, THREE.MeshDepthMaterial>[] = [];
     subject.traverse(mesh => { if (mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshDepthMaterial) casters.push(mesh); });
-    if (!casters.length) return compile.call(renderer, subject, eye, lights);
+    if (!casters.length) {
+      compile.call(renderer, subject, eye, lights);
+      const program = renderer.info.programs!.at(-1)!;
+      const uniforms = program.getUniforms.bind(program);
+      program.getUniforms = () => { subject.traverse(object => reflected.push(object)); return uniforms(); };
+      return;
+    }
     let spots = 0;
     lights.traverseVisible(light => { if (light instanceof THREE.SpotLight) spots++; });
     const variants = layouts.get(spots) ?? new Set<number>();
@@ -184,14 +200,18 @@ test('the nightclub return prepares both shadow layouts before drawing the morni
   journey.scene = 'm1_club';
   journey.club = { phase: 'done', elapsed: 0 };
   h.ready();
-  assert.equal(h.prepare([], clubLights), true);
+  assert.equal(h.prepare([marker], clubLights), true);
   const firstNormals = h.apartment.returnNormalMeshes?.slice(0, 4);
   assert.ok(firstNormals?.includes(street) && firstNormals.includes(signal), 'prepare the two city normal variants before completing the color queue');
-  for (let frame = 0; frame < 120 && h.prepare([], clubLights); frame++) { /* One preparation step per frame. */ }
+  for (let frame = 0; frame < 120 && h.prepare([marker], clubLights); frame++) { /* One preparation step per frame. */ }
   assert.deepEqual(layouts, new Map([[3, new Set([0, 1, 2])], [1, new Set([0, 1, 2])]]));
   assert.ok(h.work.indexOf('texture') < h.work.lastIndexOf('depth'), 'prepare the room texture while the shadow queue is still active');
   assert.ok(h.work.lastIndexOf('depth') < h.work.lastIndexOf('compile'), 'link both shadow layouts before finishing the colors');
   const colors = h.batches.flat();
+  for (const surface of [hair, eyes, teeth, marker]) {
+    assert.ok(colors.indexOf(surface) >= 0 && colors.indexOf(surface) < colors.indexOf(room), 'link Neo and the overlay before the room surfaces');
+    assert.ok(reflected.includes(surface) && reflected.indexOf(surface) < reflected.indexOf(room), 'read the entry shader bindings before the room');
+  }
   assert.ok(colors.indexOf(street) < colors.indexOf(root.children[4]), 'link the street surface before repeated room meshes');
   assert.equal(disposed.size, 0);
   journey.scene = 'm1_morning';

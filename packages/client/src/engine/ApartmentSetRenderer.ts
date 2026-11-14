@@ -379,6 +379,7 @@ export class ApartmentSetRenderer {
     const frustum = new THREE.Frustum().setFromProjectionMatrix(eye.projectionMatrix.clone().multiply(eye.matrixWorldInverse));
     const meshes = new Set<ReturnMesh>(), textures = new Set<THREE.Texture>(), priorityMaps = new Set<THREE.Texture>(), actorMaps = new Set<THREE.Texture>();
     const buffers: ReturnMesh[] = [], geometries = new Set<THREE.BufferGeometry>(), queue: ReturnMesh[] = [], entryColors: ReturnMesh[] = [];
+    const returnEntry: ReturnMesh[] = [];
     const collect = (mesh: THREE.Object3D, batch = queue) => {
       if (!(mesh instanceof THREE.Mesh || mesh instanceof THREE.Line) || meshes.has(mesh)) return;
       meshes.add(mesh); batch.push(mesh);
@@ -417,7 +418,7 @@ export class ApartmentSetRenderer {
     if (resume) addSubjects(subjects, queue);
     const surfaces: ReturnMesh[] = resume || clubReturn ? [] : queue;
     if (!invitation) this.root.traverseVisible(mesh => collect(mesh, surfaces));
-    if (!resume) addSubjects(subjects, queue);
+    if (!resume) addSubjects(subjects, clubReturn ? returnEntry : queue);
     const streetCasters: THREE.Mesh[] = [];
     const streetNormals = new Map<boolean, THREE.InstancedMesh>();
     if (!invitation) for (const object of this.cityLights?.children ?? []) {
@@ -443,7 +444,8 @@ export class ApartmentSetRenderer {
         (first ? entryColors : queue).push(mesh);
       }
     }
-    const pending: ColorProgram[] = [], culling = new LightCulling(lights), target = new THREE.WebGLRenderTarget(1, 1);
+    const pending: ColorProgram[] = [], entryPrograms: ColorProgram[] = [];
+    const culling = new LightCulling(lights), target = new THREE.WebGLRenderTarget(1, 1);
     if (entryScene) culling.minimumPointSlots = APARTMENT_POINT_SLOTS;
     if (opening) {
       // The park blocks share a material. Link it even though the desk view faces away from them.
@@ -458,7 +460,8 @@ export class ApartmentSetRenderer {
     ] : [];
     const uploadBuffers = prepareMeshBuffers(renderer, eye, buffers, target);
     target.texture.name = 'apartment-return-preparation';
-    const compile = (batch: ReturnMesh[], lights: LightCulling, view: THREE.PerspectiveCamera, state: 'live' | 'depth', first = false) => {
+    const compile = (batch: ReturnMesh[], lights: LightCulling, view: THREE.PerspectiveCamera, state: 'live' | 'depth',
+      order: 'queued' | 'first' | 'entry' = 'queued') => {
       const subject = new THREE.Group(), previous = renderer.getRenderTarget(), programs = renderer.info.programs, start = programs?.length ?? 0;
       subject.traverse = visit => batch.forEach(visit);
       const restore = preserveProgramBindings(renderer, sharedOverlays.filter(mesh => batch.includes(mesh)));
@@ -466,14 +469,15 @@ export class ApartmentSetRenderer {
       finally { restore(); renderer.setRenderTarget(previous); }
       if (programs) {
         const linked = programs.slice(start) as ColorProgram[];
-        if (first) pending.unshift(...linked);
+        if (order === 'entry') entryPrograms.push(...linked);
+        else if (order === 'first') pending.unshift(...linked);
         else pending.push(...linked);
       }
     };
     const uploadTextures = this.prepareReturnTextures(renderer, textures, priorityMaps, entryScene !== undefined, actorMaps);
     try {
       let textureFirst = clubReturn;
-      while (arrivals?.subjects.length || entryColors.length || queue.length || pending.length || depthQueue.some(depth => depth.meshes.length) || buffers.length
+      while (arrivals?.subjects.length || returnEntry.length || entryPrograms.length || entryColors.length || queue.length || pending.length || depthQueue.some(depth => depth.meshes.length) || buffers.length
         || textures.size || priorityMaps.size || actorMaps.size) {
         if (arrivals?.subjects.length) {
           const newMeshes: ReturnMesh[] = [];
@@ -486,25 +490,29 @@ export class ApartmentSetRenderer {
         const programs = renderer.info.programs;
         const first = entryColors.length > 0 && !clubReturn;
         const shadowsFirst = (resume || clubReturn) && depth;
-        const ready = first || shadowsFirst ? -1 : pending.findIndex(program => programs?.includes(program) && program.isReady());
-        const textureTurn = !entryColors.length && !queue.length && !depth && !buffers.length;
+        // Link the arriving player and overlays before the room. Read their bindings as soon as the driver is ready.
+        const entry = !depth && returnEntry.length > 0;
+        while (entryPrograms.length && !programs?.includes(entryPrograms[0])) entryPrograms.shift();
+        const bindings = entryPrograms.length > 0 ? entryPrograms : pending;
+        const ready = first || shadowsFirst || entry ? -1 : bindings.findIndex(program => programs?.includes(program) && program.isReady());
+        const textureTurn = !returnEntry.length && !entryColors.length && !queue.length && !depth && !buffers.length;
         const haveTextures = textures.size || priorityMaps.size || actorMaps.size;
         if (clubReturn) {
           textureFirst = !textureFirst;
           if (textureFirst && haveTextures) { uploadTextures.next(); yield; continue; }
         }
         if (ready >= 0) {
-          const [program] = pending.splice(ready, 1);
+          const [program] = bindings.splice(ready, 1);
           // Give the completed handoff program a frame before reflecting its uniforms.
           if (entryScene && !resume) yield;
           if (renderer.info.programs?.includes(program)) cacheReadyProgramLocations(renderer, program);
-        } else if (first || !shadowsFirst && (entryColors.length || queue.length)) {
-          const batch = (entryColors.length ? entryColors : queue).splice(0, 4);
+        } else if (entry || first || !shadowsFirst && (entryColors.length || queue.length)) {
+          const batch = (entry ? returnEntry : entryColors.length ? entryColors : queue).splice(0, 4);
           if (entryScene) for (const mesh of batch) if (mesh instanceof THREE.SkinnedMesh) {
             if (Array.isArray(mesh.material)) mesh.material.forEach(prepareSkinnedMaterial);
             else prepareSkinnedMaterial(mesh.material);
           }
-          compile(batch, culling, eye, 'live', first);
+          compile(batch, culling, eye, 'live', entry ? 'entry' : first ? 'first' : 'queued');
         } else if (depth) {
           compile(depth.meshes.splice(0, 4), depth.lights, depth.eye, 'depth');
         } else if (buffers.length) uploadBuffers.next();
