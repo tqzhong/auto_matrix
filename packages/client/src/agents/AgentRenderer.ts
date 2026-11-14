@@ -296,6 +296,14 @@ export class AgentRenderer {
   }
   private *prepareWellsCastAssets(renderer: THREE.WebGLRenderer, camera: THREE.Camera, heroes: THREE.Group[], cast: THREE.Mesh[]): Generator<void> {
     yield* this.prepareCastMaps(renderer, heroes, ['Anatomical_head_and_hands', 'Tailored_coat_upper', 'short04']);
+    // The eye color map also supplies the alpha mask for the first shadow draw.
+    for (const { material } of cast) {
+      if (!(material instanceof THREE.MeshStandardMaterial) || material.name !== 'Eyes' || !material.map?.version) continue;
+      const texture = material.map;
+      const uploaded = renderer.properties.get(texture) as { __webglTexture?: WebGLTexture };
+      const image = !uploaded.__webglTexture && bitmapUploadImage(renderer, texture, 1024);
+      if (image && (yield* stageBitmapTexture(renderer, texture, image))) yield;
+    }
     const meshes: THREE.Mesh[] = [], geometries = new Set<THREE.BufferGeometry>();
     for (const object of cast) {
       if (geometries.has(object.geometry)) continue;

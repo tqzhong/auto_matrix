@@ -2,10 +2,10 @@ import * as THREE from 'three';
 
 const ROWS_PER_UPLOAD = 256;
 
-export function bitmapUploadImage(renderer: THREE.WebGLRenderer, texture: THREE.Texture): ImageBitmap | undefined {
+export function bitmapUploadImage(renderer: THREE.WebGLRenderer, texture: THREE.Texture, minimumSize = 2048): ImageBitmap | undefined {
   const image: unknown = texture.image;
   if (typeof ImageBitmap === 'undefined' || !(image instanceof ImageBitmap)
-    || image.width < 2048 || image.height < 2048 || Math.max(image.width, image.height) > renderer.capabilities.maxTextureSize
+    || image.width < minimumSize || image.height < minimumSize || Math.max(image.width, image.height) > renderer.capabilities.maxTextureSize
     || texture.format !== THREE.RGBAFormat || texture.type !== THREE.UnsignedByteType
     || texture.flipY || texture.premultiplyAlpha || texture.mipmaps?.length !== 0
     || typeof texture.onUpdate === 'function' || !texture.source.dataReady) return;

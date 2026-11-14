@@ -684,7 +684,7 @@ test('Wells prepares the live fragment program when resuming before the booth br
 });
 
 test('Wells prepares the investigating cast maps and buffers during the answer and releases a failed attempt', t => {
-  class Bitmap { width = 2048; height = 2048; }
+  class Bitmap { constructor(readonly width = 2048, readonly height = width) {} }
   const previous = globalThis.ImageBitmap;
   globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
   const hero = new THREE.Group(), geometry = new THREE.BoxGeometry(), camera = new THREE.PerspectiveCamera();
@@ -696,6 +696,9 @@ test('Wells prepares the investigating cast maps and buffers during the answer a
   hero.visible = false;
   const smith = new THREE.Group(), brown = new THREE.Group();
   const smithMesh = new THREE.Mesh(new THREE.BoxGeometry()), brownMesh = new THREE.Mesh(new THREE.BoxGeometry());
+  const eyes = new THREE.Texture(new Bitmap(1024)); eyes.flipY = false; eyes.needsUpdate = true;
+  const eyeMesh = new THREE.SkinnedMesh(geometry, new THREE.MeshStandardMaterial({ name: 'Eyes', map: eyes, alphaTest: .5 }));
+  eyeMesh.name = 'high-poly'; smith.add(eyeMesh);
   smith.add(smithMesh); brown.add(brownMesh);
   const mouth = new THREE.Group(), teeth = new THREE.Mesh(new THREE.BoxGeometry());
   mouth.name = 'smith-mouth'; mouth.visible = false; mouth.add(teeth); smith.add(mouth);
@@ -705,6 +708,7 @@ test('Wells prepares the investigating cast maps and buffers during the answer a
   const prepare = () => agents.prepareWellsCast(renderer, camera, phone);
   t.after(() => {
     agents.prepareWellsCast(renderer, camera); geometry.dispose(); skin.dispose(); suit.dispose(); hair.dispose();
+    eyes.dispose(); eyeMesh.material.dispose();
     for (const mesh of [smithMesh, brownMesh, teeth]) { mesh.geometry.dispose(); mesh.material.dispose(); }
     hero.children.forEach(mesh => (mesh as THREE.Mesh<THREE.BufferGeometry, THREE.Material>).material.dispose());
     if (previous) globalThis.ImageBitmap = previous;
@@ -724,10 +728,10 @@ test('Wells prepares the investigating cast maps and buffers during the answer a
     texSubImage2D(_target: number, _level: number, _x: number, y: number, width: number, height: number,
       _format: number, _type: number, image: Bitmap) {
       assert.ok(bound); assert.equal(bound.texture.image, image);
-      assert.deepEqual([y, width, height, bound.rows], [skipRows, 2048, 256, y]);
+      assert.deepEqual([y, width, height, bound.rows], [skipRows, image.width, 256, y]);
       bound.rows += height;
     },
-    generateMipmap() { assert.ok(bound); assert.equal(bound.rows, 2048); bound.mipmaps = true; },
+    generateMipmap() { assert.ok(bound); assert.equal(bound.rows, bound.texture.image.height); bound.mipmaps = true; },
   };
   const renderer = { capabilities: { maxTextureSize: 4096 }, getContext: () => gl,
     autoClear: true, sortObjects: true, getRenderTarget: () => activeTarget,
@@ -780,11 +784,15 @@ test('Wells prepares the investigating cast maps and buffers during the answer a
   assert.equal(allocations[3].mipmaps, true); assert.equal(gpu.get(hair)?.__webglTexture, allocations[3]);
   const material = smithMesh.material;
   for (let frame = 0; frame < 15 && prepare(); frame++);
+  const eyeUpload = gpu.get(eyes)?.__webglTexture;
+  assert.ok(eyeUpload, 'the investigating cast needs its eye color and alpha mask before drawing the eyes');
+  assert.equal(eyeUpload.rows, 1024); assert.equal(eyeUpload.mipmaps, true);
+  assert.equal(eyeMesh.material.map, eyes); assert.equal(eyeMesh.material.alphaTest, .5);
   assert.deepEqual(staged, new Set([geometry, smithMesh.geometry, brownMesh.geometry, teeth.geometry]));
   assert.ok(agents.wellsCastMeshes?.includes(teeth)); assert.equal(mouth.visible, false);
   assert.equal(smithMesh.material, material); assert.equal(smithMesh.parent, smith);
   assert.equal(activeTarget, target); assert.equal(renderer.autoClear, true); assert.equal(renderer.sortObjects, true);
   assert.deepEqual(disposed, allocations.map(upload => upload.texture));
-  assert.equal(prepare(), false); assert.equal(allocations.length, 4); assert.equal(hero.visible, false);
+  assert.equal(prepare(), false); assert.equal(allocations.length, 5); assert.equal(hero.visible, false);
   assert.equal(bound, undefined); assert.equal(skipRows, 0);
 });
