@@ -315,6 +315,9 @@ export class Engine {
     const openingPhone = liveMatrixJourney?.scene === 'm1_phone_escape' ? liveMatrixJourney.openingPhone : undefined;
     const openingHandoff = openingPhone?.phase === 'connected' || openingPhone?.phase === 'done';
     const resumeApartment = resumeOnLanding && meeting?.scene === 'm1_wake_up';
+    const savedWells = resumeOnLanding && meeting?.scene === 'm1_phone_escape' ? meeting.openingPhone : undefined;
+    // Pose the offstage Neo after Wells first draws, or while the save is still on the landing screen.
+    const apartmentPosePhone = filmSet?.id === 'film_wells_phone' && filmSet === previousSet ? openingPhone : savedWells;
     const savedNeo = resumeOnLanding ? this.agentRenderer.getAgentState('neo') : undefined;
     const prepareDeferredContact = deferredContact || !meeting && savedNeo?.isInMatrix
       && insideLifeRoom(savedNeo.position) === 'neo_apartment' && this.sandbox?.neoLife?.deferredContact?.contact?.phase === 'noticed';
@@ -325,7 +328,7 @@ export class Engine {
     const wellsCast = this.agentRenderer.wellsCastMeshes;
     this.filmSets.prepareWellsCastPrograms(this.renderer, this.camera, this.lightCulling, openingPhone, wellsCast);
     const preparingApartment = preparingWellsCast
-      || (openingHandoff || resumeApartment) && this.agentRenderer.prepareOpeningApartmentActor()
+      || (openingHandoff || resumeApartment || apartmentPosePhone && apartmentPosePhone.phase !== 'failed') && this.agentRenderer.prepareOpeningApartmentActor()
       || this.voxelRenderer.interiors.prepareApartmentReturn(this.renderer, this.camera, this.scene, this.sandbox?.neoLife, neoAtHome,
       apartmentCast ? [this.agentRenderer.getAgentHero('choi'), this.agentRenderer.getAgentHero('dujour'),
         this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentDistant('neo')]
