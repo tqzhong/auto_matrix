@@ -17,6 +17,7 @@ import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js
 import { openingPhoneContact, openingHitPose } from '@auto_matrix/shared';
 import { garageCarPose, garageRiderPose, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
 import { CATCH, catchRoot, catchText, newCatch, type CatchEncounter } from '@auto_matrix/shared';
+import { morningRoot, morningText, morningWakePose, type MorningRoutine } from '@auto_matrix/shared';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fingerprint = (data: string) => createHash('sha256').update(data).digest('hex');
@@ -548,6 +549,40 @@ for (const [mode, phase] of [['commute', 'travel'], ['daily', 'closing'], ['lega
     const deadline = Date.now() + 5000;
     while ((await client.world()).agents.neo.controller) {
       assert.ok(Date.now() < deadline, 'the paused passenger was not released'); await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    check(await client.world()); await server.stop();
+  });
+}
+
+for (const savedAction of ['matching', 'missing', 'stale'] as const) {
+  test(`a cold morning alarm restores a ${savedAction} action before input`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, 'm1_morning'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.neo;
+    const morning: MorningRoutine = { phase: 'alarm', elapsed: .262, approach: { x: 5.22, z: -8.98, yaw: 1.66 }, wakeAt: 12075 };
+    const pose = morningRoot(morning);
+    journey.step = 1; journey.morning = morning; journey.lastText = morningText(morning);
+    actor.position = filmPosition(FILM_SCENE_BY_ID.m1_morning.set, pose.x, pose.z); actor.rotation = pose.yaw;
+    journey.checkpoint = { ...actor.position }; actor.velocity = { x: 0, y: 0, z: 0 };
+    const recovered = { type: 'idle', parameters: { player: true, resolved: true, wakeCall: morningWakePose(morning), morning },
+      startedAt: f.checkpoint.tick, duration: 1, progress: 0 };
+    const saved = { ...recovered, startedAt: f.checkpoint.tick - 1 };
+    actor.currentAction = savedAction === 'matching' ? saved : savedAction === 'missing' ? null
+      : { ...saved, parameters: { ...saved.parameters, morning: { ...morning, elapsed: .1 } } };
+    f.checkpoint.timeOfDay = 9250; f.checkpoint.simulation = { running: false, speed: 1 };
+    await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const check = (state: WorldStateFull) => {
+      assert.equal(state.timeOfDay, 9250);
+      assert.equal(state.simulation!.tick, f.checkpoint.tick);
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.morning, morning);
+      assert.deepEqual(state.agents.neo.position, actor.position);
+      assert.equal(state.agents.neo.rotation, actor.rotation);
+      assert.deepEqual(state.agents.neo.currentAction, savedAction === 'matching' ? saved : recovered);
+    };
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+    check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+    client.socket.disconnect();
+    const deadline = Date.now() + 5000;
+    while ((await client.world()).agents.neo.controller) {
+      assert.ok(Date.now() < deadline, 'the paused actor must be released'); await new Promise(resolve => setTimeout(resolve, 20));
     }
     check(await client.world()); await server.stop();
   });

@@ -100,7 +100,7 @@ import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENG
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText, type OfficeWorkday, type OfficeWorkdayGesture } from '@auto_matrix/shared';
 import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentAtComputer, apartmentComputerPose, apartmentText, savedSeatedApartmentAction, wakeCallDoor, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, insideLifeRoom, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
-import { MORNING, morningLocked, morningRoot, morningWakePose, morningText } from '@auto_matrix/shared';
+import { MORNING, morningLocked, morningRoot, morningWakePose, morningText, type FilmJourney } from '@auto_matrix/shared';
 import { SENTINEL_CAST, SENTINEL_TIMING, SENTINEL_POWER, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeWaiting, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
 import { ORACLE_VISIT, ORACLE_DEPARTURE, oracleDepartureRoot, oracleDepartureLocked, oracleDepartureText, oracleDepartureTarget, ORACLE_KITCHEN_CHAIRS, SPOON_LESSON, ORACLE_RECEPTION, ORACLE_RECEPTION_CAST, ORACLE_WAITING_CAST, oracleReceptionRoot, oracleReceptionLength, oracleReceptionText, spoonLessonLocked, spoonLessonRoot, spoonLessonBend, spoonLessonText, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole, type OracleWaitingGesture } from '@auto_matrix/shared';
@@ -153,6 +153,14 @@ export function savedWorkdayIdle(workday: OfficeWorkday | undefined, action: Age
   if (!workday || action?.type !== 'idle') return false;
   const saved = action.parameters.workday as OfficeWorkdayGesture | undefined;
   return saved?.role === 'neo' && saved.phase === workday.phase && saved.elapsed === workday.elapsed;
+}
+
+export function savedMorningIdle(journey: FilmJourney | undefined, agent: AgentState): boolean {
+  const action = agent.currentAction, morning = journey?.morning;
+  return Boolean(journey && morning && journey.actor === agent.id && morningLocked(journey)
+    && action?.type === 'idle' && action.parameters.player === true && action.parameters.resolved === true
+    && isDeepStrictEqual(action.parameters.morning, morning)
+    && isDeepStrictEqual(action.parameters.wakeCall, morningWakePose(morning)));
 }
 
 export function savedGarageDriveTick(action: AgentState['currentAction']): number | undefined {
@@ -1920,7 +1928,8 @@ export class FilmStorySystem {
       const call = morningWakePose(morning); const root = morningRoot(morning);
       agent.position = filmPosition(this.scene!.set, root.x, root.z); agent.rotation = root.yaw;
       agent.velocity = { x: 0, y: 0, z: 0 };
-      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, wakeCall: call, morning: { ...morning } }, startedAt: tick, duration: 1, progress: 0 };
+      if (dt !== 0 || !savedMorningIdle(state, agent))
+        agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, wakeCall: call, morning: { ...morning } }, startedAt: tick, duration: 1, progress: 0 };
       state.checkpoint = { ...agent.position };
     }
     state.lastText = morningText(morning);

@@ -29,7 +29,7 @@ import { PlayerController, airbornePlayer, savedFilmCombatAction, savedAwakening
 import { CheckpointStore } from './world/CheckpointStore.js';
 import { SupabaseCheckpointStore, CloudCheckpointConflictError } from './world/SupabaseCheckpointStore.js';
 import { SandboxSystem } from './player/SandboxSystem.js';
-import { savedGarageDriveTick, savedWorkdayIdle } from './story/FilmStorySystem.js';
+import { savedGarageDriveTick, savedMorningIdle, savedWorkdayIdle } from './story/FilmStorySystem.js';
 import { savedMetacortexLiftIdle } from './story/NeoLifeSystem.js';
 import { savedEngineeringAction } from './story/ZionEngineeringSystem.js';
 import { savedZionMessageAction } from './story/ZionMessageSystem.js';
@@ -413,7 +413,7 @@ async function main(): Promise<void> {
         && agent.state.currentAction.parameters.resolved === true && agent.state.currentAction.parameters.crouching === true
         && farewell?.role === 'neo' && farewell.phase === 'still'
         && farewell.elapsed === 0 && farewell.total >= FAREWELL.minimumSeconds;
-      const savedPerformanceAction = savedCrouch || savedFarewell || savedMetacortexLiftIdle(checkpoint.sandbox?.neoLife, agent.state)
+      const savedPerformanceAction = savedCrouch || savedFarewell || savedMorningIdle(journey, agent.state) || savedMetacortexLiftIdle(checkpoint.sandbox?.neoLife, agent.state)
         || checkpoint.simulation?.running === false && (savedChateauAction(journey, agent.state) || savedMountainAction(journey, agent.state))
         || checkpoint.simulation?.running === false && savedBookDoorAction(journey, agent.state)
         || checkpoint.simulation?.running === false && savedSeraphDoorAction(journey, agent.state)
