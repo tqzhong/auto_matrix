@@ -200,6 +200,9 @@ type EntryPreparation = {
   buffers?: { meshes: THREE.Mesh[]; geometries: WeakSet<THREE.BufferGeometry>; upload?: Generator<void> };
 };
 type TrainingPreparation = EntryPreparation & { renderer: TrainingSetRenderer; colors?: CastColorPreparation };
+type DeckEntryPreparation = EntryPreparation & {
+  deck: NebDeckRenderer; colors?: CastColorPreparation; ready: boolean; pendingCabin: Map<THREE.Material, ColorMesh>; normalMeshes?: THREE.Mesh[];
+};
 type EntryCast = { model?: THREE.Group; shadow?: THREE.Mesh };
 type ShipEntryCast = EntryCast & { garments?: () => ColorMesh[] };
 const JUMP_ENTRY_MESHES = new Set(['jump-tower-windows', 'jump-canyon-avenue', 'jump-city-matte']);
@@ -223,7 +226,13 @@ const CONSOLE_ENTRY_MESHES = new Set([
   'cypher-reality-sweater', 'neo-logos-sweater', 'Tailored_trousers', 'Fitted_leather_jacket', 'shoes01', 'short04',
   'Close-cut_scalp_undercoat', 'Swept_individual_hair_strands', 'neo-teeth-upper', 'neo-teeth-lower',
 ]);
-const CONSOLE_CABIN_MATERIALS = new Set(['neb-cabin-painted-steel', 'neb-cabin-cotton']);
+const MEAL_ENTRY_MESHES = new Set([
+  'neb-cabin-grating', 'neb-deck-floor', 'neb-cypher-crt-right-glass', 'neb-meal-table-runner', 'neb-neo-protein-bowl', 'meal-spoon-bowl',
+  'neb-medical-curtain', 'Anatomical_head_and_hands', 'high-poly', 'Anatomical_wrist_skin', 'neo-teeth-upper', 'neo-teeth-lower',
+  'mouse-anatomical-head', 'mouse_ship_shirt', 'shoes01', 'short04', 'Close-cut_scalp_undercoat', 'Swept_individual_hair_strands',
+  'Tank_face', 'Tank_ribbed_shirt', 'Tank_harness', 'Tank_curled_hair', 'neo-logos-sweater', 'Tailored_trousers',
+]);
+const NEB_CABIN_MATERIALS = new Set(['neb-cabin-painted-steel', 'neb-cabin-cotton']);
 const RESTAURANT_ENTRY_PRIORITY = new Map([
   'steak-wine-base', 'cypher-restaurant-floor', 'cypher-anatomical-head', 'cypher-teeth-lower', 'Anatomical_head_and_hands', 'cypher-restaurant-window',
   'cypher-restaurant-city-matte', 'cypher-restaurant-night', 'shoes01',
@@ -408,13 +417,11 @@ export class FilmSetRenderer {
     normalMeshes?: readonly THREE.Mesh[];
     textureUpload?: Generator<void, boolean>;
   };
-  private preparedConsole?: EntryPreparation & {
-    deck: NebDeckRenderer; colors?: CastColorPreparation; ready: boolean; pendingCabin: Map<THREE.Material, ColorMesh>; normalMeshes?: THREE.Mesh[];
-  };
+  private preparedConsole?: DeckEntryPreparation;
   private preparedRestaurant?: EntryPreparation & {
     renderer: CypherRestaurantRenderer; colors?: ColorPreparation & { cast: Set<ColorMesh> };
   };
-  private preparedMeal?: { root: THREE.Group; deck: NebDeckRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
+  private preparedMeal?: DeckEntryPreparation;
   private currentScene?: string;
   private dockApuApproach = false;
   private mirror?: Reflector;
@@ -562,7 +569,7 @@ export class FilmSetRenderer {
   get openingRoofRetryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedRoofRetry?.normalMeshes; }
   get podEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedPods?.entryNormalMeshes; }
   get sentinelRetryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedSentinelControls?.normalMeshes; }
-  get consoleEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedConsole?.normalMeshes; }
+  get deckEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedConsole?.normalMeshes ?? this.preparedMeal?.normalMeshes; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
     // Keep the prepared layout while the shaft and sixth-floor lamps are revealed.
@@ -1473,12 +1480,13 @@ export class FilmSetRenderer {
     }
   }
   private prepareStagedEntry(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: EntryPreparation,
-    colors: ColorPreparation, sourceLights?: LightCulling, stripsPerFrame = 1): void {
+    colors: ColorPreparation, sourceLights?: LightCulling, stripsPerFrame = 1, prioritizeColor = false): void {
     const { lighting, shadows, buffers } = prepared;
+    const linkingColor = prioritizeColor && this.linkColorBatch(renderer, camera, colors, lighting, 'isolated', prepared.liveMeshes);
     // The first shadow pass still sees the preceding scene's light layout.
-    const linkingDepth = shadows && (sourceLights && this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.source }, sourceLights, 'depth')
+    const linkingDepth = !linkingColor && shadows && (sourceLights && this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.source }, sourceLights, 'depth')
       || this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.destination }, lighting, 'depth'));
-    if (!linkingDepth) this.prepareColorProgram(renderer, camera, colors, lighting, 'isolated', true, prepared.liveMeshes);
+    if (!linkingColor && !linkingDepth) this.prepareColorProgram(renderer, camera, colors, lighting, 'isolated', true, prepared.liveMeshes);
     if (!this.prepareStagedColorTexture(renderer, prepared, colors.textures, stripsPerFrame) && buffers) {
       if (buffers.meshes.length) buffers.upload ??= prepareMeshBuffers(renderer, camera, buffers.meshes);
       if (buffers.upload?.next().done) buffers.upload = undefined;
@@ -1590,10 +1598,15 @@ export class FilmSetRenderer {
       const root = new THREE.Group();
       this.preparedConsole = { root, deck: new NebDeckRenderer(root, true), ready: false, liveMeshes: [this.marker], pendingCabin: new Map() };
     }
-    const prepared = this.preparedConsole;
+    this.prepareDeckEntry(renderer, camera, this.preparedConsole, journey, 'console', actor, shadowSun, inTunnels ? sourceLights : undefined, resume);
+  }
+  private prepareDeckEntry(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: DeckEntryPreparation, journey: FilmJourney,
+    kind: 'console' | 'meal', actor: (id: string) => ShipEntryCast, shadowSun: THREE.DirectionalLight, sourceLights: LightCulling | undefined, resume: boolean): void {
+    const meal = kind === 'meal', scene = meal ? 'm1_meal' : 'm1_cypher_console';
+    const entryMeshes = meal ? MEAL_ENTRY_MESHES : CONSOLE_ENTRY_MESHES;
     if (!prepared.ready) {
       if (!prepared.deck.prepareStep()) return;
-      prepared.deck.update({ ...journey, scene: 'm1_cypher_console', interlude: { kind: 'console', phase: 'ready', elapsed: 0 } }, 0);
+      prepared.deck.update({ ...journey, scene, interlude: { kind, phase: 'ready', elapsed: 0 } }, 0);
       prepared.ready = true;
     }
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
@@ -1606,31 +1619,37 @@ export class FilmSetRenderer {
       prepared.normalMeshes = colors.meshes.filter((mesh): mesh is ColorMesh => mesh instanceof THREE.Mesh && mesh.name === 'neb-cabin-grating');
       prepared.pendingCabin.clear();
       for (const mesh of colors.meshes as ColorMesh[]) {
-        if (mesh instanceof THREE.Mesh && !mesh.material.map && CONSOLE_CABIN_MATERIALS.has(mesh.material.name))
+        if (mesh instanceof THREE.Mesh && !mesh.material.map && NEB_CABIN_MATERIALS.has(mesh.material.name))
           prepared.pendingCabin.set(mesh.material, mesh);
       }
       if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
         prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
         this.queueEntryShadows(prepared, colors.meshes);
       }
+      if (meal) this.queueEntryBuffers(prepared, colors.meshes.filter(mesh => entryMeshes.has(mesh.name)));
       colors.meshes.push(this.marker);
       prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
       prepared.gpu = renderer.properties;
       prioritize = true;
     }
-    for (const id of ['neo', 'cypher', 'apoc', 'switch']) {
+    const crew = meal ? ['neo', 'tank', 'mouse', 'dozer', 'apoc', 'switch'] : ['neo', 'cypher', 'apoc', 'switch'];
+    for (const id of crew) {
       const { model: group, shadow, garments } = actor(id); if (!group || colors.actors.has(group)) continue;
       const ship = garments?.() ?? [], changing = new Set(ship.map(mesh => mesh.name));
       const meshes = this.colorMeshes(group.children).filter(mesh => !changing.has(mesh.name));
       group.traverse(object => {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
-          && (object.userData.logosCostume || object.userData.hammerBriefingCostume || object.userData.cypherCostume)
+          && (object.userData.logosCostume || object.userData.hammerBriefingCostume || (meal ? entryMeshes.has(object.name) : object.userData.cypherCostume))
           && !changing.has(object.name) && !meshes.includes(object)) meshes.push(object);
       });
       if (!meshes.length && !ship.length) continue;
       colors.actors.add(group); colors.meshes.push(...meshes); prepared.liveMeshes.push(...meshes);
-      if (id === journey.actor && shadow && !prepared.liveMeshes.includes(shadow)) {
+      if (id === (meal ? 'neo' : journey.actor) && shadow && !prepared.liveMeshes.includes(shadow)) {
         colors.meshes.unshift(shadow); prepared.liveMeshes.push(shadow);
+      }
+      if (meal) {
+        const heads = meshes.filter(mesh => mesh.name === 'Anatomical_head_and_hands' || mesh.name === 'mouse-anatomical-head');
+        if (heads.length) prepared.normalMeshes = [...(prepared.normalMeshes ?? []), ...heads];
       }
       if (ship.length) {
         const materials = prepared.materials ??= new Set();
@@ -1638,10 +1657,10 @@ export class FilmSetRenderer {
         colors.meshes.push(...ship); meshes.push(...ship);
       }
       this.queueColorTextures(colors.textures, meshes); this.queueEntryShadows(prepared, meshes);
-      this.queueEntryBuffers(prepared, meshes.filter(mesh => CONSOLE_ENTRY_MESHES.has(mesh.name)));
+      this.queueEntryBuffers(prepared, meshes.filter(mesh => entryMeshes.has(mesh.name)));
       prioritize = true;
     }
-    if (prioritize) colors.meshes.sort((a, b) => Number(CONSOLE_ENTRY_MESHES.has(b.name)) - Number(CONSOLE_ENTRY_MESHES.has(a.name)));
+    if (prioritize) colors.meshes.sort((a, b) => Number(entryMeshes.has(b.name)) - Number(entryMeshes.has(a.name)));
     // The cabin assigns its paint and cotton maps only after the images decode.
     for (const [material, mesh] of prepared.pendingCabin) {
       if (!mesh.material.map?.image) continue;
@@ -1651,7 +1670,9 @@ export class FilmSetRenderer {
       colors.meshes.unshift(mesh);
       this.queueColorTextures(colors.textures, [mesh]); this.queueEntryShadows(prepared, [mesh]);
     }
-    this.prepareStagedEntry(renderer, camera, prepared, colors, inTunnels ? sourceLights : undefined);
+    // A completed bargain can cut before the deck's full shadow queue is ready.
+    const first = colors.meshes[0];
+    this.prepareStagedEntry(renderer, camera, prepared, colors, sourceLights, meal ? 2 : 1, meal && first !== undefined && entryMeshes.has(first.name));
   }
   prepareRestaurant(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => EntryCast, shadowSun: THREE.DirectionalLight, resume = false, sourceLights?: LightCulling): void {
@@ -1716,38 +1737,19 @@ export class FilmSetRenderer {
       this.prepareStagedEntry(renderer, camera, prepared, colors, atConsole ? sourceLights : undefined, 4);
     }
   }
-  prepareMeal(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
+  prepareMeal(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    actor: (id: string) => ShipEntryCast, shadowSun: THREE.DirectionalLight, sourceLights?: LightCulling, resume = false): void {
+    const atRestaurant = this.current?.id === 'film_cypher_restaurant' && this.currentScene === 'm1_steak';
     const encounter = journey?.interlude;
-    if (this.current?.id !== 'film_cypher_restaurant' || this.currentScene !== 'm1_steak' || journey?.scene !== 'm1_steak' || journey.visiting
+    if ((!atRestaurant && !resume) || journey?.scene !== 'm1_steak' || journey.visiting
       || encounter?.kind !== 'steak' || !['performing', 'done'].includes(encounter.phase) || steakAge(encounter) < 13) {
       this.cancelMealPreparation(); return;
     }
     if (!this.preparedMeal) {
-      const root = new THREE.Group(), deck = new NebDeckRenderer(root);
-      deck.update({ ...journey, scene: 'm1_meal', interlude: { kind: 'meal', phase: 'ready', elapsed: 0 } }, 0);
-      this.preparedMeal = { root, deck };
+      const root = new THREE.Group();
+      this.preparedMeal = { root, deck: new NebDeckRenderer(root, true), ready: false, liveMeshes: [this.marker], pendingCabin: new Map() };
     }
-    const prepared = this.preparedMeal;
-    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    if (!prepared.colors || prepared.gpu !== renderer.properties) {
-      prepared.lighting?.dispose();
-      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
-      prepared.colors.meshes.push(this.marker);
-      prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
-      prepared.gpu = renderer.properties;
-    }
-    const colors = prepared.colors;
-    for (const id of ['neo', 'tank', 'mouse', 'dozer', 'apoc', 'switch']) {
-      const group = actor(id); if (!group || colors.actors.has(group)) continue;
-      const meshes = this.colorMeshes([group]);
-      group.traverse(object => {
-        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
-          && (object.userData.logosCostume || object.userData.hammerBriefingCostume) && !meshes.includes(object)) meshes.push(object);
-      });
-      if (!meshes.length) continue;
-      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
-    }
-    this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+    this.prepareDeckEntry(renderer, camera, this.preparedMeal, journey, 'meal', actor, shadowSun, atRestaurant ? sourceLights : undefined, resume);
   }
   prepareCaptainsMeeting(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined): void {
     const encounter = journey.reloaded;
@@ -3231,11 +3233,13 @@ export class FilmSetRenderer {
       const resumingSentinel = resumingScene && set?.id === 'film_red_dress_plaza' && sceneId === 'm1_red_dress' ? this.preparedSentinel : undefined;
       const resumingConsole = resumingScene && set?.id === 'film_service_tunnels' && sceneId === 'm1_sentinels' ? this.preparedConsole : undefined;
       const resumingRestaurant = resumingScene && set?.id === 'film_neb_deck' && sceneId === 'm1_cypher_console' ? this.preparedRestaurant : undefined;
+      const resumingMeal = resumingScene && set?.id === 'film_cypher_restaurant' && sceneId === 'm1_steak' ? this.preparedMeal : undefined;
       if (resumingJump) this.preparedJump = undefined;
       if (resumingRedDress) this.preparedRedDress = undefined;
       if (resumingSentinel) this.preparedSentinel = undefined;
       if (resumingConsole) this.preparedConsole = undefined;
       if (resumingRestaurant) this.preparedRestaurant = undefined;
+      if (resumingMeal) this.preparedMeal = undefined;
       const preparedJump = set?.id === 'film_jump_roofs' && sceneId === 'm1_jump' && !journey?.visiting ? this.preparedJump : undefined;
       if (preparedJump) { this.preparedJump = undefined; this.releaseEntryPreparation(preparedJump, true); }
       const preparedRedDress = set?.id === 'film_red_dress_plaza' && sceneId === 'm1_red_dress' && !journey?.visiting ? this.preparedRedDress : undefined;
@@ -3249,7 +3253,8 @@ export class FilmSetRenderer {
         this.preparedRestaurant = undefined; this.releaseEntryPreparation(preparedRestaurant, true);
       }
       const preparedMeal = set?.id === 'film_neb_deck' && sceneId === 'm1_meal' && !journey?.visiting ? this.preparedMeal : undefined;
-      if (preparedMeal) { this.preparedMeal = undefined; preparedMeal.lighting?.dispose(); preparedMeal.root.removeFromParent(); }
+      if (preparedMeal) { this.preparedMeal = undefined; this.releaseEntryPreparation(preparedMeal, true); }
+      const preparedDeck = preparedConsole ?? preparedMeal;
       const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall?.renderer : undefined;
       if (preparedMeeting) this.preparedMeetingHall = undefined;
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
@@ -3287,6 +3292,7 @@ export class FilmSetRenderer {
       this.preparedSentinel = resumingSentinel;
       this.preparedConsole = resumingConsole;
       this.preparedRestaurant = resumingRestaurant;
+      this.preparedMeal = resumingMeal;
       if (resumingClub) this.preparedClub = resumingClub;
       this.empDock = retainedEmpDock;
       if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
@@ -3359,11 +3365,9 @@ export class FilmSetRenderer {
           } else if (preparedTruthReturn) {
             preparedTruthReturn.deck.finishPreparation();
             this.root.add(preparedTruthReturn.root); this.neb = preparedTruthReturn.deck;
-          } else if (preparedConsole) {
-            preparedConsole.deck.finishPreparation();
-            this.root.add(preparedConsole.root); this.neb = preparedConsole.deck;
-          } else if (preparedMeal) {
-            this.root.add(preparedMeal.root); this.neb = preparedMeal.deck;
+          } else if (preparedDeck) {
+            preparedDeck.deck.finishPreparation();
+            this.root.add(preparedDeck.root); this.neb = preparedDeck.deck;
           } else if (preparedOneDeck) {
             this.root.add(preparedOneDeck.root); this.neb = preparedOneDeck.deck; this.theOne = preparedOneDeck.overlay;
           } else if (keepCrosscut) {
@@ -3487,10 +3491,11 @@ export class FilmSetRenderer {
       }
       if (preparedAwakening?.shadows) for (const material of preparedAwakening.shadows.materials) this.materials.add(material);
       if (desertShadows) for (const material of desertShadows) this.materials.add(material);
-      const entryShadows = (preparedJump ?? preparedRedDress ?? preparedSentinel ?? preparedConsole ?? preparedRestaurant)?.shadows;
+      const entryShadows = (preparedJump ?? preparedRedDress ?? preparedSentinel ?? preparedConsole ?? preparedRestaurant ?? preparedMeal)?.shadows;
       if (entryShadows) for (const material of entryShadows.materials) this.materials.add(material);
       if (preparedSentinel?.materials) for (const material of preparedSentinel.materials) this.materials.add(material);
-      if (preparedConsole?.materials) for (const material of preparedConsole.materials) this.materials.add(material);
+      const deckMaterials = preparedDeck?.materials;
+      if (deckMaterials) for (const material of deckMaterials) this.materials.add(material);
     }
     if (this.mirror) {
       const healing = journey?.scene === 'm1_mirror' && !journey.visiting;
@@ -6396,7 +6401,7 @@ export class FilmSetRenderer {
   }
   private cancelMealPreparation(): void {
     const prepared = this.preparedMeal; if (!prepared) return;
-    prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.deck.dispose(); this.preparedMeal = undefined;
+    this.releaseEntryPreparation(prepared); prepared.deck.dispose(); this.preparedMeal = undefined;
   }
   private cancelTvExitPreparation(): void {
     const prepared = this.preparedTvExit; if (!prepared) return;

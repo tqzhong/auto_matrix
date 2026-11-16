@@ -26,7 +26,13 @@ function fixture(t: TestContext) {
   const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
   const gpu = { properties: properties(), info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
-    getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
+    getRenderTarget: () => target, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
+    setRenderTarget: (value: typeof target) => { target = value; },
+    render(view: THREE.Scene) {
+      assert.ok(target?.width === 1 && view.children.length <= 4 && view.children.length > 0);
+      for (const object of view.children) assert.ok(object instanceof THREE.Mesh && !Array.isArray(object.material) && !object.material.visible);
+      work.push('buffer');
+    },
     compile(subject: THREE.Object3D, eye: THREE.Camera, lights: THREE.Scene) {
       assert.notEqual(lights, scene); assert.equal(lights.environment, scene.environment); assert.equal(lights.fog, scene.fog); assert.equal(eye, camera); assert.equal(target?.width, 1);
       let slots = 0; lights.traverseVisible(object => { if (object instanceof THREE.PointLight) slots++; }); assert.equal(slots, 17);
@@ -43,9 +49,11 @@ function fixture(t: TestContext) {
     },
     initTexture(map: THREE.Texture) { work.push('texture'); uploaded.set(map, map.version); },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = () => {
-    const count = work.length; film.prepareMeal(gpu, camera, journey, id => actors.get(id), sun);
-    assert.ok(work.length - count <= 1, 'prepare one batch, completed binding or texture per frame');
+  const prepare = (resume = false) => {
+    const count = work.length; film.prepareMeal(gpu, camera, journey, id => ({ model: actors.get(id) }), sun, undefined, resume);
+    const frame = work.slice(count);
+    assert.ok(frame.filter(kind => kind === 'compile' || kind === 'bindings').length <= 1, 'prepare at most one shader batch or completed binding per frame');
+    assert.ok(frame.filter(kind => kind === 'texture' || kind === 'buffer').length <= 1, 'upload one texture or small set of buffers per frame');
     assert.equal(target, null); assert.equal(parent.visible, false); assert.equal(actor.parent, parent); assert.equal(skin.parent, actor); assert.equal(sweater.visible,false); assert.equal(sun.castShadow,true); assert.equal(gpu.debug.checkShaderErrors, true);
   };
   const drain = () => { for (let i = 0; i < 450; i++) prepare(); };
@@ -55,7 +63,7 @@ function fixture(t: TestContext) {
 }
 
 test('the ongoing bargain prepares the meal deck, hidden ship clothes and late diners in bounded batches', t => {
-  const h = fixture(t); for (let i = 0; i < 4; i++) h.prepare(); assert.ok(h.batches.length); assert.ok(!h.work.includes('bindings'));
+  const h = fixture(t); for (let i = 0; i < 12; i++) h.prepare(); assert.ok(h.batches.length); assert.ok(!h.work.includes('bindings'));
   h.ready(); h.drain(); assert.ok(h.batches.flat().includes(h.skin)); assert.ok(h.batches.flat().includes(h.sweater)); assert.equal(h.work.filter(v => v === 'texture').length, 1);
   const late = new THREE.Group(), face = new THREE.Mesh(h.geometry, h.material); late.add(face); face.visible = false; face.userData.hammerBriefingCostume = true; h.actors.set('tank', late);
   const before = h.batches.length; h.drain(); assert.ok(h.batches.slice(before).flat().includes(face)); assert.equal(h.decks.size, 1);
@@ -94,6 +102,46 @@ test('meal preparation waits for the wine portion of the real bargain and suppor
   h.journey.interlude!.phase = 'performing'; h.journey.interlude!.elapsed = 8; h.prepare(); assert.equal(h.work.length, 0);
   h.journey.interlude!.elapsed = 15.7; h.ready(); h.drain(); const deck = [...h.decks][0]; assert.ok(deck);
   h.journey.interlude!.phase = 'ready'; h.prepare(); assert.equal(deck.parent, null);
-  h.journey.interlude = { kind: 'steak', phase: 'performing', elapsed: 8 }; h.prepare(); assert.ok(h.decks.size > 1);
+  h.journey.interlude = { kind: 'steak', phase: 'performing', elapsed: 8 };
+  for (let i = 0; i < 12; i++) h.prepare();
+  assert.ok(h.decks.size > 1);
   h.journey.interlude!.phase = 'done'; h.prepare();
+});
+
+test('a completed bargain keeps the prepared meal deck when Smith takes control', t => {
+  const h = fixture(t);
+  Object.assign(h.film, { current: undefined, currentScene: undefined });
+  h.journey.actor = 'smith';
+  h.journey.interlude!.phase = 'done';
+  for (let i = 0; i < 16; i++) h.prepare(true);
+  assert.equal(h.decks.size, 1);
+  const deck = [...h.decks][0];
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const smith = world.agents.get('smith')!;
+  Object.assign(smith, { position: { ...FILM_SETS.film_cypher_restaurant.center }, currentLocation: 'film_cypher_restaurant', isInMatrix: true });
+  h.film.update(smith, { structures: [], neoLife: { journey: h.journey } } as unknown as SandboxState, 0);
+  h.ready(); h.drain();
+  assert.equal(h.decks.size, 1);
+  assert.equal(deck.parent?.type, 'Scene');
+  assert.equal(h.film.root.getObjectByName('neb-crew-meal-scene'), undefined);
+});
+
+test('meal preparation queues the cabin maps that decode after the first shader batch', t => {
+  const h = fixture(t);
+  h.ready(); h.drain();
+  const deck = [...h.decks][0];
+  let surface: THREE.MeshStandardMaterial | undefined;
+  deck.traverse(object => {
+    if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
+      && object.material.name === 'neb-cabin-painted-steel') surface = object.material;
+  });
+  assert(surface);
+  const map = new THREE.Texture({ width: 2048, height: 2048 });
+  t.after(() => map.dispose());
+  map.needsUpdate = true; surface.map = surface.bumpMap = map; surface.needsUpdate = true;
+  const before = h.work.filter(item => item === 'texture').length;
+  const batches = h.batches.length;
+  h.drain();
+  assert.equal(h.work.filter(item => item === 'texture').length, before + 1);
+  assert(h.batches.slice(batches).flat().some(mesh => mesh instanceof THREE.Mesh && mesh.material === surface));
 });
