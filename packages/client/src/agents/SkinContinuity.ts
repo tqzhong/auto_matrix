@@ -45,23 +45,40 @@ export class SkinContinuity {
     const material = source.clone();
     material.onBeforeCompile = source.onBeforeCompile; material.customProgramCacheKey = source.customProgramCacheKey;
     this.body.material = material;
-    const hp = this.hand.geometry.attributes.position, bp = this.body.geometry.attributes.position, groups = new Map<string, number[]>();
-    const key = (a: THREE.BufferAttribute | THREE.InterleavedBufferAttribute, i: number) => [a.getX(i), a.getY(i), a.getZ(i)].map(v => v.toFixed(5)).join(',');
-    for (let i = 0; i < hp.count; i++) { const k = key(hp, i), group = groups.get(k) ?? []; group.push(i); groups.set(k, group); }
-    const matched = new Set(Array.from({ length: bp.count }, (_, i) => key(bp, i)));
-    for (const [k, vertices] of groups) if (matched.has(k)) this.joins.push({ point: new THREE.Vector3().fromBufferAttribute(hp, vertices[0]), vertices, normal: new THREE.Vector3() });
+    const hp = this.hand.geometry.attributes.position, bp = this.body.geometry.attributes.position;
+    const key = (a: SkinAttribute, i: number) => `${a.getX(i).toFixed(5)},${a.getY(i).toFixed(5)},${a.getZ(i).toFixed(5)}`;
+    const matched = new Set<string>(), groups = new Map<string, number[]>();
+    for (let i = 0; i < bp.count; i++) matched.add(key(bp, i));
+    for (let i = 0; i < hp.count; i++) {
+      const k = key(hp, i);
+      if (!matched.has(k)) continue;
+      const group = groups.get(k) ?? []; group.push(i); groups.set(k, group);
+    }
+    const seamRadius = .1, bandHeight = .125, bands = new Map<number, Join[]>();
+    for (const vertices of groups.values()) {
+      const point = new THREE.Vector3().fromBufferAttribute(hp, vertices[0]);
+      const join = { point, vertices, normal: new THREE.Vector3() }; this.joins.push(join);
+      const index = Math.floor(point.y / bandHeight), band = bands.get(index) ?? [];
+      band.push(join); bands.set(index, band);
+    }
+    const withinRadius = (join: Join) => join.point.distanceToSquared(this.point) < seamRadius ** 2;
     for (let vertex = 0; vertex < bp.count; vertex++) {
       this.point.fromBufferAttribute(bp, vertex);
+      // Only nearby bands can contain a join inside the blend radius. Once
+      // accepted, keep the original global ordering of all three neighbours.
+      const band = Math.floor(this.point.y / bandHeight);
+      if (!bands.get(band - 1)?.some(withinRadius) && !bands.get(band)?.some(withinRadius)
+        && !bands.get(band + 1)?.some(withinRadius)) continue;
       const nearest: { join: number; distance: number }[] = [];
       this.joins.forEach((entry, join) => {
         const distance = entry.point.distanceToSquared(this.point), at = nearest.findIndex(item => item.distance > distance);
         if (at >= 0) nearest.splice(at, 0, { join, distance }); else if (nearest.length < 3) nearest.push({ join, distance });
         if (nearest.length > 3) nearest.pop();
       });
-      if (nearest[0]?.distance < .1 ** 2) {
+      if (nearest[0]?.distance < seamRadius ** 2) {
         const selected = nearest[0].distance < 1e-12 ? nearest.slice(0, 1) : nearest;
         const weights = selected.map(item => 1 / Math.max(item.distance, 1e-12)), total = weights.reduce((a, b) => a + b, 0);
-        this.patches.push({ vertex, joins: selected.map(item => item.join), weights: weights.map(value => value / total), amount: 1 - THREE.MathUtils.smoothstep(Math.sqrt(nearest[0].distance), 0, .1) });
+        this.patches.push({ vertex, joins: selected.map(item => item.join), weights: weights.map(value => value / total), amount: 1 - THREE.MathUtils.smoothstep(Math.sqrt(nearest[0].distance), 0, seamRadius) });
       }
     }
     for (const { vertex } of this.patches) {

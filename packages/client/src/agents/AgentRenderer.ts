@@ -150,7 +150,9 @@ export class AgentRenderer {
     if (!entry) {
       const group = new THREE.Group();
       const opening = journey && !journey.visiting && openingScenes.includes(journey.scene);
-      const rig = this.models.create(state, opening && id !== journey.actor ? (openingCast.has(id) ? 'staged' : 'deferred') : 'eager');
+      const stageShipBody = this.matrix && id.startsWith('body:');
+      const rig = this.models.create(state, stageShipBody ? 'staged'
+        : opening && id !== journey.actor ? (openingCast.has(id) ? 'staged' : 'deferred') : 'eager');
       const body = rig.root;
       body.position.y = -1;
       const shadow = new THREE.Mesh(this.shadowGeometry, this.shadowMaterial);
@@ -685,12 +687,24 @@ export class AgentRenderer {
       ? fastBreakout?.phase === savedBreakout.phase && fastBreakout.elapsed >= savedBreakout.elapsed ? fastBreakout
         : { phase: savedBreakout.phase as 'airborne' | 'catching', elapsed: savedBreakout.elapsed, breakout: savedBreakout.breakout } : undefined;
     const cut = crosscutActive(journey) ? journey!.tvExit!.crosscut : undefined;
-    if (cut) for (const role of CONNECTED_ROLES) {
-      const source = this.agents.get(role)?.state; if (!source) continue;
-      const root = BETRAYAL.deckRoots[role], center = FILM_SETS.film_neb_deck.center;
-      this.updateAgent(`body:${role}`, { ...source, isInMatrix: false, status: 'alive', controller: undefined,
-        position: { x: center.x + root.x, y: center.y, z: center.z + root.z }, rotation: root.yaw, velocity: { x: 0, y: 0, z: 0 },
-        currentAction: { type: 'idle', parameters: { seated: true, crosscut: { ...cut, role, body: true } }, startedAt: tick, duration: 1e9, progress: 0 } });
+    const draining = journey?.scene === 'm1_basement' && !journey.visiting && this.playerId === journey.actor
+      && player?.isInMatrix && player.currentLocation === 'film_ambush_house'
+      && ['draining', 'tunnel', 'done'].includes(journey.basement?.phase ?? '');
+    // Assemble the doubles during the drain. A cold shaft can wait until all four avatars are on the street.
+    const prepareShipBodies = this.matrix && (draining || cut && journey?.tvExit?.phase !== 'emerging');
+    if (prepareShipBodies || cut && !this.matrix) {
+      let startedBody = false;
+      for (const role of CONNECTED_ROLES) {
+        const id = `body:${role}`, source = this.agents.get(role)?.state;
+        if (!source) continue;
+        const missing = !this.agents.has(id);
+        if (!missing && !cut || missing && prepareShipBodies && startedBody) continue;
+        const root = BETRAYAL.deckRoots[role], center = FILM_SETS.film_neb_deck.center;
+        this.updateAgent(id, { ...source, isInMatrix: false, status: 'alive', controller: undefined,
+          position: { x: center.x + root.x, y: center.y, z: center.z + root.z }, rotation: root.yaw, velocity: { x: 0, y: 0, z: 0 },
+          currentAction: cut ? { type: 'idle', parameters: { seated: true, crosscut: { ...cut, role, body: true } }, startedAt: tick, duration: 1e9, progress: 0 } : null });
+        startedBody ||= missing;
+      }
     }
     for (const [id, entry] of this.agents) {
       if (entry.combatBorrowed) { entry.group.visible = false; continue; }

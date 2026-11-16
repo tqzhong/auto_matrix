@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { BETRAYAL, FILM_SETS, TV_EXIT, crosscutDeckRoot, type CrosscutGesture } from '@auto_matrix/shared';
+import { BETRAYAL, CONNECTED_ROLES, FILM_SETS, TV_EXIT, crosscutDeckRoot, filmPosition, type CrosscutGesture, type FilmJourney } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
@@ -97,6 +97,60 @@ test('ship body doubles keep Matrix avatars in place and stay out of selection',
   }
   renderer.update(0, undefined, 0, 0, undefined);
   for (const role of ['neo', 'trinity', 'apoc', 'switch']) assert.equal(renderer.getPhysicalBody(role)!.parent!.visible, false);
+});
+
+test('the actual basement drainage stages one hidden ship body per frame before Neo reaches the exit', async t => {
+  const h = await models(t), renderer = new AgentRenderer(new THREE.Scene()); t.after(() => renderer.dispose());
+  const position = filmPosition('film_ambush_house', 0, 30);
+  for (const role of CONNECTED_ROLES) {
+    const state = h.world.agents.get(role)!;
+    Object.assign(state, { isInMatrix: true, currentLocation: 'film_ambush_house', position: { ...position } });
+    renderer.updateAgent(role, state);
+  }
+  renderer.setWorld(true); renderer.setPlayer('neo');
+  const before = JSON.stringify(CONNECTED_ROLES.map(role => h.world.agents.get(role)));
+  const create = CharacterModels.prototype.create, staged: (string | undefined)[] = [];
+  t.mock.method(CharacterModels.prototype, 'create', function (this: CharacterModels, ...args: Parameters<CharacterModels['create']>) {
+    staged.push(args[1]); return create.apply(this, args);
+  });
+  const journey = { scene: 'm1_basement', actor: 'neo', step: 3, basement: { phase: 'searching' } } as FilmJourney;
+  const update = () => renderer.update(0, undefined, 0, 0, journey);
+  update(); assert.deepEqual(staged, []);
+  journey.basement!.phase = 'draining'; journey.visiting = 'm1_basement';
+  update(); assert.deepEqual(staged, []);
+  delete journey.visiting;
+  for (const [index, role] of CONNECTED_ROLES.entries()) {
+    update(); assert.deepEqual(staged, Array(index + 1).fill('staged'));
+    const body = renderer.getPhysicalBody(role)!;
+    assert.ok(body !== renderer.getAgentBody(role)); assert.equal(body.parent!.visible, false);
+  }
+  journey.basement!.phase = 'tunnel'; update();
+  assert.equal(staged.length, CONNECTED_ROLES.length);
+  assert.deepEqual(renderer.getAgentIds(), [...CONNECTED_ROLES]);
+  assert.equal(JSON.stringify(CONNECTED_ROLES.map(role => h.world.agents.get(role))), before);
+});
+
+test('a cold Matrix shaft waits until the street to assemble missing ship bodies', async t => {
+  const h = await models(t), renderer = new AgentRenderer(new THREE.Scene()); t.after(() => renderer.dispose());
+  for (const role of CONNECTED_ROLES) {
+    const state = h.world.agents.get(role)!; state.isInMatrix = true;
+    renderer.updateAgent(role, state);
+  }
+  renderer.setWorld(true); renderer.setPlayer('neo');
+  const journey = { scene: 'm1_tv_exit', actor: 'neo', step: 0, tvExit: {
+    phase: 'emerging', crosscut: { ...cut, phase: 'phone', elapsed: 0, view: 'matrix' },
+  } } as FilmJourney;
+  const update = () => renderer.update(0, undefined, 0, 0, journey);
+  update(); update();
+  for (const role of CONNECTED_ROLES) assert.ok(renderer.getPhysicalBody(role) === renderer.getAgentBody(role), `${role} must stay unstaged in the shaft`);
+  journey.tvExit!.phase = 'ready'; update();
+  assert.ok(renderer.getPhysicalBody('neo') !== renderer.getAgentBody('neo'));
+  assert.ok(renderer.getPhysicalBody('trinity') === renderer.getAgentBody('trinity'));
+  for (let frame = 1; frame < CONNECTED_ROLES.length; frame++) update();
+  for (const role of CONNECTED_ROLES) {
+    assert.ok(renderer.getPhysicalBody(role) !== renderer.getAgentBody(role));
+    assert.equal(renderer.getPhysicalBody(role)!.parent!.visible, false);
+  }
 });
 
 test('Cypher reaches the physical neck socket of each connected body before pulling its plug',async t=>{
