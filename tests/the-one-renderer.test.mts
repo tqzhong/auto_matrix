@@ -105,13 +105,17 @@ test('the hardline prepares a detached deck and uses it for the live EMP', t => 
   assert.ok(door);
 
   const actor = new THREE.Group(), texture = new THREE.Texture({ width: 2048, height: 2048 });
+  actor.visible = false;
+  const cabinMap = new THREE.Texture({ width: 2048, height: 2048 });
+  cabinMap.needsUpdate = true;
   const geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial({ map: texture });
   const mesh = new THREE.Mesh(geometry, material); actor.add(mesh); texture.needsUpdate = true;
-  t.after(() => { sets.dispose(); geometry.dispose(); material.dispose(); texture.dispose(); });
+  t.after(() => { sets.dispose(); geometry.dispose(); material.dispose(); texture.dispose(); cabinMap.dispose(); });
 
-  let preview: THREE.Scene | undefined, actorReady = false, compiledActor = false, uploads = 0;
+  let preview: THREE.Scene | undefined, actorReady = false, compiledActor = false;
+  const uploads: THREE.Texture[] = [];
   const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
-    setRenderTarget() {}, properties: { get: () => ({}) }, initTexture(candidate: THREE.Texture) { if (candidate === texture) uploads++; },
+    setRenderTarget() {}, properties: { get: () => ({}) }, initTexture(candidate: THREE.Texture) { uploads.push(candidate); },
     compile(subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) {
       preview = target;
       subject.traverse(object => { if (object === mesh) compiledActor = true; });
@@ -127,10 +131,15 @@ test('the hardline prepares a detached deck and uses it for the live EMP', t => 
   preview = undefined;
   prepare(); assert.ok(!preview, 'wait until the fight is resolved');
   state.theOne!.phase = 'dive'; state.theOne!.elapsed = .5;
-  prepare(); actorReady = true;
+  prepare();
+  const bed = preview?.getObjectByName('neb-cabin-bed-neb-cabin-cotton') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  assert.ok(bed);
+  bed.material.map = cabinMap;
+  actorReady = true;
   for (let frame = 0; frame < 120; frame++) prepare();
-  assert.ok(compiledActor);
-  assert.equal(uploads, 1);
+  assert.deepEqual(uploads.filter(map => map === texture || map === cabinMap), [cabinMap, texture],
+    'upload the late cabin map and the offstage skin while the hotel is still active');
+  assert.ok(compiledActor); assert.equal(actor.visible, false);
   const deck = preview?.getObjectByName('neb-interior-deck'), handle = preview?.getObjectByName('one-emp-handle') as THREE.Mesh;
   assert.ok(deck && handle);
   assert.ok(!scene.getObjectByName('neb-interior-deck'), 'leave the hotel as the active set');

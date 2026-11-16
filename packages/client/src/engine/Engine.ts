@@ -368,8 +368,9 @@ export class Engine {
       this.filmSets.prepareMatrixEscape(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
     this.agentRenderer.prepareCityChaseTextures(this.renderer, liveMatrixJourney?.scene === 'm1_city_chase'
       || resumeOnLanding && meeting?.scene === 'm1_city_chase');
-    if ((meeting?.scene === 'm1_death' || meeting?.scene === 'm1_return') && player?.id === meeting.actor)
-      this.filmSets.prepareOneDeck(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), player.position);
+    const oneDeckNeo = player ?? savedNeo;
+    if (oneDeckNeo?.isInMatrix && oneDeckNeo.id === meeting?.actor && (meeting.scene === 'm1_death' || meeting.scene === 'm1_return'))
+      this.filmSets.prepareOneDeck(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), oneDeckNeo.position);
     if (meeting?.scene === 'm2_meeting' && player?.id === meeting.actor)
       this.filmSets.prepareCaptainsMeeting(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
     this.filmSets.prepareZionHomecoming(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
