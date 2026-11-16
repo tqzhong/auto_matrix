@@ -1019,6 +1019,43 @@ test('the command bunker retains its demolition flash slot through ignition and 
   assert.equal(flash(settled)?.power, 0);
 });
 
+test('the first Oracle visit keeps the same point lights in the hallway, kitchen and farewell', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {}, ellipse() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); globalThis.document = document; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, set = 'film_oracle_home';
+  neo.isInMatrix = true; neo.currentLocation = set;
+  const journey: FilmJourney = { version: 1, scene: 'm1_spoon', actor: neo.id, step: 0, completed: [],
+    enteredAt: 0, checkpoint: filmEntry(FILM_SCENE_BY_ID.m1_spoon), reflections: {}, lastText: '' };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const sample = (x: number, z: number, direction: number) => {
+    neo.position = filmPosition(set, x, z);
+    h.camera.position.set(neo.position.x, neo.position.y + 2.5, neo.position.z);
+    h.camera.lookAt(neo.position.x, neo.position.y + 2, neo.position.z + direction * 8);
+    assert.equal(renderer.update(neo, sandbox, 0, neo.position, h.camera.position)?.id, set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.culling.minimumPointSlots = renderer.minimumPointSlots;
+    h.before();
+    try {
+      const points: number[] = [];
+      h.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points.push(object.id); });
+      return points;
+    } finally { h.after(); }
+  };
+  const hallway = sample(0, 45, 1);
+  assert.equal(hallway.length, 6);
+  assert.deepEqual(sample(-5, 10, -1), hallway);
+  journey.scene = 'm1_oracle'; journey.step = 1;
+  assert.deepEqual(sample(-5, -22, -1), hallway);
+  journey.step = 2;
+  journey.oracle = { departure: { phase: 'leaving', elapsed: 0, rise: 3.8 } } as NonNullable<FilmJourney['oracle']>;
+  assert.deepEqual(sample(-3, 20, 1), hallway);
+});
+
 test('the old building stair pursuit keeps one point-light layout until the pipe wall scene', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const h = view(), renderer = new FilmSetRenderer(h.scene);

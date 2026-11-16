@@ -238,6 +238,11 @@ const RESTAURANT_ENTRY_PRIORITY = new Map([
   'cypher-restaurant-city-matte', 'cypher-restaurant-night', 'shoes01',
 ].map((name, index) => [name, index]));
 const RESTAURANT_CAST_SHADOWS = new Set(['high-poly', 'cypher-teeth-lower', 'steak-cutlery-handle', 'Anatomical_head_and_hands', 'cypher-anatomical-head']);
+const AMBUSH_ENTRY_MESHES = new Set([
+  'Anatomical_head_and_hands', 'Anatomical_wrist_skin', 'high-poly', 'neo-teeth-upper', 'neo-teeth-lower',
+  'Black_crew_neck', 'Tailored_coat_upper', 'Fitted_leather_jacket', 'short04', 'shoes01',
+  'Close-cut_scalp_undercoat', 'Swept_individual_hair_strands', 'morpheus-glasses-lens--1', 'morpheus-glasses-lens-1',
+]);
 const RECOVERY_POINT_SLOTS = 8;
 const DOWNLOAD_WALK_CAST = {
   morpheus: ['Anatomical_head_and_hands', 'Tailored_trousers', 'shoes01', 'high-poly', 'morpheus-hammer-sweater', 'morpheus-hammer-collar'],
@@ -331,7 +336,7 @@ const LAFAYETTE_STREET_POINT_SLOTS = 16;
 export class FilmSetRenderer {
   readonly root = new THREE.Group();
   private current?: FilmSet;
-  private preparedAmbush?: { renderer: AmbushSetRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
+  private preparedAmbush?: EntryPreparation & { renderer: AmbushSetRenderer; colors?: CastColorPreparation; normalMeshes?: THREE.Mesh[] };
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
@@ -570,6 +575,7 @@ export class FilmSetRenderer {
   get podEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedPods?.entryNormalMeshes; }
   get sentinelRetryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedSentinelControls?.normalMeshes; }
   get deckEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedConsole?.normalMeshes ?? this.preparedMeal?.normalMeshes; }
+  get ambushEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedAmbush?.normalMeshes; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
     // Keep the prepared layout while the shaft and sixth-floor lamps are revealed.
@@ -607,7 +613,8 @@ export class FilmSetRenderer {
       || id === 'film_oracle_courtyard' || id === 'film_le_vrai' || id === 'film_keymaker_workshop'
       || this.matrixEscape?.setId === 'film_subway_platform'
       || this.currentScene === 'm2_stop_sentinels' && Boolean(this.finale)
-      || id === 'film_oracle_home' && (this.currentScene === 'm3_oracle_request' || this.currentScene === 'm3_oracle_last')
+      || id === 'film_oracle_home' && (this.currentScene === 'm1_spoon' || this.currentScene === 'm1_oracle'
+        || this.currentScene === 'm3_oracle_request' || this.currentScene === 'm3_oracle_last')
       || Boolean(this.interrogation || this.baneInquiry || this.baneCopy || this.hammerRoute || this.smithFinale)
       || Boolean(this.zionDeployment || this.maggieDiscovery)
       || id === 'film_chateau_hall' && this.currentScene === 'm2_chateau'
@@ -648,24 +655,33 @@ export class FilmSetRenderer {
   preparePodColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, lighting: LightCulling, actor: THREE.Group | undefined, firstPerson: boolean): void {
     this.preparedPods?.prepareColorPrograms(renderer, camera, this.scene, actor, lighting, firstPerson);
   }
-  prepareAmbush(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney,
-    body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined): void {
-    const phase = journey.oracle?.departure?.phase;
-    if (this.current?.id !== 'film_oracle_home' || journey.scene !== 'm1_oracle' || journey.visiting
+  prepareAmbush(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, sourceLights?: LightCulling, resume = false): void {
+    const atOracle = this.current?.id === 'film_oracle_home', phase = journey?.oracle?.departure?.phase;
+    if ((!atOracle && !resume) || journey?.scene !== 'm1_oracle' || journey.visiting
       || !phase || !['talking', 'bite_ready', 'biting', 'leaving', 'done'].includes(phase)) {
       this.cancelAmbushPreparation(); return;
     }
-    const prepared = this.preparedAmbush ??= { renderer: new AmbushSetRenderer() };
-    if (!prepared.renderer.prepareStep() || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    if (prepared.gpu !== renderer.properties) {
-      prepared.lighting?.dispose(); prepared.colors = undefined; prepared.gpu = renderer.properties;
+    if (!this.preparedAmbush) {
+      const ambush = new AmbushSetRenderer();
+      this.preparedAmbush = { root: ambush.root, renderer: ambush, liveMeshes: [this.marker] };
     }
-    if (!prepared.colors) {
+    const prepared = this.preparedAmbush;
+    if (!prepared.renderer.prepareStep() || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      this.releaseEntryPreparation(prepared);
       prepared.renderer.update({ ...journey, scene: 'm1_dejavu', step: 0 }, [], 0);
-      prepared.colors = { ...this.colorPreparation(prepared.renderer.root, [], { includeBasic: true }), actors: new Set() };
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, playerView: resume }), actors: new Set() };
       let points = 0; prepared.colors.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
       for (; points < AMBUSH_POINT_SLOTS; points++) prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
+      prepared.liveMeshes = [this.marker]; prepared.normalMeshes = undefined;
+      if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+        prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
+        this.queueEntryShadows(prepared, prepared.colors.meshes);
+      }
+      prepared.colors.meshes.unshift(this.marker);
       prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
+      prepared.gpu = renderer.properties;
     }
     const colors = prepared.colors, meshes = new Set<ColorMesh>();
     for (const id of [journey.actor, ...FILM_SCENE_BY_ID.m1_dejavu.cast]) {
@@ -682,8 +698,18 @@ export class FilmSetRenderer {
         colors.actors.add(group); collected.forEach(mesh => meshes.add(mesh));
       }
     }
-    colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
-    if (!this.prepareColorTexture(renderer, colors.textures)) this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+    const priority = (mesh: ColorSubject) => mesh === this.marker || AMBUSH_ENTRY_MESHES.has(mesh.name) || mesh.name.startsWith('morpheus-ambush-');
+    if (meshes.size) {
+      prepared.liveMeshes.push(...meshes);
+      colors.meshes.unshift(...meshes);
+      colors.meshes.sort((a, b) => Number(priority(b)) - Number(priority(a)));
+      this.queueColorTextures(colors.textures, meshes);
+      this.queueEntryShadows(prepared, meshes);
+      const normals = [...meshes].filter(mesh => mesh.name === 'morpheus-ambush-shirt' || mesh.name === 'morpheus-ambush-collar');
+      if (normals.length) prepared.normalMeshes = normals;
+    }
+    const first = colors.meshes[0];
+    this.prepareStagedEntry(renderer, camera, prepared, colors, atOracle ? sourceLights : undefined, 2, Boolean(first && priority(first)));
   }
   prepareBasement(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney | undefined,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined): void {
@@ -3194,8 +3220,8 @@ export class FilmSetRenderer {
         preparedAwakening.buffers?.return(undefined); preparedAwakening.textureUpload?.return(false);
         preparedAwakening.lighting?.dispose(); preparedAwakening.root.removeFromParent();
       }
-      const preparedAmbush = set?.id === 'film_ambush_house' && sceneId === 'm1_dejavu' && !journey?.visiting ? this.preparedAmbush?.renderer : undefined;
-      if (preparedAmbush) { this.preparedAmbush?.lighting?.dispose(); this.preparedAmbush = undefined; }
+      const preparedAmbush = set?.id === 'film_ambush_house' && sceneId === 'm1_dejavu' && !journey?.visiting ? this.preparedAmbush : undefined;
+      if (preparedAmbush) { this.preparedAmbush = undefined; this.releaseEntryPreparation(preparedAmbush, true); }
       const preparedTvExit = set?.id === 'film_tv_repair' && sceneId === 'm1_tv_exit' && !journey?.visiting ? this.preparedTvExit : undefined;
       if (preparedTvExit) { this.preparedTvExit = undefined; preparedTvExit.lighting?.dispose(); }
       const preparedLobby = set?.id === 'film_government_lobby' && sceneId === 'm1_lobby' && !journey?.visiting ? this.preparedLobby : undefined;
@@ -3228,12 +3254,14 @@ export class FilmSetRenderer {
       const preparedDojo = set?.id === 'film_kungfu_dojo' && sceneId === 'm1_dojo' && !journey?.visiting ? this.preparedDojo : undefined;
       if (preparedDojo) { this.preparedDojo = undefined; preparedDojo.lighting?.dispose(); preparedDojo.root.removeFromParent(); }
       const resumingScene = !this.current && !journey?.visiting;
+      const resumingAmbush = resumingScene && set?.id === 'film_oracle_home' && sceneId === 'm1_oracle' ? this.preparedAmbush : undefined;
       const resumingJump = resumingScene && set?.id === 'film_kungfu_dojo' && sceneId === 'm1_dojo' ? this.preparedJump : undefined;
       const resumingRedDress = resumingScene && set?.id === 'film_neb_deck' && sceneId === 'm1_jump_return' ? this.preparedRedDress : undefined;
       const resumingSentinel = resumingScene && set?.id === 'film_red_dress_plaza' && sceneId === 'm1_red_dress' ? this.preparedSentinel : undefined;
       const resumingConsole = resumingScene && set?.id === 'film_service_tunnels' && sceneId === 'm1_sentinels' ? this.preparedConsole : undefined;
       const resumingRestaurant = resumingScene && set?.id === 'film_neb_deck' && sceneId === 'm1_cypher_console' ? this.preparedRestaurant : undefined;
       const resumingMeal = resumingScene && set?.id === 'film_cypher_restaurant' && sceneId === 'm1_steak' ? this.preparedMeal : undefined;
+      if (resumingAmbush) this.preparedAmbush = undefined;
       if (resumingJump) this.preparedJump = undefined;
       if (resumingRedDress) this.preparedRedDress = undefined;
       if (resumingSentinel) this.preparedSentinel = undefined;
@@ -3287,6 +3315,7 @@ export class FilmSetRenderer {
         this.crosscutDeck.root.removeFromParent(); this.neb = undefined;
       }
       this.clear(keepCrosscut); this.current = set; this.currentScene = sceneId;
+      this.preparedAmbush = resumingAmbush;
       this.preparedJump = resumingJump;
       this.preparedRedDress = resumingRedDress;
       this.preparedSentinel = resumingSentinel;
@@ -3430,7 +3459,7 @@ export class FilmSetRenderer {
         }
         else if (set.id === 'film_ambush_house' && sceneId === 'm1_basement') this.basement = new BasementSetRenderer(this.root);
         else if (set.id === 'film_ambush_house') {
-          this.ambush = preparedAmbush ?? new AmbushSetRenderer();
+          this.ambush = preparedAmbush?.renderer ?? new AmbushSetRenderer();
           this.ambush.attach(this.root);
         }
         else if (set.id === 'film_tv_repair') {
@@ -3491,7 +3520,7 @@ export class FilmSetRenderer {
       }
       if (preparedAwakening?.shadows) for (const material of preparedAwakening.shadows.materials) this.materials.add(material);
       if (desertShadows) for (const material of desertShadows) this.materials.add(material);
-      const entryShadows = (preparedJump ?? preparedRedDress ?? preparedSentinel ?? preparedConsole ?? preparedRestaurant ?? preparedMeal)?.shadows;
+      const entryShadows = (preparedJump ?? preparedRedDress ?? preparedSentinel ?? preparedConsole ?? preparedRestaurant ?? preparedMeal ?? preparedAmbush)?.shadows;
       if (entryShadows) for (const material of entryShadows.materials) this.materials.add(material);
       if (preparedSentinel?.materials) for (const material of preparedSentinel.materials) this.materials.add(material);
       const deckMaterials = preparedDeck?.materials;
@@ -6427,7 +6456,8 @@ export class FilmSetRenderer {
     prepared.drawing?.lighting.dispose(); prepared.renderer.dispose(); this.preparedBridge = undefined;
   }
   private cancelAmbushPreparation(): void {
-    this.preparedAmbush?.lighting?.dispose(); this.preparedAmbush?.renderer.dispose(); this.preparedAmbush = undefined;
+    const prepared = this.preparedAmbush; if (!prepared) return;
+    this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedAmbush = undefined;
   }
   private cancelZionPreparation(): void {
     this.preparedZion?.renderer.dispose(); this.preparedZion = undefined;

@@ -48,12 +48,14 @@ function fixture(t: TestContext) {
     },
     initTexture(map: THREE.Texture) { work.push('texture'); uploads.push(map); uploaded.set(map, map.version); },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = () => {
-    const count = work.length; film.prepareAmbush(gpu, camera, journey, id => actors.get(id), id => actors.get(id));
-    assert.ok(work.length - count <= 1, 'prepare one batch, completed binding or texture per frame');
+  const prepare = (resume = false) => {
+    const count = work.length; film.prepareAmbush(gpu, camera, journey, id => actors.get(id), id => actors.get(id), undefined, resume);
+    const frame = work.slice(count);
+    assert.ok(frame.filter(item => item === 'compile' || item === 'bindings').length <= 1);
+    assert.ok(frame.filter(item => item === 'texture').length <= 1 && frame.filter(item => item === 'strip').length <= 2);
     assert.equal(target, null); assert.equal(parent.visible, false); assert.equal(actor.parent, parent); assert.equal(skin.parent, actor); assert.equal(matrixClothes.visible,false); assert.equal(sun.castShadow,true); assert.equal(gpu.debug.checkShaderErrors, true);
   };
-  const drain = () => { for (let i = 0; i < 1000; i++) prepare(); };
+  const drain = (resume = false) => { for (let i = 0; i < 1000; i++) prepare(resume); };
   t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previousDocument; });
   return { film, gpu, scene, journey, actor, actors, geometry, material, skin, matrixClothes, shipClothes, texture, uploads, work, batches, rooms, prepare, drain,
     ready: () => { ready = true; }, replaceGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
@@ -77,7 +79,7 @@ test('old-building preparation rebinds a new GPU and releases canceled geometry 
 test('a decoded companion texture uploads before the long old-building mesh queue', t => {
   const h = fixture(t); h.ready();
   for (let i = 0; i < 1000 && !h.work.length; i++) h.prepare();
-  assert.equal(h.work[0], 'texture', 'an immediate departure must not wait for all hidden meshes before preparing its decoded actor map');
+  assert.ok(h.work.includes('texture'), 'prepare the decoded actor map in the first shader batch frame');
   assert.equal(h.uploads[0], h.texture); h.drain(); assert.equal(h.uploads.filter(map => map === h.texture).length, 1);
 });
 
@@ -98,4 +100,56 @@ test('old-building preparation waits for the actual farewell and cancels when it
   for (const phase of ['waiting', 'guiding', 'ready'] as const) { h.journey.oracle!.departure!.phase = phase; h.prepare(); assert.equal(h.batches.length, 0); }
   h.journey.oracle!.departure!.phase = 'talking'; h.ready(); h.drain(); const room = [...h.rooms][0]; assert.ok(room);
   h.journey.scene = 'm1_dejavu'; h.journey.visiting = 'm1_dejavu'; h.prepare(); assert.equal(room.parent, null);
+});
+
+test('an exit save prepares the old building before Neo takes control and keeps that preparation', t => {
+  const h = fixture(t);
+  Object.assign(h.film, { current: undefined, currentScene: undefined });
+  h.journey.step = 3;
+  h.journey.oracle!.departure!.phase = 'done';
+  h.ready(); h.drain(true);
+  assert.equal(h.rooms.size, 1);
+  const room = [...h.rooms][0];
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  Object.assign(neo, { position: { ...FILM_SETS.film_oracle_home.center }, currentLocation: 'film_oracle_home', isInMatrix: true });
+  h.film.update(neo, { structures: [], neoLife: { journey: h.journey } } as unknown as SandboxState, 0);
+  h.drain();
+  assert.equal(h.rooms.size, 1);
+  assert.equal(room.parent?.type, 'Scene');
+  assert.equal(h.film.root.getObjectByName('mouse-room-door'), undefined);
+});
+
+test('a large old-building companion map uploads in bounded strips during shader linking', t => {
+  const h = fixture(t);
+  class Bitmap { width = 2048; height = 2048; }
+  const previous = globalThis.ImageBitmap, bitmap = new Bitmap();
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  t.after(() => { if (previous) globalThis.ImageBitmap = previous; else Reflect.deleteProperty(globalThis, 'ImageBitmap'); });
+  h.texture.image = bitmap; h.texture.flipY = false;
+  const source = h.texture.source, rows: number[] = [], released: THREE.Texture[] = [];
+  const residency = new WeakMap<THREE.Texture, { __webglTexture: object; __version: number }>();
+  Object.assign(h.gpu, {
+    capabilities: { maxTextureSize: 4096 }, properties: { get: (map: THREE.Texture) => residency.get(map) ?? {} },
+    state: { bindTexture() {}, unbindTexture() {} },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true, pixelStorei() {},
+      texSubImage2D(_target: number, _level: number, _x: number, row: number, width: number, height: number,
+        _format: number, _type: number, image: Bitmap) {
+        assert.equal(image, bitmap); assert.deepEqual([width, height], [2048, 256]); rows.push(row); h.work.push('strip');
+      } }),
+    initTexture(map: THREE.Texture) {
+      residency.set(map, { __webglTexture: {}, __version: map.version });
+      if (map.source.dataReady) h.work.push('texture');
+      else map.addEventListener('dispose', () => released.push(map));
+    },
+  });
+  let uploadFrame: string[] = [];
+  for (let i = 0; i < 1000 && !rows.length && !h.work.includes('texture'); i++) {
+    const count = h.work.length; h.prepare(); uploadFrame = h.work.slice(count);
+  }
+  assert.deepEqual(uploadFrame, ['compile', 'strip', 'strip']);
+  assert.deepEqual(rows, [0, 256]);
+  assert.equal(residency.has(h.texture), false);
+  h.journey.oracle!.departure!.phase = 'guiding'; h.prepare();
+  assert.equal(released.length, 1); assert.notEqual(released[0], h.texture); assert.equal(h.texture.source, source);
 });

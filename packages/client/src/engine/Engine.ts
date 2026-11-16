@@ -340,8 +340,9 @@ export class Engine {
     this.filmSets.preparePodColors(this.renderer, this.camera, this.lightCulling, this.agentRenderer.getAgentHero('neo'), this.playerControls?.firstPerson ?? false);
     this.filmSets.prepareAwakeningHandoff(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id), this.lightingSystem.directionalLight, this.lightCulling);
-    if (meeting?.scene === 'm1_oracle' && player?.id === meeting.actor)
-      this.filmSets.prepareAmbush(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
+    const resumeAmbush = onLanding && meeting?.scene === 'm1_oracle';
+    this.filmSets.prepareAmbush(this.renderer, this.camera, player?.id === meeting?.actor || resumeAmbush ? meeting : undefined,
+      id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightCulling, resumeAmbush);
     this.filmSets.prepareBasement(this.renderer, this.camera, this.lightCulling, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
     this.filmSets.prepareTvExit(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
@@ -464,13 +465,14 @@ export class Engine {
     const podNormals = this.filmSets.podEntryNormalMeshes;
     const sentinelNormals = this.filmSets.sentinelRetryNormalMeshes;
     const deckNormals = this.filmSets.deckEntryNormalMeshes;
-    const setNormals = openingNormals ?? podNormals ?? sentinelNormals ?? deckNormals;
+    const ambushNormals = this.filmSets.ambushEntryNormalMeshes;
+    const setNormals = openingNormals ?? podNormals ?? sentinelNormals ?? deckNormals ?? ambushNormals;
     const apartmentNormals = openingNormals ? undefined : this.voxelRenderer.interiors.apartmentReturnNormalMeshes;
     const neoNormals = preparingLafayetteNormals || resumeApartment || openingHandoff && !preparingApartment || apartmentNormals ? neoAtHome : undefined;
     const officeNormals = liveMatrixJourney?.scene === 'm1_commute' && lift?.passenger && lift.target === 1 ? officeManager : undefined;
     this.postProcessing.prepareNormals(this.renderer, setNormals ? this.filmSets.root : neoNormals ?? officeNormals,
       setNormals ?? apartmentNormals, podNormals !== undefined || sentinelNormals !== undefined || deckNormals !== undefined || wellsCast !== undefined
-      || resumeApartment || apartmentNormals !== undefined || officeNormals !== undefined);
+      || ambushNormals !== undefined || resumeApartment || apartmentNormals !== undefined || officeNormals !== undefined);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0, openingHotel !== undefined);
     this.filmSets.renderTelevisionPreview(this.renderer, this.camera, () => this.agentRenderer.getDesertEntryCast(), this.lightingSystem.directionalLight);
