@@ -387,8 +387,11 @@ export class Engine {
     this.filmSets.prepareSentinel(this.renderer, this.camera, player?.id === meeting?.actor || resumeSentinel ? meeting : undefined,
       id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling, resumeSentinel);
     const resumeConsole = onLanding && meeting?.scene === 'm1_sentinels';
-    this.filmSets.prepareConsole(this.renderer, this.camera, player?.id === meeting?.actor || resumeConsole ? meeting : undefined,
-      id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling, resumeConsole);
+    const preparingSentinelControls = this.filmSets.prepareSentinelControls(this.renderer, this.camera,
+      player?.id === meeting?.actor ? meeting : undefined, id => this.agentRenderer.getAgentHero(id), this.lightCulling);
+    if (!preparingSentinelControls)
+      this.filmSets.prepareConsole(this.renderer, this.camera, player?.id === meeting?.actor || resumeConsole ? meeting : undefined,
+        id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling, resumeConsole);
     this.filmSets.prepareRestaurant(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareMeal(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,

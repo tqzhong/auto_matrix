@@ -3,6 +3,7 @@ import test, { type TestContext } from 'node:test';
 import * as THREE from 'three';
 import { FILM_SETS, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { SentinelSetRenderer } from '../packages/client/src/engine/SentinelSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -126,6 +127,73 @@ test('crew entry vertex buffers use the same mesh before its first cockpit draw'
   assert.ok(h.buffers.has(h.skin)); assert.equal(h.skin.material, h.material);
   assert.equal(h.actor.visible, false);
   assert.equal(h.skin.parent, h.actor);
+});
+
+test('the Sentinel viewport prepares the actual crew with the live lights before returning control', t => {
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  const camera = new THREE.PerspectiveCamera(), geometry = new THREE.BoxGeometry();
+  const lamps = Array.from({ length: 5 }, (_, i) => new THREE.PointLight(0xffffff, i));
+  scene.add(...lamps); lighting.stablePointSlots = true;
+  Object.assign(film, { current: FILM_SETS.film_service_tunnels, currentScene: 'm1_sentinels' });
+  const journey = { scene: 'm1_sentinels', actor: 'neo', sentinel: { phase: 'sweep', elapsed: 2, noise: 0, attempt: 0 } } as FilmJourney;
+  const liveProgram = {}, bindings = new Map<THREE.Material, { currentProgram: object; uniforms: { gain: { value: number } } }>();
+  function crew(names: string[]) {
+    const group = new THREE.Group();
+    for (const name of names) {
+      const material = new THREE.MeshStandardMaterial(), mesh = new THREE.Mesh(geometry, material);
+      mesh.name = name; group.add(mesh);
+      bindings.set(material, { currentProgram: liveProgram, uniforms: { gain: { value: .7 } } });
+    }
+    scene.add(group);
+    return group;
+  }
+  const morpheus = crew(['high-poly', 'morpheus-hammer-collar', 'offstage-prop']);
+  const trinity = crew(['short04', 'shoes01']);
+  const actors = new Map([['morpheus', morpheus]]);
+  const compiled: THREE.Object3D[] = [], reflected: object[] = [];
+  const programs: { program: object; isReady: () => boolean; getUniforms: () => void }[] = [];
+  let target: THREE.WebGLRenderTarget | null = null, batches = 0;
+  const gpu = { properties: { get: (material: THREE.Material) => bindings.get(material) }, info: { programs },
+    debug: { checkShaderErrors: true }, extensions: { has: () => true },
+    getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    compile(subject: THREE.Object3D, _camera: THREE.Camera, layout: THREE.Scene) {
+      assert.notEqual(layout, scene); assert.equal(target?.width, 1);
+      let slots = 0;
+      layout.traverseVisible(object => { if (object instanceof THREE.PointLight) slots++; });
+      assert.equal(slots, 6);
+      batches++;
+      subject.traverse(object => {
+        if (!(object instanceof THREE.Mesh) || Array.isArray(object.material)) return;
+        compiled.push(object);
+        const state = bindings.get(object.material)!, program = {};
+        state.currentProgram = program; state.uniforms = { gain: { value: .2 } };
+        programs.push({ program, isReady: () => true, getUniforms: () => { reflected.push(program); } });
+      });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  t.after(() => { film.dispose(); lighting.dispose(); geometry.dispose(); bindings.forEach((_state, material) => material.dispose()); });
+  const prepare = () => {
+    const work = batches + reflected.length;
+    const busy = film.prepareSentinelControls?.(gpu, camera, journey, id => actors.get(id), lighting);
+    assert(batches + reflected.length - work <= 1);
+    assert.equal(target, null);
+    for (const state of bindings.values()) {
+      assert.equal(state.currentProgram, liveProgram);
+      assert.equal(state.uniforms.gain.value, .7);
+    }
+    assert.deepEqual(lamps.map(light => light.intensity), [0, 1, 2, 3, 4]);
+    return busy;
+  };
+  prepare(); assert.equal(compiled.length, 0);
+  journey.sentinel!.phase = 'verify'; prepare();
+  assert.deepEqual(compiled.map(mesh => mesh.id), morpheus.children.slice(0, 2).map(mesh => mesh.id));
+  assert.equal(reflected.length, 0);
+  journey.sentinel!.phase = 'confirming'; actors.set('trinity', trinity);
+  for (let i = 0; i < 16; i++) prepare();
+  assert.deepEqual(compiled.map(mesh => mesh.id), [...morpheus.children.slice(0, 2), ...trinity.children].map(mesh => mesh.id));
+  assert.equal(reflected.length, 4); assert.equal(prepare(), false);
+  journey.sentinel!.phase = 'done'; assert.equal(prepare(), false);
 });
 
 test('cockpit metal shares decoded images between distinct hull and grate UV repeats', t => {

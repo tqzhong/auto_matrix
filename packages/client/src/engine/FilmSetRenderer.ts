@@ -209,6 +209,10 @@ const SENTINEL_ENTRY_MESHES = new Set([
   'morpheus-hammer-sweater', 'morpheus-hammer-collar', 'trinity-logos-sweater', 'trinity-logos-collar',
   'Tailored_trousers', 'shoes01', 'short04', 'Tank_face', 'Tank_ribbed_shirt', 'Tank_harness', 'Tank_curled_hair',
 ]);
+const SENTINEL_CONTROL_CAST = {
+  morpheus: ['high-poly', 'morpheus-hammer-collar'],
+  trinity: ['short04', 'shoes01'],
+};
 const CONSOLE_ENTRY_MESHES = new Set([
   'neb-cabin-grating', 'neb-stern-plate', 'neb-medical-curtain', 'neb-cypher-crt-left-glass', 'neb-cypher-crt-right-glass',
   'console-mug-liquid', 'Anatomical_head_and_hands', 'high-poly', 'Anatomical_wrist_skin',
@@ -389,6 +393,9 @@ export class FilmSetRenderer {
   private preparedJump?: TrainingPreparation;
   private preparedRedDress?: TrainingPreparation & { assetsReady: boolean };
   private preparedSentinel?: EntryPreparation & { renderer: SentinelSetRenderer };
+  private preparedSentinelControls?: ColorPreparation & {
+    gpu: THREE.WebGLRenderer['properties']; versions: WeakMap<THREE.Mesh, number>;
+  };
   private preparedConsole?: EntryPreparation & { deck: NebDeckRenderer; ready: boolean; pendingCabin: Map<THREE.Material, ColorMesh>; normalMeshes?: THREE.Mesh[] };
   private preparedRestaurant?: {
     root: THREE.Group; renderer: CypherRestaurantRenderer; gpu?: THREE.WebGLRenderer['properties'];
@@ -1517,6 +1524,34 @@ export class FilmSetRenderer {
     }
     if (prioritize) colors.meshes.sort((a, b) => Number(SENTINEL_ENTRY_MESHES.has(b.name)) - Number(SENTINEL_ENTRY_MESHES.has(a.name)));
     this.prepareStagedEntry(renderer, camera, prepared, colors, inPlaza ? sourceLights : undefined);
+  }
+  prepareSentinelControls(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    actor: (id: string) => THREE.Group | undefined, lighting: LightCulling): boolean {
+    const phase = journey?.sentinel?.phase;
+    if (this.current?.id !== 'film_service_tunnels' || this.currentScene !== 'm1_sentinels' || journey?.scene !== 'm1_sentinels'
+      || journey.visiting || phase !== 'verify' && phase !== 'confirming' || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+      this.preparedSentinelControls = undefined;
+      return false;
+    }
+    let prepared = this.preparedSentinelControls;
+    if (!prepared || prepared.gpu !== renderer.properties) {
+      prepared = this.preparedSentinelControls = { gpu: renderer.properties, scene: this.scene,
+        meshes: [], programs: [], textures: new Set(), versions: new WeakMap() };
+    }
+    const crew: ColorMesh[] = [];
+    for (const [id, names] of Object.entries(SENTINEL_CONTROL_CAST)) {
+      const group = actor(id);
+      for (const name of names) {
+        const mesh = group?.getObjectByName(name);
+        if (!(mesh instanceof THREE.Mesh) || !(mesh.material instanceof THREE.MeshStandardMaterial)) continue;
+        crew.push(mesh);
+        if (mesh instanceof THREE.SkinnedMesh) prepareSkinnedMaterial(mesh.material);
+        if (prepared.versions.get(mesh) === mesh.material.version) continue;
+        prepared.versions.set(mesh, mesh.material.version);
+        if (!prepared.meshes.includes(mesh)) prepared.meshes.push(mesh);
+      }
+    }
+    return this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true, crew);
   }
   prepareConsole(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => ShipEntryCast, shadowSun: THREE.DirectionalLight, sourceLights?: LightCulling, resume = false): void {
@@ -6370,6 +6405,7 @@ export class FilmSetRenderer {
     this.cancelJumpPreparation();
     this.cancelRedDressPreparation();
     this.cancelSentinelPreparation();
+    this.preparedSentinelControls = undefined;
     this.cancelConsolePreparation();
     this.cancelRestaurantPreparation();
     this.cancelMealPreparation();
