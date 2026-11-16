@@ -213,6 +213,10 @@ const SENTINEL_CONTROL_CAST = {
   morpheus: ['high-poly', 'morpheus-hammer-collar'],
   trinity: ['short04', 'shoes01'],
 };
+const SENTINEL_RETRY_CAST = {
+  tank: ['Anatomical_head_and_hands', 'high-poly', 'Tank_face', 'Tank_ribbed_shirt', 'Tank_harness', 'Tank_curled_hair'],
+  neo: ['Anatomical_head_and_hands', 'Tailored_trousers', 'shoes01', 'high-poly', 'neo-teeth-upper', 'neo-teeth-lower', 'Anatomical_wrist_skin'],
+};
 const CONSOLE_ENTRY_MESHES = new Set([
   'neb-cabin-grating', 'neb-stern-plate', 'neb-medical-curtain', 'neb-cypher-crt-left-glass', 'neb-cypher-crt-right-glass',
   'console-mug-liquid', 'Anatomical_head_and_hands', 'high-poly', 'Anatomical_wrist_skin',
@@ -394,7 +398,10 @@ export class FilmSetRenderer {
   private preparedRedDress?: TrainingPreparation & { assetsReady: boolean };
   private preparedSentinel?: EntryPreparation & { renderer: SentinelSetRenderer };
   private preparedSentinelControls?: ColorPreparation & {
-    gpu: THREE.WebGLRenderer['properties']; versions: WeakMap<THREE.Mesh, number>;
+    gpu: THREE.WebGLRenderer['properties']; retry: boolean;
+    versions: WeakMap<THREE.Mesh, { material: THREE.Material; version: number }>;
+    normalMeshes?: readonly THREE.Mesh[];
+    textureUpload?: Generator<void, boolean>;
   };
   private preparedConsole?: EntryPreparation & { deck: NebDeckRenderer; ready: boolean; pendingCabin: Map<THREE.Material, ColorMesh>; normalMeshes?: THREE.Mesh[] };
   private preparedRestaurant?: {
@@ -548,6 +555,7 @@ export class FilmSetRenderer {
   }
   get openingRoofRetryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedRoofRetry?.normalMeshes; }
   get podEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedPods?.entryNormalMeshes; }
+  get sentinelRetryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedSentinelControls?.normalMeshes; }
   get consoleEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedConsole?.normalMeshes; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
@@ -1473,8 +1481,11 @@ export class FilmSetRenderer {
   prepareSentinel(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => ShipEntryCast, shadowSun: THREE.DirectionalLight, sourceLights?: LightCulling, resume = false): void {
     const inPlaza = this.current?.id === 'film_red_dress_plaza' && this.currentScene === 'm1_red_dress';
-    if ((!inPlaza && !resume) || journey?.scene !== 'm1_red_dress' || journey.visiting
-      || journey.training?.kind !== 'red_dress' || !['frozen', 'done'].includes(journey.training.attention?.phase ?? '') || journey.training.elapsed < 6.3) {
+    const resumingFailure = resume && !this.current && journey?.scene === 'm1_sentinels'
+      && (journey.sentinel?.phase === 'detected' || journey.sentinel?.phase === 'failed');
+    const finishedLesson = (inPlaza || resume) && journey?.scene === 'm1_red_dress'
+      && journey.training?.kind === 'red_dress' && ['frozen', 'done'].includes(journey.training.attention?.phase ?? '') && journey.training.elapsed >= 6.3;
+    if (!journey || journey.visiting || !finishedLesson && !resumingFailure) {
       this.cancelSentinelPreparation(); return;
     }
     if (!this.preparedSentinel) {
@@ -1499,7 +1510,8 @@ export class FilmSetRenderer {
       prepared.gpu = renderer.properties;
       prioritize = true;
     }
-    for (const id of [FILM_SCENE_BY_ID.m1_sentinels.actor, ...FILM_SCENE_BY_ID.m1_sentinels.cast]) {
+    const cast = resumingFailure ? [journey.actor, 'tank'] : [FILM_SCENE_BY_ID.m1_sentinels.actor, ...FILM_SCENE_BY_ID.m1_sentinels.cast];
+    for (const id of cast) {
       const { model: group, shadow, garments } = actor(id); if (!group || colors.actors.has(group)) continue;
       const meshes: ColorMesh[] = [];
       const ship = garments?.() ?? [], changing = new Set(ship.map(mesh => mesh.name));
@@ -1509,7 +1521,8 @@ export class FilmSetRenderer {
           && (!object.userData.reloadedHidden || object.userData.logosCostume || object.userData.hammerBriefingCostume)) meshes.push(object);
       });
       if (!meshes.length && !ship.length) continue;
-      colors.actors.add(group); colors.meshes.push(...meshes); prepared.liveMeshes.push(...meshes);
+      colors.actors.add(group); prepared.liveMeshes.push(...meshes);
+      if (resumingFailure) colors.meshes.unshift(...meshes); else colors.meshes.push(...meshes);
       if (id === journey.actor && shadow && !prepared.liveMeshes.includes(shadow)) {
         colors.meshes.unshift(shadow); prepared.liveMeshes.push(shadow);
       }
@@ -1528,30 +1541,37 @@ export class FilmSetRenderer {
   prepareSentinelControls(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, lighting: LightCulling): boolean {
     const phase = journey?.sentinel?.phase;
+    const retry = phase === 'detected' || phase === 'failed';
     if (this.current?.id !== 'film_service_tunnels' || this.currentScene !== 'm1_sentinels' || journey?.scene !== 'm1_sentinels'
-      || journey.visiting || phase !== 'verify' && phase !== 'confirming' || !renderer.extensions.has('KHR_parallel_shader_compile')) {
-      this.preparedSentinelControls = undefined;
+      || journey.visiting || !retry && phase !== 'verify' && phase !== 'confirming' || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+      this.cancelSentinelControlsPreparation();
       return false;
     }
     let prepared = this.preparedSentinelControls;
-    if (!prepared || prepared.gpu !== renderer.properties) {
-      prepared = this.preparedSentinelControls = { gpu: renderer.properties, scene: this.scene,
+    if (!prepared || prepared.gpu !== renderer.properties || prepared.retry !== retry) {
+      this.cancelSentinelControlsPreparation();
+      prepared = this.preparedSentinelControls = { gpu: renderer.properties, scene: this.scene, retry,
         meshes: [], programs: [], textures: new Set(), versions: new WeakMap() };
     }
     const crew: ColorMesh[] = [];
-    for (const [id, names] of Object.entries(SENTINEL_CONTROL_CAST)) {
+    for (const [id, names] of Object.entries(retry ? SENTINEL_RETRY_CAST : SENTINEL_CONTROL_CAST)) {
       const group = actor(id);
       for (const name of names) {
         const mesh = group?.getObjectByName(name);
         if (!(mesh instanceof THREE.Mesh) || !(mesh.material instanceof THREE.MeshStandardMaterial)) continue;
         crew.push(mesh);
-        if (mesh instanceof THREE.SkinnedMesh) prepareSkinnedMaterial(mesh.material);
-        if (prepared.versions.get(mesh) === mesh.material.version) continue;
-        prepared.versions.set(mesh, mesh.material.version);
+        const material = mesh.material, queued = prepared.versions.get(mesh);
+        if (mesh instanceof THREE.SkinnedMesh) prepareSkinnedMaterial(material);
+        if (retry && id === 'neo' && name === 'Anatomical_head_and_hands' && prepared.normalMeshes?.[0] !== mesh)
+          prepared.normalMeshes = [mesh];
+        if (queued?.material === material && queued.version === material.version) continue;
+        prepared.versions.set(mesh, { material, version: material.version });
         if (!prepared.meshes.includes(mesh)) prepared.meshes.push(mesh);
+        if (retry) this.queueColorTextures(prepared.textures, [mesh]);
       }
     }
-    return this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true, crew);
+    const linking = this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true, crew);
+    return retry && this.prepareStagedColorTexture(renderer, prepared, prepared.textures, 2) || linking;
   }
   prepareConsole(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => ShipEntryCast, shadowSun: THREE.DirectionalLight, sourceLights?: LightCulling, resume = false): void {
@@ -3354,7 +3374,15 @@ export class FilmSetRenderer {
         }
         else if (sceneId === 'm1_sentinels') {
           this.sentinel = preparedSentinel?.renderer ?? new SentinelSetRenderer(this.root);
-          if (preparedSentinel) this.root.add(preparedSentinel.root);
+          if (preparedSentinel) {
+            this.root.add(preparedSentinel.root);
+            const { colors, gpu } = preparedSentinel, phase = journey?.sentinel?.phase;
+            if (gpu && colors && (phase === 'detected' || phase === 'failed')) {
+              // Programs linked on the landing page still need their uniform locations.
+              this.preparedSentinelControls = { scene: this.scene, gpu, retry: true, meshes: [], textures: new Set(),
+                versions: new WeakMap(), programs: colors.programs, readyProgram: colors.readyProgram };
+            }
+          }
         }
         else if (set.id === 'film_ambush_house' && sceneId === 'm1_basement') this.basement = new BasementSetRenderer(this.root);
         else if (set.id === 'film_ambush_house') {
@@ -6314,6 +6342,10 @@ export class FilmSetRenderer {
     const prepared = this.preparedSentinel; if (!prepared) return;
     this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedSentinel = undefined;
   }
+  private cancelSentinelControlsPreparation(): void {
+    this.preparedSentinelControls?.textureUpload?.return(false);
+    this.preparedSentinelControls = undefined;
+  }
   private cancelConsolePreparation(): void {
     const prepared = this.preparedConsole; if (!prepared) return;
     this.releaseEntryPreparation(prepared); prepared.deck.dispose(); this.preparedConsole = undefined;
@@ -6405,7 +6437,7 @@ export class FilmSetRenderer {
     this.cancelJumpPreparation();
     this.cancelRedDressPreparation();
     this.cancelSentinelPreparation();
-    this.preparedSentinelControls = undefined;
+    this.cancelSentinelControlsPreparation();
     this.cancelConsolePreparation();
     this.cancelRestaurantPreparation();
     this.cancelMealPreparation();

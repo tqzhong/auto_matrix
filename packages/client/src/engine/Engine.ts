@@ -383,7 +383,8 @@ export class Engine {
     this.filmSets.prepareRedDress(this.renderer, this.camera, trainingJourney,
       id => ({ model: this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), shadow: this.agentRenderer.getAgentShadow(id) }),
       this.lightCulling, resumeTraining);
-    const resumeSentinel = resumeOnLanding && meeting?.scene === 'm1_red_dress';
+    const resumeSentinel = resumeOnLanding && meeting?.scene === 'm1_red_dress'
+      || onLanding && meeting?.scene === 'm1_sentinels';
     this.filmSets.prepareSentinel(this.renderer, this.camera, player?.id === meeting?.actor || resumeSentinel ? meeting : undefined,
       id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling, resumeSentinel);
     const resumeConsole = onLanding && meeting?.scene === 'm1_sentinels';
@@ -457,13 +458,14 @@ export class Engine {
     const hotelNormals = hotelPreparation && !preparingHotelTextures ? this.filmSets.openingHotelNormalMeshes : undefined;
     const openingNormals = this.filmSets.openingRoofRetryNormalMeshes ?? hotelNormals ?? wellsCast;
     const podNormals = this.filmSets.podEntryNormalMeshes;
+    const sentinelNormals = this.filmSets.sentinelRetryNormalMeshes;
     const consoleNormals = this.filmSets.consoleEntryNormalMeshes;
-    const setNormals = openingNormals ?? podNormals ?? consoleNormals;
+    const setNormals = openingNormals ?? podNormals ?? sentinelNormals ?? consoleNormals;
     const apartmentNormals = openingNormals ? undefined : this.voxelRenderer.interiors.apartmentReturnNormalMeshes;
     const neoNormals = preparingLafayetteNormals || resumeApartment || openingHandoff && !preparingApartment || apartmentNormals ? neoAtHome : undefined;
     const officeNormals = liveMatrixJourney?.scene === 'm1_commute' && lift?.passenger && lift.target === 1 ? officeManager : undefined;
     this.postProcessing.prepareNormals(this.renderer, setNormals ? this.filmSets.root : neoNormals ?? officeNormals,
-      setNormals ?? apartmentNormals, podNormals !== undefined || consoleNormals !== undefined || wellsCast !== undefined
+      setNormals ?? apartmentNormals, podNormals !== undefined || sentinelNormals !== undefined || consoleNormals !== undefined || wellsCast !== undefined
       || resumeApartment || apartmentNormals !== undefined || officeNormals !== undefined);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0, openingHotel !== undefined);

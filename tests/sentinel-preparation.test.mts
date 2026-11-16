@@ -112,6 +112,60 @@ test('a paused red dress save prepares the same cockpit before and after taking 
   assert.equal(h.film.root.getObjectByName('sentinel-cockpit'), undefined);
 });
 
+test('a failed Sentinel save prepares the retry cast and reuses the cockpit when Neo takes control', t => {
+  const h = fixture(t);
+  Object.assign(h.film, { current: undefined, currentScene: undefined });
+  Object.assign(h.journey, { scene: 'm1_sentinels', actor: 'neo', training: undefined,
+    sentinel: { phase: 'failed', elapsed: 0, noise: 1, attempt: 0 } });
+  const tank = new THREE.Group(), face = new THREE.Mesh(h.geometry, h.material);
+  face.name = 'Tank_face'; tank.add(face);
+  h.actors.set('tank', tank);
+  for (let i = 0; i < 16; i++) h.prepare(true);
+  assert.equal(h.decks.size, 1);
+  assert(h.batches.flat().includes(h.skin));
+  assert(h.batches.flat().includes(face));
+  assert(h.work.includes('texture'));
+
+  const deck = [...h.decks][0];
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!;
+  Object.assign(neo, { currentLocation: 'film_service_tunnels', isInMatrix: false, position: { ...FILM_SETS.film_service_tunnels.center } });
+  h.film.update(neo, { structures: [], neoLife: { journey: h.journey } } as unknown as SandboxState, 0);
+  assert.equal(deck.parent, h.film.root);
+  assert.equal(deck.getObjectByName('sentinel-scan-beam')?.visible, true);
+
+  const skinMap = new THREE.Texture({ width: 2048, height: 2048 });
+  skinMap.needsUpdate = true;
+  const material = new THREE.MeshStandardMaterial({ map: skinMap });
+  const skin = new THREE.SkinnedMesh(h.geometry, material);
+  skin.name = 'Anatomical_head_and_hands'; tank.add(skin);
+  const lighting = new LightCulling(h.scene);
+  lighting.stablePointSlots = true;
+  t.after(() => { lighting.dispose(); skinMap.dispose(); material.dispose(); });
+  const compiled: THREE.Object3D[] = [];
+  t.mock.method(h.gpu, 'compile', (subject: THREE.Object3D, _camera: THREE.Camera, layout: THREE.Scene) => {
+    let slots = 0;
+    layout.traverseVisible(object => { if (object instanceof THREE.PointLight) slots++; });
+    assert.equal(slots, 6);
+    subject.traverse(object => compiled.push(object));
+  });
+  const prepareRetry = () => h.film.prepareSentinelControls(h.gpu, new THREE.PerspectiveCamera(), h.journey, id => h.actors.get(id), lighting);
+  const before = h.work.length;
+  h.ready();
+  assert(prepareRetry());
+  assert.deepEqual(h.work.slice(before), ['texture']);
+  for (let i = 0; i < 40; i++) prepareRetry();
+  assert(compiled.includes(skin));
+  assert(h.work.slice(before).includes('bindings'), 'the same programs finish preparing after the cockpit attaches');
+  assert.equal(skin.parent, tank);
+  const normals = h.film.sentinelRetryNormalMeshes;
+  assert.deepEqual(normals?.map(mesh => mesh.id), [h.skin.id]);
+  prepareRetry();
+  assert.equal(h.film.sentinelRetryNormalMeshes, normals);
+  h.journey.sentinel!.phase = 'shutdown';
+  assert.equal(prepareRetry(), false);
+  assert.equal(h.film.sentinelRetryNormalMeshes, undefined);
+});
+
 test('large skin textures from an offstage crew member upload while cockpit shaders are still linking', t => {
   const h = fixture(t); h.actor.visible = false;
   for (let i = 0; i < 5; i++) h.prepare();
