@@ -363,10 +363,11 @@ export class Engine {
     this.filmSets.prepareGovernment(this.renderer, this.camera, player?.id === meeting?.actor || resumeGovernment ? meeting : undefined,
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight,
       this.lightCulling, id => this.agentRenderer.getAgentShadow(id));
-    const resumeSubway = resumeOnLanding && meeting?.scene === 'm1_rooftop_rescue';
-    if (meeting && (resumeSubway || player?.id === meeting.actor
-      && (meeting.scene === 'm1_rooftop_rescue' || this.running && (meeting.scene === 'm1_subway' || meeting.scene === 'm1_city_chase'))))
+    if (meeting && (resumeOnLanding || player?.id === meeting.actor)
+      && (meeting.scene === 'm1_rooftop_rescue' || meeting.scene === 'm1_subway' || meeting.scene === 'm1_city_chase'))
       this.filmSets.prepareMatrixEscape(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
+    this.agentRenderer.prepareCityChaseTextures(this.renderer, liveMatrixJourney?.scene === 'm1_city_chase'
+      || resumeOnLanding && meeting?.scene === 'm1_city_chase');
     if ((meeting?.scene === 'm1_death' || meeting?.scene === 'm1_return') && player?.id === meeting.actor)
       this.filmSets.prepareOneDeck(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), player.position);
     if (meeting?.scene === 'm2_meeting' && player?.id === meeting.actor)

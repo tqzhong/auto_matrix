@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test, { type TestContext } from 'node:test';
 import * as THREE from 'three';
 import { FILM_SETS, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -12,7 +13,7 @@ const cases = {
   subway: { scene: 'm1_rooftop_rescue', from: 'film_government_roof', to: 'film_subway_platform', next: 'm1_subway',
     landmark: 'matrix-subway-track', points: 12, shadows: 1, body: 'citizen_13', late: 'trinity' },
   city: { scene: 'm1_subway', from: 'film_subway_platform', to: 'film_escape_streets', next: 'm1_city_chase',
-    landmark: 'matrix-city-room-303-door', points: 1, shadows: 2, body: 'smith', late: 'citizen_14' },
+    landmark: 'matrix-city-room-303-door', points: 2, shadows: 2, body: 'smith', late: 'citizen_14' },
   hotel: { scene: 'm1_city_chase', from: 'film_escape_streets', to: 'film_heart_hotel', next: 'm1_death',
     landmark: 'one-room-303-door', points: 8, shadows: 1, body: 'neo', late: 'neo' },
 } as const;
@@ -124,13 +125,14 @@ for (const mode of ['roof', 'subway', 'city', 'hotel'] as const) {
   });
 }
 
-for (const mode of ['roof', 'subway'] as const) {
+for (const mode of ['roof', 'subway', 'city', 'hotel'] as const) {
   test(`a saved rescue keeps its prepared ${mode} when Neo takes control`, t => {
     const h = fixture(t, mode), plan = cases[mode]; h.ready();
     Object.assign(h.film, { current: undefined });
     h.sun.visible = false;
-    h.journey.airRescue!.phase = 'ready'; h.prepare(); assert.equal(h.work.length, 0);
-    h.journey.airRescue!.phase = 'done'; h.journey.completed = [plan.scene];
+    const encounter = h.journey.airRescue ?? h.journey.matrixEscape!;
+    encounter.phase = 'ready'; h.prepare(); assert.equal(h.work.length, 0);
+    encounter.phase = 'done'; h.journey.completed = [plan.scene];
     h.drain();
     assert.equal(h.roots.size, 1, 'prepare the destination under the player lights while on the landing screen');
     const root = [...h.roots][0], landmark = root.getObjectByName(h.landmark) as THREE.Mesh;
@@ -145,6 +147,7 @@ for (const mode of ['roof', 'subway'] as const) {
     neo.position = filmPosition(h.target); neo.currentLocation = h.target;
     const next = { ...h.journey, scene: plan.next, step: 0,
       airRescue: mode === 'roof' ? { kind: 'roof', phase: 'ready', elapsed: 0, attempt: 0, grip: 1, braces: 0, misses: 0, resolved: [] } : undefined,
+      matrixEscape: mode === 'city' ? { ...h.journey.matrixEscape!, kind: 'city', phase: 'ready', elapsed: 0, checkpoint: 'street' } : undefined,
     } as FilmJourney;
     h.film.update(neo, { neoLife: { journey: next } } as SandboxState, 0);
     assert.equal(h.film.root.getObjectByName(h.landmark), landmark);
@@ -224,4 +227,46 @@ test('subway phone debris preparation cancels and disposes each actual shard onc
   let disposed = 0; shard.geometry.addEventListener('dispose', () => disposed++);
   h.journey.scene = 'm1_guns'; h.prepare(); h.prepare();
   assert.equal(disposed, 1); assert.equal(root.parent, null);
+});
+
+test('street pursuit uploads Smith’s skin, hair and coat in strips before his first draw', t => {
+  const h = fixture(t, 'city');
+  class Bitmap { width = 2048; height = 2048; }
+  const previous = globalThis.ImageBitmap;
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  t.after(() => { if (previous) globalThis.ImageBitmap = previous; else Reflect.deleteProperty(globalThis, 'ImageBitmap'); });
+  const smith = new THREE.Group();
+  const meshes = ['Anatomical_head_and_hands', 'short04', 'Tailored_coat_upper'].map(name => {
+    const map = new THREE.Texture(new Bitmap()); map.flipY = false; map.needsUpdate = true;
+    const mesh = new THREE.Mesh(h.geometry, new THREE.MeshStandardMaterial({ map })); mesh.name = name; smith.add(mesh);
+    t.after(() => { mesh.material.dispose(); map.dispose(); }); return mesh;
+  });
+  let hero: THREE.Group | undefined;
+  const agent = Object.assign(Object.create(AgentRenderer.prototype), { getAgentHero: (id: string) => id === 'smith' ? hero : undefined }) as AgentRenderer;
+  const original = meshes.map(mesh => mesh.material.map!), disposals: THREE.Texture[] = [], rows: number[] = [];
+  const resident = new WeakMap<THREE.Texture, object>();
+  Object.assign(h.gpu, {
+    properties: { get: (texture: THREE.Texture) => ({ __webglTexture: resident.get(texture) }) },
+    capabilities: { maxTextureSize: 4096 }, state: { bindTexture() {}, unbindTexture() {} },
+    getContext: () => ({ pixelStorei() {}, generateMipmap() {},
+      texSubImage2D(_target: number, _level: number, _x: number, row: number, width: number, height: number) {
+        assert.deepEqual([width, height], [2048, 256]); rows.push(row);
+      } }),
+    initTexture(texture: THREE.Texture) {
+      resident.set(texture, {}); if (!original.includes(texture)) texture.addEventListener('dispose', () => disposals.push(texture));
+    },
+  });
+  const prepare = (active = true) => agent.prepareCityChaseTextures?.(h.gpu, active);
+  t.after(() => prepare(false));
+  prepare(); assert.deepEqual(rows, []);
+  hero = smith; prepare();
+  assert.deepEqual(rows, [0], 'the first available Smith map must stage only its first strip');
+  assert.equal(resident.has(original[0]), false);
+  prepare(false); assert.equal(disposals.length, 1, 'leaving the chase cancels the partial allocation');
+  rows.length = 0;
+  for (let frame = 0; frame < 32; frame++) prepare();
+  const mapRows = [0, 256, 512, 768, 1024, 1280, 1536, 1792];
+  assert.deepEqual(rows, [...mapRows, ...mapRows, ...mapRows]);
+  assert.ok(original.every(texture => resident.has(texture)));
+  assert.equal(disposals.length, 4);
 });

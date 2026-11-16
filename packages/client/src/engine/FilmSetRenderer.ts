@@ -207,6 +207,7 @@ type EntryCast = { model?: THREE.Group; shadow?: THREE.Mesh };
 type ShipEntryCast = EntryCast & { garments?: () => ColorMesh[] };
 const JUMP_ENTRY_MESHES = new Set(['jump-tower-windows', 'jump-canyon-avenue', 'jump-city-matte']);
 const QUESTIONING_POINT_SLOTS = 1;
+const CITY_CHASE_POINT_SLOTS = 2;
 const QUESTIONING_SMITH_MESHES = new Set(['Anatomical_head_and_hands', 'high-poly', 'short04', 'shoes01', 'Tailored_coat_upper', 'Tailored_trousers']);
 const SENTINEL_ENTRY_MESHES = new Set([
   'sentinel-frosted-glass', 'sentinel-cockpit-deck', 'sentinel-exterior-matte',
@@ -592,6 +593,8 @@ export class FilmSetRenderer {
     // The screen, three loadouts and objective share one layout throughout the reveal.
     if (this.current?.id === 'film_white_construct' && this.currentScene === 'm1_guns') return 5;
     if (this.current?.id === 'film_government_office' && this.currentScene === 'm1_smith_question') return QUESTIONING_POINT_SLOTS;
+    // The hotel lamp and the market muzzle flash share this layout.
+    if (this.matrixEscape?.setId === 'film_escape_streets') return CITY_CHASE_POINT_SLOTS;
     if (this.current?.id === 'film_kungfu_dojo' && this.currentScene === 'm1_dojo') return 1;
     if (this.current?.id === 'film_jump_roofs' && this.currentScene === 'm1_jump') return 2;
     if (this.current?.id === 'film_red_dress_plaza' && this.currentScene === 'm1_red_dress') return 1;
@@ -997,13 +1000,13 @@ export class FilmSetRenderer {
   prepareMatrixEscape(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
     const phase = journey.airRescue?.phase;
-    const onRescueRoof = this.current?.id === 'film_government_roof' && this.currentScene === 'm1_rooftop_rescue';
-    const subway = (!this.current || onRescueRoof)
-      && journey.scene === 'm1_rooftop_rescue' && (phase === 'pulling' || phase === 'done');
+    const atSource = this.currentScene === journey.scene, landing = !this.current;
+    const subway = journey.scene === 'm1_rooftop_rescue' && (landing || atSource && this.current?.id === 'film_government_roof')
+      && (phase === 'pulling' || phase === 'done');
     const escape = journey.matrixEscape;
-    const city = this.currentScene === 'm1_subway' && this.current?.id === 'film_subway_platform' && journey.scene === 'm1_subway'
+    const city = journey.scene === 'm1_subway' && (landing || atSource && this.current?.id === 'film_subway_platform')
       && (escape?.phase === 'done' || escape?.phase === 'body_swap' && escape.elapsed >= .6);
-    const hotel = this.currentScene === 'm1_city_chase' && this.current?.id === 'film_escape_streets' && journey.scene === 'm1_city_chase'
+    const hotel = journey.scene === 'm1_city_chase' && (landing || atSource && this.current?.id === 'film_escape_streets')
       && (escape?.phase === 'door' || escape?.phase === 'done');
     if (journey.visiting || !subway && !city && !hotel) {
       this.cancelMatrixEscapePreparation();
@@ -1028,11 +1031,14 @@ export class FilmSetRenderer {
         });
         prepared.colors.meshes.push(...debris, this.marker);
         this.queueColorTextures(prepared.colors.textures, debris);
-        let points = 0; prepared.colors.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
-        for (; points < SUBWAY_POINT_SLOTS; points++) prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
       } else if (city) {
-        // Tank's briefing starts with only the street's own point light.
+        // The chase uses its own lights without the cloned objective lamp.
         for (const light of prepared.colors.scene.children) if (light instanceof THREE.PointLight) light.visible = false;
+      }
+      if (subway || city) {
+        let points = 0; prepared.colors.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
+        const slots = subway ? SUBWAY_POINT_SLOTS : CITY_CHASE_POINT_SLOTS;
+        for (; points < slots; points++) prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
       }
       prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
       prepared.gpu = renderer.properties;
@@ -3307,8 +3313,12 @@ export class FilmSetRenderer {
           || set?.id === 'film_government_office' && sceneId === 'm1_smith_question' && this.preparedGovernment?.scene === 'm1_bullet_dodge'
           || set?.id === 'film_government_office' && sceneId === 'm1_helicopter' && this.preparedGovernment?.scene === 'm1_rooftop_rescue')
         ? this.preparedGovernment : undefined;
-      const resumingMatrixEscape = resumingScene && journey?.actor === player?.id && set?.id === 'film_government_roof' && sceneId === 'm1_rooftop_rescue'
-        && this.preparedMatrixEscape?.renderer.setId === 'film_subway_platform' ? this.preparedMatrixEscape : undefined;
+      const escapeTarget = this.preparedMatrixEscape?.renderer.setId;
+      const resumingMatrixEscape = resumingScene && journey?.actor === player?.id
+        && (sceneId === 'm1_rooftop_rescue' && set?.id === 'film_government_roof' && escapeTarget === 'film_subway_platform'
+          || sceneId === 'm1_subway' && set?.id === 'film_subway_platform' && escapeTarget === 'film_escape_streets'
+          || sceneId === 'm1_city_chase' && set?.id === 'film_escape_streets' && escapeTarget === 'film_heart_hotel')
+        ? this.preparedMatrixEscape : undefined;
       if (resumingAmbush) this.preparedAmbush = undefined;
       if (resumingJump) this.preparedJump = undefined;
       if (resumingRedDress) this.preparedRedDress = undefined;

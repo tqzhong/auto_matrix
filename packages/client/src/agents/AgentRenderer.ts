@@ -101,6 +101,7 @@ export class AgentRenderer {
   private models = new CharacterModels();
   private preparedOpeningApartment = new WeakSet<THREE.Group>();
   private hotelCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; pursuit: boolean; heroes: THREE.Group[]; steps?: Generator<void> };
+  private cityChasePreparation?: { gpu: THREE.WebGLRenderer['properties']; smith: THREE.Group; steps?: Generator<void> };
   private wellsCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; heroes: THREE.Group[]; meshes: THREE.Mesh[]; steps?: Generator<void> };
   private fallenFloorShapes = new WeakMap<THREE.Object3D, Float32Array>();
   private custody = new OfficeCustodyPerformance();
@@ -289,6 +290,21 @@ export class AgentRenderer {
   private cancelOpeningHotelTextures(): void {
     this.hotelCastPreparation?.steps?.return(undefined);
     this.hotelCastPreparation = undefined;
+  }
+  prepareCityChaseTextures(renderer: THREE.WebGLRenderer, active: boolean): void {
+    const smith = active ? this.getAgentHero('smith') : undefined;
+    if (!smith) { this.cancelCityChaseTextures(); return; }
+    let prepared = this.cityChasePreparation;
+    if (!prepared || prepared.smith !== smith || prepared.gpu !== renderer.properties) {
+      this.cancelCityChaseTextures();
+      const names = ['Anatomical_head_and_hands', 'short04', 'Tailored_coat_upper'];
+      this.cityChasePreparation = prepared = { gpu: renderer.properties, smith, steps: this.prepareCastMaps(renderer, [smith], names, true) };
+    }
+    if (prepared.steps?.next().done) prepared.steps = undefined;
+  }
+  private cancelCityChaseTextures(): void {
+    this.cityChasePreparation?.steps?.return(undefined);
+    this.cityChasePreparation = undefined;
   }
   get wellsCastMeshes(): readonly THREE.Mesh[] | undefined { return this.wellsCastPreparation?.meshes; }
   prepareWellsCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, phone?: OpeningPhoneEncounter): boolean {
@@ -1633,6 +1649,7 @@ export class AgentRenderer {
   }
   dispose(): void {
     this.cancelOpeningHotelTextures();
+    this.cancelCityChaseTextures();
     this.cancelWellsCastPreparation();
     this.cancelOfficeCastTexture();
     this.preparedOfficeActors = undefined;
