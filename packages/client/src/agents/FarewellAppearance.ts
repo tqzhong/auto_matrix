@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { HeroRig } from './HeroModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 import { fitShipKnit } from './ShipKnit.js';
+import { cloneSkinnedMaterial } from './SkinnedPrecision.js';
 import { prepareOpaqueShadowDepth } from '../engine/OpaqueShadowDepth.js';
 
 /** Real-world knit costumes; the normal wardrobe restores Matrix appearances. */
@@ -114,7 +115,7 @@ export class FarewellAppearance {
     return this.rig.wardrobe.flatMap(({ mesh }) => {
       const garment = this.garment(mesh, input);
       if (!garment || !(mesh instanceof THREE.SkinnedMesh) || !(mesh.material instanceof THREE.MeshStandardMaterial)) return [];
-      const material = mesh.material.clone();
+      const material = cloneSkinnedMaterial(mesh.material);
       this.applyGarment(mesh, material, garment, input);
       const geometry = this.shipKnit?.mesh === mesh ? this.shipKnit.fitted : mesh.geometry;
       const proxy = new THREE.SkinnedMesh(geometry, material);

@@ -307,7 +307,8 @@ export class Engine {
       ? [...this.sandboxRenderer.openingHotelTelegraphs(), this.combatEffects.openingHotelImpactFlash()]
       : openingHotel?.phase === 'phone' ? [] : undefined);
     this.sandboxRenderer.showOpeningHotelHall(openingHotelHallTime(openingHotel, openingTrace));
-    const resumeOnLanding = this.matrix && !this.playerControls?.id && !meeting?.visiting && document.body.classList.contains('landing');
+    const onLanding = !this.playerControls?.id && !meeting?.visiting && document.body.classList.contains('landing');
+    const resumeOnLanding = this.matrix && onLanding;
     const resumeRoof = resumeOnLanding && meeting?.scene === 'm1_roofs';
     this.filmSets.prepareOpening(this.renderer, this.camera, liveMatrixJourney ?? (resumeRoof ? meeting : undefined),
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id), this.agentRenderer.getAgentShadow('trinity'),
@@ -384,9 +385,10 @@ export class Engine {
       this.lightCulling, resumeTraining);
     const resumeSentinel = resumeOnLanding && meeting?.scene === 'm1_red_dress';
     this.filmSets.prepareSentinel(this.renderer, this.camera, player?.id === meeting?.actor || resumeSentinel ? meeting : undefined,
-      id => this.agentRenderer.getSentinelCast(id), this.lightingSystem.directionalLight, this.lightCulling, resumeSentinel);
-    this.filmSets.prepareConsole(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
-      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
+      id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling, resumeSentinel);
+    const resumeConsole = onLanding && meeting?.scene === 'm1_sentinels';
+    this.filmSets.prepareConsole(this.renderer, this.camera, player?.id === meeting?.actor || resumeConsole ? meeting : undefined,
+      id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling, resumeConsole);
     this.filmSets.prepareRestaurant(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareMeal(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
@@ -452,11 +454,14 @@ export class Engine {
     const hotelNormals = hotelPreparation && !preparingHotelTextures ? this.filmSets.openingHotelNormalMeshes : undefined;
     const openingNormals = this.filmSets.openingRoofRetryNormalMeshes ?? hotelNormals ?? wellsCast;
     const podNormals = this.filmSets.podEntryNormalMeshes;
+    const consoleNormals = this.filmSets.consoleEntryNormalMeshes;
+    const setNormals = openingNormals ?? podNormals ?? consoleNormals;
     const apartmentNormals = openingNormals ? undefined : this.voxelRenderer.interiors.apartmentReturnNormalMeshes;
     const neoNormals = preparingLafayetteNormals || resumeApartment || openingHandoff && !preparingApartment || apartmentNormals ? neoAtHome : undefined;
     const officeNormals = liveMatrixJourney?.scene === 'm1_commute' && lift?.passenger && lift.target === 1 ? officeManager : undefined;
-    this.postProcessing.prepareNormals(this.renderer, openingNormals || podNormals ? this.filmSets.root : neoNormals ?? officeNormals,
-      openingNormals ?? podNormals ?? apartmentNormals, podNormals !== undefined || wellsCast !== undefined || resumeApartment || apartmentNormals !== undefined || officeNormals !== undefined);
+    this.postProcessing.prepareNormals(this.renderer, setNormals ? this.filmSets.root : neoNormals ?? officeNormals,
+      setNormals ?? apartmentNormals, podNormals !== undefined || consoleNormals !== undefined || wellsCast !== undefined
+      || resumeApartment || apartmentNormals !== undefined || officeNormals !== undefined);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0, openingHotel !== undefined);
     this.filmSets.renderTelevisionPreview(this.renderer, this.camera, () => this.agentRenderer.getDesertEntryCast(), this.lightingSystem.directionalLight);

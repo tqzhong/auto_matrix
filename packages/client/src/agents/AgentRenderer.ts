@@ -235,7 +235,7 @@ export class AgentRenderer {
   getAgentShadow(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.shadow; }
   getAgentDetail(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.detail; }
   getAgentDistant(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.rig.distant; }
-  getSentinelCast(id: string) {
+  getShipEntryCast(id: string) {
     const entry = this.agents.get(id), hero = entry?.rig.hero;
     return { model: hero?.root ?? entry?.body, shadow: entry?.shadow, garments: hero && (() => this.models.prepareEarlyShipGarments(hero)) };
   }

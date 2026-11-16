@@ -40,6 +40,14 @@ export function prepareSkinnedMaterial(material: THREE.Material): void {
   material.needsUpdate = true;
 }
 
+export function cloneSkinnedMaterial<T extends THREE.Material>(source: T): T {
+  const material = source.clone();
+  material.onBeforeCompile = source.onBeforeCompile;
+  material.customProgramCacheKey = source.customProgramCacheKey;
+  if (materials.has(source)) materials.add(material);
+  return material;
+}
+
 function boneTexture(source: THREE.Skeleton, origin: THREE.Vector3): THREE.Skeleton {
   let entry = textures.get(source);
   if (!entry) {

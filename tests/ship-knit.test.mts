@@ -2,7 +2,19 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { newMotion } from '../packages/client/src/agents/CharacterMotion.js';
+import { prepareSkinnedMaterial } from '../packages/client/src/agents/SkinnedPrecision.js';
+import { actor } from './helpers/fighting-hand-fixture.mts';
 import { shipKnit } from './helpers/ship-knit.mjs';
+
+test('Neo ship entry keeps the live sweater shader customization in its prepared material', async t => {
+  const { models, rig } = await actor('neo'); t.after(() => models.dispose());
+  const sweater = rig.root.getObjectByName('neo-logos-sweater') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  const garments = models.prepareEarlyShipGarments(rig); t.after(() => garments.forEach(mesh => mesh.material.dispose()));
+  const prepared = garments.find(mesh => mesh.name === sweater.name)!;
+  prepareSkinnedMaterial(sweater.material); prepareSkinnedMaterial(prepared.material);
+  assert.match(sweater.material.customProgramCacheKey(), /liquid-mirror-v4:actor-local-skin-v1$/);
+  assert.equal(prepared.material.customProgramCacheKey(), sweater.material.customProgramCacheKey());
+});
 
 test('the ship entry prepares the fitted knit and its actual maps without touching the Matrix costume', async t => {
   const h = await shipKnit(t);
