@@ -29,10 +29,19 @@ test('executive interrogation set contains physical restraints, drug feed, glass
   assert.ok(root.getObjectByName('government-serum-bag')!.scale.y > .9);
   const towers = root.children[0].children.filter(child => child.name === 'government-city-tower');
   assert.equal(towers.length, 13); assert.ok(towers.every(tower => tower.position.z < -32), 'the skyline must remain outside the glass wall');
+  const windows = towers.flatMap(tower => tower.children.slice(1)) as THREE.Mesh[];
+  assert.equal(windows.length, 291);
+  const windowGeometry = windows[0].geometry;
+  assert.equal(new Set(windows.map(window => window.geometry)).size, 1, 'equal skyline windows should share their vertex buffers');
+  assert.deepEqual(windows[0].position.toArray(), [-1.7, 3, 3.22]);
+  const originalWindow = new THREE.BoxGeometry(1.1, 1.6, .04);
+  assert.deepEqual(windowGeometry.attributes.position.array, originalWindow.attributes.position.array);
+  originalWindow.dispose();
   root.updateMatrixWorld(true); const chair = root.getObjectByName('government-restraint-chair')!;
   const chairBack = root.getObjectByName('government-chair-back'); assert.ok(chairBack);
   assert.ok(chairBack!.getWorldPosition(new THREE.Vector3()).z > chair.getWorldPosition(new THREE.Vector3()).z, 'the backrest belongs behind seated Morpheus');
-  renderer.dispose(); assert.equal(root.children.length, 0);
+  let released = 0; windowGeometry.addEventListener('dispose', () => released++);
+  renderer.dispose(); assert.equal(root.children.length, 0); assert.equal(released, 1);
 });
 
 test('rooftop set exposes a complete B-212 silhouette and renders each bullet-time firing line', () => {

@@ -89,10 +89,11 @@ export class GovernmentSetRenderer {
       this.box(glassWall, this.metal, col * 5.25 - 2.62, 7, .08, .18, 13.4, .3);
     }
     this.box(glassWall, this.metal, 0, .45, .08, 47, .3, .45); this.box(glassWall, this.metal, 0, 13.45, .08, 47, .3, .45);
+    const windowGeometry = new THREE.BoxGeometry(1.1, 1.6, .04);
     for (let i = 0; i < 13; i++) {
       const tower = new THREE.Group(); tower.name = 'government-city-tower'; tower.position.set(-42 + i * 7.2, -1, -72 - (i % 3) * 14); this.group.add(tower);
       const height = 18 + i % 5 * 5; this.box(tower, this.darkConcrete, 0, height / 2, 0, 5.8, height, 6.4);
-      for (let y = 3; y < height - 2; y += 3.2) for (const x of [-1.7, 0, 1.7]) this.box(tower, this.green, x, y, 3.22, 1.1, 1.6, .04);
+      for (let y = 3; y < height - 2; y += 3.2) for (const x of [-1.7, 0, 1.7]) this.mesh(windowGeometry, this.green, tower).position.set(x, y, 3.22);
     }
 
     const chair = new THREE.Group(); chair.name = 'government-restraint-chair'; chair.position.set(0, 0, -2.2); this.group.add(chair);

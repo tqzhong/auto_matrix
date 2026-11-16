@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import test, { type TestContext } from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SETS, LOBBY_COLUMNS, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-function fixture(t: TestContext, roof = false) {
+function fixture(t: TestContext, roof = false, withShadows = false) {
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({
     createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {},
@@ -23,40 +24,54 @@ function fixture(t: TestContext, roof = false) {
   parent.visible = false; parent.add(hero, body); scene.add(parent);
   const texture = new THREE.Texture({ width: 2048, height: 2048, complete: true }); texture.needsUpdate = true;
   const material = new THREE.MeshStandardMaterial({ map: texture }), skin = new THREE.SkinnedMesh(geometry, material); skin.visible = false; hero.add(skin);
+  skin.name = 'Anatomical_head_and_hands';
   const later = new THREE.Mesh(geometry, material); later.userData.reloadedHidden = true; later.visible = false; hero.add(later);
   const coarse = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true })); body.add(coarse);
+  const contact = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ depthWrite: false })); contact.visible = false; parent.add(contact);
+  const sourceLights = withShadows ? new LightCulling(scene) : undefined;
+  if (sourceLights) sourceLights.minimumPointSlots = 9;
   const heroes = new Map([[roof ? 'neo' : 'morpheus', hero]]), bodies = new Map([[roof ? 'citizen_11' : 'smith', body]]), roots = new Set<THREE.Object3D>();
   const work: string[] = [], batches: THREE.Object3D[][] = [], programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  const depthBatches: { points: number; meshes: THREE.Mesh<THREE.BufferGeometry, THREE.MeshDepthMaterial>[] }[] = [];
   let ready = false, target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
   const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
   const gpu = { properties: properties(), info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
+    shadowMap: withShadows ? { enabled: true, type: THREE.PCFSoftShadowMap } : undefined,
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }), getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
     compile(subject: THREE.Object3D, eye: THREE.Camera, colors: THREE.Scene) {
-      assert.notEqual(colors, scene); assert.equal(colors.environment, scene.environment); assert.equal(colors.fog, scene.fog); assert.equal(eye, camera); assert.equal(target?.width, 1);
+      assert.notEqual(colors, scene); assert.equal(eye, camera); assert.equal(target?.width, 1);
+      const meshes: THREE.Object3D[] = []; subject.traverse(object => meshes.push(object)); assert.ok(meshes.length && meshes.length <= 4);
+      const depth = meshes.filter((mesh): mesh is THREE.Mesh<THREE.BufferGeometry, THREE.MeshDepthMaterial> => mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshDepthMaterial);
       let points = 0, shadows = 0; let root: THREE.Object3D | undefined;
       colors.traverseVisible(object => {
         if (object instanceof THREE.PointLight) points++;
         if (object instanceof THREE.DirectionalLight && object.castShadow) shadows++;
         if (object instanceof THREE.Group && object.parent instanceof THREE.Scene && object.getObjectByName(roof ? 'government-roof-deck' : 'government-restraint-chair')) root = object;
       });
-      assert.equal(points, roof ? 1 : 0); assert.equal(shadows, roof ? 2 : 1); assert.ok(root); roots.add(root);
-      assert.equal(scene.children.includes(root), false, 'the future government set must stay offstage');
-      const meshes: THREE.Object3D[] = []; subject.traverse(object => meshes.push(object)); assert.ok(meshes.length && meshes.length <= 4);
+      if (depth.length) {
+        assert.equal(depth.length, meshes.length); assert.equal(colors.fog, null); assert.equal(colors.environment, null);
+        depthBatches.push({ points, meshes: depth });
+      } else {
+        assert.equal(colors.environment, scene.environment); assert.equal(colors.fog, scene.fog);
+        assert.equal(points, roof ? 1 : 0); assert.equal(shadows, roof ? 2 : 1); assert.ok(root); roots.add(root);
+        assert.equal(scene.children.includes(root), false, 'the future government set must stay offstage');
+      }
       if (meshes.includes(skin)) assert.match(material.customProgramCacheKey(), /actor-local-skin-v1$/);
       batches.push(meshes); work.push('compile'); programs.push({ program: {}, isReady: () => ready, getUniforms: () => { assert.equal(gpu.debug.checkShaderErrors, false); work.push('bindings'); } });
     },
     initTexture(map: THREE.Texture) { uploaded.set(map, map.version); work.push('texture'); },
   } as unknown as THREE.WebGLRenderer;
   const prepare = () => {
-    const count = work.length; film.prepareGovernment(gpu, camera, journey, id => bodies.get(id), id => heroes.get(id), sun);
+    const count = work.length; film.prepareGovernment(gpu, camera, journey, id => bodies.get(id), id => heroes.get(id), sun,
+      sourceLights, withShadows ? id => id === 'morpheus' ? contact : undefined : undefined);
     const frame = work.slice(count), strips = frame.filter(item => item === 'strip').length;
     assert.ok(strips ? frame.length === strips && strips <= 2 : frame.length <= 1,
       'prepare a bounded upload or a small program batch per frame');
     assert.equal(parent.visible, false); assert.equal(hero.parent, parent); assert.equal(skin.parent, hero); assert.equal(skin.visible, false); assert.equal(later.visible, false); assert.equal(target, null);
   };
   const drain = () => { for (let i = 0; i < 1000; i++) prepare(); };
-  t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); (coarse.material as THREE.Material).dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
-  return { film, journey, gpu, heroes, bodies, geometry, material, texture, skin, coarse, later, work, batches, roots, prepare, drain,
+  t.after(() => { film.dispose(); sourceLights?.dispose(); geometry.dispose(); material.dispose(); coarse.material.dispose(); contact.material.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
+  return { film, journey, gpu, heroes, bodies, geometry, material, texture, skin, coarse, later, contact, work, batches, depthBatches, roots, prepare, drain,
     ready: () => { ready = true; }, newGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
 
@@ -68,6 +83,37 @@ test('cleared lobby preparation queues the future interrogation office, hidden c
   const late = new THREE.Group(), guard = new THREE.Mesh(h.geometry, h.material); guard.visible = false; late.add(guard); h.heroes.set('agent_brown', late);
   const before = h.batches.length; h.drain(); assert.ok(h.batches.slice(before).flat().includes(guard), 'late delivered security cast must be accepted');
   const after = h.batches.length; h.newGpu(); h.drain(); assert.ok(h.batches.length > after); assert.equal(h.roots.size, 1, 'a new GPU reuses the same authored office');
+});
+
+test('the interrogation prepares its real depth, contact shadow and normal variants before the elevator cut', t => {
+  const h = fixture(t, false, true);
+  h.skin.castShadow = true;
+  const smith = new THREE.Group(), smithSkin = new THREE.SkinnedMesh(h.geometry, h.material);
+  smith.add(smithSkin); smithSkin.name = 'Anatomical_head_and_hands'; h.heroes.set('smith', smith);
+  h.ready(); h.drain();
+  assert.deepEqual([...new Set(h.depthBatches.map(batch => batch.points))], [9, 0]);
+  for (const points of [9, 0]) {
+    const meshes = h.depthBatches.filter(batch => batch.points === points).flatMap(batch => batch.meshes);
+    assert(meshes.some(mesh => mesh instanceof THREE.SkinnedMesh && mesh.geometry === h.geometry));
+    assert(meshes.some(mesh => !(mesh instanceof THREE.SkinnedMesh)), 'the office floor also needs a depth program');
+  }
+  const entrance = h.batches.find(batch => batch.includes(h.contact));
+  assert(entrance?.some(mesh => mesh.name === 'government-glass-pane-0'), 'the glazing and contact shadow should be in the first colour batch');
+  assert(entrance?.includes(smithSkin), 'Smith’s skin should prepare before the rest of the cast materials');
+  assert(h.film.governmentEntryNormalMeshes?.includes(h.skin));
+  assert.equal(h.contact.visible, false);
+
+  const depth = new Set(h.depthBatches.flatMap(batch => batch.meshes.map(mesh => mesh.material)));
+  let disposed = 0;
+  for (const material of depth) material.addEventListener('dispose', () => disposed++);
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const morpheus = world.agents.get('morpheus')!;
+  morpheus.position = filmPosition('film_government_office', 0, -2.2); morpheus.currentLocation = 'film_government_office'; morpheus.isInMatrix = true;
+  const journey = { scene: 'm1_smith_question', actor: 'morpheus', step: 0, government: { kind: 'questioning', phase: 'ready', elapsed: 0, attempt: 0, resolve: 1 } } as FilmJourney;
+  h.film.update(morpheus, { neoLife: { journey } } as SandboxState, 0);
+  assert.equal(disposed, 0, 'keep the prepared programs through the first visible office frame');
+  assert.equal(h.film.governmentEntryNormalMeshes, undefined);
+  h.film.update(undefined, undefined, 0);
+  assert.equal(disposed, depth.size);
 });
 
 test('the interruption prepares the gun-line roof with its entrance lights and adopts the same set', t => {
@@ -121,6 +167,31 @@ test('clearing the lobby stages the interrogation maps a few strips at a time an
   for (let frame = 0; frame < 3; frame++) h.prepare();
   assert.deepEqual(rows.slice(2), [0, 256, 512, 768, 1024, 1280, 1536, 1792]);
   assert.ok(resident.has(h.texture)); assert.equal(released.length, 2);
+});
+
+test('a cleared lobby save keeps the interrogation preparation from the landing screen through ownership', t => {
+  const h = fixture(t);
+  Object.assign(h.film, { current: undefined, currentScene: 'm1_lobby' });
+  h.journey.lobby!.phase = 'combat'; h.prepare();
+  assert.equal(h.work.length, 0);
+  h.journey.lobby = { phase: 'cleared', loadout: 'compact', ammo: 24, wave: 3, shots: 36, kills: 8, allyShotAt: 0, columns: LOBBY_COLUMNS.map(() => 0) };
+  h.ready(); h.drain();
+  assert.equal(h.roots.size, 1, 'prepare the actual office while a cleared lobby save is on the landing screen');
+  const office = [...h.roots][0], chair = office.getObjectByName('government-chair-back') as THREE.Mesh;
+  let disposed = 0; chair.geometry.addEventListener('dispose', () => disposed++);
+
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, morpheus = world.agents.get('morpheus')!;
+  neo.position = filmPosition('film_government_lobby', 0, -35); neo.currentLocation = 'film_government_lobby'; neo.isInMatrix = true;
+  h.film.update(neo, { neoLife: { journey: h.journey } } as SandboxState, 0);
+  assert.equal(disposed, 0, 'owning Neo keeps the same future room');
+  h.drain(); assert.equal(h.roots.size, 1);
+
+  morpheus.position = filmPosition('film_government_office', 0, -2.2); morpheus.currentLocation = 'film_government_office'; morpheus.isInMatrix = true;
+  const journey = { scene: 'm1_smith_question', actor: 'morpheus', step: 0, government: { kind: 'questioning', phase: 'ready', elapsed: 0, attempt: 0, resolve: 1 } } as FilmJourney;
+  h.film.update(morpheus, { neoLife: { journey } } as SandboxState, 0);
+  assert.equal(h.film.root.getObjectByName(chair.name), chair);
+  h.film.update(undefined, undefined, 0); assert.equal(disposed, 1);
 });
 
 test('cancelling or visiting releases the offstage office once without changing the live scene', t => {
