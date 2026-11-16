@@ -206,6 +206,7 @@ type DeckEntryPreparation = EntryPreparation & {
 type EntryCast = { model?: THREE.Group; shadow?: THREE.Mesh };
 type ShipEntryCast = EntryCast & { garments?: () => ColorMesh[] };
 const JUMP_ENTRY_MESHES = new Set(['jump-tower-windows', 'jump-canyon-avenue', 'jump-city-matte']);
+const QUESTIONING_POINT_SLOTS = 1;
 const QUESTIONING_SMITH_MESHES = new Set(['Anatomical_head_and_hands', 'high-poly', 'short04', 'shoes01', 'Tailored_coat_upper', 'Tailored_trousers']);
 const SENTINEL_ENTRY_MESHES = new Set([
   'sentinel-frosted-glass', 'sentinel-cockpit-deck', 'sentinel-exterior-matte',
@@ -590,6 +591,7 @@ export class FilmSetRenderer {
     if (this.current?.id === 'film_hotel_roofs' && this.currentScene === 'm1_roofs') return 4;
     // The screen, three loadouts and objective share one layout throughout the reveal.
     if (this.current?.id === 'film_white_construct' && this.currentScene === 'm1_guns') return 5;
+    if (this.current?.id === 'film_government_office' && this.currentScene === 'm1_smith_question') return QUESTIONING_POINT_SLOTS;
     if (this.current?.id === 'film_kungfu_dojo' && this.currentScene === 'm1_dojo') return 1;
     if (this.current?.id === 'film_jump_roofs' && this.currentScene === 'm1_jump') return 2;
     if (this.current?.id === 'film_red_dress_plaza' && this.currentScene === 'm1_red_dress') return 1;
@@ -813,7 +815,7 @@ export class FilmSetRenderer {
     sourceLights?: LightCulling, shadow?: (id: string) => THREE.Mesh | undefined): void {
     const inLobby = this.current?.id === 'film_government_lobby';
     const questioning = (inLobby || !this.current) && journey?.scene === 'm1_lobby' && journey.lobby?.phase === 'cleared';
-    const roofFight = this.current?.id === 'film_government_office' && journey?.scene === 'm1_smith_question'
+    const roofFight = (!this.current || this.current.id === 'film_government_office') && journey?.scene === 'm1_smith_question'
       && ['alarm_ready', 'alarm', 'done'].includes(journey.government?.phase ?? '');
     const helicopter = this.current?.id === 'film_government_roof' && journey?.scene === 'm1_bullet_dodge'
       && ['download_ready', 'downloading', 'done'].includes(journey.government?.phase ?? '');
@@ -836,7 +838,7 @@ export class FilmSetRenderer {
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       this.releaseEntryPreparation(prepared);
-      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun, playerView: questioning && !inLobby }), actors: new Set() };
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun, playerView: !this.current }), actors: new Set() };
       // These entrances hide the objective light, unlike the preceding elevator or cockpit.
       for (const light of prepared.colors.scene.children) if (light instanceof THREE.PointLight) light.intensity = 0;
       prepared.liveMeshes = [this.marker]; prepared.normalMeshes = undefined;
@@ -847,6 +849,8 @@ export class FilmSetRenderer {
       prepared.colors.meshes.push(this.marker);
       prepared.lighting = new LightCulling(prepared.colors.scene);
       prepared.lighting.stablePointSlots = !questioning && !roofFight;
+      // The alarm and the window objective take turns using this slot.
+      if (questioning) prepared.lighting.minimumPointSlots = QUESTIONING_POINT_SLOTS;
       prepared.gpu = renderer.properties;
     }
     const colors = prepared.colors, meshes = new Set<ColorMesh>(), contacts: THREE.Mesh[] = [];
@@ -3297,8 +3301,10 @@ export class FilmSetRenderer {
       const resumingConsole = resumingScene && set?.id === 'film_service_tunnels' && sceneId === 'm1_sentinels' ? this.preparedConsole : undefined;
       const resumingRestaurant = resumingScene && set?.id === 'film_neb_deck' && sceneId === 'm1_cypher_console' ? this.preparedRestaurant : undefined;
       const resumingMeal = resumingScene && set?.id === 'film_cypher_restaurant' && sceneId === 'm1_steak' ? this.preparedMeal : undefined;
-      const resumingGovernment = resumingScene && set?.id === 'film_government_lobby' && sceneId === 'm1_lobby'
-        && journey?.actor === player?.id && journey?.lobby?.phase === 'cleared' ? this.preparedGovernment : undefined;
+      const resumingGovernment = resumingScene && journey?.actor === player?.id
+        && (set?.id === 'film_government_lobby' && sceneId === 'm1_lobby' && journey?.lobby?.phase === 'cleared'
+          || set?.id === 'film_government_office' && sceneId === 'm1_smith_question' && this.preparedGovernment?.scene === 'm1_bullet_dodge')
+        ? this.preparedGovernment : undefined;
       if (resumingAmbush) this.preparedAmbush = undefined;
       if (resumingJump) this.preparedJump = undefined;
       if (resumingRedDress) this.preparedRedDress = undefined;

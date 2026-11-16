@@ -53,7 +53,7 @@ function fixture(t: TestContext, roof = false, withShadows = false) {
         depthBatches.push({ points, meshes: depth });
       } else {
         assert.equal(colors.environment, scene.environment); assert.equal(colors.fog, scene.fog);
-        assert.equal(points, roof ? 1 : 0); assert.equal(shadows, roof ? 2 : 1); assert.ok(root); roots.add(root);
+        assert.equal(points, 1); assert.equal(shadows, roof ? 2 : 1); assert.ok(root); roots.add(root);
         assert.equal(scene.children.includes(root), false, 'the future government set must stay offstage');
       }
       if (meshes.includes(skin)) assert.match(material.customProgramCacheKey(), /actor-local-skin-v1$/);
@@ -91,8 +91,8 @@ test('the interrogation prepares its real depth, contact shadow and normal varia
   const smith = new THREE.Group(), smithSkin = new THREE.SkinnedMesh(h.geometry, h.material);
   smith.add(smithSkin); smithSkin.name = 'Anatomical_head_and_hands'; h.heroes.set('smith', smith);
   h.ready(); h.drain();
-  assert.deepEqual([...new Set(h.depthBatches.map(batch => batch.points))], [9, 0]);
-  for (const points of [9, 0]) {
+  assert.deepEqual([...new Set(h.depthBatches.map(batch => batch.points))], [9, 1]);
+  for (const points of [9, 1]) {
     const meshes = h.depthBatches.filter(batch => batch.points === points).flatMap(batch => batch.meshes);
     assert(meshes.some(mesh => mesh instanceof THREE.SkinnedMesh && mesh.geometry === h.geometry));
     assert(meshes.some(mesh => !(mesh instanceof THREE.SkinnedMesh)), 'the office floor also needs a depth program');
@@ -130,6 +130,21 @@ test('the interruption prepares the gun-line roof with its entrance lights and a
     government: { kind: 'rooftop', phase: 'ready', elapsed: 0, attempt: 0 } } as FilmJourney;
   h.film.update(neo, { neoLife: { journey } } as SandboxState, 0);
   assert.equal(h.film.root.getObjectByName(deck.name), deck); assert.equal(root.parent, h.film.root); assert.equal(disposed, 0);
+  h.film.update(undefined, undefined, 0); assert.equal(disposed, 1);
+});
+
+test('a saved interrogation keeps its prepared roof when Morpheus takes control', t => {
+  const h = fixture(t, true);
+  Object.assign(h.film, { current: undefined, currentScene: 'm1_smith_question' });
+  h.journey.step = 2; h.journey.completed = ['m1_smith_question']; h.journey.government!.phase = 'done';
+  h.ready(); h.drain();
+  assert.equal(h.roots.size, 1, 'the saved handoff prepares the real roof before Morpheus takes control');
+  const roof = [...h.roots][0], deck = roof.getObjectByName('government-roof-deck') as THREE.Mesh;
+  let disposed = 0; deck.geometry.addEventListener('dispose', () => disposed++);
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const morpheus = world.agents.get('morpheus')!;
+  morpheus.position = filmPosition('film_government_office', 0, -2.2); morpheus.currentLocation = 'film_government_office'; morpheus.isInMatrix = true;
+  h.film.update(morpheus, { neoLife: { journey: h.journey } } as SandboxState, 0);
+  h.drain(); assert.equal(h.roots.size, 1); assert.equal(disposed, 0);
   h.film.update(undefined, undefined, 0); assert.equal(disposed, 1);
 });
 

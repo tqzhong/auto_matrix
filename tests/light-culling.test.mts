@@ -374,6 +374,33 @@ test('the interrogation keeps the objective light slot when Neo sits down', t =>
   assert.deepEqual(sitting.map(light => light.energy), standing.map(light => light.energy === 5 ? 0 : light.energy));
 });
 
+test('Smith’s interrogation keeps one point-light slot as its real alarm and objective light take turns', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m1_smith_question, world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const morpheus = world.agents.get(scene.actor)!; morpheus.currentLocation = scene.set; morpheus.isInMatrix = true;
+  morpheus.position = filmEntry(scene);
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: morpheus.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: { ...morpheus.position }, reflections: {}, lastText: '', government: { kind: 'questioning', phase: 'ready', elapsed: 0, attempt: 0 } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const center = FILM_SETS[scene.set].center;
+  h.camera.position.set(center.x, center.y + 4, center.z + 12);
+  h.camera.lookAt(center.x, center.y + 1, center.z - 12);
+  const energies: number[][] = [];
+  for (const [phase, step] of [['ready', 0], ['alarm_ready', 1], ['alarm', 1], ['done', 2]] as const) {
+    journey.government!.phase = phase; journey.step = step;
+    renderer.update(morpheus, sandbox, 0, morpheus.position, h.camera.position, undefined, false, 12000, h.camera);
+    h.culling.minimumPointSlots = renderer.minimumPointSlots; h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    try {
+      const row: number[] = [];
+      h.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) row.push(object.intensity); });
+      energies.push(row);
+    } finally { h.after(); }
+  }
+  assert.deepEqual(energies, [[0], [5], [95], [0]]);
+});
+
 test('the Logos wreck keeps the fire and objective light slots as Neo reaches Trinity', t => {
   const h = view(), renderer = new FilmSetRenderer(h.scene);
   t.after(() => { h.culling.dispose(); renderer.dispose(); });

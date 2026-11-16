@@ -1896,13 +1896,14 @@ export class SandboxUI {
     }
     if (!journey.visiting && journey.government && ['m1_smith_question', 'm1_bullet_dodge'].includes(scene.id)) {
       const encounter = journey.government; const questioning = encounter.kind === 'questioning'; const phase = encounter.phase;
-      const close = !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
-      const canAct = phase === 'failed' || phase === 'alarm_ready' || phase === 'ready' && !questioning || phase === 'download_ready' && close || phase === 'done';
+      const close = step && filmStepActionReady(scene, step, player.position, player.isInMatrix, journey);
+      const canAct = phase === 'failed' || phase === 'ready' && !questioning
+        || (phase === 'alarm_ready' || phase === 'download_ready') && Boolean(close) || phase === 'done';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', phase === 'bullet_time' || phase === 'failed');
       this.el('film-sequence-line').textContent = governmentText(encounter);
       this.el('film-sequence-hint').textContent = phase === 'ready' && questioning ? 'J 打开手记，选择 Morpheus 如何守住锡安密码 · 等待不会替你回答'
         : phase === 'monologue' ? `按住 G 保持清醒 · 意志 ${Math.round((encounter.resolve ?? 0) * 100)}% · 松开会持续下降`
-        : phase === 'alarm_ready' ? '走到落地窗前 · G 继续 · 暂停或重连会保留审讯结果'
+        : phase === 'alarm_ready' ? close ? 'G 见证警报 · 暂停或重连会保留审讯结果' : '走到落地窗前 · 暂停或重连会保留审讯结果'
         : phase === 'ready' ? 'G 举枪开火 · V 切换视角 · 当前检查点自动保存'
         : phase === 'opening' ? 'Jones 正在闪过 Neo 的弹道 · 准备按 X'
         : phase === 'bullet_time' ? '弹道贴近时按 X · 可以承受一次擦伤，第二次会从屋顶检查点重试'

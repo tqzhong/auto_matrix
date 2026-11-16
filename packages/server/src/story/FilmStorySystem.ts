@@ -3639,6 +3639,8 @@ export class FilmStorySystem {
         this.governmentFrame(agent, false, 0, tick); return `${choice.response} 现在按住 G，让 Morpheus 在 Smith 的逼问中保持清醒。`;
       }
       if (encounter.phase === 'alarm_ready' && target === 'act') {
+        const step = this.step;
+        if (!step || !this.near(agent, step)) return governmentText(encounter);
         encounter.phase = 'alarm'; encounter.elapsed = 0; this.governmentFrame(agent, false, 0, tick); return state.lastText;
       }
       return governmentText(encounter);

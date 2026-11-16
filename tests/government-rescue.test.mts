@@ -83,6 +83,9 @@ test('alarm, sprinklers and returning agents finish the interrogation only after
   const h = setup('m1_smith_question'); const state = h.sandbox.life.film.state!;
   h.command('reflect:trust'); h.frames(GOVERNMENT_RESCUE.questioning.monologue + .2, true);
   h.frames(10, true); assert.equal(state.step, 1); assert.equal(state.government!.phase, 'alarm_ready');
+  const waiting = structuredClone(state.government);
+  h.command('act'); assert.deepEqual(state.government, waiting, 'the chair is too far from the window to start the alarm');
+  assert.match(h.command('act'), /走近落地窗/); assert.equal(state.step, 1);
   h.actor.position = filmStepPosition(h.scene, h.scene.steps[1]); h.command('act');
   assert.equal(state.government!.phase, 'alarm'); assert.equal(governmentLocked(state), true);
   h.frames(GOVERNMENT_RESCUE.questioning.alarm + .2);
