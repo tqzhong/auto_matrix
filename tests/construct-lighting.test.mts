@@ -50,7 +50,9 @@ test('detached program preparation restores the live shadow uniforms and lets a 
 for (const [source, destination, set, kind] of [
   ['m1_cabin', 'm1_construct', 'film_neb_deck', 'core'],
   ['m1_desert', 'm1_truth_exit', 'film_real_desert', 'desert'],
+  ['m1_rescue_decision', 'm1_guns', 'film_neb_deck', 'briefing'],
 ] as const) test(`${destination} prepares its actual props and cast while still in ${source}`, t => {
+  const armoury = destination === 'm1_guns', propName = armoury ? 'construct-rack-row-0' : 'construct-chair-neo';
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {},
     beginPath() {}, moveTo() {}, lineTo() {}, arc() {}, stroke() {}, fill() {},
@@ -60,12 +62,16 @@ for (const [source, destination, set, kind] of [
   const sun = new THREE.DirectionalLight(); const fill = new THREE.DirectionalLight(); const ambient = new THREE.HemisphereLight();
   scene.add(sun, fill, ambient);
   Object.assign(film, { current: FILM_SETS[set], currentScene: source });
-  const journey = { scene: source, actor: 'neo', awakening: { kind, elapsed: 4, started: true } } as FilmJourney;
+  const journey = { scene: source, actor: 'neo', ...(armoury ? { rescue: { phase: 'briefing', elapsed: 4 } }
+    : { awakening: { kind, elapsed: 4, started: true } }) } as FilmJourney;
   const neoHero = new THREE.Group(), actorParent = new THREE.Group(), surfaces = new THREE.Group();
   const geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial({ name: 'Skin' });
   geometry.setAttribute('skinWeightResidual', new THREE.Float32BufferAttribute(new Float32Array(geometry.attributes.position.count), 1));
   const skin = new THREE.SkinnedMesh(geometry, material); skin.name = 'Anatomical_head_and_hands'; surfaces.add(skin); neoHero.add(surfaces);
   actorParent.visible = false; actorParent.add(neoHero); scene.add(actorParent);
+  const trinity = new THREE.Group(), boots = new THREE.Mesh(geometry, material); boots.visible = false; trinity.add(boots); actorParent.add(trinity);
+  const shadowMaterial = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false });
+  const trinityShadow = new THREE.Mesh(geometry, shadowMaterial); trinity.add(trinityShadow);
   const properties = new WeakMap<THREE.Material, object>(), liveBinding = {}, compiled = new Set<THREE.Object3D>();
   properties.set(material, { currentProgram: liveBinding });
   let target: THREE.WebGLRenderTarget | null = null, props: THREE.Group | undefined, castsSun = false;
@@ -78,24 +84,36 @@ for (const [source, destination, set, kind] of [
       lights.traverseVisible(object => {
         if (object instanceof THREE.PointLight) points++;
         if (object instanceof THREE.DirectionalLight && object.castShadow) castsSun = true;
-        if (object.name === 'construct-chair-neo') props = object as THREE.Group;
+        if (object.name === propName) props = object as THREE.Group;
       });
-      assert.equal(points, 2);
+      assert.equal(points, armoury ? 5 : 2);
       subject.traverse(object => { compiled.add(object); if (object === skin) Object.assign(properties.get(material)!, { currentProgram: {} }); });
     },
   } as unknown as THREE.WebGLRenderer;
-  t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); });
+  t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); shadowMaterial.dispose(); });
   assert.equal(typeof film.prepareAwakeningHandoff, 'function', 'the first Construct needs preparation before the ship cut');
-  for (let frame = 0; frame < 130; frame++) film.prepareAwakeningHandoff(gpu, camera, journey, id => id === 'neo' ? neoHero : undefined, sun);
+  const prepare = () => film.prepareAwakeningHandoff(gpu, camera, journey, id => id === 'neo' ? neoHero : id === 'trinity' ? trinity : undefined,
+    sun, undefined, armoury ? { armouryShadow: trinityShadow } : undefined);
+  if (armoury) {
+    journey.rescue!.phase = 'briefing_ready'; prepare(); assert.equal(compiled.size, 0);
+    journey.rescue!.phase = 'briefing';
+  }
+  for (let frame = 0; frame < 190; frame++) prepare();
   assert(compiled.has(skin) && castsSun && props);
+  if (armoury) {
+    assert.ok(compiled.has(boots), 'Trinity’s hidden gear prepares for the white room');
+    assert.ok(compiled.has(trinityShadow), 'the first view draws Trinity’s existing contact shadow');
+  }
   assert.equal((properties.get(material) as { currentProgram: object }).currentProgram, liveBinding);
   assert.equal(sun.castShadow, false); assert.equal(actorParent.visible, false); assert.equal(target, null);
-  assert.equal(film.root.getObjectByName('construct-chair-neo'), undefined);
+  assert.equal(film.root.getObjectByName(propName), undefined);
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const neo = world.agents.get('neo')!; neo.position = filmPosition('film_white_construct', 0, 0); neo.isInMatrix = true;
   Object.assign(journey, { scene: destination, step: 0, awakening: undefined });
+  if (armoury) journey.rescue = { phase: 'racks_ready', elapsed: 0 };
   film.update(neo, { structures: [], neoLife: { journey } } as unknown as SandboxState, 0);
-  assert.ok(film.root.getObjectByName('construct-chair-neo') === props, 'the construct must attach its prepared props');
+  assert.ok(film.root.getObjectByName(propName) === props, 'the construct must attach its prepared props');
+  if (armoury) assert.equal(props.visible, false, 'the prepared weapon rows wait for the actual request');
 });
 
 test('the real terrain prepares its CRT and playable programs and uploads its maps before showing the CRT', async t => {

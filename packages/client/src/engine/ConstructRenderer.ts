@@ -83,7 +83,7 @@ export class ConstructRenderer {
       this.surface(this.leather, 'leather_red_03'); this.surface(this.wood, 'old_wood_floor');
     }
     this.floor();
-    if (sceneId === 'm1_guns') this.armoury();
+    if (sceneId === 'm1_guns') yield* this.armoury();
     else {
       this.chair(CONSTRUCT.chairX.morpheus, 'construct-chair-morpheus'); yield;
       this.chair(CONSTRUCT.chairX.neo, 'construct-chair-neo'); yield;
@@ -152,23 +152,31 @@ export class ConstructRenderer {
     this.root.add(tv);
   }
 
-  private weapon(parent: THREE.Object3D, x: number, y: number, z: number, long = false): void {
-    this.box(parent, this.black, x, y, z, .28, .34, long ? 3.9 : 2.35, .08);
-    this.box(parent, this.black, x, y - .42, z + (long ? .65 : .35), .52, .9, .35, .08);
-    this.cylinder(parent, this.steel, x, y, z - (long ? 2.1 : 1.35), .07, long ? 1.2 : .65).rotation.x = Math.PI / 2;
+  private weapon(parent: THREE.Object3D, long: boolean): void {
+    this.box(parent, this.black, 0, 0, 0, .28, .34, long ? 3.9 : 2.35, .08);
+    this.box(parent, this.black, 0, -.42, long ? .65 : .35, .52, .9, .35, .08);
+    this.cylinder(parent, this.steel, 0, 0, -(long ? 2.1 : 1.35), .07, long ? 1.2 : .65).rotation.x = Math.PI / 2;
   }
 
-  private armoury(): void {
+  private *armoury(): Generator<void> {
     const racks = new THREE.Group(); racks.name = 'construct-weapon-racks'; this.root.add(racks);
+    const short = new THREE.Group(), long = new THREE.Group();
+    this.weapon(short, false); this.weapon(long, true);
     let index = 0;
     for (const side of [-1, 1]) for (const z of [-24, -8, 8, 24]) {
       const rack = new THREE.Group(); rack.name = `construct-rack-row-${index}`; rack.position.set(side * 19, 0, z); rack.rotation.y = side * Math.PI / 2; racks.add(rack);
       this.box(rack, this.steel, 0, 3.4, 0, 8.5, 6.8, .48, .12);
-      for (let i = 0; i < 7; i++) this.weapon(rack, -3.1 + i * 1.05, 4.2 - i % 2 * 2.2, .5, i % 3 === 0);
+      for (let i = 0; i < 7; i++) {
+        const x = -3.1 + i * 1.05, y = 4.2 - i % 2 * 2.2;
+        for (const part of (i % 3 === 0 ? long : short).children) {
+          const mesh = part.clone(); mesh.position.set(x + part.position.x, y + part.position.y, .5 + part.position.z); rack.add(mesh);
+        }
+      }
       this.rackRows.push({ group: rack, x: side * 19, z, index: index++ });
+      yield;
     }
     this.box(this.root, this.black, 0, .04, -31, 16, .08, .22);
-    for (const style of ['compact', 'breacher', 'rifle'] as const) this.loadout(style);
+    for (const style of ['compact', 'breacher', 'rifle'] as const) { this.loadout(style); yield; }
   }
 
   private loadout(style: RescueLoadout): void {

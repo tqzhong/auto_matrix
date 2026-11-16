@@ -59,3 +59,21 @@ test('Construct racks arrive from the horizon and leave three distinct saved loa
     assert.ok(selected.position.y > .2); assert.ok(selected.scale.x > rejected.scale.x, 'the chosen physical stand remains emphasized during equip');
   } finally { renderer.dispose(); globalThis.document = savedDocument; }
 });
+
+test('the staged armoury builds the rows incrementally and shares the original weapon meshes', () => {
+  const savedDocument = globalThis.document; globalThis.document = canvasDocument();
+  const root = new THREE.Group(), renderer = new ConstructRenderer(root, 'm1_guns', true);
+  try {
+    assert.equal(renderer.prepareStep(), false, 'one row should be ready after the first build step');
+    const racks = root.getObjectByName('construct-weapon-racks')!;
+    assert.equal(racks.children.length, 1);
+    assert.equal(renderer.prepareStep(), false);
+    assert.equal(racks.children.length, 2);
+    renderer.finishPreparation();
+    assert.equal(racks.children.length, 8);
+    const first = racks.children[0].children[1] as THREE.Mesh, last = racks.children[7].children[1] as THREE.Mesh;
+    assert.ok(first !== last && first.geometry === last.geometry, 'identical weapons should share their vertex data');
+    assert.deepEqual(first.position.toArray(), last.position.toArray());
+    assert.equal(first.castShadow, true); assert.equal(last.receiveShadow, true);
+  } finally { renderer.dispose(); globalThis.document = savedDocument; }
+});

@@ -178,7 +178,7 @@ type ColorPreparation = {
 };
 type CastColorPreparation = ColorPreparation & { actors: Set<THREE.Group> };
 type AwakeningSetPreparation = {
-  scene: 'm1_recovery' | 'm1_construct' | 'm1_truth_exit'; root: THREE.Group; deck?: NebDeckRenderer; construct?: ConstructRenderer;
+  scene: 'm1_recovery' | 'm1_construct' | 'm1_truth_exit' | 'm1_guns'; root: THREE.Group; deck?: NebDeckRenderer; construct?: ConstructRenderer;
   gpu?: THREE.WebGLRenderer['properties']; colors?: ColorPreparation; lighting?: LightCulling;
   queued: WeakMap<THREE.Mesh, number>; buffers?: Generator<void>; bufferMeshes: THREE.Mesh[];
   textureUpload?: Generator<void, boolean>;
@@ -1046,11 +1046,16 @@ export class FilmSetRenderer {
     if (colors) this.prepareCastColors(renderer, camera, colors, ['neo', 'trinity', 'morpheus', 'tank', 'cypher', 'dozer'], actor);
   }
   prepareAwakeningHandoff(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
-    actor: (id: string) => THREE.Group | undefined, sun: THREE.DirectionalLight, sourceLights?: LightCulling): void {
+    actor: (id: string) => THREE.Group | undefined, sun: THREE.DirectionalLight, sourceLights?: LightCulling,
+    armouryOptions?: { resumeArmoury?: boolean; armouryShadow?: THREE.Mesh }): void {
     const rescue = this.current?.id === 'film_power_plant_pods' && journey?.scene === 'm1_pod' && journey.awakening?.kind === 'rescue';
     const connecting = this.current?.id === 'film_neb_deck' && journey?.scene === 'm1_cabin' && journey.awakening?.kind === 'core';
     const leavingDesert = this.current?.id === 'film_real_desert' && journey?.scene === 'm1_desert' && journey.awakening?.kind === 'desert';
-    const scene = rescue ? 'm1_recovery' : connecting ? 'm1_construct' : leavingDesert ? 'm1_truth_exit' : undefined;
+    const briefing = this.current?.id === 'film_neb_deck' && journey?.scene === 'm1_rescue_decision'
+      && (journey.rescue?.phase === 'briefing' || journey.rescue?.phase === 'briefing_done');
+    const resumeArmoury = armouryOptions?.resumeArmoury;
+    const armoury = briefing || resumeArmoury && !this.current && journey?.scene === 'm1_guns';
+    const scene = rescue ? 'm1_recovery' : connecting ? 'm1_construct' : leavingDesert ? 'm1_truth_exit' : armoury ? 'm1_guns' : undefined;
     if (!journey || journey.visiting || !scene) { this.cancelAwakeningPreparation(); return; }
     let prepared = this.preparedAwakening;
     if (prepared?.scene !== scene) {
@@ -1064,7 +1069,7 @@ export class FilmSetRenderer {
       this.releaseAwakeningPreparation(prepared);
       if (rescue) prepared.deck!.update({ ...journey, scene: 'm1_recovery', awakening: { kind: 'recovery', elapsed: 0, started: false } }, 0);
       prepared.gpu = renderer.properties; prepared.queued = new WeakMap(); prepared.bufferMeshes = [];
-      const colors = this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun: rescue ? undefined : sun });
+      const colors = this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun: rescue ? undefined : sun, playerView: resumeArmoury });
       if (rescue) {
         // Reserve the first room's eight point slots. The fixture shadows come from the real deck.
         const lights: THREE.PointLight[] = [];
@@ -1080,11 +1085,12 @@ export class FilmSetRenderer {
     const colors = prepared.colors, lighting = prepared.lighting!;
     const setMeshes = this.colorMeshes([prepared.root], true), cast: ColorMesh[] = [];
     const contactShadow = prepared.root.getObjectByName('construct-contact-shadows');
-    for (const id of rescue ? ['neo', ...FILM_SCENE_BY_ID.m1_recovery.cast] : ['neo', 'morpheus']) {
+    const actors = armoury ? [journey.actor, ...FILM_SCENE_BY_ID.m1_guns.cast] : rescue ? ['neo', ...FILM_SCENE_BY_ID.m1_recovery.cast] : ['neo', 'morpheus'];
+    for (const id of actors) {
       const group = actor(id);
       group?.traverse(object => {
         if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial) || object.userData.reloadedHidden) return;
-        if (object.visible || object.userData.patientBody || object.userData.club || object.name.startsWith('morpheus-construct-')
+        if (armoury || object.visible || object.userData.patientBody || object.userData.club || object.name.startsWith('morpheus-construct-')
           || object.name.startsWith('morpheus-glasses-') || object.userData.wristSkin || object.material.name === 'Eyes'
           || object.name === 'Tailored_coat_upper' || object.name === 'Tailored_trousers' || object.name === 'shoes01'
           || !rescue && (object.name === 'Close-cut_scalp_undercoat' || object.name === 'Swept_individual_hair_strands')) cast.push(object);
@@ -1092,6 +1098,7 @@ export class FilmSetRenderer {
     }
     const subjects: THREE.Mesh[] = [...cast, ...setMeshes];
     if (contactShadow instanceof THREE.Mesh) subjects.push(contactShadow);
+    if (armoury && armouryOptions?.armouryShadow) subjects.push(armouryOptions.armouryShadow);
     const updated = subjects.filter(mesh => {
       if (Array.isArray(mesh.material)) return false;
       const version = prepared.queued.get(mesh);

@@ -338,8 +338,10 @@ export class Engine {
         : clubReturn ? [this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo')] : undefined,
       openingHandoff || resumeApartment || prepareDeferredContact || clubReturn ? this.lightCulling : undefined, prepareDeferredContact, resumeApartment);
     this.filmSets.preparePodColors(this.renderer, this.camera, this.lightCulling, this.agentRenderer.getAgentHero('neo'), this.playerControls?.firstPerson ?? false);
-    this.filmSets.prepareAwakeningHandoff(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
-      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id), this.lightingSystem.directionalLight, this.lightCulling);
+    const resumeArmoury = resumeOnLanding && meeting?.scene === 'm1_guns';
+    this.filmSets.prepareAwakeningHandoff(this.renderer, this.camera, player?.id === meeting?.actor || resumeArmoury ? meeting : undefined,
+      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id), this.lightingSystem.directionalLight, this.lightCulling,
+      { resumeArmoury, armouryShadow: this.agentRenderer.getAgentShadow('trinity') });
     const resumeAmbush = onLanding && meeting?.scene === 'm1_oracle';
     this.filmSets.prepareAmbush(this.renderer, this.camera, player?.id === meeting?.actor || resumeAmbush ? meeting : undefined,
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightCulling, resumeAmbush);
@@ -347,8 +349,10 @@ export class Engine {
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
     this.filmSets.prepareTvExit(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
-    this.filmSets.prepareLobby(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
-      id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
+    // Give the newly entered armoury its first frame before building the lobby.
+    if (meeting?.scene !== 'm1_guns' || filmSet === previousSet)
+      this.filmSets.prepareLobby(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
+        id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareInterrogation(this.renderer, this.camera, liveMatrixJourney,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareBridge(this.renderer, this.camera, liveMatrixJourney,
