@@ -3,6 +3,7 @@ import test, { type TestContext } from 'node:test';
 import * as THREE from 'three';
 import { FILM_SETS, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -22,6 +23,7 @@ function fixture(t: TestContext) {
   const material = new THREE.MeshStandardMaterial({ map: texture }), skin = new THREE.SkinnedMesh(geometry, material); actor.add(skin); const matrixClothes = new THREE.SkinnedMesh(geometry, material); matrixClothes.visible = false; actor.add(matrixClothes);
   const shipClothes = new THREE.Mesh(geometry, material); shipClothes.userData.reloadedHidden = true; shipClothes.visible = false; actor.add(shipClothes);
   const actors = new Map([['smith', actor]]), work: string[] = [], batches: THREE.Object3D[][] = [], rooms = new Set<THREE.Object3D>();
+  const shadows = new Map<string, THREE.Mesh>();
   const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   let ready = false, target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
   const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
@@ -45,8 +47,9 @@ function fixture(t: TestContext) {
     },
     initTexture(map: THREE.Texture) { work.push('texture'); uploaded.set(map, map.version); },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = () => {
-    const count = work.length; film.prepareRestaurant(gpu, camera, journey, id => actors.get(id), sun);
+  const prepare = (resume = false, sourceLights?: LightCulling) => {
+    const count = work.length;
+    film.prepareRestaurant(gpu, camera, journey, id => ({ model: actors.get(id), shadow: shadows.get(id) }), sun, resume, sourceLights);
     const frame = work.slice(count);
     assert.ok(frame.filter(item => item === 'compile' || item === 'bindings').length <= 1);
     assert.ok(frame.filter(item => item === 'texture').length <= 1 && frame.filter(item => item === 'strip').length <= 4);
@@ -54,7 +57,7 @@ function fixture(t: TestContext) {
   };
   const drain = () => { for (let i = 0; i < 450; i++) prepare(); };
   t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previousDocument; });
-  return { film, gpu, scene, journey, actor, actors, geometry, material, skin, matrixClothes, shipClothes, texture, work, batches, rooms, prepare, drain,
+  return { film, gpu, scene, journey, actor, actors, shadows, geometry, material, skin, matrixClothes, shipClothes, texture, work, batches, rooms, prepare, drain,
     ready: () => { ready = true; }, replaceGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
 
@@ -63,6 +66,9 @@ test('the actual response prepares the existing restaurant, hidden Matrix clothe
   h.ready(); h.drain(); assert.ok(h.batches.flat().includes(h.skin)); assert.ok(h.batches.flat().includes(h.matrixClothes)); assert.equal(h.work.filter(v => v === 'texture').length, 1); assert.equal(h.batches.flat().includes(h.shipClothes), false);
   const late = new THREE.Group(), face = new THREE.Mesh(h.geometry, h.material); late.add(face); face.visible = false; h.actors.set('cypher', late);
   const before = h.batches.length; h.drain(); assert.ok(h.batches.slice(before).flat().includes(face)); assert.equal(h.rooms.size, 1);
+  const mouth = new THREE.Mesh(h.geometry, h.material); mouth.name = 'cypher-teeth-lower';
+  const next = h.batches.length; late.add(mouth); h.drain();
+  assert(h.batches.slice(next).flat().includes(mouth), 'a late part of an existing actor must enter the queue');
   const count = h.work.length; h.drain(); assert.equal(h.work.length, count, 'completed preparation stops compiling and uploading');
 });
 
@@ -127,4 +133,93 @@ test('restaurant preparation waits for an explicit response and cancels when the
   h.journey.interlude!.phase = 'responding'; h.ready(); h.drain(); const room = [...h.rooms][0]; assert.ok(room);
   h.journey.interlude!.phase = 'choice'; h.prepare(); assert.equal(room.parent, null);
   h.journey.interlude!.phase = 'done'; h.prepare(); assert.ok(h.rooms.size > 1);
+});
+
+test('a completed console save prepares the same restaurant before and after Neo takes control', t => {
+  const h = fixture(t);
+  Object.assign(h.film, { current: undefined, currentScene: undefined });
+  h.journey.actor = 'neo';
+  h.journey.interlude!.phase = 'done';
+  h.prepare(true);
+  assert(h.batches[0].some(mesh => mesh.name === 'steak-wine-base'), 'prepare the first visible glass programs in the first batch');
+  assert(h.batches[0].includes(h.film.goalMarker), 'prepare the goal marker before entering the restaurant');
+  for (let i = 1; i < 12; i++) h.prepare(true);
+  assert.equal(h.rooms.size, 1);
+  const room = [...h.rooms][0];
+
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!;
+  Object.assign(neo, { position: { ...FILM_SETS.film_neb_deck.center }, isInMatrix: false, currentLocation: 'film_neb_deck' });
+  h.film.update(neo, { structures: [], neoLife: { journey: h.journey } } as unknown as SandboxState, 0);
+  h.ready(); h.drain();
+  assert.equal(h.rooms.size, 1);
+  assert.equal(h.film.root.getObjectByName('cypher-window-table'), undefined);
+  assert.equal(room.parent?.type, 'Scene');
+});
+
+test('restaurant shadows prepare the floor, cutlery and Smith’s eyes in both light layouts before cutting', t => {
+  const h = fixture(t), source = new LightCulling(h.scene);
+  source.stablePointSlots = true;
+  h.skin.name = 'high-poly'; h.skin.castShadow = true; h.material.alphaTest = .5;
+  Object.assign(h.gpu, { shadowMap: { enabled: true, type: THREE.PCFShadowMap } });
+  const surface = new THREE.MeshBasicMaterial(), contact = new THREE.Mesh(h.geometry, surface);
+  h.shadows.set('smith', contact);
+  t.after(() => surface.dispose());
+  t.after(() => source.dispose());
+  const layouts = new Map<number, THREE.MeshDepthMaterial[]>();
+  let contactPrepared = false;
+  t.mock.method(h.gpu, 'compile', (subject: THREE.Object3D, _camera: THREE.Camera, layout: THREE.Scene) => {
+    h.work.push('compile');
+    let lamps = 0;
+    layout.traverseVisible(object => { if (object instanceof THREE.PointLight) lamps++; });
+    subject.traverse(object => {
+      if (object === contact) contactPrepared = true;
+      if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshDepthMaterial)) return;
+      const materials = layouts.get(lamps) ?? [];
+      materials.push(object.material); layouts.set(lamps, materials);
+      assert.equal(object.material.depthPacking, THREE.RGBADepthPacking);
+      assert.equal(layout.fog, null);
+      if (object.geometry === h.skin.geometry) assert.equal(object.material.map, h.texture);
+    });
+  });
+  for (let i = 0; i < 8; i++) h.prepare(false, source);
+  assert.deepEqual([...layouts.keys()], [1, 7]);
+  assert(contactPrepared);
+  for (const materials of layouts.values()) {
+    assert.equal(materials.length, 3);
+    assert(materials.some(material => material.map === h.texture));
+    assert(materials.some(material => material.map === null));
+  }
+  let disposals = 0;
+  for (const material of new Set([...layouts.values()].flat())) material.addEventListener('dispose', () => disposals++);
+  h.journey.interlude!.phase = 'choice'; h.prepare(false, source);
+  assert.equal(disposals, 3);
+});
+
+test('restaurant keeps one prepared room while the journey arrives before Smith’s control and position', t => {
+  const h = fixture(t);
+  Object.assign(h.film, { current: undefined, currentScene: undefined });
+  h.journey.actor = 'neo';
+  h.journey.interlude!.phase = 'done';
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, smith = world.agents.get('smith')!;
+  const deck = FILM_SETS.film_neb_deck, restaurant = FILM_SETS.film_cypher_restaurant;
+  Object.assign(neo, { position: { ...deck.center }, isInMatrix: false, currentLocation: deck.id });
+  const sandbox = { structures: [], neoLife: { journey: h.journey } } as unknown as SandboxState;
+  h.film.update(neo, sandbox, 0);
+  h.ready(); h.drain();
+  const room = [...h.rooms][0], parent = room.parent;
+  const previous = h.film.root.children.map(child => child.id);
+  Object.assign(h.journey, { scene: 'm1_steak', actor: 'smith', interlude: { kind: 'steak', phase: 'ready', elapsed: 0 } });
+
+  assert.equal(h.film.update(neo, sandbox, 0), deck);
+  h.prepare();
+  assert.deepEqual(h.film.root.children.map(child => child.id), previous);
+  assert.equal(room.parent, parent);
+  assert.equal(h.film.update(smith, sandbox, 0), deck);
+  h.prepare();
+  assert.equal(room.parent, parent);
+
+  Object.assign(smith, { position: { ...restaurant.center }, isInMatrix: true, currentLocation: restaurant.id });
+  assert.equal(h.film.update(smith, sandbox, 0), restaurant);
+  assert.equal(room.parent, h.film.root);
 });

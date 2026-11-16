@@ -393,8 +393,11 @@ export class Engine {
     if (!preparingSentinelControls)
       this.filmSets.prepareConsole(this.renderer, this.camera, player?.id === meeting?.actor || resumeConsole ? meeting : undefined,
         id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling, resumeConsole);
-    this.filmSets.prepareRestaurant(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
-      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
+    const resumeRestaurant = onLanding && meeting?.scene === 'm1_cypher_console';
+    const restaurantJourney = player?.id === meeting?.actor || resumeRestaurant || meeting?.scene === 'm1_steak' ? meeting : undefined;
+    this.filmSets.prepareRestaurant(this.renderer, this.camera, restaurantJourney,
+      id => ({ model: this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), shadow: this.agentRenderer.getAgentShadow(id) }),
+      this.lightingSystem.directionalLight, resumeRestaurant, this.lightCulling);
     this.filmSets.prepareMeal(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareSecondOracle(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
