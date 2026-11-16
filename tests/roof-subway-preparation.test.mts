@@ -75,7 +75,7 @@ function fixture(t: TestContext, mode: keyof typeof cases) {
   };
   const drain = () => { for (let i = 0; i < 1000; i++) prepare(); };
   t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); (coarse.material as THREE.Material).dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
-  return { target: plan.to, landmark, film, journey, gpu, heroes, bodies, geometry, material, skin, coarse, later, texture, work, batches, roots, prepare, drain,
+  return { target: plan.to, landmark, film, journey, gpu, sun, heroes, bodies, geometry, material, skin, coarse, later, texture, work, batches, roots, prepare, drain,
     ready: () => { ready = true; }, newGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
 
@@ -121,6 +121,34 @@ for (const mode of ['roof', 'subway', 'city', 'hotel'] as const) {
     assert.ok(h.film.root.getObjectByName(h.landmark) === mesh); assert.equal(disposed, 0);
     assert.deepEqual(mesh.getWorldPosition(new THREE.Vector3()).toArray(), [center.x + local.x, center.y - 1 + local.y, center.z + local.z]);
     h.film.update(undefined, undefined, 0); assert.equal(disposed, 1); h.film.dispose(); assert.equal(disposed, 1);
+  });
+}
+
+for (const mode of ['roof', 'subway'] as const) {
+  test(`a saved rescue keeps its prepared ${mode} when Neo takes control`, t => {
+    const h = fixture(t, mode), plan = cases[mode]; h.ready();
+    Object.assign(h.film, { current: undefined });
+    h.sun.visible = false;
+    h.journey.airRescue!.phase = 'ready'; h.prepare(); assert.equal(h.work.length, 0);
+    h.journey.airRescue!.phase = 'done'; h.journey.completed = [plan.scene];
+    h.drain();
+    assert.equal(h.roots.size, 1, 'prepare the destination under the player lights while on the landing screen');
+    const root = [...h.roots][0], landmark = root.getObjectByName(h.landmark) as THREE.Mesh;
+    let disposed = 0; landmark.geometry.addEventListener('dispose', () => disposed++);
+
+    const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!;
+    neo.position = filmPosition(plan.from); neo.currentLocation = plan.from; neo.isInMatrix = true;
+    h.sun.visible = true;
+    h.film.update(neo, { neoLife: { journey: h.journey } } as SandboxState, 0);
+    h.drain(); assert.equal(h.roots.size, 1); assert.equal(disposed, 0);
+
+    neo.position = filmPosition(h.target); neo.currentLocation = h.target;
+    const next = { ...h.journey, scene: plan.next, step: 0,
+      airRescue: mode === 'roof' ? { kind: 'roof', phase: 'ready', elapsed: 0, attempt: 0, grip: 1, braces: 0, misses: 0, resolved: [] } : undefined,
+    } as FilmJourney;
+    h.film.update(neo, { neoLife: { journey: next } } as SandboxState, 0);
+    assert.equal(h.film.root.getObjectByName(h.landmark), landmark);
+    h.film.update(undefined, undefined, 0); assert.equal(disposed, 1);
   });
 }
 

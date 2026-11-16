@@ -819,7 +819,7 @@ export class FilmSetRenderer {
       && ['alarm_ready', 'alarm', 'done'].includes(journey.government?.phase ?? '');
     const helicopter = this.current?.id === 'film_government_roof' && journey?.scene === 'm1_bullet_dodge'
       && ['download_ready', 'downloading', 'done'].includes(journey.government?.phase ?? '');
-    const rooftop = this.current?.id === 'film_government_office' && journey?.scene === 'm1_helicopter'
+    const rooftop = (!this.current || this.current.id === 'film_government_office') && journey?.scene === 'm1_helicopter'
       && ['catching', 'done'].includes(journey.airRescue?.phase ?? '');
     if (!journey || journey.visiting || !questioning && !roofFight && !helicopter && !rooftop) {
       this.cancelGovernmentPreparation(); return;
@@ -997,7 +997,8 @@ export class FilmSetRenderer {
   prepareMatrixEscape(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
     const phase = journey.airRescue?.phase;
-    const subway = this.currentScene === 'm1_rooftop_rescue' && this.current?.id === 'film_government_roof'
+    const onRescueRoof = this.current?.id === 'film_government_roof' && this.currentScene === 'm1_rooftop_rescue';
+    const subway = (!this.current || onRescueRoof)
       && journey.scene === 'm1_rooftop_rescue' && (phase === 'pulling' || phase === 'done');
     const escape = journey.matrixEscape;
     const city = this.currentScene === 'm1_subway' && this.current?.id === 'film_subway_platform' && journey.scene === 'm1_subway'
@@ -1019,7 +1020,7 @@ export class FilmSetRenderer {
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose();
-      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun, playerView: !this.current }), actors: new Set() };
       if (subway) {
         const debris: ColorMesh[] = [];
         prepared.root.getObjectByName('matrix-subway-phone-debris')?.traverse(object => {
@@ -3303,8 +3304,11 @@ export class FilmSetRenderer {
       const resumingMeal = resumingScene && set?.id === 'film_cypher_restaurant' && sceneId === 'm1_steak' ? this.preparedMeal : undefined;
       const resumingGovernment = resumingScene && journey?.actor === player?.id
         && (set?.id === 'film_government_lobby' && sceneId === 'm1_lobby' && journey?.lobby?.phase === 'cleared'
-          || set?.id === 'film_government_office' && sceneId === 'm1_smith_question' && this.preparedGovernment?.scene === 'm1_bullet_dodge')
+          || set?.id === 'film_government_office' && sceneId === 'm1_smith_question' && this.preparedGovernment?.scene === 'm1_bullet_dodge'
+          || set?.id === 'film_government_office' && sceneId === 'm1_helicopter' && this.preparedGovernment?.scene === 'm1_rooftop_rescue')
         ? this.preparedGovernment : undefined;
+      const resumingMatrixEscape = resumingScene && journey?.actor === player?.id && set?.id === 'film_government_roof' && sceneId === 'm1_rooftop_rescue'
+        && this.preparedMatrixEscape?.renderer.setId === 'film_subway_platform' ? this.preparedMatrixEscape : undefined;
       if (resumingAmbush) this.preparedAmbush = undefined;
       if (resumingJump) this.preparedJump = undefined;
       if (resumingRedDress) this.preparedRedDress = undefined;
@@ -3313,6 +3317,7 @@ export class FilmSetRenderer {
       if (resumingRestaurant) this.preparedRestaurant = undefined;
       if (resumingMeal) this.preparedMeal = undefined;
       if (resumingGovernment) this.preparedGovernment = undefined;
+      if (resumingMatrixEscape) this.preparedMatrixEscape = undefined;
       const preparedJump = set?.id === 'film_jump_roofs' && sceneId === 'm1_jump' && !journey?.visiting ? this.preparedJump : undefined;
       if (preparedJump) { this.preparedJump = undefined; this.releaseEntryPreparation(preparedJump, true); }
       const preparedRedDress = set?.id === 'film_red_dress_plaza' && sceneId === 'm1_red_dress' && !journey?.visiting ? this.preparedRedDress : undefined;
@@ -3368,6 +3373,7 @@ export class FilmSetRenderer {
       this.preparedRestaurant = resumingRestaurant;
       this.preparedMeal = resumingMeal;
       this.preparedGovernment = resumingGovernment;
+      this.preparedMatrixEscape = resumingMatrixEscape;
       if (resumingClub) this.preparedClub = resumingClub;
       this.empDock = retainedEmpDock;
       if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
