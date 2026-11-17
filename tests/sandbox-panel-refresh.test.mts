@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
-import { APARTMENT_NETWORK, TRAINMAN_CHASE, filmPosition, newReloaded, newTrainmanChase } from '@auto_matrix/shared';
+import { APARTMENT_NETWORK, FILM_SCENE_BY_ID, TRAINMAN_CHASE, filmPosition, newReloaded, newTrainmanChase } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -150,6 +150,25 @@ test('a Trainman timeout keeps its retry button attached until the retry changes
   chase.phase = 'running'; chase.attempts++; chase.remaining = TRAINMAN_CHASE.pursuitSeconds;
   ui.renderPanel(); assert.equal(retry.connected, false); assert.equal(body.action('film:retry'), undefined);
   assert.match(body.innerHTML, /Shift 奔跑追出车门/);
+});
+
+test('the Club Hel VIP handoff keeps the continue button attached while companion clocks advance', () => {
+  const { ui, body, sandbox, world } = fixture();
+  const trinity = world.agents.get('trinity')!; sandbox.enter(trinity); ui.player = trinity;
+  trinity.position = filmPosition('film_club_hel', 0, -27.5); trinity.isInMatrix = true;
+  const scene = FILM_SCENE_BY_ID.m3_hel_entry;
+  const helDanceDoor = { phase: 'open' as const, elapsed: 2.6, lastTick: 0, allyTick: 0 };
+  const journey = sandbox.state.neoLife!.journey = { version: 1, scene: scene.id, actor: trinity.id, step: scene.steps.length,
+    completed: [scene.id], enteredAt: 0, reflections: {}, lastText: '三人已到达 VIP 高台。', checkpoint: trinity.position, helDanceDoor };
+  ui.renderPanel(); const next = body.action('film:next'); assert.ok(next && !next.disabled);
+  body.scrollTop = 100;
+  for (let frame = 1; frame <= 20; frame++) {
+    helDanceDoor.allyTick = frame; ui.time += 50; ui.tick = frame; ui.renderPanel();
+  }
+  assert.equal(next.connected, true, 'companion updates detached the continue button before click');
+  assert.equal(body.action('film:next'), next); assert.equal(body.scrollTop, 100);
+  journey.step--;
+  ui.renderPanel(); assert.equal(next.connected, false); assert.equal(body.action('film:next'), undefined);
 });
 
 test('the captains journal keeps both exit choices attached until evacuation begins', () => {
