@@ -990,7 +990,7 @@ export class FilmSetRenderer {
   }
   prepareBridge(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight, shadow?: THREE.Mesh, apartmentLights?: LightCulling,
-    tail?: THREE.Group): void {
+    tail?: THREE.Group, resume = false): void {
     const call = journey?.wakeCall;
     if (journey?.scene !== 'm1_wake_again' || journey.visiting || !call || ['waking', 'ringing'].includes(call.phase)) {
       this.cancelBridgePreparation(); return;
@@ -1013,7 +1013,7 @@ export class FilmSetRenderer {
       eye.lookAt(entry.x, entry.y + 2.2, set.center.z);
       prepared.renderer.root.position.set(set.center.x, set.center.y - 1, set.center.z);
       prepared.renderer.update({ ...journey, scene: 'm1_bridge', bridgeArrival: { phase: 'approaching', elapsed: 0 } }, 0);
-      const colors = { ...this.colorPreparation(prepared.renderer.root, [], { includeBasic: true, shadowSun }), actors: new Set<THREE.Group>() };
+      const colors = { ...this.colorPreparation(prepared.renderer.root, [], { includeBasic: true, shadowSun, playerView: resume }), actors: new Set<THREE.Group>() };
       const lighting = new LightCulling(colors.scene); lighting.stablePointSlots = true;
       const buffers: (THREE.Mesh | THREE.Line)[] = [], geometries = new WeakSet<THREE.BufferGeometry>();
       prepared.drawing = { eye, colors, lighting, buffers, geometries };
@@ -1058,7 +1058,7 @@ export class FilmSetRenderer {
     }
     // The first shadow pass still uses the apartment lights. Later passes use the bridge lights.
     if (parallel && !(shadows && apartmentLights && (
-      this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.apartment }, apartmentLights, 'depth')
+      !resume && this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.apartment }, apartmentLights, 'depth')
       || this.linkColorBatch(renderer, eye, { ...colors, meshes: shadows.bridge }, lighting, 'depth'))))
       this.prepareColorProgram(renderer, eye, colors, lighting, 'isolated', true, [this.marker, shadow]);
     if (buffers.length) prepared.bufferUpload ??= prepareMeshBuffers(renderer, eye, buffers);

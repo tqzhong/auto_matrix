@@ -358,10 +358,11 @@ export class Engine {
         id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareInterrogation(this.renderer, this.camera, liveMatrixJourney,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
-    this.filmSets.prepareBridge(this.renderer, this.camera, liveMatrixJourney,
+    const resumeBridge = resumeOnLanding && meeting?.scene === 'm1_wake_again';
+    this.filmSets.prepareBridge(this.renderer, this.camera, liveMatrixJourney ?? (resumeBridge ? meeting : undefined),
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id),
       this.lightingSystem.directionalLight, this.agentRenderer.getAgentShadow('neo'), this.lightCulling,
-      liveMatrixJourney?.scene === 'm1_wake_again' ? this.sandboxRenderer.prepareBridgeTail() : undefined);
+      liveMatrixJourney?.scene === 'm1_wake_again' || resumeBridge ? this.sandboxRenderer.prepareBridgeTail() : undefined, resumeBridge);
     const resumeGovernment = resumeOnLanding && (meeting?.scene === 'm1_lobby' || meeting?.scene === 'm1_smith_question' || meeting?.scene === 'm1_helicopter');
     this.filmSets.prepareGovernment(this.renderer, this.camera, player?.id === meeting?.actor || resumeGovernment ? meeting : undefined,
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight,

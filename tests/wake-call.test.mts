@@ -130,6 +130,23 @@ test('the exact apartment departure beat survives pause, disconnect, save restor
   h.neo.status = 'dead'; h.command('retry'); assert.deepEqual(h.state().wakeCall, beat); assert.deepEqual(h.neo.position, position);
 });
 
+for (const branch of ['captured', 'escaped'] as const) test(`the second call preserves the complete paused action on the ${branch} departure`, () => {
+  const h = setup(branch); reachDecision(h); h.command('act'); h.frames(WAKE_CALL.reply + .2);
+  h.neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_wake_again, FILM_SCENE_BY_ID.m1_wake_again.steps[1]);
+  h.command('act'); h.frames(WAKE_CALL.leaving * .48);
+  h.neo.currentAction!.startedAt = h.tick() - 1;
+  const action = structuredClone(h.neo.currentAction), call = structuredClone(h.state().wakeCall);
+  h.frames(.2, false);
+  assert.deepEqual(h.neo.currentAction, action, 'pausing must retain the complete saved action');
+  h.players.release('player', h.tick());
+  assert.deepEqual(h.neo.currentAction, action, 'disconnecting must retain the complete saved action');
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('player', 'neo', h.tick());
+  assert.deepEqual(h.neo.currentAction, action, 'taking control must retain the complete saved action');
+  assert.deepEqual(h.state().wakeCall, call);
+  h.frames(.1);
+  assert.ok(h.state().wakeCall!.elapsed > call!.elapsed, 'real input frames must still advance the departure');
+});
+
 test('Morpheus describes the actual office outcome during the second call', () => {
   for (const outcome of ['captured', 'escaped'] as const) {
     const h = setup(outcome); h.frames(WAKE_CALL.waking + .2);

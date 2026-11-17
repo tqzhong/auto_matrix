@@ -163,6 +163,13 @@ export function savedMorningIdle(journey: FilmJourney | undefined, agent: AgentS
     && isDeepStrictEqual(action.parameters.wakeCall, morningWakePose(morning)));
 }
 
+export function savedWakeCallIdle(journey: FilmJourney | undefined, agent: AgentState): boolean {
+  const action = agent.currentAction;
+  return Boolean(journey && journey.actor === agent.id && wakeCallLocked(journey)
+    && action?.type === 'idle' && action.parameters.player === true && action.parameters.resolved === true
+    && isDeepStrictEqual(action.parameters.wakeCall, journey.wakeCall));
+}
+
 export function savedGarageDriveTick(action: AgentState['currentAction']): number | undefined {
   if (action?.type === 'move_to' && action.parameters.riding === true && action.parameters.seated === true
     && action.parameters.resolved === true && Number.isFinite(action.startedAt)) return action.startedAt;
@@ -2087,7 +2094,8 @@ export class FilmStorySystem {
       const before = { ...agent.position }; const root = wakeCallRoot(call);
       agent.position = filmPosition(this.scene!.set, root.x, root.z); agent.rotation = root.yaw;
       agent.velocity = dt > 0 ? { x: (agent.position.x - before.x) / dt, y: 0, z: (agent.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
-      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, wakeCall: { ...call } }, startedAt: tick, duration: 1, progress: 0 };
+      if (dt > 0 || !savedWakeCallIdle(state, agent))
+        agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, wakeCall: { ...call } }, startedAt: tick, duration: 1, progress: 0 };
       state.checkpoint = { ...agent.position };
     } else if (call.phase === 'ringing' || call.phase === 'done') agent.currentAction = null;
     const seal = 'film:apartment:door';

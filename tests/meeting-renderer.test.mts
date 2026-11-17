@@ -48,6 +48,7 @@ test('the bridge prepares cast buffers, both shadow layouts and the rain program
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(), sun = new THREE.DirectionalLight(), roomLamp = new THREE.SpotLight();
   sun.castShadow = roomLamp.castShadow = true; scene.add(sun, roomLamp);
+  const fill = new THREE.DirectionalLight(); fill.visible = false; scene.add(fill);
   scene.fog = new THREE.FogExp2(0x18231e, .01);
   const lighting = new LightCulling(scene); lighting.minimumPointSlots = 4;
   const film = new FilmSetRenderer(scene);
@@ -59,7 +60,7 @@ test('the bridge prepares cast buffers, both shadow layouts and the rain program
   const tail = new THREE.Group(), tailGeometry = new THREE.BoxGeometry(), tailMesh = new THREE.Mesh(tailGeometry, surface); tail.add(tailMesh);
   t.after(() => tailGeometry.dispose());
   const journey = { scene: 'm1_wake_again', actor: 'neo', wakeCall: { phase: 'leaving' } } as FilmJourney;
-  let target: THREE.WebGLRenderTarget | null = null;
+  let target: THREE.WebGLRenderTarget | null = null, onLanding = true;
   const depth = new Map<THREE.MeshDepthMaterial, Set<string>>(), effects = new Map<string, THREE.Object3D>();
   const uploaded = new Map<THREE.BufferGeometry, number>();
   const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
@@ -77,12 +78,14 @@ test('the bridge prepares cast buffers, both shadow layouts and the rain program
     },
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
     compile(subject: THREE.Object3D, _eye: THREE.Camera, view: THREE.Scene) {
-      let points = 0, spots = 0;
-      view.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; if (object instanceof THREE.SpotLight) spots++; });
+      let points = 0, spots = 0, directional = 0;
+      view.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; if (object instanceof THREE.SpotLight) spots++; if (object instanceof THREE.DirectionalLight) directional++; });
+      if (view.fog) assert.equal(directional, 2, 'the landing prepares both player light slots before possession');
       let entersProgram = false;
       subject.traverse(object => {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial) {
           assert.equal(view.fog, null);
+          if (points === 4) assert.equal(onLanding, false, 'wait for possession before preparing the apartment shadow layout');
           const layouts = depth.get(object.material) ?? new Set();
           layouts.add(`${points}/${spots}`); depth.set(object.material, layouts);
           entersProgram = true;
@@ -96,8 +99,11 @@ test('the bridge prepares cast buffers, both shadow layouts and the rain program
     },
   } as unknown as THREE.WebGLRenderer;
   let reflected = 0;
-  for (let frame = 0; frame < 120; frame++) film.prepareBridge(renderer, camera, journey, id => id === 'neo' ? actor : undefined, sun, undefined, lighting,
-    frame >= 92 ? tail : undefined);
+  for (let frame = 0; frame < 120; frame++) {
+    onLanding = frame < 60; fill.visible = !onLanding;
+    film.prepareBridge(renderer, camera, journey, id => id === 'neo' ? actor : undefined, sun, undefined, lighting,
+      frame >= 92 ? tail : undefined, onLanding);
+  }
   assert(depth.size >= 3);
   assert([...depth.values()].every(layouts => layouts.has('4/1') && layouts.has('12/7')));
   assert.deepEqual([...effects.keys()].sort(), ['meeting-bridge-runoff', 'meeting-bridge-spray', 'meeting-road-puddles', 'rain']);
