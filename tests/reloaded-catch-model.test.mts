@@ -173,6 +173,27 @@ test('the complete patient trouser hems meet the boot surfaces around both ankle
   assert.ok(gaps.at(-1)! < .07, `part of Trinity’s trouser hem is ${gaps.at(-1)} metres from her boots`);
 });
 
+test('the rendered rescue deck does not cover Trinity’s ankles in the saved revival pose', async t => {
+  const h = await fixture(t), state = { ...newCatch(), phase: 'reviving' as const, elapsed: 1.145 };
+  h.apply(state);
+  const patient = h.renderer.getAgentBody('trinity')!, root = new THREE.Group();
+  const center = filmPosition('film_trinity_roof', 0, 0), floor = center.y - 1;
+  root.position.set(center.x, floor, center.z);
+  const renderer = new ReloadedCatchRenderer(root); t.after(() => renderer.dispose());
+  renderer.update({ scene: 'm2_catch', catch: state } as FilmJourney, patient);
+  root.updateMatrixWorld(true);
+  const bounds = skinBounds(patient), down = new THREE.Vector3(0, -1, 0);
+  for (const side of ['R', 'L']) {
+    const origin = patient.getObjectByName(`ankle_${side}`)!.getWorldPosition(new THREE.Vector3());
+    origin.y = floor + 1;
+    const [deck] = new THREE.Raycaster(origin, down, 0, 2).intersectObject(root, true);
+    assert.ok(deck, `missing rescue deck below ankle ${side}`);
+    assert.ok(Math.abs(deck.point.y - floor) < 1e-6,
+      `${side} ankle has a deck ${deck.point.y - floor} metres above the landing surface`);
+    assert.ok(deck.point.y <= bounds.min.y && bounds.min.y - deck.point.y <= .14);
+  }
+});
+
 test('Neo’s first-person medical sleeves leave Trinity’s face visible from his posed eye', async t => {
   const h = await fixture(t), state = { ...newCatch(), phase: 'extract_ready' as const };
   h.apply(state); h.renderer.setPlayer('neo', true);

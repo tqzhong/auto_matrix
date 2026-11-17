@@ -36,8 +36,9 @@ export class ReloadedCatchRenderer {
     const lane = this.mat(0xb7a77e, .7, 0, 0x5f634f, .2);
     for (let x = -10; x <= 10; x += 5) for (let z = -56; z <= 44; z += 13) this.box(lane, x, CATCH.roadY + .03, z, .18, .02, 3.7);
     for (const building of CATCH_BUILDINGS) {
+      const rescue = building.name === 'catch-trinity-tower';
       if (building.name !== 'catch-architect-exit-tower') this.tower(building.x, building.z, building.width, building.depth, building.height,
-        building.name === 'catch-trinity-tower' || building.x < 0 ? stone : dark, trim, building.name);
+        rescue || building.x < 0 ? stone : dark, trim, building.name, rescue ? roof : undefined);
       else {
         // An actual passage, rather than a bright rectangle stuck on an opaque box.
         const lower = CATCH.start.y - CATCH.roadY, upper = CATCH.roadY + building.height - CATCH.start.y - CATCH.window.height;
@@ -60,8 +61,6 @@ export class ReloadedCatchRenderer {
       this.box(trim, x, CATCH.roadY + 3.5, z, .13, 7, .13, 'catch-street-lamp-post');
       this.box(warm, x, CATCH.roadY + 7, z, .6, .16, .9, 'catch-street-lamp');
     }
-    // The fall occurs in front of this roof; it later becomes the rescue surface.
-    this.box(roof, 0, -.27, -12, 26.2, .54, 20.2, 'catch-rescue-roof');
     for (const x of [-12.5, 12.5]) this.box(stone, x, .72, -12, .55, 1.45, 20);
     this.box(stone, 0, .7, -2.25, 26, 1.4, .55);
     for (const x of [-8, 8]) { this.box(trim, x, 1.25, -9, 2.7, 2.5, 3.2); this.box(dark, x, 2.6, -9, 3.2, .25, 3.7); }
@@ -105,10 +104,13 @@ export class ReloadedCatchRenderer {
   private box(material: THREE.Material, x: number, y: number, z: number, w: number, h: number, d: number, name = ''): THREE.Mesh {
     const mesh = this.mesh(new THREE.BoxGeometry(w, h, d), material, name); mesh.position.set(x, y, z); return mesh;
   }
-  private tower(x: number, z: number, w: number, d: number, h: number, wall: THREE.Material, trim: THREE.Material, name: string): void {
-    this.box(wall, x, CATCH.roadY + h / 2, z, w, h, d, name);
-    for (let y = CATCH.roadY + 8; y < CATCH.roadY + h; y += 12) this.box(trim, x, y, z - d / 2 - .09, w + .15, .13, .17);
-    this.box(trim, x, CATCH.roadY + h + .2, z, w + .6, .38, d + .6);
+  private tower(x: number, z: number, w: number, d: number, h: number, wall: THREE.Material, trim: THREE.Material, name: string, deck?: THREE.Material): void {
+    const top = CATCH.roadY + h, deckThickness = .54, wallHeight = deck ? h - deckThickness : h;
+    this.box(wall, x, CATCH.roadY + wallHeight / 2, z, w, wallHeight, d, name);
+    for (let y = CATCH.roadY + 8; y < top; y += 12) this.box(trim, x, y, z - d / 2 - .09, w + .15, .13, .17);
+    // Match the rescue deck to the shared landing height.
+    if (deck) this.box(deck, x, top - deckThickness / 2, z, w + .2, deckThickness, d + .2, 'catch-rescue-roof');
+    else this.box(trim, x, top + .2, z, w + .6, .38, d + .6);
   }
   private windows(): void {
     const geometry = new THREE.PlaneGeometry(1.5, 2.35); this.geometries.add(geometry);
