@@ -2083,13 +2083,15 @@ export class FilmSetRenderer {
     const garageEntry = next.id === 'm2_garage', architectEntry = next.id === 'm2_architect', medicalEntry = next.id === 'm2_medical';
     const helGarageEntry = next.id === 'm3_hel_garage';
     if (helGarageEntry && !helGarageTemplate) return;
-    const helEntry = helGarageEntry || next.id === 'm3_hel_entry';
+    const helElevatorEntry = next.id === 'm3_hel_entry';
+    const helEntry = helGarageEntry || helElevatorEntry;
     const isolatedEntry = firstOracle || teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || architectEntry || medicalEntry || helEntry;
     if (!this.preparedSecondOracle) {
       const set = FILM_SETS[next.set], { x, y, z } = set.center;
       const room = new FilmSetRenderer(new THREE.Scene());
       room.current = set; room.currentScene = next.id;
       room.root.position.set(x, y - 1, z);
+      if (helElevatorEntry) room.loadHelPerformers();
       this.preparedSecondOracle = { scene: next.id, room, steps: room.prepareRoomSteps(set, undefined, helGarageTemplate) };
     }
     const prepared = this.preparedSecondOracle;
@@ -2111,7 +2113,7 @@ export class FilmSetRenderer {
         playerView: savedCut,
       });
       for (const texture of room.architectRoom?.screenTextures ?? []) colors.textures.add(texture);
-      prepared.colors = { ...colors, actors: new Set() };
+      prepared.colors = { ...colors, actors: new Set(), preserveStockSkinning: helElevatorEntry };
       if (isolatedEntry) {
         colors.meshes.push(this.marker);
         if (room.chateauVolley) colors.meshes.push(...this.colorMeshes(room.chateauVolley.children));
@@ -2123,8 +2125,11 @@ export class FilmSetRenderer {
       const cast = [next.actor, ...next.cast];
       if (isolatedEntry) {
         const colors = prepared.colors;
+        const attendant = helElevatorEntry ? prepared.room.helAttendant : undefined;
+        if (attendant) cast.push(attendant.name);
         for (const id of cast) {
-          const group = actor(id); if (!group || colors.actors.has(group)) continue;
+          const group = id === attendant?.name ? attendant : actor(id);
+          if (!group || colors.actors.has(group)) continue;
           let meshes: ColorMesh[];
           const detailed = (teaEntry || helEntry) && id === 'seraph' || (libraryEntry || garageEntry) && id === 'keymaker'
             || architectEntry && id === 'architect' || medicalEntry && id === 'roland';
@@ -3188,9 +3193,15 @@ export class FilmSetRenderer {
     this.helDanceDoor = room.helDanceDoor;
     this.helCoatDamage = room.helCoatDamage;
     this.helStandoff = room.helStandoff;
+    this.helPerformers = room.helPerformers; room.helPerformers = undefined;
     this.finale = room.finale; room.finale = undefined;
     this.maggieDiscovery = room.maggieDiscovery; room.maggieDiscovery = undefined;
     room.dispose();
+  }
+  private loadHelPerformers(): void {
+    if (this.helPerformers || typeof window === 'undefined') return;
+    this.helPerformers = new HelClubPerformers(this.root);
+    void this.helPerformers.ready.catch(error => console.error('Club Hel 演员加载失败', error));
   }
   private cancelLafayettePreparation(): void {
     const prepared = this.preparedLafayette;
@@ -3733,10 +3744,7 @@ export class FilmSetRenderer {
           if (sceneId === 'm3_oracle_absorbed' && set.id === 'film_oracle_home'
             || ['m3_bane_questions', 'm3_logos_plan', 'm3_emp'].includes(sceneId ?? '') && set.id === 'film_hammer_deck')
             this.revolutionsPrelude = new RevolutionsPreludeRenderer(this.root, sceneId as 'm3_oracle_absorbed' | 'm3_bane_questions' | 'm3_logos_plan' | 'm3_emp');
-          if (set.id === 'film_club_hel' && typeof window !== 'undefined') {
-            this.helPerformers = new HelClubPerformers(this.root);
-            void this.helPerformers.ready.catch(error => console.error('Club Hel 演员加载失败', error));
-          }
+          if (set.id === 'film_club_hel') this.loadHelPerformers();
           if (set.architecture === 'power') this.createPowerStatus(set);
           if (set.id === 'film_chateau_hall' && !this.chateauDoor) this.buildChateauProps();
           if (set.id === 'film_lafayette') {

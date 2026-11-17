@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, HEL_COAT_COUNTERS, HEL_COATCHECK, helCoatcheckAllyRoot, type FilmJourney, type HelCoatcheckEncounter } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, HEL_COAT_COUNTERS, HEL_COATCHECK, filmEntry, helCoatcheckAllyRoot, type FilmJourney, type HelCoatcheckEncounter, type SandboxState } from '@auto_matrix/shared';
 import { CharacterModels, weaponMuzzle } from '../packages/client/src/agents/CharacterModel.js';
 import { HelClubPerformers } from '../packages/client/src/engine/HelClubPerformers.js';
 import { helAttendantContact, poseHelProtection } from '../packages/client/src/agents/HelCoatcheckPerformance.js';
@@ -51,8 +51,59 @@ async function setup(t: test.TestContext, player = false) {
     models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 }, 0);
     performers.update(journey, 0); poseHelProtection(rig, performers.coatcheckAttendant, state); root.updateMatrixWorld(true);
   }
-  return { rig, performers, root, state, journey, pose, center, models, world };
+  return { rig, performers, root, state, journey, pose, center, models, world, assets };
 }
+
+test('the prepared coatcheck attendant keeps her stock rig and warmed textures through the elevator cut', async t => {
+  const h = await setup(t);
+  const oldWindow = globalThis.window;
+  globalThis.window = {} as Window & typeof globalThis;
+  t.after(() => { globalThis.window = oldWindow; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture({ width: 1, complete: true }));
+  const map = new THREE.Texture({ width: 2048, complete: true }); map.needsUpdate = true;
+  const female = h.assets['club-female'].scene.getObjectByName('Anatomical_head_and_hands');
+  assert.ok(female instanceof THREE.SkinnedMesh && female.material instanceof THREE.MeshStandardMaterial);
+  female.material.map = map;
+  let disposals = 0; map.addEventListener('dispose', () => disposals++);
+  const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene), eye = new THREE.PerspectiveCamera();
+  t.after(() => sets.dispose());
+  const actor = h.world.agents.get('trinity')!, from = FILM_SCENE_BY_ID.m3_hel_garage, to = FILM_SCENE_BY_ID.m3_hel_entry;
+  Object.assign(actor, { position: filmEntry(from), currentLocation: from.set, isInMatrix: true });
+  const journey: FilmJourney = { version: 1, scene: from.id, actor: actor.id, step: 1, completed: [], enteredAt: 0,
+    reflections: {}, checkpoint: { ...actor.position }, lastText: '' };
+  const sandbox = { neoLife: { journey }, structures: [] } as unknown as SandboxState;
+  const compiled = new Set<THREE.Object3D>(), uploads: THREE.Texture[] = [];
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, properties: { get: () => ({}) },
+    getRenderTarget: () => null, setRenderTarget() {}, initTexture(texture: THREE.Texture) { uploads.push(texture); },
+    compile(subject: THREE.Group) { subject.traverse(mesh => compiled.add(mesh)); } } as unknown as THREE.WebGLRenderer;
+  sets.update(actor, sandbox, 0); sets.prepareSecondOracle(graphics, eye, journey, () => undefined);
+  await new Promise(resolve => setImmediate(resolve));
+  for (let i = 0; i < 120; i++) sets.prepareSecondOracle(graphics, eye, journey, () => undefined);
+  const prepared = (sets as unknown as { preparedSecondOracle: { room: FilmSetRenderer; steps?: unknown; colors?: unknown } }).preparedSecondOracle;
+  const preview = prepared.room;
+  const attendant = preview.helAttendant;
+  assert.ok(attendant, 'the actual attendant must load while Trinity is still in the garage');
+  assert.equal(Boolean(prepared.steps), false, 'the elevator geometry must be ready before cast compilation');
+  assert.ok(prepared.colors, 'the staged elevator color programs must be ready to link');
+  assert.equal(scene.getObjectByName(attendant.name), undefined);
+  const skin = attendant.getObjectByName('Anatomical_head_and_hands');
+  assert.ok(skin instanceof THREE.SkinnedMesh && skin.material instanceof THREE.MeshStandardMaterial);
+  assert.equal(skin.material.map, map);
+  assert.ok(compiled.has(skin)); assert.ok(uploads.includes(map));
+  assert.ok(!skin.material.customProgramCacheKey().includes('actor-local-skin-v1'));
+  for (const object of compiled) {
+    for (let parent = object.parent; parent; parent = parent.parent) assert.ok(!parent.name.startsWith('hel-dancer-'));
+  }
+  Object.assign(journey, { scene: to.id, step: 0 });
+  Object.assign(actor, { position: filmEntry(to), currentLocation: to.set });
+  sets.update(actor, sandbox, 0);
+  assert.equal(sets.helAttendant, attendant);
+  assert.equal(scene.getObjectByName(attendant.name), attendant);
+  assert.equal(attendant.visible, true); assert.equal(attendant.parent!.visible, true);
+  assert.equal(disposals, 0);
+  sets.update(undefined, sandbox, 0);
+  assert.equal(disposals, 1);
+});
 
 test('Seraph’s real palm follows the visible upper arm while the attendant is moved and lowered', async t => {
   const h = await setup(t), girl = h.performers.coatcheckAttendant!;

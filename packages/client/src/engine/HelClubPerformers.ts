@@ -24,7 +24,8 @@ export class HelClubPerformers {
   get coatcheckAttendant(): THREE.Group | undefined { return this.attendant?.root; }
 
   constructor(parent: THREE.Group) {
-    this.root.name = 'hel-performers'; parent.add(this.root);
+    this.root.name = 'hel-performers'; this.root.visible = false; this.root.userData.dynamic = true;
+    parent.add(this.root);
     this.ready = this.load();
   }
 
@@ -173,6 +174,7 @@ export class HelClubPerformers {
 
   update(journey: FilmJourney | undefined, time: number): void {
     if (!this.loaded) return;
+    this.root.visible = true;
     const scene = journey?.visiting ?? journey?.scene;
     const phase = scene === 'm3_hel_bargain' && !journey?.visiting ? journey?.helBargain?.phase : undefined;
     const entering = scene === 'm3_hel_entry' && !journey?.visiting && ((journey?.step ?? 0) > 3
