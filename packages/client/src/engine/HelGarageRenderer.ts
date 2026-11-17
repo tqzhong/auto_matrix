@@ -13,12 +13,22 @@ export class HelGarageRenderer {
   private models = new CharacterModels();
   private guards: CharacterRig[] = [];
   private guns: THREE.Group[] = [];
-  private reflection: Reflector;
+  private reflection?: Reflector;
   private geometry = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
-  constructor(parent: THREE.Group, template: AgentState) {
+  private construction?: Generator<void>;
+  constructor(parent: THREE.Group, template: AgentState, staged = false) {
     this.group.name = 'hel-garage-arrival'; parent.add(this.group); this.group.add(this.fixed, this.door);
+    this.construction = this.build(template);
+    if (!staged) while (!this.prepareStep()) { /* Finish the set on direct entry. */ }
+  }
+  prepareStep(): boolean {
+    if (this.construction && !this.construction.next().done) return false;
+    this.construction = undefined;
+    return true;
+  }
+  private *build(template: AgentState): Generator<void> {
     const grain = new Uint8Array(128 * 128 * 4);
     for (let i = 0; i < grain.length; i += 4) {
       const value = 142 + ((Math.imul(i + 51, 1664525) >>> 12) % 65); grain[i] = grain[i + 1] = grain[i + 2] = value; grain[i + 3] = 255;
@@ -56,7 +66,8 @@ export class HelGarageRenderer {
       const light = new THREE.PointLight(0xdce6be, 64, 26, 2); light.position.set(0, 7.4, z); this.group.add(light);
     }
     for (const x of [-7.8, 7.8]) for (const y of [7.88, 8.15]) this.rail(this.fixed, steel, [x, y, -35.5], [x, y, 35.5], .11);
-    for (const car of HEL_GARAGE.cars) this.car(car.x, car.z, steel, black, cream);
+    yield;
+    for (const car of HEL_GARAGE.cars) { this.car(car.x, car.z, steel, black, cream); yield; }
     for (const x of [-8.4, 8.4]) for (let z = -33; z < 32; z += 4) this.box(this.fixed, cream, x, .021, z, .12, .018, 2.5);
     for (const z of [-12, 12]) {
       this.box(this.fixed, black, 0, .024, z, 7, .025, .72);
@@ -80,6 +91,7 @@ export class HelGarageRenderer {
     for (const x of [-4.2, 4.2]) for (let z = -37.8; z <= -30.4; z += .4) this.rail(this.fixed, steel, [x, .05, z], [x, 6.9, z], .028);
     for (const y of [1, 4, 6.9]) for (const side of [-1, 1]) this.rail(this.fixed, steel, [side * 4.2, y, -30.4], [side * 4.2, y, -38.05], .05);
     for (let x = -4; x <= 4; x += .4) this.rail(this.fixed, steel, [x, .05, -38.05], [x, 6.9, -38.05], .028);
+    yield;
     for (const [pair, spot] of HEL_GARAGE.pairs.entries()) {
       const state = structuredClone(template); state.id = `hel_garage_guard_${pair}`; state.name = 'Hel 入口守卫';
       state.faction = 'merovingian'; state.appearance.headColor = pair === 0 ? '#c0a98e' : '#ac907a'; state.appearance.clothing = '#171b18';
@@ -87,6 +99,7 @@ export class HelGarageRenderer {
       const gun = new THREE.Group(); gun.name = `hel-garage-gun-${pair}`; this.group.add(gun); this.guns.push(gun);
       this.box(gun, steel, 0, 0, .18, .15, .19, .58, .025); this.box(gun, black, 0, -.15, -.015, .13, .28, .14, .018);
       this.mesh(gun, this.own(new THREE.TorusGeometry(.085, .012, 8, 18)), black).position.set(0, -.12, .08);
+      yield;
     }
     batchStaticGeometry(this.fixed, new Set()).forEach(g => this.geometry.add(g)); this.update();
   }
@@ -136,6 +149,7 @@ export class HelGarageRenderer {
     mesh.position.copy(a.lerp(b, .5)); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize()); return mesh;
   }
   dispose(): void {
-    this.models.dispose(); this.reflection.dispose(); this.geometry.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.group.removeFromParent();
+    this.construction = undefined;
+    this.models.dispose(); this.reflection?.dispose(); this.geometry.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.group.removeFromParent();
   }
 }

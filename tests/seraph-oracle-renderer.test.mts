@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { BURLY, FILM_SCENE_BY_ID, FILM_SETS, filmEntry, newCatch, newGarageEscape, newMaggieDiscovery, newTrainmanChase, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
+import { BURLY, FILM_SCENE_BY_ID, FILM_SETS, filmEntry, newCatch, newGarageEscape, newHelGarage, newMaggieDiscovery, newTrainmanChase, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
@@ -13,7 +13,8 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 
 test('the Oracle routes adopt prepared sets and keep their interactive props live', async t => {
   const previous = globalThis.document;
-  const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {}, ellipse() {} };
+  const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {}, ellipse() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
   t.after(() => { globalThis.document = previous; });
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture({ width: 1, complete: true }));
@@ -48,7 +49,7 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   };
   const prepare = (resumeLibrary = false) => sets.prepareSecondOracle(graphics, camera, journey, id => libraryCast.get(id)
     ?? (id === 'seraph' ? offstageSeraph : id === 'merovingian' ? offstageHost
-      : ['neo', 'smith', 'trinity', 'roland'].includes(id) ? cast : undefined), resumeLibrary);
+      : ['neo', 'smith', 'trinity', 'roland'].includes(id) ? cast : undefined), resumeLibrary, world.agents.get('trinity'));
   const warm = (name: string, resumeLibrary = false) => {
     preview = undefined; castCompiled = false; compiled.clear();
     for (let i = 0; i < 120; i++) prepare(resumeLibrary);
@@ -438,6 +439,28 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     enter('m3_trainman_chase', 1);
     assert.ok(Math.abs(door.position.z - closed) > 1.7);
     delete journey.helChase;
+    enter('m2_departure', 0);
+    assert.equal(disposals, 1);
+  });
+  await t.test('a saved Trainman escape prepares and transfers the physical garage, including its wet floor and door', () => {
+    enter('m3_trainman_chase', 1); preview = undefined; prepare(); assert.ok(!preview);
+    enter('m3_trainman_chase', 2); sets.update(undefined, sandbox, 0);
+    const floor = warm('hel-wet-floor-reflection', true) as THREE.Mesh;
+    const door = preview!.getObjectByName('hel-garage-steel-door')!, slots = pointSlots(preview!);
+    let disposals = 0; floor.geometry.addEventListener('dispose', () => disposals++);
+    enter('m3_trainman_chase', 2);
+    assert.equal(scene.getObjectByName(floor.name), undefined);
+    enter('m3_hel_garage', 0);
+    assert.equal(scene.getObjectByName(floor.name), floor);
+    assert.equal(scene.getObjectByName(door.name), door);
+    assert.ok(scene.getObjectByName('hel_garage_guard_2'));
+    assert.equal(pointSlots(scene), slots);
+    assert.equal(sets.stablePointSlots, true);
+    assert.equal(disposals, 0);
+    journey.helGarage = { ...newHelGarage(), phase: 'opening', door: .5 };
+    enter('m3_hel_garage', 1);
+    assert.equal(door.rotation.y, Math.PI / 4);
+    delete journey.helGarage;
     enter('m2_departure', 0);
     assert.equal(disposals, 1);
   });
