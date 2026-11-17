@@ -1358,7 +1358,14 @@ export class CharacterModels {
           rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
         }
       }
-      if (input.chateauWeapon) rig.hero.bones.get('shoulder_R')!.rotation.x -= .55;
+      if (input.chateauWeapon) {
+        if (input.firstPerson) {
+          const grip = rig.root.localToWorld(new THREE.Vector3(-.52, 3.2, 1.46));
+          const wrist = rig.root.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion()
+            .setFromEuler(new THREE.Euler(1.05, input.chateauWeapon === 'spear' ? .94 : 0, 0, 'YXZ')));
+          crosscutPalm(rig, 'R', grip, wrist);
+        } else rig.hero.bones.get('shoulder_R')!.rotation.x -= .55;
+      }
       if (input.burly?.phase === 'flight' && input.burly.role === 'neo') {
         rig.hero.bones.get('chest')!.rotation.x -= .55;
         for (const side of ['R', 'L']) rig.hero.bones.get(`shoulder_${side}`)!.rotation.x -= 1.1;

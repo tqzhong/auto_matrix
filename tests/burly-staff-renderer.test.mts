@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { filmPosition, type BurlyEncounter } from '@auto_matrix/shared';
+import { filmPosition, type BurlyEncounter, type ChateauWeapon } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -70,4 +70,39 @@ test('Neo sees the held courtyard staff in first person without his face coverin
   update('flight', true);
   assert.equal(staff.visible, false);
   assert.equal(body.visible, false);
+
+  await t.test('Neo can see the held château weapon and his grip in first person', () => {
+    const hall = 'film_chateau_hall';
+    Object.assign(neo, { currentLocation: hall, position: filmPosition(hall, 0, 0) });
+    camera.position.set(neo.position.x, neo.position.y + 2.99, neo.position.z);
+    camera.lookAt(neo.position.x, camera.position.y - Math.sin(.1), neo.position.z + Math.cos(.1));
+    camera.updateMatrixWorld(true);
+    const draw = (firstPerson: boolean, chateauWeapon?: ChateauWeapon) => {
+      neo.currentAction = { type: 'idle', parameters: { player: true, resolved: true, chateauWeapon }, startedAt: 9, duration: 1, progress: 0 };
+      renderer.updateAgent('neo', neo); renderer.setPlayer('neo', firstPerson);
+      renderer.getAgent('neo')!.position.copy(camera.position).y = neo.position.y;
+      body.rotation.y = 0;
+      renderer.setPlayerMotion({ speed: 0, turn: 0, grounded: true, verticalVelocity: 0, firstPerson, chateauWeapon });
+      renderer.update(0); scene.updateMatrixWorld(true);
+    };
+    for (const kind of ['sword', 'spear', 'axe', 'mace'] as const) {
+      draw(false, kind);
+      const weapon = hero.getObjectByName(`chateau-${kind}`)!;
+      assert.ok(weapon.visible && body.visible);
+      assert.equal(skin.geometry, thirdPersonSkin);
+      draw(true, kind);
+      assert.ok(weapon.visible && body.visible, `${kind}: the body must draw the held weapon`);
+      assert.equal(hero.getObjectByName(`chateau-${kind}`), weapon, `${kind}: use the same weapon when switching views`);
+      assert.notEqual(skin.geometry, thirdPersonSkin, `${kind}: keep the face out of the first-person view`);
+      const wrist = hero.getObjectByName('wrist_R')!;
+      const palm = weapon.worldToLocal(wrist.localToWorld(new THREE.Vector3(0, -.19, .035)));
+      assert.ok(Math.hypot(palm.x, palm.z) < .1 && Math.abs(palm.y) < .9, `${kind}: the palm misses the handle ${palm.toArray()}`);
+      for (const y of [0, kind === 'spear' ? .5 : .8]) {
+        const screen = weapon.localToWorld(new THREE.Vector3(0, y, 0)).project(camera);
+        assert.ok(screen.toArray().every(value => Math.abs(value) < 1), `${kind}: the grip or blade is outside the frame ${screen.toArray()}`);
+      }
+    }
+    draw(true);
+    assert.ok(!body.visible && !hero.getObjectByName('chateau-mace')?.visible);
+  });
 });
