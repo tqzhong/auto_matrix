@@ -18,6 +18,7 @@ import { deusPactLocked, smithFinaleLocked } from '@auto_matrix/shared';
 import { wellsClearPosition } from '@auto_matrix/shared';
 import { CONSTRUCT, DESERT_REVEAL, filmPosition, mirrorTime, awakeningLocked, awakeningPose, type ConstructGesture, type FilmJourney, type OracleDepartureGesture } from '@auto_matrix/shared';
 import { zionTempleSpeechActive } from '@auto_matrix/shared';
+import type { TruckRoad } from '@auto_matrix/shared';
 
 interface PlayerSession {
   agentId: string;
@@ -41,7 +42,14 @@ export function airbornePlayer(agent: AgentState, structures: WorldStructure[] =
 }
 
 export function savedFilmCombatAction(journey: FilmJourney, action: AgentState['currentAction'], paused: boolean): boolean {
-  return Boolean(!journey.visiting && action && (action.type === 'idle' || paused && action.type === 'move_to')
+  if (journey.visiting || !action) return false;
+  if (paused && journey.scene === 'm2_trucks' && journey.trucks?.phase === 'duel' && journey.trucks.road) {
+    const road = journey.trucks.road;
+    const pose = action.parameters.truckRoad as (TruckRoad & { role: string }) | undefined;
+    return action.parameters.resolved === true && pose?.role === journey.actor
+      && pose.phase === road.phase && pose.elapsed === road.elapsed;
+  }
+  return Boolean((action.type === 'idle' || paused && action.type === 'move_to')
     && (journey.matrixEscape && action.parameters.matrixEscape || journey.theOne && action.parameters.theOne));
 }
 

@@ -70,6 +70,37 @@ function blade(h: ReturnType<typeof setup>) {
   h.players.act('truck-player', 'dodge', 3); until(h, 'blade');
 }
 
+for (const pose of ['highway overpass drop', 'blade ready'] as const) {
+  test(`paused disconnect and reclaim keep the truck action during ${pose}`, () => {
+    const h = setup();
+    if (pose === 'highway overpass drop') {
+      const road = h.journey.trucks!.road!;
+      road.phase = 'dropping';
+      road.elapsed = TRUCK_ROAD.approach + .1;
+      h.frame();
+    } else {
+      blade(h);
+      h.frame({ crouch: true });
+      assert.equal(h.actor.currentAction?.parameters.crouching, true);
+    }
+    h.frame({}, false);
+    const action = structuredClone(h.actor.currentAction!);
+    const position = { ...h.actor.position };
+    const saved = JSON.stringify(h.sandbox.state);
+    assert.equal(action.parameters.player, true);
+    h.players.release('truck-player', 12);
+    assert.deepEqual(h.actor.currentAction, { ...action, parameters: { ...action.parameters, player: false } });
+    h.sandbox.restore(JSON.parse(saved));
+    assert.equal(h.players.possess('truck-player', 'morpheus', 12).agentId, 'morpheus');
+    assert.deepEqual(h.actor.currentAction, action);
+    assert.deepEqual(h.actor.position, position);
+    const road = h.sandbox.life.film.state!.trucks!.road!;
+    const elapsed = road.elapsed;
+    h.frame();
+    assert.ok(road.elapsed > elapsed);
+  });
+}
+
 test('Johnson steps away from the blade on the moving roof rather than only turning his chest', () => {
   const h = setup(); blade(h);
   const road = h.journey.trucks!.road!, johnson = h.world.agents.get('agent_johnson')!, start = johnson.position.x - road.truck.x;
