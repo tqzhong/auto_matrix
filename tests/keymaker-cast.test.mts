@@ -3,6 +3,8 @@ import test, { type TestContext } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FILM_SCENE_BY_ID, filmEntry, type FilmJourney } from '@auto_matrix/shared';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -25,6 +27,43 @@ test('Keymaker requests his own continuous body and older face instead of the an
   await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(requests.sort(), ['/assets/characters/keymaker-body.glb', '/assets/characters/keymaker-head.glb']);
   assert.equal(rig.detail.visible, true, 'a missing detailed asset must retain a visible fallback');
+});
+
+test('leaving the restaurant requests the detailed Keymaker while the workshop is out of view', async t => {
+  const requests: string[] = [];
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => {
+    if (url.includes('/keymaker-')) requests.push(url);
+    throw new Error('deliberately unavailable asset');
+  });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(console, 'warn', () => {});
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {},
+    createRadialGradient: () => ({ addColorStop() {} }), putImageData() {},
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }) }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const renderer = new AgentRenderer(new THREE.Scene()), camera = new THREE.PerspectiveCamera();
+  t.after(() => { renderer.dispose(); globalThis.document = previous; });
+  const neo = world.agents.get('neo')!, keymaker = world.agents.get('keymaker')!;
+  const former = FILM_SCENE_BY_ID.m2_persephone, next = FILM_SCENE_BY_ID.m2_library;
+  Object.assign(neo, { position: filmEntry(former), currentLocation: former.set, isInMatrix: true });
+  Object.assign(keymaker, { position: filmEntry(next), currentLocation: next.set, isInMatrix: true });
+  camera.position.set(neo.position.x, neo.position.y, neo.position.z);
+  renderer.setWorld(true); renderer.updateAgent('neo', neo); renderer.updateAgent('keymaker', keymaker);
+  renderer.setPlayer('neo');
+  const journey: FilmJourney = { version: 1, scene: former.id, actor: 'neo', step: 2, completed: [], enteredAt: 0,
+    checkpoint: neo.position, reflections: {}, lastText: '' };
+  renderer.update(0, camera, 0, 0, journey);
+  assert.deepEqual(requests, []);
+  renderer.setPlayer(null);
+  journey.step = 3;
+  renderer.update(0, camera, 0, 0, journey);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(requests.sort(), ['/assets/characters/keymaker-body.glb', '/assets/characters/keymaker-head.glb']);
+  assert.equal(renderer.getAgentDetail('keymaker')!.visible, false);
+  renderer.setPlayer('neo');
+  renderer.update(0, camera, 0, 0, journey);
+  assert.equal(requests.length, 2);
 });
 
 async function shipped(name: string) {

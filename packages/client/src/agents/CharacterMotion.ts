@@ -186,7 +186,7 @@ export interface MotionInput {
   vase?: number;
   realWorld?: boolean;
   smithProjection?: boolean;
-  prepareZionCast?: boolean;
+  prepareDetailedCast?: boolean;
   engineering?: import('@auto_matrix/shared').EngineeringEncounter;
   zionMessage?: import('@auto_matrix/shared').ZionMessageGesture;
   seraphDoor?: import('@auto_matrix/shared').SeraphDoorGesture;

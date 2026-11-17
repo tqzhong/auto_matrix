@@ -1018,7 +1018,7 @@ export class CharacterModels {
     }
     const near = distance < 100 || Boolean(input.oracleRestored || rig.smithProjection?.visible);
     rig.detail.visible = near; rig.distant.visible = !near;
-    if (!near && input.prepareZionCast) {
+    if (!near && input.prepareDetailedCast) {
       this.epilogueHeads.update(rig, input); this.diggerBodies.update(rig);
     }
     if (!near) return;

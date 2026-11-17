@@ -28,6 +28,7 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   t.after(() => { sets.dispose(); body.geometry.dispose(); body.material.dispose(); });
 
   let preview: THREE.Scene | undefined, castCompiled = false, offstageSeraph: THREE.Group | undefined, offstageHost: THREE.Group | undefined;
+  const libraryCast = new Map<string, THREE.Group>();
   const compiled = new Set<THREE.Object3D>();
   const compileCounts = new Map<THREE.Object3D, number>();
   const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
@@ -45,11 +46,12 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     Object.assign(neo, { position: filmEntry(beat), isInMatrix: FILM_SETS[beat.set].world === 'matrix', currentLocation: beat.set });
     sets.update(neo, sandbox, 0);
   };
-  const prepare = () => sets.prepareSecondOracle(graphics, camera, journey, id => id === 'seraph' ? offstageSeraph : id === 'merovingian' ? offstageHost
-    : ['neo', 'smith', 'trinity', 'roland'].includes(id) ? cast : undefined);
-  const warm = (name: string) => {
+  const prepare = (resumeLibrary = false) => sets.prepareSecondOracle(graphics, camera, journey, id => libraryCast.get(id)
+    ?? (id === 'seraph' ? offstageSeraph : id === 'merovingian' ? offstageHost
+      : ['neo', 'smith', 'trinity', 'roland'].includes(id) ? cast : undefined), resumeLibrary);
+  const warm = (name: string, resumeLibrary = false) => {
     preview = undefined; castCompiled = false; compiled.clear();
-    for (let i = 0; i < 120; i++) prepare();
+    for (let i = 0; i < 120; i++) prepare(resumeLibrary);
     const mesh = preview?.getObjectByName(name);
     assert.ok(mesh instanceof THREE.Mesh || mesh instanceof THREE.Group, `${name} was prepared`);
     assert.ok(!scene.getObjectByName(name));
@@ -140,6 +142,39 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   enter('m2_persephone', 0);
   assert.ok(scene.getObjectByName(dessert.name) === dessert, 'the washroom is in the existing restaurant');
   assert.equal(dessert.visible, false);
+  await t.test('the library prepares the hidden guard, the objective and the late Keymaker models', t => {
+    const keymaker = new THREE.Group(), cain = new THREE.Group();
+    const physical = new THREE.MeshPhysicalMaterial();
+    const guard = new THREE.Mesh(body.geometry, physical);
+    cain.visible = keymaker.visible = false;
+    cain.add(guard);
+    libraryCast.set('cain', cain); libraryCast.set('keymaker', keymaker);
+    t.after(() => { libraryCast.clear(); enter('m2_persephone', 2); prepare(); physical.dispose(); });
+    enter('m2_persephone', 4);
+    warm('keymaker-book-door');
+    assert(compiled.has(guard), 'prepare the hidden guard with the library lights');
+    assert(compiled.has(sets.goalMarker), 'prepare the objective ring before the cut');
+    const detailed = ['body', 'head'].map(part => {
+      const mesh = new THREE.Mesh(body.geometry, body.material);
+      mesh.name = 'keymaker-detailed-' + part; keymaker.add(mesh); return mesh;
+    });
+    for (let i = 0; i < 80; i++) prepare();
+    assert.deepEqual(detailed.map(mesh => compileCounts.get(mesh)), [1, 1]);
+    assert.equal(keymaker.visible, false);
+    assert.equal(cain.visible, false);
+  });
+  await t.test('an office save keeps the library built on the landing screen through possession', t => {
+    t.after(() => { enter('m2_persephone', 2); prepare(); });
+    enter('m2_persephone', 4);
+    sets.update(undefined, sandbox, 0);
+    const shelf = warm('keymaker-book-door', true);
+    const slots = pointSlots(preview!);
+    enter('m2_persephone', 4);
+    assert.equal(scene.getObjectByName(shelf.name), undefined);
+    enter('m2_library', 0);
+    assert.equal(scene.getObjectByName(shelf.name), shelf);
+    assert.equal(pointSlots(scene), slots);
+  });
   enter('m2_persephone', 4);
   const bookshelf = warm('keymaker-book-door');
   const librarySlots = pointSlots(preview!);

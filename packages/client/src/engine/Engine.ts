@@ -420,9 +420,11 @@ export class Engine {
     const resumeMeal = onLanding && meeting?.scene === 'm1_steak';
     this.filmSets.prepareMeal(this.renderer, this.camera, player?.id === meeting?.actor || resumeMeal ? meeting : undefined,
       id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling, resumeMeal);
-    this.filmSets.prepareSecondOracle(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
+    const resumeLibrary = resumeOnLanding && meeting?.scene === 'm2_persephone';
+    this.filmSets.prepareSecondOracle(this.renderer, this.camera, player?.id === meeting?.actor || resumeLibrary ? meeting : undefined,
       id => id === 'seraph' && meeting?.scene === 'm2_departure' ? this.agentRenderer.getAgentDetail(id)
-        : this.agentRenderer.getAgentHero(id) ?? (meeting?.scene === 'm2_burly' ? this.agentRenderer.getAgentDetail(id) : this.agentRenderer.getAgentBody(id)));
+        : this.agentRenderer.getAgentHero(id) ?? (meeting?.scene === 'm2_burly' || meeting?.scene === 'm2_persephone'
+          ? this.agentRenderer.getAgentDetail(id) : this.agentRenderer.getAgentBody(id)), resumeLibrary);
     if (filmSet?.id === 'film_oracle_courtyard' && player?.id === meeting?.actor) this.sandboxRenderer.prepareBurlyCopies();
     if (morningApartment && liveMatrixJourney.morning?.phase === 'ready')
       this.filmSets.prepareMorningStreet(this.renderer, this.camera, neoAtHome, this.voxelRenderer.matrix);

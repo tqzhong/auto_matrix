@@ -2025,7 +2025,7 @@ export class FilmSetRenderer {
     this.prepareColorFrame(renderer, camera, colors);
   }
   prepareSecondOracle(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
-    actor: (id: string) => THREE.Group | undefined): void {
+    actor: (id: string) => THREE.Group | undefined, resumeLibrary = false): void {
     if (this.current?.id === 'film_chateau_garage' && journey?.scene === 'm2_garage' && !journey.visiting && journey.step >= 1) {
       if (journey.garage?.phase === 'wrecked') return;
       const prepared = this.preparedFreeway ??= { renderer: new FreewaySetRenderer(undefined, FILM_SETS.film_freeway_101) };
@@ -2063,16 +2063,17 @@ export class FilmSetRenderer {
     const flight = journey?.mountain;
     const approachingGarage = journey?.scene !== 'm2_mountain' || flight?.phase === 'arrived'
       || flight?.phase === 'flying' && flight.z <= MOUNTAIN.launch.z - 30;
-    if (!journey || !cut || journey.visiting || journey.step < cut.step || this.currentScene !== journey.scene
-      || !approachingGarage || this.current?.id !== FILM_SCENE_BY_ID[journey.scene].set
+    const atSource = journey && cut && this.currentScene === journey.scene && this.current?.id === FILM_SCENE_BY_ID[journey.scene].set;
+    const savedLibrary = resumeLibrary && !this.current && journey?.scene === 'm2_persephone';
+    if (!journey || !cut || journey.visiting || journey.step < cut.step || (!atSource && !savedLibrary) || !approachingGarage
       || firstOracle && (meal?.kind !== 'meal' || !['performing', 'accepting', 'done'].includes(meal.phase) || crewMealAge(meal) < 8.2)) {
       this.cancelSecondOraclePreparation(); return;
     }
     if (journey.scene === 'm2_backup' && journey.step === 1 && journey.trinityTerminal?.phase === 'ready' && !this.preparedSecondOracle) return;
     const next = FILM_SCENE_BY_ID[cut.scene];
     const teaEntry = next.id === 'm2_seraph', leVraiEntry = next.id === 'm2_merovingian';
-    const chateauEntry = next.id === 'm2_chateau';
-    const matrixEntry = firstOracle || teaEntry || leVraiEntry || chateauEntry;
+    const libraryEntry = next.id === 'm2_library', chateauEntry = next.id === 'm2_chateau';
+    const matrixEntry = firstOracle || teaEntry || leVraiEntry || libraryEntry || chateauEntry;
     if (!this.preparedSecondOracle) {
       const set = FILM_SETS[next.set], { x, y, z } = set.center;
       const room = new FilmSetRenderer(new THREE.Scene());
@@ -2094,8 +2095,9 @@ export class FilmSetRenderer {
       for (const texture of prepared.room.textures) if (!texture.image) return;
       const room = prepared.room;
       const colors = this.colorPreparation(room.root, [], {
-        includeBasic: teaEntry || leVraiEntry || chateauEntry
+        includeBasic: teaEntry || leVraiEntry || libraryEntry || chateauEntry
           || Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
+        playerView: savedLibrary,
       });
       for (const texture of room.architectRoom?.screenTextures ?? []) colors.textures.add(texture);
       prepared.colors = { ...colors, actors: new Set() };
@@ -2112,8 +2114,9 @@ export class FilmSetRenderer {
         for (const id of cast) {
           const group = actor(id); if (!group || colors.actors.has(group)) continue;
           let meshes: ColorMesh[];
-          if (teaEntry && id === 'seraph') {
-            if (!group.getObjectByName('seraph-detailed-body') || !group.getObjectByName('seraph-detailed-head')) continue;
+          const detailed = teaEntry && id === 'seraph' || libraryEntry && id === 'keymaker';
+          if (detailed && (!group.getObjectByName(`${id}-detailed-body`) || !group.getObjectByName(`${id}-detailed-head`))) continue;
+          if (detailed || libraryEntry) {
             meshes = this.colorMeshes(group.children, true);
           } else {
             meshes = [];
@@ -3412,6 +3415,9 @@ export class FilmSetRenderer {
       const resumingDeparture = resumingScene && sceneId === 'm2_oracle_message' && set?.id === 'film_zion_bedroom'
         && journey?.actor === player?.id && this.preparedZion?.scene === 'm2_departure' ? this.preparedZion : undefined;
       if (resumingDeparture) this.preparedZion = undefined;
+      const resumingLibrary = resumingScene && sceneId === 'm2_persephone' && set?.id === 'film_le_vrai'
+        && journey?.actor === player?.id && this.preparedSecondOracle?.scene === 'm2_library' ? this.preparedSecondOracle : undefined;
+      if (resumingLibrary) this.preparedSecondOracle = undefined;
       const resumingDream = resumingScene && sceneId === 'm1_final_call' && set?.id === 'film_final_phone' && journey?.actor === player?.id
         ? this.preparedDream : undefined;
       if (resumingDream) this.preparedDream = undefined;
@@ -3511,6 +3517,7 @@ export class FilmSetRenderer {
       this.preparedDream = resumingDream;
       this.preparedMeetingDeck = resumingMeetingDeck;
       if (resumingDeparture) this.preparedZion = resumingDeparture;
+      if (resumingLibrary) this.preparedSecondOracle = resumingLibrary;
       if (resumingClub) this.preparedClub = resumingClub;
       this.empDock = retainedEmpDock;
       if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
