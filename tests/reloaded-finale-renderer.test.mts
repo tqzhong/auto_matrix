@@ -77,7 +77,12 @@ test('tunnel Sentinels approach without shutting down before Neo establishes the
   saved.tunnel = { phase: 'sensing', remaining: RELOADED_FINALE.sentinelSeconds, focus: 0, lastTick: 0, attempts: 0 };
   renderer.update(saved, 0);
   const first = root.getObjectByName('real-sentinel-1') as THREE.Group; assert.ok(first);
+  const beam = root.getObjectByName('hammer-rescue-beam') as THREE.SpotLight;
   assert.equal(root.getObjectByName('hammer-rescue-arrival')?.visible, false);
+  let beamInLayout = false;
+  root.traverseVisible(object => { if (object === beam) beamInLayout = true; });
+  assert.ok(beamInLayout, 'the unlit rescue beam reserves its shader slot');
+  assert.equal(beam.intensity, 0);
   const before = first.position.z;
   saved.tunnel.remaining = 7; saved.tunnel.focus = RELOADED_FINALE.signalSeconds * .4; renderer.update(saved, 2);
   assert.ok(first.position.z < before);
@@ -85,7 +90,7 @@ test('tunnel Sentinels approach without shutting down before Neo establishes the
   assert.equal(((first.getObjectByName('sentinel-eye') as THREE.Mesh).material as THREE.MeshBasicMaterial).color.getHex(), 0xf06554);
   saved.tunnel.phase = 'collapsed'; renderer.update(saved, 3);
   assert.equal(root.getObjectByName('hammer-rescue-arrival')?.visible, true);
-  assert.ok((root.getObjectByName('hammer-rescue-beam') as THREE.SpotLight).intensity > 0);
+  assert.ok(beam.intensity > 0);
   renderer.dispose(); assert.equal(root.children.length, 0);
 });
 

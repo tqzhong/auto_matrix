@@ -118,7 +118,8 @@ export class ReloadedFinaleRenderer {
     this.box(this.rescueRig, iron, 0, 5.8, -66, 24, 11, 11, 'hammer-rescue-nose');
     for (const x of [-7, 7]) this.box(this.rescueRig, pale, x, 5.5, -60.35, 4.8, 1.8, .12, 'hammer-searchlight-lens');
     this.rescue = new THREE.SpotLight(0xd8eff5, 0, 105, Math.PI / 7, .55, 1.5); this.rescue.name = 'hammer-rescue-beam'; this.rescue.position.set(0, 7, -60); this.rescue.target.position.set(0, 1, -25);
-    this.rescueRig.add(this.rescue, this.rescue.target); this.lights.add(this.rescue);
+    // Keep the beam in the light layout while the ship geometry is hidden.
+    this.group.add(this.rescue, this.rescue.target); this.lights.add(this.rescue);
   }
   private medical(): void {
     const dark = this.material(new THREE.MeshStandardMaterial({ color: 0x252e35, metalness: .62, roughness: .48 }));
