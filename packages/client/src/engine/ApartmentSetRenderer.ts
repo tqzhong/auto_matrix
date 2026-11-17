@@ -504,7 +504,7 @@ export class ApartmentSetRenderer {
         if (ready >= 0) {
           const [program] = bindings.splice(ready, 1);
           // Give the completed handoff program a frame before reflecting its uniforms.
-          if (entryScene && !resume) yield;
+          if (entryScene) yield;
           if (renderer.info.programs?.includes(program)) cacheReadyProgramLocations(renderer, program);
         } else if (entry || first || !shadowsFirst && (entryColors.length || queue.length)) {
           const batch = (entry ? returnEntry : entryColors.length ? entryColors : queue).splice(0, 4);

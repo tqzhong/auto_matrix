@@ -335,6 +335,38 @@ test('Wells leaves a frame between shader completion and reading its bindings', 
   assert.deepEqual(h.work, ['compile', 'bindings']);
 });
 
+test('a resumed apartment waits a frame after shader completion before reading bindings', t => {
+  const h = fixture(); t.after(h.dispose);
+  h.journey.scene = 'm1_wake_up'; h.journey.contact = { phase: 'accepted', elapsed: 0 };
+  type Program = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
+  const queued = new Set<Program>(), readyAt = new Map<Program, number>();
+  let frame = 0, reads = 0;
+  const prepare = () => {
+    frame++;
+    const pending = h.prepare([], undefined, false, true);
+    for (const program of h.renderer.info.programs as Program[]) {
+      if (queued.has(program)) continue;
+      queued.add(program);
+      const ready = program.isReady.bind(program), uniforms = program.getUniforms.bind(program);
+      t.mock.method(program, 'isReady', () => {
+        const complete = ready();
+        if (complete && !readyAt.has(program)) readyAt.set(program, frame);
+        return complete;
+      });
+      t.mock.method(program, 'getUniforms', () => {
+        assert.ok(readyAt.has(program) && readyAt.get(program)! < frame, 'resume must not reflect a program in its completion frame');
+        reads++;
+        return uniforms();
+      });
+    }
+    return pending;
+  };
+  prepare(); h.ready();
+  for (let i = 0; i < 80 && prepare(); i++) { /* Drain the resumed room queue. */ }
+  assert.ok(queued.size > 0);
+  assert.equal(reads, queued.size, 'every queued program must still finish preparing');
+});
+
 test('resuming 101 prepares the room and visitors with the player light layout before the first turn', t => {
   const h = fixture(); t.after(h.dispose);
   const fill = h.scene.children.find(light => light instanceof THREE.DirectionalLight && !light.castShadow)!;
@@ -523,7 +555,7 @@ test('preparing the 101 handoff leaves the shared ground shadow bound to Wells u
   const live = new THREE.Mesh(h.arms.geometry, material), arrival = new THREE.Mesh(h.arms.geometry, material);
   h.scene.add(live); arrival.visible = false; t.after(() => material.dispose());
   const wellsProgram = {}, apartmentProgram = { program: {}, isReady: () => false, getUniforms() {} };
-  const bindings = { currentProgram: wellsProgram, uniforms: {}, uniformsList: [], lightsStateVersion: 7, programs: new Map([[7, wellsProgram]]) };
+  const bindings = { currentProgram: wellsProgram, uniforms: { opacity: { value: .37 } }, uniformsList: [], lightsStateVersion: 7, programs: new Map([[7, wellsProgram]]) };
   const previous = { ...bindings };
   const get = h.renderer.properties.get.bind(h.renderer.properties);
   t.mock.method(h.renderer.properties, 'get', (object: object) => object === material ? bindings : get(object));
@@ -542,7 +574,7 @@ test('preparing the 101 handoff leaves the shared ground shadow bound to Wells u
   for (let frame = 0; frame < 60; frame++) {
     h.prepare([arrival]);
     assert.equal(bindings.currentProgram, previous.currentProgram);
-    assert.equal(bindings.uniforms, previous.uniforms);
+    assert.deepEqual(bindings.uniforms, previous.uniforms, 'keep the live uniform values when their descriptors are copied');
     assert.equal(bindings.uniformsList, previous.uniformsList);
     assert.equal(bindings.lightsStateVersion, previous.lightsStateVersion);
   }
