@@ -578,7 +578,8 @@ export class SandboxUI {
     if (oracleRequestActive(journey)) {
       const request = journey.oracleRequest, text = oracleRequestText(request, journey.step);
       document.getElementById('game-objective-copy')!.textContent = text;
-      this.el('sandbox-nearby').textContent = journey.step === 3 ? '跟随 Seraph 离开' : journey.step === 2 ? '记录信任与怀疑' : '向先知提问';
+      this.el('sandbox-nearby').textContent = journey.step >= scene.steps.length ? '跟随 Seraph 去找 Trainman'
+        : journey.step === 3 ? '跟随 Seraph 离开' : journey.step === 2 ? '记录信任与怀疑' : '向先知提问';
       if (oracleRequestLocked(request)) {
         this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
         this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.add('oracle-request');
