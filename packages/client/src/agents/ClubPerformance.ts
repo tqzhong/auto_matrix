@@ -26,7 +26,7 @@ export function poseClub(neo: HeroRig | undefined, trinity: HeroRig | undefined,
       bone('head').rotation.set(.04 * close, .6 * close, .05 * close);
     } else {
       pelvis.position.y -= .13 * Math.sin(close * Math.PI);
-      bone('spine').rotation.set(.07 * close, 0, 0); bone('chest').rotation.set(.1 * close, 0, 0);
+      bone('spine').rotation.set(.07 * close, 0, .12 * close); bone('chest').rotation.set(.1 * close, 0, .08 * close);
       const emphasis = ['introduction', 'reply'].includes(encounter.phase) ? Math.sin(Math.min(1, encounter.elapsed / 6) * Math.PI) : 0;
       bone('head').rotation.set(-.18 * close + Math.sin(encounter.elapsed * 2) * .025 * emphasis, .23 * close, .06 * close);
     }

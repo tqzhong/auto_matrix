@@ -130,7 +130,7 @@ test('the actual close pose places Trinity’s lips beside Neo’s ear rather th
 });
 
 function surface(mesh: THREE.SkinnedMesh, minimumY = -Infinity) {
-  mesh.updateWorldMatrix(true, false); mesh.skeleton.update();
+  mesh.updateWorldMatrix(true, false); mesh.updateMatrixWorld(true); mesh.skeleton.update();
   const center = FILM_SETS.film_white_rabbit_club.center, origin = new THREE.Vector3(center.x, center.y - 1, center.z);
   const points = Array.from({ length: mesh.geometry.attributes.position.count }, (_, i) => mesh.localToWorld(mesh.getVertexPosition(i, new THREE.Vector3())).sub(origin));
   const source = mesh.geometry.index!, indices: number[] = [];
