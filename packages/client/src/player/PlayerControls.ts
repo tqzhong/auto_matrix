@@ -49,6 +49,7 @@ import type { MotionInput } from '../agents/CharacterMotion.js';
 import { openingHotelPistolLowering, openingHotelPistolRest } from '../agents/HelPistolModel.js';
 import { ZION_ENGINEERING } from '@auto_matrix/shared';
 import { zionMessageDisk, zionMessageHandle } from '@auto_matrix/shared';
+import { BOOK_DOOR, bookDoorPalm } from '@auto_matrix/shared';
 import { upperDiggerEye, upperDiggerLookBack } from '../agents/UpperDiggerPerformance.js';
 import { ambushCompanyStep } from '@auto_matrix/shared';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
@@ -3286,6 +3287,15 @@ export class PlayerControls {
       const pitch = interview?.pinned ? THREE.MathUtils.lerp(this.pitch, -Math.PI / 2 + this.pitch * .6, interview.pinned)
         : THREE.MathUtils.lerp(this.pitch, .67, reload);
       this.camera.lookAt(target.x + Math.sin(this.yaw) * Math.cos(pitch), target.y - Math.sin(pitch), target.z + Math.cos(this.yaw) * Math.cos(pitch));
+    } else if (bookDoor?.role === 'neo' && ['reaching', 'unlatching', 'grasping', 'opening', 'releasing'].includes(bookDoor.phase)
+      && !this.dragging && now - this.lastLook > 700) {
+      // Look through the opening from the side of Neo as the contact moves with the shelf.
+      const { center } = FILM_SETS[BOOK_DOOR.set], palm = bookDoorPalm(bookDoor), { persephone } = bookDoor;
+      const focus = new THREE.Vector3(center.x + palm.x, center.y - 1 + palm.y, center.z + palm.z)
+        .lerp(new THREE.Vector3(center.x + persephone.x, center.y + 1.9, center.z + persephone.z), .25);
+      const eye = new THREE.Vector3(center.x + BOOK_DOOR.anchor.x + 5.6, center.y + 4.2, center.z + BOOK_DOOR.anchor.z + 1.8);
+      this.camera.position.lerp(eye, resetCamera ? 1 : 1 - Math.exp(-10 * delta));
+      this.camera.lookAt(focus);
     } else if (zionMessage?.role === 'neo' && ['unlatching', 'opening', 'taking', 'transfer', 'stowing'].includes(zionMessage.phase)
       && !this.dragging && now - this.lastLook > 700) {
       // Frame the contact from the open side of the aisle, beside Neo's silhouette.

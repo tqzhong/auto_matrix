@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { BOOK_DOOR,FILM_SETS,bookDoorStance,filmPosition,type BookDoorEncounter,type FilmJourney }from '@auto_matrix/shared';
 import { AgentRenderer }from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer }from '../packages/client/src/engine/FilmSetRenderer.js';
+import { PlayerControls }from '../packages/client/src/player/PlayerControls.js';
 import { WorldState }from '../packages/server/src/world/WorldState.js';
 import { AgentManager }from '../packages/server/src/agents/AgentManager.js';
 
@@ -20,7 +21,7 @@ function setup(t:test.TestContext){
     camera.position.set(c.x+BOOK_DOOR.anchor.x+(first?0:2),c.y+(first?3.1:6),c.z+BOOK_DOOR.anchor.z+(first?0:5));camera.lookAt(c.x+p.x,c.y+3,c.z+p.z);camera.updateMatrixWorld(true);sets.update(neo,{neoLife:{journey:j}}as never,time);actors.update(.03,camera,speed,0,j);scene.updateMatrixWorld(true);
   };
   const palm=()=>{const mesh=actors.getAgent('persephone')!.getObjectByName('persephone-palm-R');assert.ok(mesh instanceof THREE.Mesh&&mesh.geometry.type==='SphereGeometry','measure the rendered palm surface');return mesh.localToWorld(new THREE.Vector3(0,0,1));};
-  return{state,pose,palm,sets,actors};
+  return{state,pose,palm,sets,actors,camera,world};
 }
 
 test('the visible palm stays on the real brass shelf during the continuous swing in both views and when paused',t=>{
@@ -40,4 +41,54 @@ test('the real palm pulls the real book spine and browser time cannot advance th
     const before=h.palm().toArray();h.pose(structuredClone(s),true,300,0);assert.ok(h.palm().distanceTo(new THREE.Vector3(...before))<1e-8,'saved book contact ignores elapsed browser time');
   }
   assert.equal(misses.length,0,JSON.stringify(misses));
+});
+
+test('the library camera keeps the latch and the moving shelf contact clear of Neo and the shelves', t => {
+  const h = setup(t), neo = h.world.agents.get('neo')!;
+  globalThis.document = Object.assign(new EventTarget(), document, { pointerLockElement: null, hidden: false }) as unknown as Document;
+  const canvas = new EventTarget() as HTMLCanvasElement;
+  const controls = new PlayerControls(canvas, h.camera, () => {}, () => {});
+  const player = new THREE.Group();
+  const silhouette = new THREE.Mesh(new THREE.CylinderGeometry(.68, .68, 3.75));
+  silhouette.position.y = .875;
+  player.add(silhouette);
+  silhouette.name = 'Neo’s silhouette';
+  let now = 1200;
+  t.mock.method(performance, 'now', () => now);
+  const latch = { ...h.state(), phase: 'unlatching' as const, book: .5, elapsed: .5 * BOOK_DOOR.unlatching };
+  const phases = [latch, ...[.1, .35, .65, .95, 1].map(h.state)];
+  const center = FILM_SETS[BOOK_DOOR.set].center;
+  try {
+    for (const aspect of [16 / 9, .65]) {
+      h.camera.aspect = aspect;
+      h.camera.updateProjectionMatrix();
+      for (const s of phases) {
+        h.pose(s);
+        const position = filmPosition(BOOK_DOOR.set, s.neo.x, s.neo.z);
+        const rotation = Math.atan2(BOOK_DOOR.hinge.x + BOOK_DOOR.book.x - s.neo.x, BOOK_DOOR.hinge.z - s.neo.z);
+        Object.assign(neo, { position, rotation, currentLocation: BOOK_DOOR.set, isInMatrix: true, currentAction: { type: 'idle', parameters: {
+          player: true, resolved: true, bookDoor: { role: 'neo', phase: s.phase, elapsed: s.elapsed, door: s.door, book: s.book, persephone: s.persephone },
+        }, startedAt: 7, duration: 1e9, progress: 0 } });
+        player.position.set(position.x, position.y, position.z);
+        player.updateMatrixWorld(true);
+        controls.possess(neo);
+        now += 50;
+        controls.update(.05, neo, player, false);
+        h.camera.updateMatrixWorld(true);
+        const context = `${aspect}/${s.phase}/${s.door}`;
+        const hand = h.palm();
+        const chest = new THREE.Vector3(center.x + s.persephone.x, center.y + 1.9, center.z + s.persephone.z);
+        for (const point of [hand, chest]) {
+          const screen = point.clone().project(h.camera);
+          assert.ok(Math.max(Math.abs(screen.x), Math.abs(screen.y), Math.abs(screen.z)) < .99, `${context}: off screen ${screen.toArray()}`);
+        }
+        const ray = hand.clone().sub(h.camera.position);
+        const hit = new THREE.Raycaster(h.camera.position, ray.clone().normalize(), .05, ray.length() - .11)
+          .intersectObjects([player, h.sets.root], true)[0];
+        assert.ok(!hit, `${context}: palm blocked by ${hit?.object.name || hit?.object.type} at ${hit?.point.toArray()}`);
+      }
+    }
+  } finally {
+    controls.dispose(); silhouette.geometry.dispose(); silhouette.material.dispose();
+  }
 });
