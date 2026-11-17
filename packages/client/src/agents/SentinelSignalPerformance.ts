@@ -36,5 +36,6 @@ export function poseSentinelSignal(rig: CharacterRig, signal?: TunnelEncounter):
     wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
     bone('finger1-1_R').rotation.z = -.3; wrist.updateWorldMatrix(false, true);
   }
-  groundCharacter(rig, down);
+  // Keep the lowest part of the body supported throughout the fall.
+  groundCharacter(rig, elapsed > 0 ? 1 : 0);
 }

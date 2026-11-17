@@ -57,7 +57,8 @@ test('Neo extends a real palm and lowers his delivered body continuously, with i
   };
   const base: TunnelEncounter = { phase: 'stopping', remaining: 11, focus: 2.2, lastTick: 42, attempts: 0, age: 3.2, elapsed: .5 };
   save(warm, base, 0); save(cold, base, 0); await new Promise(resolve => setImmediate(resolve));
-  for (const beat of [base, { ...base, phase: 'collapsing' as const, elapsed: 1.2 }, { ...base, phase: 'collapsed' as const, elapsed: 3.4 }]) {
+  const fall = [0, .4, 1.2, 1.6, 2.25].map(elapsed => ({ ...base, phase: 'collapsing' as const, elapsed }));
+  for (const beat of [base, ...fall, { ...base, phase: 'collapsed' as const, elapsed: 3.4 }]) {
     const journey = save(warm, beat, .1); save(cold, structuredClone(beat), 0);
     const expected = bones(cold); assert.deepEqual(bones(warm), expected, `${beat.phase}: saved pose is independent of player and render delta`);
     warm.update(.25, undefined, 0, 0, journey); assert.deepEqual(bones(warm), expected, 'paused save cannot continue to animate');
@@ -93,15 +94,16 @@ test('Neo extends a real palm and lowers his delivered body continuously, with i
     }
     if (beat.phase === 'collapsed') assert.ok(camera.getWorldDirection(new THREE.Vector3()).y > .7, 'the fallen eye should face upward rather than remain a standing camera');
     warm.setPlayer('neo', false); save(warm, beat, 0);
-    if (beat.phase === 'collapsed') {
-      assert.ok(head.y < center.y + 1, `the actual head is still upright at ${head.y - center.y}`);
+    if (beat.phase === 'collapsed') assert.ok(head.y < center.y + 1, `the actual head is still upright at ${head.y - center.y}`);
+    if (beat.phase === 'collapsing' || beat.phase === 'collapsed') {
       let lowest = Infinity;
       body.traverseVisible(object => {
         if (!(object instanceof THREE.SkinnedMesh)) return; object.skeleton.update();
         for (let i = 0; i < object.geometry.attributes.position.count; i++) lowest = Math.min(lowest, object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())).y);
       });
-      assert.ok(lowest >= center.y - 1 - .015, `body penetrates the tunnel floor by ${center.y - 1 - lowest}`);
-      assert.ok(lowest < center.y - 1 + .12, `body floats ${lowest - (center.y - 1)} above the floor`);
+      const clearance = lowest - (center.y - 1);
+      assert.ok(clearance >= -.015, `body penetrates the tunnel floor by ${-clearance} at ${beat.elapsed}s`);
+      assert.ok(clearance < .12, `body floats ${clearance} above the floor at ${beat.elapsed}s`);
     }
   }
 });
