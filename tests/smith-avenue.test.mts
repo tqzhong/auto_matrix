@@ -147,3 +147,41 @@ test('the actual shadow camera uses its configured projection and covers both in
     }
   } finally { renderer.dispose(); }
 });
+
+test('a resumed mid-descent save prepares the hidden crater before impact', () => {
+  for (const elapsed of [.944, 1.571, 2.849]) {
+    const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+    const neo = world.agents.get('neo')!;
+    neo.position = { ...FILM_SETS.film_smith_avenue.center }; neo.currentLocation = 'film_smith_avenue'; neo.isInMatrix = true;
+    const journey = { scene: 'm3_rain', actor: 'neo', step: 1, smithFinale: { ...newSmithFinale(), phase: 'descent', elapsed } } as FilmJourney;
+    const sandbox = { neoLife: { journey }, structures: [] } as unknown as SandboxState;
+    const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene), camera = new THREE.PerspectiveCamera();
+    let compiled = 0, target: THREE.WebGLRenderTarget | null = null;
+    const gpu = {
+      extensions: { has: () => true },
+      getRenderTarget: () => target,
+      setRenderTarget: (value: THREE.WebGLRenderTarget | null) => { target = value; },
+      compile: (objects: THREE.Object3D, view: THREE.Camera, lights: THREE.Scene) => {
+        assert.equal(objects, sets.root.getObjectByName('smith-finale-crater'));
+        assert.equal(objects.visible, false);
+        assert.equal(view, camera); assert.equal(lights, scene);
+        assert.ok(target instanceof THREE.WebGLRenderTarget);
+        compiled++;
+      },
+    } as unknown as THREE.WebGLRenderer;
+    try {
+      sets.update(neo, sandbox, 0);
+      const before = JSON.stringify(journey);
+      journey.visiting = true;
+      sets.prepareSmithCrater(gpu, camera, journey);
+      assert.equal(compiled, 0, 'a scene revisit must keep its existing preparation behavior');
+      delete journey.visiting;
+      sets.prepareSmithCrater(gpu, camera, journey);
+      sets.prepareSmithCrater(gpu, camera, journey);
+      assert.equal(compiled, 1, 'a hidden mid-descent crater must compile once before the first impact frame');
+      assert.equal(target, null);
+      assert.equal(JSON.stringify(journey), before, 'warming a paused save cannot advance its story clock');
+      assert.equal(sets.root.getObjectByName('smith-finale-crater')!.visible, false);
+    } finally { sets.dispose(); }
+  }
+});

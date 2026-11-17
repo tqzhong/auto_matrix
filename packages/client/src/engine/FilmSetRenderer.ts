@@ -723,8 +723,8 @@ export class FilmSetRenderer {
   }
   prepareSmithCrater(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey?: FilmJourney): void {
     if (!this.smithFinale || journey?.scene !== 'm3_rain' || journey.visiting || !journey.smithFinale) return;
-    const { phase, elapsed } = journey.smithFinale;
-    if (['approach', 'entrance', 'building', 'relaunch', 'sky_grapple'].includes(phase) || phase === 'descent' && elapsed < .8)
+    const { phase } = journey.smithFinale;
+    if (['approach', 'entrance', 'building', 'relaunch', 'sky_grapple'].includes(phase) || phase === 'descent')
       this.smithFinale.prepareCrater(renderer, camera, this.scene);
   }
   preparePodColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, lighting: LightCulling, actor: THREE.Group | undefined, firstPerson: boolean): void {

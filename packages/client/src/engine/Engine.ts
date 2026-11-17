@@ -488,7 +488,7 @@ export class Engine {
         this.filmSets.prepareOfficeStreetColors(this.renderer, this.camera, this.lightCulling,
           this.agentRenderer.getNearbyOfficeActor('citizen_2', this.camera), this.agentRenderer.getNearbyOfficeActor('citizen_11', this.camera));
     } else if (!preparingOffice) this.agentRenderer.cancelOfficeCastTexture();
-    if (this.running) this.filmSets.prepareSmithCrater(this.renderer, this.camera, meeting);
+    this.filmSets.prepareSmithCrater(this.renderer, this.camera, meeting);
     if (filmSet?.id === 'film_smith_avenue' && meeting?.scene === 'm3_rain' && !meeting.visiting && meeting.smithFinale?.phase === 'approach')
       this.agentRenderer.prepareSmithEntrance(this.renderer, this.camera);
     if (filmSet?.id === 'film_oracle_home' && meeting?.scene === 'm3_oracle_absorbed' && !meeting.visiting && meeting.step === 3
