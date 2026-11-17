@@ -93,6 +93,64 @@ test('the departure camera stays outside the vault from liftoff to the end', () 
   }
 });
 
+test('the final flight prepares the real dream roof and its cast before Trinity takes over', t => {
+  const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene), world = new WorldState();
+  new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, trinity = world.agents.get('trinity')!;
+  const flight: FilmJourney = { ...journey('dream'), scene: 'm1_final_call', actor: 'neo', reloaded: undefined,
+    theOne: { kind: 'flight', phase: 'takeoff', elapsed: 3.2, attempt: 0, checkpoint: 'phone',
+      signal: 0, hits: 0, blocks: 0, deadline: 0, altitude: 12, flightX: 4, flightZ: 2, resolved: [] } };
+  const sandbox = { neoLife: { journey: flight } } as SandboxState;
+  neo.position = filmPosition('film_final_phone');
+  neo.isInMatrix = trinity.isInMatrix = true;
+  trinity.position = filmPosition('film_trinity_roof');
+  const sun = new THREE.DirectionalLight(), camera = new THREE.PerspectiveCamera();
+  scene.add(sun, new THREE.DirectionalLight(), new THREE.HemisphereLight());
+  const geometry = new THREE.BoxGeometry(), skin = new THREE.Texture({ width: 2048, height: 2048 });
+  skin.needsUpdate = true;
+  const material = new THREE.MeshStandardMaterial({ map: skin }), actor = new THREE.Group();
+  const mesh = new THREE.Mesh(geometry, material); actor.add(mesh); actor.visible = mesh.visible = false;
+  t.after(() => { sets.dispose(); geometry.dispose(); material.dispose(); skin.dispose(); });
+  let window: THREE.Object3D | undefined, target: THREE.WebGLRenderTarget | null = null;
+  const uploads: THREE.Texture[] = [];
+  let compiledCast = false;
+  const graphics = { extensions: { has: () => true }, properties: { get: () => ({}) }, info: { programs: [] },
+    getRenderTarget: () => target, setRenderTarget(value: typeof target) { target = value; },
+    initTexture(map: THREE.Texture) { uploads.push(map); },
+    compile(subject: THREE.Group, _camera: THREE.Camera, lights: THREE.Scene) {
+      assert.equal(target?.width, 1);
+      let points = 0;
+      lights.traverseVisible(object => {
+        if (object instanceof THREE.PointLight) points++;
+        if (object.name === 'dream-intact-window') window = object;
+      });
+      assert.equal(points, 7);
+      subject.traverse(object => { if (object === mesh) compiledCast = true; });
+    } } as unknown as THREE.WebGLRenderer;
+  const prepare = () => sets.prepareDream?.(graphics, camera, flight, id => ({ model: id === 'trinity' ? actor : undefined }), sun);
+
+  for (let frame = 0; frame < 40; frame++) prepare();
+  assert.ok(window, 'the roof must be prepared while the final flight is still paused on the landing screen');
+  assert.ok(!scene.getObjectByName('dream-intact-window'));
+  assert.equal(compiledCast, true);
+  assert.deepEqual(uploads, [skin]);
+  const preparedWindow = window;
+  sets.update(neo, sandbox, 0);
+  prepare();
+  assert.equal(window, preparedWindow);
+  assert.equal(actor.visible, false);
+  assert.equal(mesh.visible, false);
+
+  sandbox.neoLife!.journey = journey('dream');
+  sets.update(trinity, sandbox, 1);
+  assert.equal(scene.getObjectByName('dream-intact-window'), preparedWindow);
+  assert.equal(sets.minimumPointSlots, 7);
+  let released = 0;
+  (preparedWindow as THREE.Mesh).geometry.addEventListener('dispose', () => { released++; });
+  sets.update(undefined, undefined, 2);
+  assert.equal(released, 1);
+});
+
 test('the meeting adopts the prepared hall and warms the breach cast with the live light slots', t => {
   const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene), world = new WorldState();
   new AgentManager(world).initializeAllAgents();

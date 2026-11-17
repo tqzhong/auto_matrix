@@ -208,6 +208,7 @@ type ShipEntryCast = EntryCast & { garments?: () => ColorMesh[] };
 const JUMP_ENTRY_MESHES = new Set(['jump-tower-windows', 'jump-canyon-avenue', 'jump-city-matte']);
 const QUESTIONING_POINT_SLOTS = 1;
 const CITY_CHASE_POINT_SLOTS = 2;
+const TRINITY_ROOF_POINT_SLOTS = 7;
 const QUESTIONING_SMITH_MESHES = new Set(['Anatomical_head_and_hands', 'high-poly', 'short04', 'shoes01', 'Tailored_coat_upper', 'Tailored_trousers']);
 const SENTINEL_ENTRY_MESHES = new Set([
   'sentinel-frosted-glass', 'sentinel-cockpit-deck', 'sentinel-exterior-matte',
@@ -480,6 +481,7 @@ export class FilmSetRenderer {
     gpu?: THREE.WebGLRenderer['properties']; textureUpload?: Generator<void, boolean>; pendingCabin: Set<THREE.MeshStandardMaterial> };
   private theOne?: TheOneRenderer;
   private reloaded?: ReloadedOpeningRenderer;
+  private preparedDream?: EntryPreparation & { renderer: ReloadedOpeningRenderer; colors?: CastColorPreparation };
   private preparedMeetingHall?: { renderer: ReloadedOpeningRenderer; colors?: CastColorPreparation };
   private preparedMeetingAgents?: CastColorPreparation;
   private catchSet?: ReloadedCatchRenderer;
@@ -600,7 +602,7 @@ export class FilmSetRenderer {
     if (this.current?.id === 'film_jump_roofs' && this.currentScene === 'm1_jump') return 2;
     if (this.current?.id === 'film_red_dress_plaza' && this.currentScene === 'm1_red_dress') return 1;
     // Five dream fixtures, the objective and one real muzzle flash share one layout.
-    if (this.current?.id === 'film_trinity_roof' && this.currentScene === 'm2_dream') return 7;
+    if (this.current?.id === 'film_trinity_roof' && this.currentScene === 'm2_dream') return TRINITY_ROOF_POINT_SLOTS;
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_jump_return') return 16;
     // Keep the console lamp and objective slots when turning toward Cypher.
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_cypher_console') return 17;
@@ -1838,6 +1840,50 @@ export class FilmSetRenderer {
       this.preparedMeal = { root, deck: new NebDeckRenderer(root, true), ready: false, liveMeshes: [this.marker], pendingCabin: new Map() };
     }
     this.prepareDeckEntry(renderer, camera, this.preparedMeal, journey, 'meal', actor, shadowSun, atRestaurant ? sourceLights : undefined, resume);
+  }
+  prepareDream(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    actor: (id: string) => EntryCast, sun: THREE.DirectionalLight, sourceLights?: LightCulling): void {
+    const flight = journey?.theOne;
+    if (journey?.scene !== 'm1_final_call' || journey.visiting || flight?.kind !== 'flight'
+      || (flight.phase !== 'takeoff' && flight.phase !== 'done') || (this.current && this.current.id !== 'film_final_phone')) {
+      this.cancelDreamPreparation(); return;
+    }
+    let prepared = this.preparedDream;
+    if (!prepared) {
+      const root = new THREE.Group(), roof = new ReloadedOpeningRenderer(root, 'film_trinity_roof');
+      roof.update();
+      this.preparedDream = prepared = { root, renderer: roof, liveMeshes: [this.marker] };
+    }
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    let colors = prepared.colors;
+    if (!colors || prepared.gpu !== renderer.properties) {
+      this.releaseEntryPreparation(prepared);
+      colors = prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun: sun, playerView: !this.current }), actors: new Set() };
+      // The real roof has five fixtures and a goal light. Reserve the muzzle slot too.
+      colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
+      prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
+      prepared.gpu = renderer.properties; prepared.liveMeshes = [this.marker];
+      if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+        prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
+        this.queueEntryShadows(prepared, colors.meshes);
+      }
+      colors.meshes.push(this.marker);
+    }
+    for (const id of ['trinity', 'agent_johnson']) {
+      const { model, shadow } = actor(id);
+      if (shadow && !prepared.liveMeshes.includes(shadow)) {
+        prepared.liveMeshes.push(shadow); colors.meshes.unshift(shadow);
+      }
+      if (!model || colors.actors.has(model)) continue;
+      const meshes: ColorMesh[] = [];
+      model.traverse(object => {
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
+      });
+      if (!meshes.length) continue;
+      colors.actors.add(model); colors.meshes.unshift(...meshes); prepared.liveMeshes.push(...meshes);
+      this.queueColorTextures(colors.textures, meshes); this.queueEntryShadows(prepared, meshes);
+    }
+    this.prepareStagedEntry(renderer, camera, prepared, colors, this.current ? sourceLights : undefined);
   }
   prepareCaptainsMeeting(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined): void {
     const encounter = journey.reloaded;
@@ -3320,6 +3366,9 @@ export class FilmSetRenderer {
       const preparedDojo = set?.id === 'film_kungfu_dojo' && sceneId === 'm1_dojo' && !journey?.visiting ? this.preparedDojo : undefined;
       if (preparedDojo) { this.preparedDojo = undefined; preparedDojo.lighting?.dispose(); preparedDojo.root.removeFromParent(); }
       const resumingScene = !this.current && !journey?.visiting;
+      const resumingDream = resumingScene && sceneId === 'm1_final_call' && set?.id === 'film_final_phone' && journey?.actor === player?.id
+        ? this.preparedDream : undefined;
+      if (resumingDream) this.preparedDream = undefined;
       const resumingOneDeck = resumingScene && journey?.actor === player?.id && set?.id === 'film_heart_hotel'
         && (sceneId === 'm1_death' || sceneId === 'm1_return') ? this.preparedOneDeck : undefined;
       const resumingAmbush = resumingScene && set?.id === 'film_oracle_home' && sceneId === 'm1_oracle' ? this.preparedAmbush : undefined;
@@ -3365,6 +3414,8 @@ export class FilmSetRenderer {
       const preparedMeal = set?.id === 'film_neb_deck' && sceneId === 'm1_meal' && !journey?.visiting ? this.preparedMeal : undefined;
       if (preparedMeal) { this.preparedMeal = undefined; this.releaseEntryPreparation(preparedMeal, true); }
       const preparedDeck = preparedConsole ?? preparedMeal;
+      const preparedDream = set?.id === 'film_trinity_roof' && sceneId === 'm2_dream' && !journey?.visiting ? this.preparedDream : undefined;
+      if (preparedDream) { this.preparedDream = undefined; this.releaseEntryPreparation(preparedDream, true); }
       const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall?.renderer : undefined;
       if (preparedMeeting) this.preparedMeetingHall = undefined;
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
@@ -3407,6 +3458,7 @@ export class FilmSetRenderer {
       this.preparedGovernment = resumingGovernment;
       this.preparedMatrixEscape = resumingMatrixEscape;
       this.preparedOneDeck = resumingOneDeck;
+      this.preparedDream = resumingDream;
       if (resumingClub) this.preparedClub = resumingClub;
       this.empDock = retainedEmpDock;
       if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
@@ -3449,7 +3501,11 @@ export class FilmSetRenderer {
           } else this.theOne = new TheOneRenderer(this.root, set.id);
         }
         else if (['m2_dream', 'm2_meeting'].includes(sceneId ?? '') && (set.id === 'film_trinity_roof' || set.id === 'film_captains_meeting')) {
-          this.reloaded = preparedMeeting ?? new ReloadedOpeningRenderer(this.root, set.id);
+          this.reloaded = preparedDream?.renderer ?? preparedMeeting ?? new ReloadedOpeningRenderer(this.root, set.id);
+          if (preparedDream) {
+            this.root.add(preparedDream.root);
+            for (const material of preparedDream.shadows?.materials ?? []) this.materials.add(material);
+          }
           if (preparedMeeting) this.root.add(preparedMeeting.group);
         }
         else if (sceneId === 'm2_catch' && set.id === 'film_trinity_roof' && !preparedSecondOracle) this.catchSet = new ReloadedCatchRenderer(this.root);
@@ -6449,6 +6505,11 @@ export class FilmSetRenderer {
     prepared.textureUpload?.return(false);
     prepared.root.removeFromParent(); prepared.overlay.dispose(); prepared.deck.dispose(); this.preparedOneDeck = undefined;
   }
+  private cancelDreamPreparation(): void {
+    const prepared = this.preparedDream;
+    if (!prepared) return;
+    this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedDream = undefined;
+  }
   private cancelTruthReturnPreparation(): void {
     const prepared = this.preparedTruthReturn; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.deck.dispose(); this.preparedTruthReturn = undefined;
@@ -6590,6 +6651,7 @@ export class FilmSetRenderer {
     this.cancelPodPreparation();
     this.cancelMatrixEscapePreparation();
     this.cancelOneDeckPreparation();
+    this.cancelDreamPreparation();
     this.cancelAwakeningPreparation();
     this.cancelDesertPreparation();
     this.cancelTruthReturnPreparation();

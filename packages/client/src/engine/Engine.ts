@@ -371,6 +371,10 @@ export class Engine {
     const oneDeckNeo = player ?? savedNeo;
     if (oneDeckNeo?.isInMatrix && oneDeckNeo.id === meeting?.actor && (meeting.scene === 'm1_death' || meeting.scene === 'm1_return'))
       this.filmSets.prepareOneDeck(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), oneDeckNeo.position);
+    const resumeDream = resumeOnLanding && meeting?.scene === 'm1_final_call';
+    this.filmSets.prepareDream(this.renderer, this.camera, player?.id === meeting?.actor || resumeDream ? meeting : undefined,
+      id => ({ model: this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), shadow: this.agentRenderer.getAgentShadow(id) }),
+      this.lightingSystem.directionalLight, this.lightCulling);
     if (meeting?.scene === 'm2_meeting' && player?.id === meeting.actor)
       this.filmSets.prepareCaptainsMeeting(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
     this.filmSets.prepareZionHomecoming(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
