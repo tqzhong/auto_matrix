@@ -1213,7 +1213,8 @@ export class AgentRenderer {
         || id === 'keymaker' && (journey?.scene === 'm2_persephone' && journey.step >= 3
           || journey?.scene === 'm2_mountain' && journey.step >= 2)
           && (!this.playerId || this.playerId === journey.actor)
-        || id === 'architect' && journey?.scene === 'm2_key_door' && journey.step >= 4
+        || (id === 'architect' && journey?.scene === 'm2_key_door' && journey.step >= 4
+          || (id === 'maggie' || id === 'roland') && journey?.scene === 'm2_stop_sentinels' && journey.step >= 1)
           && (!this.playerId || this.playerId === journey.actor));
       input.trainmanChase = state.currentAction?.parameters.trainmanChase as MotionInput['trainmanChase'];
       input.helGarage = state.currentAction?.parameters.helGarage as MotionInput['helGarage'];

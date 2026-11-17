@@ -420,11 +420,12 @@ export class Engine {
     const resumeMeal = onLanding && meeting?.scene === 'm1_steak';
     this.filmSets.prepareMeal(this.renderer, this.camera, player?.id === meeting?.actor || resumeMeal ? meeting : undefined,
       id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling, resumeMeal);
-    const resumeSecondOracle = resumeOnLanding && (meeting?.scene === 'm2_persephone' || meeting?.scene === 'm2_mountain' || meeting?.scene === 'm2_key_door');
+    const resumeSecondOracle = resumeOnLanding && (meeting?.scene === 'm2_persephone' || meeting?.scene === 'm2_mountain'
+      || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_stop_sentinels');
     this.filmSets.prepareSecondOracle(this.renderer, this.camera, player?.id === meeting?.actor || resumeSecondOracle ? meeting : undefined,
       id => id === 'seraph' && meeting?.scene === 'm2_departure' ? this.agentRenderer.getAgentDetail(id)
         : this.agentRenderer.getAgentHero(id) ?? (meeting?.scene === 'm2_burly' || meeting?.scene === 'm2_persephone'
-          || meeting?.scene === 'm2_mountain' || meeting?.scene === 'm2_key_door'
+          || meeting?.scene === 'm2_mountain' || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_stop_sentinels'
           ? this.agentRenderer.getAgentDetail(id) : this.agentRenderer.getAgentBody(id)), resumeSecondOracle);
     if (filmSet?.id === 'film_oracle_courtyard' && player?.id === meeting?.actor) this.sandboxRenderer.prepareBurlyCopies();
     if (morningApartment && liveMatrixJourney.morning?.phase === 'ready')

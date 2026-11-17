@@ -329,6 +329,7 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m2_backup: { scene: 'm2_key_door', step: 1 },
   m2_key_door: { scene: 'm2_architect', step: 4 },
   m2_architect: { scene: 'm2_catch', step: 3 },
+  m2_stop_sentinels: { scene: 'm2_medical', step: 1 },
   m3_trainman: { scene: 'm3_oracle_request', step: 3 },
   m3_oracle_request: { scene: 'm3_trainman_chase', step: 3 },
   m3_zion_prepare: { scene: 'm3_maggie_discovery', step: 3 },
@@ -389,6 +390,7 @@ export class FilmSetRenderer {
   private preparedSecondOracle?: {
     scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation;
     gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling; textureUpload?: Generator<void, boolean>;
+    liveMeshes?: ColorMesh[];
   };
   private courtyardCastColors?: CastColorPreparation;
   private preparedLafayetteGround?: { meshes: ColorMesh[]; programs: ColorProgram[] };
@@ -628,7 +630,7 @@ export class FilmSetRenderer {
       || id === 'film_seraph_teahouse' || id === 'film_backdoor_hall'
       || id === 'film_oracle_courtyard' || id === 'film_le_vrai' || id === 'film_keymaker_workshop'
       || this.matrixEscape?.setId === 'film_subway_platform'
-      || this.currentScene === 'm2_stop_sentinels' && Boolean(this.finale)
+      || (this.currentScene === 'm2_stop_sentinels' || this.currentScene === 'm2_medical') && Boolean(this.finale)
       || id === 'film_oracle_home' && (this.currentScene === 'm1_spoon' || this.currentScene === 'm1_oracle'
         || this.currentScene === 'm3_oracle_request' || this.currentScene === 'm3_oracle_last')
       || Boolean(this.interrogation || this.baneInquiry || this.baneCopy || this.hammerRoute || this.smithFinale)
@@ -2066,7 +2068,8 @@ export class FilmSetRenderer {
     const approachingGarage = journey?.scene !== 'm2_mountain' || flight?.phase === 'arrived'
       || flight?.phase === 'flying' && flight.z <= MOUNTAIN.launch.z - 30;
     const atSource = journey && cut && this.currentScene === journey.scene && this.current?.id === FILM_SCENE_BY_ID[journey.scene].set;
-    const savedCut = resume && !this.current && (journey?.scene === 'm2_persephone' || journey?.scene === 'm2_mountain' || journey?.scene === 'm2_key_door');
+    const savedCut = resume && !this.current && (journey?.scene === 'm2_persephone' || journey?.scene === 'm2_mountain'
+      || journey?.scene === 'm2_key_door' || journey?.scene === 'm2_stop_sentinels');
     if (!journey || !cut || journey.visiting || journey.step < cut.step || (!atSource && !savedCut) || !approachingGarage
       || firstOracle && (meal?.kind !== 'meal' || !['performing', 'accepting', 'done'].includes(meal.phase) || crewMealAge(meal) < 8.2)) {
       this.cancelSecondOraclePreparation(); return;
@@ -2075,8 +2078,8 @@ export class FilmSetRenderer {
     const next = FILM_SCENE_BY_ID[cut.scene];
     const teaEntry = next.id === 'm2_seraph', leVraiEntry = next.id === 'm2_merovingian';
     const libraryEntry = next.id === 'm2_library', chateauEntry = next.id === 'm2_chateau';
-    const garageEntry = next.id === 'm2_garage', architectEntry = next.id === 'm2_architect';
-    const matrixEntry = firstOracle || teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || architectEntry;
+    const garageEntry = next.id === 'm2_garage', architectEntry = next.id === 'm2_architect', medicalEntry = next.id === 'm2_medical';
+    const isolatedEntry = firstOracle || teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || architectEntry || medicalEntry;
     if (!this.preparedSecondOracle) {
       const set = FILM_SETS[next.set], { x, y, z } = set.center;
       const room = new FilmSetRenderer(new THREE.Scene());
@@ -2089,7 +2092,7 @@ export class FilmSetRenderer {
       if (prepared.steps.next().done) prepared.steps = undefined;
       return;
     }
-    if (matrixEntry && prepared.gpu !== renderer.properties) {
+    if (isolatedEntry && prepared.gpu !== renderer.properties) {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose(); prepared.colors = undefined; prepared.gpu = renderer.properties;
     }
@@ -2098,28 +2101,31 @@ export class FilmSetRenderer {
       for (const texture of prepared.room.textures) if (!texture.image) return;
       const room = prepared.room;
       const colors = this.colorPreparation(room.root, [], {
-        includeBasic: teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry
+        includeBasic: teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || medicalEntry
           || Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
         playerView: savedCut,
       });
       for (const texture of room.architectRoom?.screenTextures ?? []) colors.textures.add(texture);
       prepared.colors = { ...colors, actors: new Set() };
-      if (matrixEntry) {
+      if (isolatedEntry) {
         colors.meshes.push(this.marker);
         if (room.chateauVolley) colors.meshes.push(...this.colorMeshes(room.chateauVolley.children));
         prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
+        if (medicalEntry) prepared.liveMeshes = [this.marker];
       }
     }
     if (prepared.colors) {
       const cast = [next.actor, ...next.cast];
-      if (matrixEntry) {
+      if (isolatedEntry) {
         const colors = prepared.colors;
         for (const id of cast) {
           const group = actor(id); if (!group || colors.actors.has(group)) continue;
           let meshes: ColorMesh[];
-          const detailed = teaEntry && id === 'seraph' || (libraryEntry || garageEntry) && id === 'keymaker' || architectEntry && id === 'architect';
-          if (detailed && (!group.getObjectByName(`${id}-detailed-body`) || !group.getObjectByName(`${id}-detailed-head`))) continue;
-          if (detailed || libraryEntry || garageEntry || architectEntry) {
+          const detailed = teaEntry && id === 'seraph' || (libraryEntry || garageEntry) && id === 'keymaker'
+            || architectEntry && id === 'architect' || medicalEntry && id === 'roland';
+          if ((detailed || medicalEntry && id === 'maggie') && !group.getObjectByName(`${id}-detailed-head`)) continue;
+          if (detailed && !group.getObjectByName(`${id}-detailed-body`)) continue;
+          if (detailed || libraryEntry || garageEntry || architectEntry || medicalEntry) {
             meshes = this.colorMeshes(group.children, true);
           } else {
             meshes = [];
@@ -2130,9 +2136,11 @@ export class FilmSetRenderer {
           }
           if (!meshes.length) continue;
           colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+          prepared.liveMeshes?.push(...meshes);
         }
-        const deferBindings = garageEntry || architectEntry;
-        this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated', deferBindings, deferBindings ? [this.marker] : undefined);
+        const deferBindings = garageEntry || architectEntry || medicalEntry;
+        this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated', deferBindings,
+          prepared.liveMeshes ?? (deferBindings ? [this.marker] : undefined));
         this.prepareStagedColorTexture(renderer, prepared, colors.textures, 4);
         return;
       }
@@ -3103,6 +3111,10 @@ export class FilmSetRenderer {
       while (!this.trainmanChase.prepareStep()) yield;
       return;
     }
+    if (set.id === 'film_hammer_deck' && this.currentScene === 'm2_medical') {
+      this.finale = new ReloadedFinaleRenderer(this.root, 'm2_medical');
+      return;
+    }
     if (set.id === 'film_hammer_deck' && this.currentScene === 'm3_maggie_discovery') {
       this.maggieDiscovery = new MaggieDiscoveryRenderer(this.root);
       return;
@@ -3161,6 +3173,7 @@ export class FilmSetRenderer {
     this.oracleVase = room.oracleVase; room.oracleVase = undefined;
     this.oracleVase?.moveTo(this.root);
     this.trainmanChase = room.trainmanChase; room.trainmanChase = undefined;
+    this.finale = room.finale; room.finale = undefined;
     this.maggieDiscovery = room.maggieDiscovery; room.maggieDiscovery = undefined;
     room.dispose();
   }
@@ -3685,7 +3698,7 @@ export class FilmSetRenderer {
           this.meeting.attach(this.root);
         }
         else if (sceneId === 'm2_stop_sentinels' && set.id === 'film_service_tunnels') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
-        else if (sceneId === 'm2_medical' && set.id === 'film_hammer_deck') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
+        else if (sceneId === 'm2_medical' && set.id === 'film_hammer_deck' && !preparedSecondOracle) this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
         else {
           if (preparedVisit) this.adoptOpeningRoom(preparedVisit.room);
           else if (preparedOpening) {

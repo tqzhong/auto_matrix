@@ -371,6 +371,33 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     enter('m2_departure', 4);
     assert.equal(disposals, 1);
   });
+  await t.test('the saved tunnel prepares the Hammer beds and brings in the finished medical cast', t => {
+    t.mock.method(HeroModels.prototype, 'create', async () => undefined);
+    const maggie = new THREE.Group(), fallback = new THREE.Mesh(body.geometry, body.material);
+    maggie.visible = false; maggie.add(fallback); libraryCast.set('maggie', maggie);
+    t.after(() => { libraryCast.delete('maggie'); });
+    enter('m2_stop_sentinels', 0); preview = undefined; prepare(); assert.ok(!preview);
+    enter('m2_stop_sentinels', 2); sets.update(undefined, sandbox, 0);
+    const bed = warm('hammer-medical-neo', true);
+    assert.ok(preview!.getObjectByName('hammer-medical-bane'));
+    assert.ok(!compiled.has(fallback));
+    const face = new THREE.Mesh(body.geometry, body.material); face.name = 'maggie-detailed-head';
+    fallback.visible = false; maggie.add(face);
+    for (let i = 0; i < 30; i++) prepare(true);
+    assert.ok(compiled.has(face));
+    assert.equal(maggie.visible, false);
+    const pointCount = pointSlots(preview!);
+    const mattress = bed.getObjectByName('medical-mattress') as THREE.Mesh;
+    let disposals = 0; mattress.geometry.addEventListener('dispose', () => disposals++);
+    enter('m2_stop_sentinels', 2);
+    assert.equal(scene.getObjectByName(bed.name), undefined);
+    enter('m2_medical', 0);
+    assert.equal(scene.getObjectByName(bed.name), bed);
+    assert.equal(pointSlots(scene), pointCount);
+    assert.equal(sets.stablePointSlots, true);
+    enter('m2_departure', 0);
+    assert.equal(disposals, 1);
+  });
   await t.test('Mobil prepares the Oracle apartment with its open entrance and intact vase', () => {
     enter('m3_trainman', 2); preview = undefined; prepare(); assert.ok(!preview);
     enter('m3_trainman', 3);
