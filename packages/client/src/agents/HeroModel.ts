@@ -610,25 +610,29 @@ export class HeroModels {
       this.mesh(needle, new THREE.BoxGeometry(.006, .095, .003), ink).position.y = .03;
       this.mesh(watch, new THREE.BoxGeometry(.012, .058, .005), ink).position.set(-.007, .021, -.034);
     }
-    if (support === 'ballard') {
-      const cap = this.mesh(head, new THREE.SphereGeometry(.3, 24, 12), new THREE.MeshStandardMaterial({ color: 0x151813, roughness: .94 })); cap.position.set(.03, .21, -.04); cap.scale.set(1.15, .3, .93); cap.rotation.z = -.17;
-    }
-    if (support === 'link') {
-      const hair = new THREE.MeshStandardMaterial({ color: 0x17140f, roughness: .96 });
+    if (support === 'link' || support === 'ballard') {
+      const link = support === 'link';
+      const hair = new THREE.MeshStandardMaterial({ color: link ? 0x17140f : 0x151813, roughness: link ? .96 : .94 });
       const scalp: number[] = [];
       root.updateWorldMatrix(true, true);
+      const toHead = head.matrixWorld.clone().invert(), point = new THREE.Vector3();
       root.traverse(object => {
         if (!(object instanceof THREE.SkinnedMesh) || (object.material as THREE.Material).name !== 'Skin') return;
         object.skeleton.update(); const indices = object.geometry.index!;
+        const points = new Array<THREE.Vector3 | undefined>(object.geometry.attributes.position.count);
+        for (let i = 0; i < points.length; i++) {
+          object.getVertexPosition(i, point).applyMatrix4(object.matrixWorld);
+          const hairline = metadata.eye[1] - .34 + THREE.MathUtils.smoothstep(point.z, -.15, .23) * .47;
+          if (point.y > hairline) points[i] = point.clone().applyMatrix4(toHead).multiplyScalar(1.025);
+        }
         for (let i = 0; i < indices.count; i += 3) {
-          const points = [0, 1, 2].map(k => object.localToWorld(object.getVertexPosition(indices.getX(i + k), new THREE.Vector3())));
-          if (!points.every(p => p.y > metadata.eye[1] - .34 + THREE.MathUtils.smoothstep(p.z, -.15, .23) * .47)) continue;
-          for (const point of points) { head.worldToLocal(point); point.multiplyScalar(1.025); scalp.push(point.x, point.y, point.z); }
+          const a = points[indices.getX(i)], b = points[indices.getX(i + 1)], c = points[indices.getX(i + 2)];
+          if (a && b && c) scalp.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
         }
       });
       const shell = new THREE.BufferGeometry(); shell.setAttribute('position', new THREE.Float32BufferAttribute(scalp, 3)); shell.computeVertexNormals();
-      this.mesh(head, shell, hair).name = 'link-hair-cap';
-      for (let i = 0; i < 24; i++) {
+      this.mesh(head, shell, hair).name = `${support}-hair-cap`;
+      if (link) for (let i = 0; i < 24; i++) {
         const angle = i * 2.39996323, radius = .1 + Math.sqrt(i / 24) * .21;
         const x = Math.sin(angle) * radius, z = Math.cos(angle) * radius;
         const braid = this.mesh(head, new THREE.TubeGeometry(new THREE.CatmullRomCurve3([

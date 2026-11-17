@@ -85,6 +85,40 @@ test('the single disk stays under the actual holder palm while offered, received
   assert.equal(misses.length, 0, JSON.stringify(misses.slice(0, 8)));
 });
 
+test('Ballard’s short hair follows his actual scalp while he delivers the disk', async t => {
+  const h = await setup(t), state = newZionMessage(1);
+  const hero = h.renderer.getAgentHero('ballard')!, head = hero.getObjectByName('head')!;
+  const skin = hero.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+  const hair = head.children.find(part => part instanceof THREE.Mesh && part.material instanceof THREE.MeshStandardMaterial
+    && part.material.color.getHex() === 0x151813) as THREE.Mesh;
+  assert.ok(hair && skin instanceof THREE.SkinnedMesh);
+  for (const phase of ['offer', 'taking', 'stowing'] as const) {
+    state.phase = phase; state.elapsed = .36; state.owner = phase === 'stowing' ? 'neo' : 'ballard';
+    h.pose(state);
+    const fromWorld = head.matrixWorld.clone().invert(), fromSkin = fromWorld.clone().multiply(skin.matrixWorld);
+    const fromHair = fromWorld.clone().multiply(hair.matrixWorld), scalp: THREE.Vector3[] = [];
+    for (let i = 0; i < skin.geometry.attributes.position.count; i++) {
+      const point = skin.getVertexPosition(i, new THREE.Vector3()).applyMatrix4(fromSkin);
+      // Include the back hairline below the head bone while excluding the hands.
+      if (point.lengthSq() < .6 ** 2) scalp.push(point);
+    }
+    assert(scalp.length > 100);
+    const vertices = hair.geometry.attributes.position, point = new THREE.Vector3();
+    const sampleEvery = Math.max(1, Math.floor(vertices.count / 100));
+    let furthest = 0, top = -Infinity;
+    for (let i = 0; i < vertices.count; i++) {
+      point.fromBufferAttribute(vertices, i).applyMatrix4(fromHair);
+      top = Math.max(top, point.y);
+      if (i % sampleEvery) continue;
+      const closest = scalp.reduce((best, skinPoint) => Math.min(best, point.distanceToSquared(skinPoint)), Infinity);
+      furthest = Math.max(furthest, Math.sqrt(closest));
+    }
+    assert(furthest < .04, `${phase}: the hair crosses or lifts off the actual scalp by ${furthest}`);
+    const crown = scalp.reduce((upper, skinPoint) => Math.max(upper, skinPoint.y), -Infinity);
+    assert(top >= crown && top - crown < .04, `${phase}: the short hair must cover the crown without gapping`);
+  }
+});
+
 test('the Zion message follow camera keeps the door handle and the disk clear of Neo', async t => {
   const h = await setup(t);
   const canvas = Object.assign(new EventTarget(), { matches: () => false });
