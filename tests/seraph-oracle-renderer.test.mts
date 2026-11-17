@@ -545,6 +545,42 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     assert.equal(shadowsDisposed, 0);
     atlas.dispose(); shadow.material.dispose(); shadowMap.dispose();
   });
+  await t.test('the Logos rescue prepares the actual Hammer cockpit and its late crew before the cut', () => {
+    const niobe = new THREE.Group(); niobe.visible = false;
+    const head = new THREE.Mesh(body.geometry, body.material); head.name = 'niobe-detailed-head';
+    const atlas = new THREE.Texture({ width: 2048, complete: true }); atlas.needsUpdate = true;
+    const uniform = new THREE.Mesh(body.geometry, new THREE.MeshStandardMaterial({ map: atlas })); uniform.name = 'niobe-detailed-body';
+    const knit = new THREE.Mesh(body.geometry, new THREE.MeshStandardMaterial()); knit.name = 'morpheus-hammer-sweater';
+    const shadow = new THREE.Mesh(body.geometry, new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false }));
+    const warmHammer = () => sets.prepareSecondOracle(graphics, camera, journey,
+      id => id === 'niobe' ? niobe : id === 'morpheus' ? cast : undefined, true, undefined,
+      id => id === 'niobe' ? { shadow } : { garments: () => [knit] });
+    enter('m3_bane', 1); preview = undefined; warmHammer(); assert.ok(!preview);
+    enter('m3_bane', 2); sets.update(undefined, sandbox, 0);
+    compiled.clear(); uploads.clear();
+    for (let i = 0; i < 120; i++) warmHammer();
+    const cockpit = preview?.getObjectByName('hammer-cockpit');
+    assert.ok(cockpit, 'the actual Hammer cockpit must be staged during the Logos rescue');
+    assert.ok(!scene.getObjectByName(cockpit.name));
+    assert.ok(compiled.has(knit) && compiled.has(shadow));
+    niobe.add(head, uniform);
+    for (let i = 0; i < 20; i++) warmHammer();
+    assert.ok(compiled.has(head) && compiled.has(uniform) && uploads.has(atlas));
+    const door = cockpit.getObjectByName('hammer-aft-door') as THREE.Mesh;
+    const slots = pointSlots(preview!);
+    let disposals = 0; door.geometry.addEventListener('dispose', () => disposals++);
+    enter('m3_bane', 2);
+    enter('m3_hammer_tunnels', 0);
+    assert.equal(scene.getObjectByName(cockpit.name), cockpit);
+    assert.equal(pointSlots(scene), slots);
+    assert.ok(Math.abs(door.rotation.y) > 1);
+    journey.hammerHandover = { phase: 'ready', elapsed: 16.8, station: true };
+    enter('m3_hammer_tunnels', 2);
+    assert.equal(Math.abs(door.rotation.y), 0);
+    delete journey.hammerHandover;
+    enter('m2_departure', 0); assert.equal(disposals, 1);
+    uniform.material.dispose(); atlas.dispose(); shadow.material.dispose();
+  });
   enter('m2_departure', 4);
   const abandoned = warm('m2_seraph-keyed-door') as THREE.Mesh;
   let disposed = 0; abandoned.geometry.addEventListener('dispose', () => disposed++);

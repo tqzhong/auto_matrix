@@ -1217,7 +1217,8 @@ export class AgentRenderer {
           || journey?.scene === 'm2_mountain' && journey.step >= 2)
           && (!this.playerId || this.playerId === journey.actor)
         || (id === 'architect' && journey?.scene === 'm2_key_door' && journey.step >= 4
-          || (id === 'maggie' || id === 'roland') && journey?.scene === 'm2_stop_sentinels' && journey.step >= 1)
+          || (id === 'maggie' || id === 'roland') && journey?.scene === 'm2_stop_sentinels' && journey.step >= 1
+          || (id === 'niobe' || id === 'roland') && input.realWorld && journey?.scene === 'm3_bane' && journey.step >= 2)
           && (!this.playerId || this.playerId === journey.actor));
       input.trainmanChase = state.currentAction?.parameters.trainmanChase as MotionInput['trainmanChase'];
       input.helGarage = state.currentAction?.parameters.helGarage as MotionInput['helGarage'];

@@ -337,6 +337,7 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m3_hel_garage: { scene: 'm3_hel_entry', step: 1 },
   m3_zion_prepare: { scene: 'm3_maggie_discovery', step: 3 },
   m3_maggie_discovery: { scene: 'm3_bane', step: 5 },
+  m3_bane: { scene: 'm3_hammer_tunnels', step: 2 },
 };
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
@@ -2035,7 +2036,7 @@ export class FilmSetRenderer {
   }
   prepareSecondOracle(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, resume = false, helGarageTemplate?: AgentState,
-    logosCast?: (id: string) => ShipEntryCast): void {
+    shipCast?: (id: string) => ShipEntryCast): void {
     if (this.current?.id === 'film_chateau_garage' && journey?.scene === 'm2_garage' && !journey.visiting && journey.step >= 1) {
       if (journey.garage?.phase === 'wrecked') return;
       const prepared = this.preparedFreeway ??= { renderer: new FreewaySetRenderer(undefined, FILM_SETS.film_freeway_101) };
@@ -2076,7 +2077,7 @@ export class FilmSetRenderer {
     const atSource = journey && cut && this.currentScene === journey.scene && this.current?.id === FILM_SCENE_BY_ID[journey.scene].set;
     const savedCut = resume && !this.current && (journey?.scene === 'm2_persephone' || journey?.scene === 'm2_mountain'
       || journey?.scene === 'm2_key_door' || journey?.scene === 'm2_stop_sentinels' || journey?.scene === 'm3_trainman_chase'
-      || journey?.scene === 'm3_hel_garage' || journey?.scene === 'm3_maggie_discovery');
+      || journey?.scene === 'm3_hel_garage' || journey?.scene === 'm3_maggie_discovery' || journey?.scene === 'm3_bane');
     if (!journey || !cut || journey.visiting || journey.step < cut.step || (!atSource && !savedCut) || !approachingGarage
       || firstOracle && (meal?.kind !== 'meal' || !['performing', 'accepting', 'done'].includes(meal.phase) || crewMealAge(meal) < 8.2)) {
       this.cancelSecondOraclePreparation(); return;
@@ -2090,8 +2091,9 @@ export class FilmSetRenderer {
     if (helGarageEntry && !helGarageTemplate) return;
     const helElevatorEntry = next.id === 'm3_hel_entry';
     const helEntry = helGarageEntry || helElevatorEntry;
-    const logosEntry = next.id === 'm3_bane';
-    const isolatedEntry = firstOracle || teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || architectEntry || medicalEntry || helEntry || logosEntry;
+    const logosEntry = next.id === 'm3_bane', hammerEntry = next.id === 'm3_hammer_tunnels';
+    const shipEntry = logosEntry || hammerEntry;
+    const isolatedEntry = firstOracle || teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || architectEntry || medicalEntry || helEntry || shipEntry;
     if (!this.preparedSecondOracle) {
       const set = FILM_SETS[next.set], { x, y, z } = set.center;
       const room = new FilmSetRenderer(new THREE.Scene());
@@ -2114,7 +2116,7 @@ export class FilmSetRenderer {
       for (const texture of prepared.room.textures) if (!texture.image) return;
       const room = prepared.room;
       const colors = this.colorPreparation(room.root, [], {
-        includeBasic: teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || medicalEntry || helEntry || logosEntry
+        includeBasic: teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || medicalEntry || helEntry || shipEntry
           || Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
         playerView: savedCut,
       });
@@ -2124,8 +2126,8 @@ export class FilmSetRenderer {
         colors.meshes.push(this.marker);
         if (room.chateauVolley) colors.meshes.push(...this.colorMeshes(room.chateauVolley.children));
         prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
-        if (medicalEntry || logosEntry) prepared.liveMeshes = [this.marker];
-        const shadow = logosEntry ? logosCast?.(next.actor).shadow : undefined;
+        if (medicalEntry || shipEntry) prepared.liveMeshes = [this.marker];
+        const shadow = shipEntry ? shipCast?.(next.actor).shadow : undefined;
         if (shadow) { colors.meshes.unshift(shadow); prepared.liveMeshes?.push(shadow); }
       }
     }
@@ -2140,10 +2142,11 @@ export class FilmSetRenderer {
           if (!group || colors.actors.has(group)) continue;
           let meshes: ColorMesh[];
           const detailed = (teaEntry || helEntry) && id === 'seraph' || (libraryEntry || garageEntry) && id === 'keymaker'
-            || architectEntry && id === 'architect' || medicalEntry && id === 'roland' || logosEntry && id === 'bane';
+            || architectEntry && id === 'architect' || medicalEntry && id === 'roland' || logosEntry && id === 'bane'
+            || hammerEntry && (id === 'niobe' || id === 'roland');
           if ((detailed || medicalEntry && id === 'maggie') && !group.getObjectByName(`${id}-detailed-head`)) continue;
           if (detailed && !group.getObjectByName(`${id}-detailed-body`)) continue;
-          if (detailed || libraryEntry || garageEntry || architectEntry || medicalEntry || helEntry || logosEntry) {
+          if (detailed || libraryEntry || garageEntry || architectEntry || medicalEntry || helEntry || shipEntry) {
             meshes = this.colorMeshes(group.children, true);
           } else {
             meshes = [];
@@ -2152,7 +2155,8 @@ export class FilmSetRenderer {
               if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
             });
           }
-          const garments = logosEntry && (id === 'neo' || id === 'trinity') ? logosCast?.(id).garments?.() ?? [] : [];
+          const hasShipGarments = logosEntry && (id === 'neo' || id === 'trinity') || hammerEntry && id === 'morpheus';
+          const garments = hasShipGarments ? shipCast?.(id).garments?.() ?? [] : [];
           if (garments.length) {
             const names = new Set(garments.map(mesh => mesh.name));
             meshes = meshes.filter(mesh => !names.has(mesh.name));
@@ -2163,7 +2167,7 @@ export class FilmSetRenderer {
           this.queueColorTextures(colors.textures, [...meshes, ...garments]);
           prepared.liveMeshes?.push(...meshes);
         }
-        const deferBindings = garageEntry || architectEntry || medicalEntry || helEntry || logosEntry;
+        const deferBindings = garageEntry || architectEntry || medicalEntry || helEntry || shipEntry;
         this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated', deferBindings,
           prepared.liveMeshes ?? (deferBindings ? [this.marker] : undefined));
         this.prepareStagedColorTexture(renderer, prepared, colors.textures, 4);
@@ -3153,6 +3157,10 @@ export class FilmSetRenderer {
       this.buildLogosBane().update(undefined, 0, 0);
       return;
     }
+    if (set.id === 'film_hammer_route') {
+      this.hammerRoute = new HammerRouteRenderer(this.root);
+      return;
+    }
     yield* this.buildSteps(set, lights, true);
     yield* this.batchSteps(true);
     if (set.id === 'film_chateau_hall') this.buildChateauProps();
@@ -3217,6 +3225,7 @@ export class FilmSetRenderer {
     this.maggieDiscovery = room.maggieDiscovery; room.maggieDiscovery = undefined;
     this.logosBane = room.logosBane; room.logosBane = undefined;
     this.logosBane?.moveTo(this.root);
+    this.hammerRoute = room.hammerRoute; room.hammerRoute = undefined;
     room.dispose();
   }
   private buildLogosBane(): LogosBaneRenderer {
@@ -3705,7 +3714,7 @@ export class FilmSetRenderer {
           if (preparedMountain) this.root.add(preparedMountain.root);
           this.mountain = preparedMountain?.renderer ?? new MountainSetRenderer(this.root);
         }
-        else if (set.id === 'film_hammer_route') this.hammerRoute = new HammerRouteRenderer(this.root);
+        else if (set.id === 'film_hammer_route' && !preparedSecondOracle) this.hammerRoute = new HammerRouteRenderer(this.root);
         else if (set.id === 'film_machine_defense' || set.id === 'film_above_clouds') this.logosFlight = new LogosFlightRenderer(this.root, set.id === 'film_machine_defense' ? 'defense' : 'sun');
         else if (set.id === 'film_logos_wreck') this.logosWreck = new LogosWreckRenderer(this.root);
         else if (['m3_deus', 'm3_neo_carried'].includes(sceneId ?? '') && set.id === 'film_machine_core') this.machineCore = new MachineCoreRenderer(this.root);
