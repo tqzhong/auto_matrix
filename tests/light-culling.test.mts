@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import lightFragmentSource from 'three/src/renderers/shaders/ShaderChunk/lights_fragment_begin.glsl.js';
-import { APU_RIG, APU_ROUTE, BANE_INQUIRY, BASEMENT, DIGGERS, DOCK_GUNNERY, FILM_SCENE_BY_ID, FILM_SETS, TRAINMAN_CHASE, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newGarageEscape, newHammerFlight, newHammerGunnery, newSmithFinale, newTrainmanChase, newUpperDigger, trainmanPassingTrain, type AirRescueEncounter, type BasementEncounter, type FilmJourney, type SandboxState, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { APU_RIG, APU_ROUTE, BANE_INQUIRY, BASEMENT, DIGGERS, DOCK_GUNNERY, DOCK_RELOAD, FILM_SCENE_BY_ID, FILM_SETS, TRAINMAN_CHASE, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newDockReload, newGarageEscape, newHammerFlight, newHammerGunnery, newSmithFinale, newTrainmanChase, newUpperDigger, trainmanPassingTrain, type AirRescueEncounter, type BasementEncounter, type FilmJourney, type SandboxState, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -1003,6 +1003,7 @@ test('the dock defense stabilizes the moving approach and keeps cockpit light cu
     h.camera.lookAt(actor.position.x + Math.sin(yaw) * 8, actor.position.y + 2, actor.position.z + Math.cos(yaw) * 8);
     assert.equal(renderer.update(actor, sandbox, 0, actor.position, h.camera.position, undefined, false, 12000, h.camera)?.id, ground.set);
     h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.culling.minimumPointSlots = renderer.minimumPointSlots;
     h.before();
     let slots = 0, dockLamps = 0;
     try {
@@ -1040,13 +1041,21 @@ test('the dock defense stabilizes the moving approach and keeps cockpit light cu
   assert.deepEqual(sample(mifune, -4.3, 0, 44, -Math.PI / 2), entrance);
   assert.deepEqual(sample(mifune, -4.3, 0, 10, Math.PI), entrance);
   journey.dockGunnery.phase = 'firing';
-  sample(mifune, 0, APU_RIG.floor + APU_RIG.pilot.y, DOCK_GUNNERY.apuZ, Math.PI - .8);
+  const firing = sample(mifune, 0, APU_RIG.floor + APU_RIG.pilot.y, DOCK_GUNNERY.apuZ, Math.PI - .8);
   assert.equal(renderer.stablePointSlots, false, 'the cockpit can cull lights outside its restricted view');
+  assert.equal(firing.slots, entrance.slots, 'mounting the APU keeps the approach layout');
 
   const kid = world.agents.get('kid')!;
   kid.isInMatrix = false;
+  journey.actor = kid.id; journey.step = 1;
+  journey.dockGunnery.phase = 'cleared'; journey.dockReload = newDockReload();
+  const cart = DOCK_RELOAD.entry;
+  assert.equal(sample(kid, cart.x, 0, cart.z, -Math.PI / 2).slots, entrance.slots, 'turning at the reload cart keeps the layout');
+  Object.assign(journey.dockReload, { phase: 'hoisting', lift: .35 });
+  assert.equal(sample(kid, cart.x, 0, cart.z, Math.PI).slots, entrance.slots, 'raising the box keeps the same layout');
+
   journey.scene = 'm3_gate'; journey.actor = kid.id; journey.completed.push('m3_dock_battle');
-  delete journey.dockGunnery;
+  journey.step = 0; delete journey.dockGunnery; delete journey.dockReload;
   const handoff = sample(kid, -1.55, 0, 6.3, -Math.PI / 2);
   assert.equal(handoff.slots, entrance.slots, 'the hovering Sentinels use the existing dock slots at the handoff');
   assert.equal(sample(kid, -5.5, 0, 6.3, Math.PI / 2).slots, handoff.slots);

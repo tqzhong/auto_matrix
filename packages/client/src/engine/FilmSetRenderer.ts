@@ -209,6 +209,7 @@ type ShipEntryCast = EntryCast & { garments?: () => ColorMesh[] };
 const JUMP_ENTRY_MESHES = new Set(['jump-tower-windows', 'jump-canyon-avenue', 'jump-city-matte']);
 const QUESTIONING_POINT_SLOTS = 1;
 const LOGOS_CARGO_POINT_SLOTS = 7;
+const DOCK_BATTLE_POINT_SLOTS = 20;
 const CITY_CHASE_POINT_SLOTS = 2;
 const TRINITY_ROOF_POINT_SLOTS = 7;
 const MEETING_WAKE_POINT_SLOTS = 16;
@@ -600,6 +601,8 @@ export class FilmSetRenderer {
     if (this.ambush) return AMBUSH_POINT_SLOTS;
     if (this.club) return CLUB_POINT_SLOTS;
     if (this.logosBane) return LOGOS_CARGO_POINT_SLOTS;
+    // Reuse the dock approach programs when the cockpit and reload views cull fixtures.
+    if (this.current?.id === 'film_zion_hangar' && this.currentScene === 'm3_dock_battle') return DOCK_BATTLE_POINT_SLOTS;
     if (this.currentScene === 'm1_pills' && this.approach?.root.visible) return LAFAYETTE_STREET_POINT_SLOTS;
     // Seven fixtures, the objective and the player plus four police muzzle flashes.
     if (this.current?.id === 'film_heart_hotel' && this.currentScene === 'm1_room303') return 13;
