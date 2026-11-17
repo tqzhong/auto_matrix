@@ -16,9 +16,11 @@
 
 1-02 耳语接触复验保存在 `quality-club-1118bk/`。其中 `world.json` 与 `memories/` 是第 560 刻返家续档，`whisper-source.json.gz` 是同档穿模复测的原始耳语档，另保留五处完整冷读、实际模型相交检查和相关回归的压缩记录。该次恢复从原始世界档启动，独立记忆库由隔离规则模式初始化。
 
+上述续档及五处冷读副本逐一通过 SHA-256 核对后，本轮临时运行目录已删除，回收约 74.86 MiB；另删除一份过期预览脚本，约 4.10 MiB。构建、发布及静音浏览器检查的精简记录保存在 `quality-club-1118bk/preview-publish/`，清理结果见同级恢复目录的 `cleanup-quality-1118bk.json`。项目 `output/` 保持不存在。
+
 原 5173 试玩从 `output/` 读取预览构建。清理后用已提交源码重建并迁出运行目录和存档，默认端口保持 5173。上述本机目录的 `local-preview-runtime/` 提供客户端和服务端，`local-preview-data/` 保存试玩世界。切换后用 HTTP 核对页面、角色素材和 85 人世界，原保存刻恢复一致。
 
-5173 客户端已同步坠落读档准备修复，对应源码版本为 `0355cd36`。构建文件和 HTTP 内容经 SHA-256 核对，隔离静音 Chrome 已正常载入登录页，控制台无错误及警告。`local-preview-runtime/CLIENT-REVISION.json` 保存客户端版本及发布核对结果。
+5173 客户端已同步坠落读档准备和夜店耳语接触修复，对应源码版本为 `2d56ee7b`。构建文件和 HTTP 内容经 SHA-256 核对，隔离静音 Chrome 已正常载入登录页，控制台无错误及警告。`local-preview-runtime/CLIENT-REVISION.json` 保存客户端版本及发布核对结果。
 
 在项目根目录执行以下命令，把指定资料提取到临时目录。
 
