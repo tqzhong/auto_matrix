@@ -151,6 +151,59 @@ test('the final flight prepares the real dream roof and its cast before Trinity 
   assert.equal(released, 1);
 });
 
+test('the end of the dream prepares the cabin and Neo under the waking light layout', t => {
+  const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene), world = new WorldState();
+  new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, trinity = world.agents.get('trinity')!;
+  const state = journey('dream'), sandbox = { neoLife: { journey: state } } as SandboxState;
+  trinity.position = filmPosition('film_trinity_roof'); trinity.isInMatrix = true;
+  neo.position = filmPosition('film_neb_deck', 12.5, 32); neo.isInMatrix = false;
+  const sun = new THREE.DirectionalLight(), camera = new THREE.PerspectiveCamera();
+  scene.add(sun, new THREE.DirectionalLight(), new THREE.HemisphereLight());
+  const geometry = new THREE.BoxGeometry(), skin = new THREE.Texture({ width: 2048, height: 2048 });
+  skin.needsUpdate = true;
+  const material = new THREE.MeshStandardMaterial({ map: skin }), actor = new THREE.Group();
+  const mesh = new THREE.Mesh(geometry, material); mesh.name = 'Anatomical_head_and_hands'; actor.add(mesh); actor.visible = false;
+  t.after(() => { sets.dispose(); geometry.dispose(); material.dispose(); skin.dispose(); });
+  let grating: THREE.Mesh | undefined, face = false;
+  const uploads: THREE.Texture[] = [];
+  const graphics = { extensions: { has: () => true }, properties: { get: () => ({}) }, info: { programs: [] },
+    getRenderTarget: () => null, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
+    setRenderTarget() {}, render() {}, initTexture(map: THREE.Texture) { uploads.push(map); },
+    compile(subject: THREE.Group, _camera: THREE.Camera, lights: THREE.Scene) {
+      let points = 0;
+      lights.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
+      assert.equal(points, 16);
+      subject.traverse(object => {
+        if (object instanceof THREE.Mesh && object.name === 'neb-cabin-grating') grating = object;
+        if (object === mesh) face = true;
+      });
+    } } as unknown as THREE.WebGLRenderer;
+  const prepare = () => sets.prepareMeetingWake?.(graphics, camera, state, id => ({ model: id === 'neo' ? actor : undefined }), sun);
+  state.reloaded!.phase = 'falling'; state.reloaded!.elapsed = 3.2;
+  for (let frame = 0; frame < 20; frame++) prepare();
+  assert.deepEqual(uploads, []);
+  assert.equal(grating, undefined);
+  state.reloaded!.phase = 'dream_hit';
+  for (let frame = 0; frame < 120; frame++) prepare();
+  assert.ok(grating, 'the waking cabin must be prepared before admitting the saved dream');
+  assert.equal(face, true);
+  assert.deepEqual(uploads, [skin]);
+  assert.equal(actor.visible, false);
+  sets.update(trinity, sandbox, 1);
+  assert.ok(!scene.getObjectByName('neb-cabin-grating'));
+
+  const wake = journey('meeting'); wake.reloaded!.phase = 'waking';
+  sandbox.neoLife!.journey = wake;
+  sets.update(neo, sandbox, 2);
+  assert.equal(scene.getObjectByName('neb-cabin-grating'), grating);
+  assert.ok(scene.getObjectByName('reloaded-opening-set'));
+  let released = 0;
+  grating.geometry.addEventListener('dispose', () => { released++; });
+  sets.update(undefined, undefined, 3);
+  assert.equal(released, 1);
+});
+
 test('the meeting adopts the prepared hall and warms the breach cast with the live light slots', t => {
   const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene), world = new WorldState();
   new AgentManager(world).initializeAllAgents();

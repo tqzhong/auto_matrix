@@ -375,6 +375,9 @@ export class Engine {
     this.filmSets.prepareDream(this.renderer, this.camera, player?.id === meeting?.actor || resumeDream ? meeting : undefined,
       id => ({ model: this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), shadow: this.agentRenderer.getAgentShadow(id) }),
       this.lightingSystem.directionalLight, this.lightCulling);
+    const resumeMeetingWake = resumeOnLanding && meeting?.scene === 'm2_dream';
+    this.filmSets.prepareMeetingWake(this.renderer, this.camera, player?.id === meeting?.actor || resumeMeetingWake ? meeting : undefined,
+      id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling);
     if (meeting?.scene === 'm2_meeting' && player?.id === meeting.actor)
       this.filmSets.prepareCaptainsMeeting(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
     this.filmSets.prepareZionHomecoming(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
