@@ -386,6 +386,9 @@ export class Engine {
     const resumeZionCut = onLanding && (meeting?.scene === 'm2_oracle_message' || meeting?.scene === 'm3_shaft_seal');
     this.filmSets.prepareZionHomecoming(this.renderer, this.camera, player?.id === meeting?.actor || resumeZionCut ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id), resumeZionCut, this.lightCulling);
+    const resumeLogosDefense = onLanding && meeting?.scene === 'm3_temple_defense';
+    this.filmSets.prepareLogosDefense(this.renderer, this.camera, player?.id === meeting?.actor || resumeLogosDefense ? meeting : undefined,
+      id => this.agentRenderer.getShipEntryCast(id), this.lightCulling, resumeLogosDefense);
     this.filmSets.prepareTruthReturn(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
     this.filmSets.prepareDownloadWalk(this.renderer, this.camera, this.lightCulling, player?.id === meeting?.actor ? meeting : undefined,

@@ -520,6 +520,7 @@ export class FilmSetRenderer {
   private hammerMonitors?: { face: THREE.MeshStandardMaterial; glyphs: THREE.MeshBasicMaterial };
   private hammerRoute?: HammerRouteRenderer;
   private logosFlight?: LogosFlightRenderer;
+  private preparedLogosDefense?: EntryPreparation & { renderer: LogosFlightRenderer; colors?: CastColorPreparation };
   private logosAltitude = 22;
   private logosTop = 62;
   private logosWreck?: LogosWreckRenderer;
@@ -2065,6 +2066,53 @@ export class FilmSetRenderer {
       this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2);
     } else this.prepareColorFrame(renderer, camera, colors);
   }
+  prepareLogosDefense(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    cast: (id: string) => ShipEntryCast, sourceLights?: LightCulling, resume = false): void {
+    const atTemple = this.currentScene === 'm3_temple_defense' && this.current?.id === 'film_zion_temple';
+    const savedTemple = resume && !this.current;
+    if (journey?.scene !== 'm3_temple_defense' || journey.visiting || (!atTemple && !savedTemple)
+      || !(journey.completed.includes(journey.scene) || journey.step >= 3 && journey.templeSeal?.phase === 'sealed')) {
+      this.cancelLogosDefensePreparation(); return;
+    }
+    if (!this.preparedLogosDefense) {
+      const root = new THREE.Group();
+      this.preparedLogosDefense = { root, renderer: new LogosFlightRenderer(root, 'defense', true), liveMeshes: [] };
+    }
+    const prepared = this.preparedLogosDefense;
+    if (!prepared.renderer.prepareStep() || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.colors) {
+      const colors = prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, playerView: savedTemple }), actors: new Set<THREE.Group>() };
+      // The two ship fixtures light the controls; the objective lamp is hidden in flight.
+      colors.scene.remove(...colors.scene.children.filter(light => light instanceof THREE.PointLight));
+      const sky = prepared.root.getObjectByName('logos-atmosphere');
+      if (sky instanceof THREE.Mesh) colors.meshes.unshift(sky);
+      prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
+      if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+        prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
+        this.queueEntryShadows(prepared, colors.meshes);
+      }
+    }
+    const colors = prepared.colors;
+    for (const id of ['neo', 'trinity']) {
+      const { model, shadow, garments } = cast(id);
+      if (!model || colors.actors.has(model)) continue;
+      const wardrobe = garments?.() ?? [], changed = new Set(wardrobe.map(mesh => mesh.name));
+      const meshes = this.colorMeshes(model.children, true).filter(mesh => !changed.has(mesh.name));
+      const band = model.getObjectByName('neo-farewell-eye-band');
+      if (band instanceof THREE.Mesh && band.material instanceof THREE.MeshStandardMaterial && !meshes.includes(band)) meshes.push(band);
+      if (!meshes.length && !wardrobe.length) continue;
+      colors.actors.add(model);
+      if (wardrobe.length) {
+        const materials = prepared.materials ??= new Set();
+        wardrobe.forEach(mesh => materials.add(mesh.material));
+      }
+      if (shadow) { colors.meshes.unshift(shadow); prepared.liveMeshes.push(shadow); }
+      const surfaces = [...meshes, ...wardrobe];
+      colors.meshes.unshift(...surfaces); prepared.liveMeshes.push(...meshes);
+      this.queueColorTextures(colors.textures, surfaces); this.queueEntryShadows(prepared, surfaces);
+    }
+    this.prepareStagedEntry(renderer, camera, prepared, colors, atTemple ? sourceLights : undefined, 2);
+  }
   private prepareBaneCopy(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined): void {
     if (!journey || journey.scene !== 'm2_room' || journey.visiting || journey.step < 1
@@ -3556,6 +3604,9 @@ export class FilmSetRenderer {
       const resumingZionCut = resumingScene && sceneId && zionCut && set?.id === FILM_SCENE_BY_ID[sceneId].set
         && journey?.actor === player?.id && this.preparedZion?.scene === zionCut.scene ? this.preparedZion : undefined;
       if (resumingZionCut) this.preparedZion = undefined;
+      const resumingLogosDefense = resumingScene && sceneId === 'm3_temple_defense' && set?.id === 'film_zion_temple'
+        && player?.id === journey?.actor ? this.preparedLogosDefense : undefined;
+      if (resumingLogosDefense) this.preparedLogosDefense = undefined;
       const nextOracleCut = sceneId && SECOND_ORACLE_CUTS[sceneId];
       const resumingSecondOracle = resumingScene && sceneId && nextOracleCut && set?.id === FILM_SCENE_BY_ID[sceneId].set
         && journey?.actor === player?.id && this.preparedSecondOracle?.scene === nextOracleCut.scene ? this.preparedSecondOracle : undefined;
@@ -3619,6 +3670,11 @@ export class FilmSetRenderer {
       if (preparedZion) {
         this.preparedZion = undefined; this.releaseEntryPreparation(preparedZion, true);
       }
+      const preparedLogosDefense = sceneId === 'm3_defense' && set?.id === 'film_machine_defense' && !journey?.visiting
+        ? this.preparedLogosDefense : undefined;
+      if (preparedLogosDefense) {
+        this.preparedLogosDefense = undefined; this.releaseEntryPreparation(preparedLogosDefense, true);
+      }
       const preparedBaneCopy = set?.id === 'film_industrial_loft' && sceneId === 'm2_bane_copy' && !journey?.visiting ? this.preparedBaneCopy?.renderer : undefined;
       if (preparedBaneCopy) this.preparedBaneCopy = undefined;
       const empHangar = this.currentScene === 'm3_gate' && this.zion?.set === 'film_zion_hangar'
@@ -3662,6 +3718,7 @@ export class FilmSetRenderer {
       this.preparedDream = resumingDream;
       this.preparedMeetingDeck = resumingMeetingDeck;
       if (resumingZionCut) this.preparedZion = resumingZionCut;
+      if (resumingLogosDefense) this.preparedLogosDefense = resumingLogosDefense;
       if (resumingSecondOracle) this.preparedSecondOracle = resumingSecondOracle;
       if (resumingClub) this.preparedClub = resumingClub;
       this.empHangar = empHangar;
@@ -3786,7 +3843,14 @@ export class FilmSetRenderer {
           this.mountain = preparedMountain?.renderer ?? new MountainSetRenderer(this.root);
         }
         else if (set.id === 'film_hammer_route' && !preparedSecondOracle) this.hammerRoute = new HammerRouteRenderer(this.root);
-        else if (set.id === 'film_machine_defense' || set.id === 'film_above_clouds') this.logosFlight = new LogosFlightRenderer(this.root, set.id === 'film_machine_defense' ? 'defense' : 'sun');
+        else if (set.id === 'film_machine_defense' || set.id === 'film_above_clouds') {
+          this.logosFlight = preparedLogosDefense?.renderer ?? new LogosFlightRenderer(this.root, set.id === 'film_machine_defense' ? 'defense' : 'sun');
+          if (preparedLogosDefense) {
+            this.logosFlight.attach(this.root);
+            for (const material of preparedLogosDefense.shadows?.materials ?? []) this.materials.add(material);
+            for (const material of preparedLogosDefense.materials ?? []) this.materials.add(material);
+          }
+        }
         else if (set.id === 'film_logos_wreck') this.logosWreck = new LogosWreckRenderer(this.root);
         else if (['m3_deus', 'm3_neo_carried'].includes(sceneId ?? '') && set.id === 'film_machine_core') this.machineCore = new MachineCoreRenderer(this.root);
         else if (set.id === 'film_smith_avenue') this.smithFinale = new SmithFinaleRenderer(this.root);
@@ -6832,6 +6896,10 @@ export class FilmSetRenderer {
   private cancelBaneCopyPreparation(): void {
     this.preparedBaneCopy?.renderer.dispose(); this.preparedBaneCopy = undefined;
   }
+  private cancelLogosDefensePreparation(): void {
+    const prepared = this.preparedLogosDefense; if (!prepared) return;
+    this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedLogosDefense = undefined;
+  }
   private cancelSecondOraclePreparation(): void {
     this.preparedSecondOracle?.textureUpload?.return(false);
     this.preparedSecondOracle?.lighting?.dispose();
@@ -6890,6 +6958,7 @@ export class FilmSetRenderer {
     this.cancelInterrogationPreparation();
     this.cancelBridgePreparation();
     this.cancelZionPreparation();
+    this.cancelLogosDefensePreparation();
     this.cancelBaneCopyPreparation();
     this.cancelSecondOraclePreparation();
     this.cancelFreewayPreparation();

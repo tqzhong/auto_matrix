@@ -21,8 +21,8 @@ export class LogosFlightRenderer {
   private discharge = new THREE.Group();
   private threats: THREE.Group[] = [];
   private swarms: THREE.Group[] = [];
-  private atmosphere: LogosAtmosphere;
-  private impact: LogosImpactRenderer;
+  private atmosphere!: LogosAtmosphere;
+  private impact!: LogosImpactRenderer;
   private cabinFrame!: LogosCabinFrame;
   private engines: THREE.MeshStandardMaterial[] = [];
   private sunlight = new THREE.DirectionalLight(0xffdfb1, 0);
@@ -30,14 +30,34 @@ export class LogosFlightRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private lights: THREE.Light[] = [];
+  private construction?: Generator<void>;
 
-  constructor(root: THREE.Group, private mode: LogosFlightMode) {
+  constructor(root: THREE.Group, private mode: LogosFlightMode, staged = false) {
+    this.construction = this.build();
+    if (staged) root.add(this.group);
+    else this.attach(root);
+  }
+
+  prepareStep(): boolean {
+    if (this.construction && !this.construction.next().done) return false;
+    this.construction = undefined;
+    return true;
+  }
+
+  attach(root: THREE.Group): void {
+    while (!this.prepareStep()) { /* Finish the ship if the handoff arrives early. */ }
     root.add(this.group);
+  }
+
+  private *build(): Generator<void> {
     this.buildShip();
     this.group.add(this.ship, this.pulse); this.ship.add(this.cockpit);
     batchStaticGeometry(this.ship, new Set(this.grips.map(grip => grip.mesh))).forEach(geometry => this.geometries.add(geometry));
+    yield;
     this.impact = new LogosImpactRenderer(this.group, this.ship);
-    if (mode === 'defense') this.buildDefense();
+    yield;
+    if (this.mode === 'defense') this.buildDefense();
+    yield;
     this.atmosphere = new LogosAtmosphere(this.group);
     this.sunlight.position.set(-44, 18, -87); this.group.add(this.sunlight, this.sunlight.target, this.skyFill);
     this.lights.push(this.sunlight, this.skyFill);
@@ -255,9 +275,10 @@ export class LogosFlightRenderer {
   }
 
   dispose(): void {
-    this.impact.dispose();
-    this.cabinFrame.dispose();
-    this.atmosphere.dispose();
+    this.construction?.return(undefined); this.construction = undefined;
+    this.impact?.dispose();
+    this.cabinFrame?.dispose();
+    this.atmosphere?.dispose();
     this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());
     this.lights.forEach(light => light.dispose());

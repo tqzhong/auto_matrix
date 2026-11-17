@@ -5,10 +5,12 @@ import {
   FILM_SCENE_BY_ID,
   FILM_SETS,
   LOGOS_DEFENSE,
+  filmEntry,
   filmStepPosition,
   newLogosFlight,
   stepLogosFlight,
   type LogosFlight,
+  type FilmJourney,
   type WorldEvent,
 } from '@auto_matrix/shared';
 import { LogosFlightRenderer } from '../packages/client/src/engine/LogosFlightRenderer.js';
@@ -54,6 +56,58 @@ function defenseInput(flight: LogosFlight) {
     focus: canPulse,
   };
 }
+
+for (const resume of [false, true]) test(`the temple handoff prepares the actual Logos ${resume ? 'from the saved refuge' : 'during the live refuge'}`, t => {
+  const h = game(), scene = new THREE.Scene(), sets = new FilmSetRenderer(scene), camera = new THREE.PerspectiveCamera();
+  const journey: FilmJourney = h.state();
+  const temple = FILM_SCENE_BY_ID.m3_temple_defense, defense = FILM_SCENE_BY_ID.m3_defense;
+  const enter = (chapter: typeof temple, step: number) => {
+    const actor = h.world.agents.get(chapter.actor)!;
+    Object.assign(actor, { position: filmEntry(chapter), isInMatrix: false, currentLocation: chapter.set });
+    Object.assign(journey, { scene: chapter.id, actor: actor.id, step });
+    sets.update(actor, h.sandbox.state, 0);
+  };
+  const body = new THREE.Group(), texture = new THREE.DataTexture(new Uint8Array(4096), 1024, 1);
+  texture.needsUpdate = true;
+  const skin = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ map: texture }));
+  body.add(skin); body.visible = false;
+  const linked = new Set<THREE.Object3D>(), uploaded = new Set<THREE.Texture>();
+  let cockpit: THREE.Object3D | undefined, lights = 0;
+  let target: THREE.WebGLRenderTarget | null = null;
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, properties: { get: () => ({}) },
+    getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
+    initTexture: (map: THREE.Texture) => { uploaded.add(map); },
+    compile: (subject: THREE.Group, _camera: THREE.Camera, next: THREE.Scene) => {
+      subject.traverse(mesh => linked.add(mesh)); lights = 0;
+      next.traverseVisible(object => {
+        if (object.name === 'logos-flight-cockpit') cockpit = object;
+        if (object instanceof THREE.PointLight) lights++;
+      });
+    } } as unknown as THREE.WebGLRenderer;
+  const prepare = () => sets.prepareLogosDefense?.(graphics, camera, journey, id => ({ model: id === 'neo' ? body : undefined }), undefined, resume);
+  t.after(() => { sets.dispose(); skin.geometry.dispose(); skin.material.dispose(); texture.dispose(); });
+  enter(temple, 2);
+  if (resume) sets.update(undefined, h.sandbox.state, 0);
+  journey.templeSeal = { phase: 'running', remaining: 12, attempts: 1, lastTick: 5, turns: [1, .8] };
+  prepare(); assert.equal(linked.size, 0, 'the remaining cannon still needs the player');
+  journey.step = 3; journey.templeSeal = { ...journey.templeSeal, phase: 'sealed', turns: [1, 1] };
+  const before = structuredClone(journey);
+  for (let frame = 0; frame < 140; frame++) prepare();
+  assert.ok(cockpit, 'the actual cockpit must prepare before the next scene');
+  assert.equal(scene.getObjectByName('logos-flight-cockpit'), undefined);
+  assert.equal(lights, 2, 'the cockpit and engine light determine the color program');
+  assert.ok([...linked].some(mesh => mesh.name === 'logos-atmosphere'));
+  assert.ok(linked.has(skin) && uploaded.has(texture));
+  assert.equal(body.visible, false); assert.deepEqual(journey, before);
+  if (resume) enter(temple, 3);
+  const cabin = cockpit.getObjectByName('logos-cabin-floor') as THREE.Mesh;
+  let releases = 0; cabin.geometry.addEventListener('dispose', () => releases++);
+  enter(defense, 0);
+  assert.equal(scene.getObjectByName(cockpit.name), cockpit);
+  assert.equal(releases, 0);
+  enter(FILM_SCENE_BY_ID.m2_departure, 0);
+  assert.equal(releases, 1);
+});
 
 test('Logos entry seats both living crew before launch and cannot walk off or resurrect an unavailable Neo', () => {
   const h = game(), scene = FILM_SCENE_BY_ID.m3_defense, state = h.state();
