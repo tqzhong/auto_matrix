@@ -294,6 +294,10 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   });
   await t.test('the key handoff prepares the Architect room and preserves its door and light rig', t => {
     t.mock.method(HeroModels.prototype, 'create', async () => undefined);
+    const actor = new THREE.Group(), standIn = new THREE.Mesh(body.geometry, body.material);
+    actor.visible = false; actor.add(standIn);
+    libraryCast.set('architect', actor);
+    t.after(() => { libraryCast.delete('architect'); });
     let finishAtlas: (() => void) | undefined;
     t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string, onLoad?: (texture: THREE.Texture) => void) => {
       if (!url.endsWith('/neo-reactions-atlas.png')) return new THREE.Texture({ width: 1, complete: true });
@@ -312,6 +316,13 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     assert.ok(finishAtlas); finishAtlas();
     assert.ok(maps.every(map => map.version > 0 && map.image.width === 1672));
     assert.ok(displays.every(display => compiled.has(display)), 'CRT program preparation includes the instanced screens');
+    assert(!compiled.has(standIn));
+    const head = new THREE.Mesh(body.geometry, body.material), suit = new THREE.Mesh(body.geometry, body.material);
+    head.name = 'architect-detailed-head'; suit.name = 'architect-detailed-body';
+    standIn.visible = false; actor.add(head, suit);
+    for (let i = 0; i < 20; i++) prepare();
+    assert(compiled.has(head) && compiled.has(suit));
+    assert.equal(actor.visible, false);
     const preparedSlots = pointSlots(preview!);
     enter('m2_architect', 0);
     assert.equal(scene.getObjectByName(monitors.name), monitors);
@@ -329,6 +340,16 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     let disposals = 0; monitors.geometry.addEventListener('dispose', () => disposals++);
     enter('m2_departure', 4);
     assert.equal(disposals, 1);
+  });
+  await t.test('a saved source door approach keeps the prepared CRT room when Neo takes control', t => {
+    t.mock.method(HeroModels.prototype, 'create', async () => undefined);
+    enter('m2_key_door', 5);
+    sets.update(undefined, sandbox, 0);
+    const monitors = warm('CRT-wall-cases', true);
+    enter('m2_key_door', 5);
+    assert.equal(scene.getObjectByName(monitors.name), undefined);
+    enter('m2_architect', 0);
+    assert.equal(scene.getObjectByName(monitors.name), monitors);
   });
   await t.test('the Architect choice prepares the rescue set with its actual breakable window', () => {
     enter('m2_architect', 2); preview = undefined; prepare(); assert.ok(!preview);
