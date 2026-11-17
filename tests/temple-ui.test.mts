@@ -76,3 +76,29 @@ test('the temple journal blocks repeated start and scene skip during orders, bre
   journey.farewell = { phase: 'still', elapsed: 0, total: 20 };
   assert.match(renderFilmJourney(player, sandbox), /锡安/, 'the farewell handoff must identify the intervening city scene');
 });
+
+test('the completed temple journal keeps the Logos handoff mounted through clock updates', async () => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { SandboxUI } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const elements = new Map(), element = (id: string) => {
+    if (!elements.has(id)) elements.set(id, { textContent: '', innerHTML: '', scrollTop: 0,
+      querySelectorAll: () => [], classList: { toggle() {} } });
+    return elements.get(id);
+  };
+  let replacements = 0, html = '';
+  Object.defineProperty(element('#sandbox-panel-body'), 'innerHTML', { get: () => html, set: value => { html = value; replacements++; } });
+  const player = { id: 'zee', name: 'Zee', status: 'alive', isInMatrix: false, position: filmPosition('film_zion_temple', 0, -18) } as AgentState;
+  const state = { profiles: { zee: { inventory: {}, xp: 0, skills: {}, visited: [] } }, missions: {}, structures: [], incidents: [], threats: [], ending: 'open',
+    neoLife: { journal: [], cycle: 1, journey: { scene: 'm3_temple_defense', actor: 'zee', step: 4, completed: ['m3_temple_defense'], reflections: {},
+      templeSeal: { phase: 'sealed', remaining: 12, attempts: 1, lastTick: 100, turns: [1, 1], waiting: 3.2 } } } } as unknown as SandboxState;
+  const seal = state.neoLife!.journey!.templeSeal!;
+  const ui = Object.assign(Object.create(SandboxUI.prototype), { player, state, panel: 'journal', signature: '', time: 7500,
+    root: { querySelector: element, querySelectorAll: () => [] } });
+  ui.renderPanel(); assert.match(html, /data-target="film:next"[^>]*>转入 Logos 航线/);
+  for (let frame = 0; frame < 5; frame++) { seal.lastTick++; ui.renderPanel(); }
+  assert.equal(replacements, 1, 'a server tick must preserve the next button between mouse-down and mouse-up');
+  seal.paused = 'Link'; ui.renderPanel();
+  assert.equal(replacements, 2, 'the visible occupation notice must refresh the controls');
+  assert.doesNotMatch(html, /data-target="film:next"/);
+});

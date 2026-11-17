@@ -2467,6 +2467,7 @@ export class SandboxUI {
       || trainmanChaseActive(journey) && journey?.helChase?.performance?.phase === 'failed'
       || journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.step >= FILM_SCENE_BY_ID.m3_hel_entry.steps.length
       || journey?.scene === 'm3_hel_bargain' && !journey.visiting && (journey.helBargain?.phase === 'failed' || journey.step >= FILM_SCENE_BY_ID.m3_hel_bargain.steps.length)
+      || journey?.scene === 'm3_temple_defense' && !journey.visiting && journey.step >= FILM_SCENE_BY_ID.m3_temple_defense.steps.length
       || journey?.scene === 'm2_meeting' && !journey.visiting && journey.reloaded?.phase === 'evacuate_ready';
     const stableJournal = life && stableFilmPanel && (this.panel === 'journal' || this.panel === 'map')
       ? renderNeoLife(player, state, this.time) : undefined;
