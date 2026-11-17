@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
-import { filmPosition, templeDefenseText, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, filmPosition, templeDefenseText, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
 test('temple HUD separates held mounting from automatic city breach and restores explicit handoff after waiting', async t => {
   const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
@@ -77,7 +77,10 @@ test('the temple journal blocks repeated start and scene skip during orders, bre
   assert.match(renderFilmJourney(player, sandbox), /锡安/, 'the farewell handoff must identify the intervening city scene');
 });
 
-test('the completed temple journal keeps the Logos handoff mounted through clock updates', async () => {
+for (const [scene, actor, name, handoff, label] of [
+  ['m3_temple_defense', 'zee', 'Zee', 'Logos', '转入 Logos 航线'],
+  ['m3_temple_breach', 'lock', 'Lock', 'Neo', '接回机器城的 Neo'],
+] as const) test(`the completed temple journal keeps the ${handoff} handoff mounted through clock updates`, async () => {
   const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
     platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
   const { SandboxUI } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
@@ -88,17 +91,18 @@ test('the completed temple journal keeps the Logos handoff mounted through clock
   };
   let replacements = 0, html = '';
   Object.defineProperty(element('#sandbox-panel-body'), 'innerHTML', { get: () => html, set: value => { html = value; replacements++; } });
-  const player = { id: 'zee', name: 'Zee', status: 'alive', isInMatrix: false, position: filmPosition('film_zion_temple', 0, -18) } as AgentState;
-  const state = { profiles: { zee: { inventory: {}, xp: 0, skills: {}, visited: [] } }, missions: {}, structures: [], incidents: [], threats: [], ending: 'open',
-    neoLife: { journal: [], cycle: 1, journey: { scene: 'm3_temple_defense', actor: 'zee', step: 4, completed: ['m3_temple_defense'], reflections: {},
-      templeSeal: { phase: 'sealed', remaining: 12, attempts: 1, lastTick: 100, turns: [1, 1], waiting: 3.2 } } } } as unknown as SandboxState;
-  const seal = state.neoLife!.journey!.templeSeal!;
+  const player = { id: actor, name, status: 'alive', isInMatrix: false, position: filmPosition('film_zion_temple', 0, -18) } as AgentState;
+  const state = { profiles: { [actor]: { inventory: {}, xp: 0, skills: {}, visited: [] } }, missions: {}, structures: [], incidents: [], threats: [], ending: 'open',
+    neoLife: { journal: [], cycle: 1, journey: { scene, actor, step: FILM_SCENE_BY_ID[scene].steps.length, completed: [scene], reflections: {},
+      templeSeal: { phase: 'sealed', remaining: 12, attempts: 1, lastTick: 100, turns: [1, 1], waiting: 3.2 },
+      templeBreach: scene === 'm3_temple_breach' ? { phase: 'done', elapsed: 0 } : undefined } } } as unknown as SandboxState;
+  const journey = state.neoLife!.journey!, seal = journey.templeSeal!;
   const ui = Object.assign(Object.create(SandboxUI.prototype), { player, state, panel: 'journal', signature: '', time: 7500,
     root: { querySelector: element, querySelectorAll: () => [] } });
-  ui.renderPanel(); assert.match(html, /data-target="film:next"[^>]*>转入 Logos 航线/);
+  ui.renderPanel(); assert.match(html, new RegExp(`data-target="film:next"[^>]*>${label}`));
   for (let frame = 0; frame < 5; frame++) { seal.lastTick++; ui.renderPanel(); }
   assert.equal(replacements, 1, 'a server tick must preserve the next button between mouse-down and mouse-up');
-  seal.paused = 'Link'; ui.renderPanel();
+  (journey.templeBreach ?? seal).paused = 'Link'; ui.renderPanel();
   assert.equal(replacements, 2, 'the visible occupation notice must refresh the controls');
   assert.doesNotMatch(html, /data-target="film:next"/);
 });
