@@ -3336,7 +3336,7 @@ export class PlayerControls {
       const lafayetteWalking = state.currentLocation === 'film_lafayette' && !this.performing;
       const dojoWalking = state.currentLocation === 'film_kungfu_dojo';
       const officeFollow = state.currentLocation === 'film_metacortex_floor';
-      const closeFollow = lafayetteWalking || dojoWalking || officeFollow;
+      const closeFollow = lafayetteWalking || dojoWalking || officeFollow || Boolean(this.motion.mobilRefusal);
       if (closeFollow) for (let step = 0; step < 4 && playerBlocked(pivot, state.isInMatrix, .5, this.structures); step++) pivot.lerp(this.cameraTarget, .5);
       const followDistance = hotelPickup ? (this.camera.aspect < .8 ? 13 : 11.5) - 5.5 * pickupFraming
         : wreckCabin || doorwayView ? 4.2 : this.motion.engineering ? 6 : lafayetteWalking || state.currentLocation === 'film_zion_personnel' || state.currentLocation === 'film_zion_bedroom' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
@@ -3370,8 +3370,7 @@ export class PlayerControls {
           : playerBlocked(lafayetteWalking ? { ...point, y: Math.min(point.y, this.position.y + 2) } : point, state.isInMatrix, 0.5, this.structures);
         if (blocked || point.y > cameraCeiling(point)) { cameraDistance = Math.max(.25, distance - .5); break; }
       }
-      // A tight shoulder view in the tracking passage must look over Neo,
-      // rather than putting the lens inside the wall or the back of his head.
+      // A wall that shortens the follow distance also raises the camera above the player's silhouette.
       if (closeFollow) pivot.y += 2.1 * (1 - THREE.MathUtils.smoothstep(cameraDistance, 1.5, 4.5));
       const ideal = pivot.clone().addScaledVector(offset, cameraDistance);
       if (wreckCabin) {

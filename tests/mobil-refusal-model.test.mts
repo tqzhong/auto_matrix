@@ -21,7 +21,7 @@ async function neoGeometry() {
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
 
-test('the delivered Neo body follows the saved Mobil strike, stays above its floor and follows the eye in first person', async t => {
+test('the delivered Neo body follows the saved Mobil strike while the cameras show the retrieval and the posed eye', async t => {
   const asset = await neoGeometry();
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
@@ -55,7 +55,7 @@ test('the delivered Neo body follows the saved Mobil strike, stays above its flo
     assert.ok(result.pelvis); return result;
   };
   save(warm, 0, 0); save(cold, 0, 0); await new Promise(resolve => setImmediate(resolve));
-  for (const elapsed of [.55, .9, 1.45, 2.4, 3.5, 4.4]) {
+  for (const elapsed of [.55, .9, 1.45, 1.712, 2.4, 3.5, 4.4]) {
     const journey = save(warm, elapsed, .1); save(cold, elapsed, 0);
     assert.deepEqual(bones(warm), bones(cold), `cold and warm bones differ at ${elapsed}`);
     const paused = bones(warm); warm.update(.3, undefined, 42, 0, journey);
@@ -75,7 +75,25 @@ test('the delivered Neo body follows the saved Mobil strike, stays above its flo
       assert.ok(left >= center.x - 16.77, `body penetrates the tiled wall at ${elapsed}: ${left}`);
       if (elapsed === 2.4) assert.ok(lowest < center.y - 1 + .12, 'the fallen body must be supported, without floating');
     }
-    controls.possess(neo); inputWindow.dispatchEvent(Object.assign(new Event('keydown'), { code: 'KeyV', repeat: false }));
+    controls.possess(neo);
+    if (elapsed === 1.712) {
+      controls.update(.016, neo, warm.getAgent('neo')!, false);
+      camera.updateMatrixWorld(true);
+      const suitcase = new THREE.Vector3(center.x + 5.16, center.y - 1 + .55, center.z - 18.58);
+      const screen = suitcase.clone().project(camera);
+      assert.ok(Math.abs(screen.x) < 1 && Math.abs(screen.y) < 1 && Math.abs(screen.z) < 1, 'the case stays in the third-person frame');
+      const toCase = suitcase.sub(camera.position);
+      const ray = new THREE.Raycaster(camera.position, toCase.clone().normalize(), camera.near, toCase.length());
+      const visibleSkin: THREE.SkinnedMesh[] = [];
+      body.traverseVisible(object => {
+        if (!(object instanceof THREE.SkinnedMesh)) return;
+        object.computeBoundingSphere();
+        visibleSkin.push(object);
+      });
+      const hit = ray.intersectObjects(visibleSkin, false)[0];
+      assert.equal(hit?.object.name, undefined, 'the near-wall third-person camera must leave the suitcase visible past Neo');
+    }
+    inputWindow.dispatchEvent(Object.assign(new Event('keydown'), { code: 'KeyV', repeat: false }));
     inputWindow.dispatchEvent(Object.assign(new Event('keyup'), { code: 'KeyV' })); controls.update(.016, neo, warm.getAgent('neo')!, false);
     controls.syncMobilRefusalCamera(warm.getAgent('neo')!);
     const head = body.getObjectByName('head')!, eye = head.localToWorld((head.userData.cameraEye as THREE.Vector3).clone());
