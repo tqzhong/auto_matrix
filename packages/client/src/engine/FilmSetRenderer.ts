@@ -333,6 +333,7 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m3_trainman: { scene: 'm3_oracle_request', step: 3 },
   m3_oracle_request: { scene: 'm3_trainman_chase', step: 3 },
   m3_trainman_chase: { scene: 'm3_hel_garage', step: 2 },
+  m3_hel_garage: { scene: 'm3_hel_entry', step: 1 },
   m3_zion_prepare: { scene: 'm3_maggie_discovery', step: 3 },
 };
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
@@ -622,7 +623,7 @@ export class FilmSetRenderer {
   get stablePointSlots(): boolean {
     const id = this.current?.id;
     return id === 'film_wells_phone' || id === 'film_power_plant_pods' || id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.club || this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
-      || Boolean(this.basement || this.tvRepair || this.architectRoom || this.catchSet || this.trainmanChase || this.helGarage)
+      || Boolean(this.basement || this.tvRepair || this.architectRoom || this.catchSet || this.trainmanChase || this.helGarage || this.helLift)
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
       || id === 'film_white_construct' && (this.currentScene === 'm1_construct' || this.currentScene === 'm1_truth_exit')
       || id === 'film_heart_hotel' && this.currentScene === 'm1_room303'
@@ -2070,7 +2071,7 @@ export class FilmSetRenderer {
       || flight?.phase === 'flying' && flight.z <= MOUNTAIN.launch.z - 30;
     const atSource = journey && cut && this.currentScene === journey.scene && this.current?.id === FILM_SCENE_BY_ID[journey.scene].set;
     const savedCut = resume && !this.current && (journey?.scene === 'm2_persephone' || journey?.scene === 'm2_mountain'
-      || journey?.scene === 'm2_key_door' || journey?.scene === 'm2_stop_sentinels' || journey?.scene === 'm3_trainman_chase');
+      || journey?.scene === 'm2_key_door' || journey?.scene === 'm2_stop_sentinels' || journey?.scene === 'm3_trainman_chase' || journey?.scene === 'm3_hel_garage');
     if (!journey || !cut || journey.visiting || journey.step < cut.step || (!atSource && !savedCut) || !approachingGarage
       || firstOracle && (meal?.kind !== 'meal' || !['performing', 'accepting', 'done'].includes(meal.phase) || crewMealAge(meal) < 8.2)) {
       this.cancelSecondOraclePreparation(); return;
@@ -2082,7 +2083,8 @@ export class FilmSetRenderer {
     const garageEntry = next.id === 'm2_garage', architectEntry = next.id === 'm2_architect', medicalEntry = next.id === 'm2_medical';
     const helGarageEntry = next.id === 'm3_hel_garage';
     if (helGarageEntry && !helGarageTemplate) return;
-    const isolatedEntry = firstOracle || teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || architectEntry || medicalEntry || helGarageEntry;
+    const helEntry = helGarageEntry || next.id === 'm3_hel_entry';
+    const isolatedEntry = firstOracle || teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || architectEntry || medicalEntry || helEntry;
     if (!this.preparedSecondOracle) {
       const set = FILM_SETS[next.set], { x, y, z } = set.center;
       const room = new FilmSetRenderer(new THREE.Scene());
@@ -2104,7 +2106,7 @@ export class FilmSetRenderer {
       for (const texture of prepared.room.textures) if (!texture.image) return;
       const room = prepared.room;
       const colors = this.colorPreparation(room.root, [], {
-        includeBasic: teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || medicalEntry || helGarageEntry
+        includeBasic: teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || medicalEntry || helEntry
           || Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
         playerView: savedCut,
       });
@@ -2124,11 +2126,11 @@ export class FilmSetRenderer {
         for (const id of cast) {
           const group = actor(id); if (!group || colors.actors.has(group)) continue;
           let meshes: ColorMesh[];
-          const detailed = (teaEntry || helGarageEntry) && id === 'seraph' || (libraryEntry || garageEntry) && id === 'keymaker'
+          const detailed = (teaEntry || helEntry) && id === 'seraph' || (libraryEntry || garageEntry) && id === 'keymaker'
             || architectEntry && id === 'architect' || medicalEntry && id === 'roland';
           if ((detailed || medicalEntry && id === 'maggie') && !group.getObjectByName(`${id}-detailed-head`)) continue;
           if (detailed && !group.getObjectByName(`${id}-detailed-body`)) continue;
-          if (detailed || libraryEntry || garageEntry || architectEntry || medicalEntry || helGarageEntry) {
+          if (detailed || libraryEntry || garageEntry || architectEntry || medicalEntry || helEntry) {
             meshes = this.colorMeshes(group.children, true);
           } else {
             meshes = [];
@@ -2141,7 +2143,7 @@ export class FilmSetRenderer {
           colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
           prepared.liveMeshes?.push(...meshes);
         }
-        const deferBindings = garageEntry || architectEntry || medicalEntry || helGarageEntry;
+        const deferBindings = garageEntry || architectEntry || medicalEntry || helEntry;
         this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated', deferBindings,
           prepared.liveMeshes ?? (deferBindings ? [this.marker] : undefined));
         this.prepareStagedColorTexture(renderer, prepared, colors.textures, 4);
@@ -3182,6 +3184,10 @@ export class FilmSetRenderer {
     this.oracleVase?.moveTo(this.root);
     this.trainmanChase = room.trainmanChase; room.trainmanChase = undefined;
     this.helGarage = room.helGarage; room.helGarage = undefined;
+    this.helLift = room.helLift;
+    this.helDanceDoor = room.helDanceDoor;
+    this.helCoatDamage = room.helCoatDamage;
+    this.helStandoff = room.helStandoff;
     this.finale = room.finale; room.finale = undefined;
     this.maggieDiscovery = room.maggieDiscovery; room.maggieDiscovery = undefined;
     room.dispose();
@@ -4938,7 +4944,8 @@ export class FilmSetRenderer {
     // Keep the tracking equipment light between the shell lights and room fixtures.
     if (lights) this.root.add(lights.fixtures);
     if (['office', 'interrogation', 'power', 'workshop', 'backdoors', 'architect'].includes(a)) this.workplace(set);
-    if (['chateau', 'restaurant', 'club', 'hel'].includes(a)) this.publicInterior(set);
+    if (set.id === 'film_club_hel') yield* this.helClub(set);
+    else if (['chateau', 'restaurant', 'club', 'hel'].includes(a)) this.publicInterior(set);
     if (['ship', 'engineering', 'zion', 'temple', 'pods', 'machine', 'desert'].includes(a)) this.realWorld(set);
     if (['subway', 'mobil'].includes(a)) this.station(set);
     if (['rooftop', 'street', 'rain', 'bridge', 'freeway', 'garage', 'car'].includes(a)) this.transport(set);
@@ -5809,7 +5816,6 @@ export class FilmSetRenderer {
     this.powerStatus = { primary, emergency, lights };
   }
   private publicInterior(set: FilmSet): void {
-    if (set.id === 'film_club_hel') { this.helClub(set); return; }
     const { architecture: a, width: w, depth: d, height: h } = set;
     if (a === 'chateau') {
       // Two stair wings, a landing, balustrades and a weapons wall define the film's composition.
@@ -5936,7 +5942,7 @@ export class FilmSetRenderer {
       this.label(a === 'hel' ? 'HEL' : 'EXIT', 0, h - 2, -d / 2 + .5, 7, '#c59878', '#201513');
     }
   }
-  private helClub(set: FilmSet): void {
+  private *helClub(set: FilmSet): Generator<void> {
     const { width: w, depth: d, height: h } = set;
     const basalt = this.mat(0x242729, .88); const red = this.mat(0x5b2027, .5, .14);
     const steel = this.mat(0x52575a, .35, .65); const velvet = this.mat(0x321016, .92);
@@ -6001,6 +6007,7 @@ export class FilmSetRenderer {
     cage.add(this.label('HEL', -3.45, 3.35, 26.43, 1.3, '#f4d2c7', '#2e1b20'));
     cage.add(this.box(this.glow, 0, 8.75, 31, 5, .06, .35));
     batchStaticGeometry(cage, new Set()).forEach(geometry => this.own(geometry));
+    yield;
     for (const z of [12]) {
       this.box(this.glow, 0, 9.1, z, 8, .12, .7);
       const light = new THREE.PointLight(0xf0d8cb, z === 31 ? 330 : 290, 24, 2);
@@ -6041,6 +6048,7 @@ export class FilmSetRenderer {
       panel.add(this.box(steel, -side * (HEL_DANCE_DOOR.width / 2 - .4), 3.1, .39, .12, 1.1, .14));
       return panel;
     }) as [THREE.Group, THREE.Group];
+    yield;
     for (const z of [-19, -13, -7]) {
       for (const x of [-19, -12, 12, 19]) {
         const tile = this.box(red, x, .1, z, 6.2, .08, 5.4); tile.name = 'hel-dance-floor';
