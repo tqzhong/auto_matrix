@@ -37,6 +37,41 @@ function view() {
   return { scene, camera, culling, before, after, light };
 }
 
+test('the missing ship interior leaves the same light slot count through a failed evacuation and retry', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m2_ship_lost, center = FILM_SETS[scene.set].center;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get(scene.actor)!;
+  neo.currentLocation = scene.set; neo.isInMatrix = false; neo.position = filmPosition(scene.set, 0, .73);
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: neo.id, step: 3, completed: [], enteredAt: 0,
+    checkpoint: neo.position, reflections: {}, lastText: '',
+    shipLoss: { phase: 'evacuating', remaining: 2, lastTick: 0, attempts: 0, age: 30 } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  h.camera.aspect = 16 / 9; h.camera.updateProjectionMatrix();
+  h.camera.position.set(center.x, center.y + 4, center.z + 7);
+  h.camera.lookAt(center.x, center.y + 1, center.z - 18);
+  const lights = () => {
+    assert.equal(renderer.update(neo, sandbox, 0, neo.position, h.camera.position, undefined, false, 12000, h.camera)?.id, scene.set);
+    h.culling.minimumPointSlots = renderer.minimumPointSlots; h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    const points: { name: string; energy: number }[] = [];
+    try { h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) points.push({ name: light.name, energy: light.intensity }); }); }
+    finally { h.after(); }
+    return points;
+  };
+  const evacuation = lights();
+  journey.shipLoss!.phase = 'failed';
+  const failed = lights();
+  journey.shipLoss = { phase: 'evacuating', remaining: 32, lastTick: 0, attempts: 1, age: 0 };
+  const retry = lights();
+  assert.ok(evacuation.some(light => light.name === 'neb-evacuation-alarm' && light.energy > 0));
+  assert.ok(failed.every(light => light.name !== 'neb-evacuation-alarm'));
+  assert.ok(failed.some(light => light.name === 'neb-blast-light' && light.energy > 0));
+  assert.equal(failed.length, evacuation.length, 'the wreck keeps the evacuation program layout');
+  assert.equal(retry.length, evacuation.length);
+});
+
 test('the desert lightning keeps the same point-light slots between pulses', t => {
   const h = view(), renderer = new FilmSetRenderer(h.scene);
   t.after(() => { h.culling.dispose(); renderer.dispose(); });

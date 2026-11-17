@@ -610,6 +610,8 @@ export class FilmSetRenderer {
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_jump_return') return 16;
     // Keep the console lamp and objective slots when turning toward Cypher.
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_cypher_console') return 17;
+    // The wreck reuses the evacuation programs when the interior lights disappear.
+    if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm2_ship_lost') return 16;
     if (this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_recovery' || this.currentScene === 'm1_cabin')) return RECOVERY_POINT_SLOTS;
     // The training jack and objective can overlap the fifteen deck fixtures.
     return this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_truth_return' || this.currentScene === 'm1_download') ? 17 : 0;
