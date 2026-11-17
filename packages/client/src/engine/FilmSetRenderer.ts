@@ -210,6 +210,8 @@ const JUMP_ENTRY_MESHES = new Set(['jump-tower-windows', 'jump-canyon-avenue', '
 const QUESTIONING_POINT_SLOTS = 1;
 const LOGOS_CARGO_POINT_SLOTS = 7;
 const DOCK_BATTLE_POINT_SLOTS = 20;
+const DOCK_BRIEFING_POINT_SLOTS = 7;
+const DOCK_BRIEFING_MORPHEUS_MESHES = new Set(['Anatomical_head_and_hands', 'morpheus-hammer-collar', 'shoes01']);
 const CITY_CHASE_POINT_SLOTS = 2;
 const TRINITY_ROOF_POINT_SLOTS = 7;
 const MEETING_WAKE_POINT_SLOTS = 16;
@@ -507,6 +509,8 @@ export class FilmSetRenderer {
   private logosBaneBlind = false;
   private revolutionsPrelude?: RevolutionsPreludeRenderer;
   private dockBriefing?: DockBriefingRenderer;
+  private dockBriefingCast?: ColorPreparation & { actor: THREE.Group; gpu: THREE.WebGLRenderer['properties'];
+    liveMeshes: ColorMesh[]; textureUpload?: Generator<void, boolean> };
   private dockEvacuation?: DockEvacuationRenderer;
   private empHangar?: ZionHomecomingRenderer;
   private empDock?: DockEmpRenderer;
@@ -603,6 +607,8 @@ export class FilmSetRenderer {
     if (this.ambush) return AMBUSH_POINT_SLOTS;
     if (this.club) return CLUB_POINT_SLOTS;
     if (this.logosBane) return LOGOS_CARGO_POINT_SLOTS;
+    // Six corridor and lift lamps plus the objective.
+    if (this.dockBriefing) return DOCK_BRIEFING_POINT_SLOTS;
     // Reuse the dock approach programs when the cockpit and reload views cull fixtures.
     if (this.current?.id === 'film_zion_hangar' && this.currentScene === 'm3_dock_battle') return DOCK_BATTLE_POINT_SLOTS;
     if (this.currentScene === 'm1_pills' && this.approach?.root.visible) return LAFAYETTE_STREET_POINT_SLOTS;
@@ -668,6 +674,24 @@ export class FilmSetRenderer {
     cast: () => ColorMesh[], sun: THREE.DirectionalLight): void {
     this.construct?.renderPreview(renderer, this.scene.environment,
       (preview, root, eye) => this.prepareDesertHandoff(renderer, camera, cast, sun, preview, root, eye));
+  }
+  prepareDockBriefing(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, morpheus?: THREE.Group): void {
+    if (!this.dockBriefing || !morpheus || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    let prepared = this.dockBriefingCast;
+    if (prepared?.actor !== morpheus || prepared.gpu !== renderer.properties) {
+      prepared?.textureUpload?.return(false);
+      const liveMeshes: ColorMesh[] = [];
+      morpheus.traverse(mesh => {
+        if (!(mesh instanceof THREE.Mesh) || !(mesh.material instanceof THREE.MeshStandardMaterial)) return;
+        if (DOCK_BRIEFING_MORPHEUS_MESHES.has(mesh.name) || mesh.name === 'high-poly' && mesh.material.name === 'Eyes') liveMeshes.push(mesh);
+      });
+      const textures = new Set<THREE.Texture>();
+      this.queueColorTextures(textures, liveMeshes);
+      prepared = this.dockBriefingCast = { actor: morpheus, gpu: renderer.properties, scene: this.scene,
+        liveMeshes, meshes: liveMeshes.slice(), programs: [], textures };
+    }
+    if (!this.prepareStagedColorTexture(renderer, prepared, prepared.textures, 2))
+      this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true, prepared.liveMeshes);
   }
   prepareDockEmp(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey?: FilmJourney): void {
     if (this.currentScene !== 'm3_emp' || journey?.scene !== 'm3_emp' || journey.visiting || !journey.empOperator || journey.emp
@@ -6899,6 +6923,7 @@ export class FilmSetRenderer {
     this.maggieDiscovery?.dispose(); this.maggieDiscovery = undefined;
     this.oracleAbsorption?.dispose(); this.oracleAbsorption = undefined;
     this.dockEvacuation?.dispose(); this.dockEvacuation = undefined;
+    this.dockBriefingCast?.textureUpload?.return(false); this.dockBriefingCast = undefined;
     this.dockBriefing?.dispose(); this.dockBriefing = undefined;
     this.empDockColors?.textureUpload?.return(false); this.empDockColors = undefined;
     this.empHangar?.dispose(); this.empHangar = undefined;

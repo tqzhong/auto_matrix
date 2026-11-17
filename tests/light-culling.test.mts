@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import lightFragmentSource from 'three/src/renderers/shaders/ShaderChunk/lights_fragment_begin.glsl.js';
-import { APU_RIG, APU_ROUTE, BANE_INQUIRY, BASEMENT, DIGGERS, DOCK_GUNNERY, DOCK_RELOAD, FILM_SCENE_BY_ID, FILM_SETS, TRAINMAN_CHASE, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newDockReload, newGarageEscape, newHammerFlight, newHammerGunnery, newSmithFinale, newTrainmanChase, newUpperDigger, trainmanPassingTrain, type AirRescueEncounter, type BasementEncounter, type FilmJourney, type SandboxState, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { APU_RIG, APU_ROUTE, BANE_INQUIRY, BASEMENT, DIGGERS, DOCK_BRIEFING, DOCK_GUNNERY, DOCK_RELOAD, FILM_SCENE_BY_ID, FILM_SETS, TRAINMAN_CHASE, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newDockReload, newGarageEscape, newHammerFlight, newHammerGunnery, newSmithFinale, newTrainmanChase, newUpperDigger, trainmanPassingTrain, type AirRescueEncounter, type BasementEncounter, type FilmJourney, type SandboxState, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -1077,6 +1077,93 @@ test('the dock defense stabilizes the moving approach and keeps cockpit light cu
   assert.equal(renderer.stablePointSlots, false, 'the moving APU keeps its existing culling');
   renderer.update(kid, sandbox, 0, kid.position, h.camera.position);
   for (let i = 1; i <= APU_ROUTE.dives.length; i++) assert.equal(signal(i).visible, true);
+});
+
+test('the dock briefing keeps one shader layout from the lift to the exit', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const chapter = FILM_SCENE_BY_ID.m3_dock_briefing;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const niobe = world.agents.get('niobe')!;
+  niobe.isInMatrix = false; niobe.currentLocation = chapter.set;
+  const journey: FilmJourney = { version: 1, scene: chapter.id, actor: niobe.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: filmEntry(chapter), reflections: {}, lastText: '', dockBriefing: { phase: 'ready', elapsed: 0, escort: 0 } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  h.camera.aspect = 16 / 9; h.camera.updateProjectionMatrix();
+  const sample = (position: typeof niobe.position) => {
+    niobe.position = position;
+    h.camera.position.set(position.x, position.y + 2, position.z + 1);
+    h.camera.lookAt(position.x, position.y + 1.5, position.z - 8);
+    assert.equal(renderer.update(niobe, sandbox, 0, position)?.id, chapter.set);
+    h.culling.minimumPointSlots = renderer.minimumPointSlots; h.culling.stablePointSlots = renderer.stablePointSlots;
+    let slots = 0, lit = 0;
+    h.before();
+    try {
+      h.scene.traverseVisible(light => {
+        if (!(light instanceof THREE.PointLight)) return;
+        slots++;
+        if (light.intensity > 0) lit++;
+      });
+    } finally { h.after(); }
+    return { slots, lit };
+  };
+  assert.equal(sample(filmEntry(chapter)).slots, 7);
+  journey.dockBriefing = { phase: 'greeting', elapsed: 1, escort: DOCK_BRIEFING.escortSeconds };
+  journey.step = 2;
+  assert.equal(sample(filmPosition(chapter.set, 0, 2)).slots, 7);
+  journey.dockBriefing.phase = 'return'; journey.step = 4;
+  const exit = sample(filmPosition(chapter.set, DOCK_BRIEFING.exit.x, DOCK_BRIEFING.exit.z + .8));
+  assert.equal(exit.slots, 7, 'turning away from the lift must keep the dialogue shader layout');
+  assert.ok(exit.lit < exit.slots, 'fixtures outside the view can still lose energy');
+});
+
+test('the dock briefing stages Morpheus before the corridor view reveals him', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const chapter = FILM_SCENE_BY_ID.m3_dock_briefing;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const niobe = world.agents.get('niobe')!, position = filmEntry(chapter);
+  Object.assign(niobe, { position, isInMatrix: false, currentLocation: chapter.set });
+  const journey: FilmJourney = { version: 1, scene: chapter.id, actor: niobe.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: position, reflections: {}, lastText: '', dockBriefing: { phase: 'gate', elapsed: .45, escort: 0 } };
+  const sandbox = { neoLife: { journey } } as SandboxState, before = structuredClone(journey);
+  renderer.update(niobe, sandbox, 0, position);
+  h.culling.minimumPointSlots = renderer.minimumPointSlots;
+  const morpheus = new THREE.Group(); morpheus.visible = false;
+  const albedo = new THREE.Texture({ width: 2048, height: 2048 }), iris = new THREE.Texture({ width: 1024, height: 1024 });
+  albedo.needsUpdate = iris.needsUpdate = true;
+  const subject = (name: string, surface: string, map: THREE.Texture | null = null) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ name: surface, map }));
+    mesh.name = name; morpheus.add(mesh);
+    t.after(() => { mesh.geometry.dispose(); mesh.material.dispose(); });
+    return mesh;
+  };
+  subject('Anatomical_head_and_hands', 'Skin', albedo);
+  subject('high-poly', 'Eyes', iris);
+  subject('morpheus-hammer-collar', 'Knit');
+  subject('shoes01', 'Boot leather');
+  subject('high-poly', 'Unrelated material');
+  const uploads: THREE.Texture[] = [], linked: string[] = [], programs: { isReady(): boolean; getUniforms(): void }[] = [];
+  let reads = 0, target: THREE.WebGLRenderTarget | null = null;
+  const webgl = {
+    info: { programs }, properties: { get: () => ({}) }, extensions: { has: () => true }, debug: { checkShaderErrors: false },
+    getRenderTarget: () => target, setRenderTarget: (next: typeof target) => { target = next; },
+    initTexture: (texture: THREE.Texture) => { uploads.push(texture); },
+    compile: (root: THREE.Group) => {
+      root.traverse(mesh => { if (mesh instanceof THREE.Mesh) linked.push(mesh.material.name); });
+      if (!programs.length) programs.push({ isReady: () => true, getUniforms: () => { reads++; } });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const prepare = () => renderer.prepareDockBriefing?.(webgl, h.camera, h.culling, morpheus);
+  prepare();
+  assert.deepEqual(uploads, [albedo], 'the skin is ready before the player walks closer');
+  assert.deepEqual(linked, []);
+  for (let frame = 0; frame < 5; frame++) prepare();
+  assert.deepEqual(uploads, [albedo, iris]);
+  assert.deepEqual(linked, ['Skin', 'Eyes', 'Knit', 'Boot leather']);
+  assert.equal(reads, 1);
+  assert.equal(morpheus.visible, false);
+  assert.deepEqual(journey, before);
 });
 
 test('the command bunker retains its demolition flash slot through ignition and settling', t => {

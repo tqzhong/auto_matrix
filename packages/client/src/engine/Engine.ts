@@ -314,6 +314,8 @@ export class Engine {
     this.filmSets.prepareOpening(this.renderer, this.camera, liveMatrixJourney ?? (resumeRoof ? meeting : undefined),
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id), this.agentRenderer.getAgentShadow('trinity'),
       this.lightCulling, this.agentRenderer.getAgentDistant('neo'), resumeRoof, frameDelta);
+    if (meeting?.scene === 'm3_dock_briefing' && !meeting.visiting && player?.id === meeting.actor)
+      this.filmSets.prepareDockBriefing(this.renderer, this.camera, this.lightCulling, this.agentRenderer.getAgentHero('morpheus'));
     this.filmSets.prepareDockEmp(this.renderer, this.camera, meeting);
     const openingPhone = liveMatrixJourney?.scene === 'm1_phone_escape' ? liveMatrixJourney.openingPhone : undefined;
     const openingHandoff = openingPhone?.phase === 'connected' || openingPhone?.phase === 'done';
