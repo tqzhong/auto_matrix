@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import lightFragmentSource from 'three/src/renderers/shaders/ShaderChunk/lights_fragment_begin.glsl.js';
 import { APU_RIG, APU_ROUTE, BANE_INQUIRY, BASEMENT, DIGGERS, DOCK_BRIEFING, DOCK_GUNNERY, DOCK_RELOAD, FILM_SCENE_BY_ID, FILM_SETS, TRAINMAN_CHASE, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newDockReload, newGarageEscape, newHammerFlight, newHammerGunnery, newLogosFlight, newSmithFinale, newTrainmanChase, newUpperDigger, trainmanPassingTrain, type AirRescueEncounter, type BasementEncounter, type FilmJourney, type SandboxState, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { ApartmentSetRenderer, APARTMENT_POINT_SLOTS } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -36,6 +37,58 @@ function view() {
   };
   return { scene, camera, culling, before, after, light };
 }
+
+test('second-call camera changes keep the apartment light layout without dimming contributing fixtures', t => {
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.after(() => { globalThis.document = document; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const h = view(), renderer = new FilmSetRenderer(h.scene), home = new THREE.Group();
+  const apartment = new ApartmentSetRenderer(home), scene = FILM_SCENE_BY_ID.m1_wake_again, center = FILM_SETS[scene.set].center;
+  home.position.set(center.x, center.y - 1, center.z); h.scene.add(home);
+  t.after(() => { apartment.dispose(); renderer.dispose(); h.culling.dispose(); });
+  h.camera.fov = 57; h.camera.aspect = 16 / 9; h.camera.near = .5; h.camera.far = 5000; h.camera.updateProjectionMatrix();
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  neo.currentLocation = scene.set; neo.isInMatrix = true; neo.position = filmStepPosition(scene, scene.steps[0]);
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: neo.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: neo.position, reflections: {}, lastText: '' };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const counts: number[] = [];
+  for (const phase of ['decision', 'reply', 'done', 'leaving'] as const) {
+    journey.wakeCall = { phase, elapsed: 0, nightmare: false }; journey.step = phase === 'done' || phase === 'leaving' ? 1 : 0;
+    if (phase === 'decision' || phase === 'reply') {
+      h.camera.position.set(1207.45, 4.35, 678.95);
+      h.camera.quaternion.set(-.07304292337265895, .8586037248821511, .12770946284511356, .49107501266454595);
+    } else {
+      h.camera.position.set(1206.7127290141655, 5.12746886690657, 682.8832313859226);
+      h.camera.quaternion.set(-.22221554295862603, .19424656381979521, .04522785833564916, .9543809332453032);
+    }
+    apartment.update(journey, 22000, true);
+    assert.equal(renderer.update(neo, sandbox, 0, neo.position, h.camera.position)?.id, scene.set);
+    h.culling.minimumPointSlots = renderer.minimumPointSlots; h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.scene.updateMatrixWorld(true); h.camera.updateMatrixWorld(true);
+    const fixtures: { light: THREE.PointLight; intensity: number; visible: boolean; position: THREE.Vector3 }[] = [];
+    h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) fixtures.push({ light, intensity: light.intensity, visible: light.visible, position: light.getWorldPosition(new THREE.Vector3()) }); });
+    const frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(h.camera.projectionMatrix, h.camera.matrixWorldInverse));
+    h.before();
+    try {
+      let count = 0;
+      h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) count++; });
+      counts.push(count);
+      for (const fixture of fixtures) if (fixture.intensity > 0 && frustum.intersectsSphere(new THREE.Sphere(fixture.position, fixture.light.distance + .01))) {
+        assert.equal(fixture.light.visible, true); assert.equal(fixture.light.intensity, fixture.intensity);
+      }
+    } finally { h.after(); }
+    for (const fixture of fixtures) {
+      assert.equal(fixture.light.intensity, fixture.intensity); assert.equal(fixture.light.visible, fixture.visible);
+    }
+  }
+  assert.deepEqual(counts, counts.map(() => counts[0]), 'phone, free-control and departure cameras must reuse the same light layout');
+  assert.equal(counts[0], APARTMENT_POINT_SLOTS);
+  renderer.update(undefined, undefined, 0);
+  assert.equal(renderer.minimumPointSlots, 0, 'leaving the film apartment releases its reserved slots');
+});
 
 test('the Logos keeps its two point-light slots as the engines cut out and restart', t => {
   const h = view(), renderer = new FilmSetRenderer(h.scene);

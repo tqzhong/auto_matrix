@@ -58,6 +58,7 @@ import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS, LobbySetRenderer } from './LobbySetRenderer.js';
 import { OFFICE_POINT_SLOTS, OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { LightCulling, POINT_SLOT_FLOOR } from './LightCulling.js';
+import { APARTMENT_POINT_SLOTS } from './ApartmentSetRenderer.js';
 import { cacheReadyProgramLocations, preserveProgramBindings, shadowCasterProxies } from './PrepareShaderProgram.js';
 import { prepareMeshBuffers } from './PrepareMeshBuffers.js';
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
@@ -606,6 +607,8 @@ export class FilmSetRenderer {
   get governmentEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedGovernment?.normalMeshes; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
+    // Keep the apartment layout when the second call hands back the camera.
+    if (this.current?.id === 'film_anderson_flat' && this.currentScene === 'm1_wake_again') return APARTMENT_POINT_SLOTS;
     // Keep the prepared layout while the shaft and sixth-floor lamps are revealed.
     if (this.ambush) return AMBUSH_POINT_SLOTS;
     if (this.club) return CLUB_POINT_SLOTS;
