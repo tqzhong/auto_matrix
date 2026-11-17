@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import test, { type TestContext } from 'node:test';
 import * as THREE from 'three';
 import { DOCK_EMP, DOCK_REUNION, FILM_SETS, dockEmpSentinel, dockReunionRoot, filmPosition, newDockGate, newDiggers, type DockReunion, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { DockEmpRenderer } from '../packages/client/src/engine/DockEmpRenderer.js';
@@ -16,6 +16,16 @@ function vertices(mesh: THREE.InstancedMesh, index: number) {
   const matrix = new THREE.Matrix4(); mesh.getMatrixAt(index, matrix);
   const buffer = mesh.geometry.getAttribute('position');
   return Array.from({ length: buffer.count }, (_, v) => new THREE.Vector3().fromBufferAttribute(buffer, v).applyMatrix4(matrix));
+}
+
+function mockRoomTextures(t: TestContext): void {
+  const original = globalThis.document;
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }),
+    putImageData() {}, fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
+  }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.after(() => { globalThis.document = original; });
 }
 
 test('the EMP reaches individual machines, leaves grounded wreckage and resumes the identical frame', () => {
@@ -88,15 +98,10 @@ test('EMP wreckage lands on the raised east dock and the Hammer slides clear of 
   renderer.dispose();
 });
 
-test('switching back inside the Hammer restores the cabin with its CRTs powered off', t => {
-  const original = globalThis.document;
-  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({
-    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }),
-    putImageData() {}, fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
-  }) }) } as unknown as Document;
-  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+test('EMP preparation queues work before switching to the powered-off cabin view', t => {
+  mockRoomTextures(t);
   const scene = new THREE.Scene(), renderer = new FilmSetRenderer(scene);
-  t.after(() => { renderer.dispose(); globalThis.document = original; });
+  t.after(() => renderer.dispose());
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const link = world.agents.get('link')!, journey = saved(1.8);
   delete journey.emp; journey.step = 0;
@@ -114,22 +119,45 @@ test('switching back inside the Hammer restores the cabin with its CRTs powered 
   renderer.update(link, sandbox, .5, link.position);
   assert.equal(marker.visible, true, 'seating retains the cabin light layout');
   const before = structuredClone(journey), camera = new THREE.PerspectiveCamera();
-  const pointSlots: number[] = [];
+  const pointSlots: number[] = [], uploads: THREE.Texture[] = [];
   const body = new THREE.Group();
+  const map = new THREE.Texture({ width: 1024, height: 1024 });
+  const normalMap = new THREE.Texture({ width: 1024, height: 1024 });
+  map.needsUpdate = normalMap.needsUpdate = true;
+  body.add(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ map, normalMap })));
   renderer.setCrosscutSubjects(() => undefined, id => id === 'mifune' ? body : undefined);
+  let ready = false, reads = 0;
+  const program = { isReady: () => ready, getUniforms: () => { reads++; } };
+  const programs: typeof program[] = [];
   let target: THREE.WebGLRenderTarget | null = null;
   const webgl = {
+    info: { programs }, properties: { get: (texture: THREE.Texture) =>
+      texture === map || texture === normalMap ? {} : { __version: texture.version } },
     extensions: { has: () => true }, getRenderTarget: () => target,
     setRenderTarget: (next: typeof target) => { target = next; },
+    initTexture: (texture: THREE.Texture) => { uploads.push(texture); },
     compile: (group: THREE.Group, _camera: THREE.Camera, lights: THREE.Scene) => {
       assert.ok(target, 'prepare the programs for the offscreen color pass');
       let points = 0;
       for (const root of [group, lights]) root.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
       pointSlots.push(points);
+      if (!programs.length) programs.push(program);
     },
   } as unknown as THREE.WebGLRenderer;
   renderer.prepareDockEmp(webgl, camera, journey);
+  assert.deepEqual(uploads, []);
   renderer.prepareDockEmp(webgl, camera, journey);
+  assert.deepEqual(uploads, [map], 'only one ready texture starts uploading per preparation frame');
+  renderer.prepareDockEmp(webgl, camera, journey);
+  assert.deepEqual(uploads, [map, normalMap]);
+  assert.equal(reads, 0, 'shader reflection waits for the linked program');
+  ready = true;
+  renderer.prepareDockEmp(webgl, camera, journey);
+  assert.equal(reads, 0, 'advance one frame after the driver reports the program is ready');
+  renderer.prepareDockEmp(webgl, camera, journey);
+  assert.equal(reads, 1);
+  renderer.prepareDockEmp(webgl, camera, journey);
+  assert.equal(reads, 1);
   assert.deepEqual(pointSlots, [3, 3], 'the dock and the existing cast use the same prepared light layout');
   assert.deepEqual(journey, before, 'warming cannot spend the saved EMP charge');
   assert.equal(target, null);
@@ -169,6 +197,59 @@ test('switching back inside the Hammer restores the cabin with its CRTs powered 
   renderer.update(undefined, undefined, 3);
   assert.equal(exterior.parent, null);
   assert.equal(released, 1);
+});
+
+test('the EMP retains the gate hangar until the reunion ends', t => {
+  mockRoomTextures(t);
+  const scene = new THREE.Scene(), renderer = new FilmSetRenderer(scene);
+  t.after(() => renderer.dispose());
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const kid = world.agents.get('kid')!, link = world.agents.get('link')!;
+  Object.assign(kid, { position: filmPosition('film_zion_hangar', 0, -32), isInMatrix: false, currentLocation: 'film_zion_hangar' });
+  Object.assign(link, { position: filmPosition('film_hammer_deck', -2.8, -16), isInMatrix: false, currentLocation: 'film_hammer_deck' });
+  const journey = { ...saved(0), scene: 'm3_gate', actor: 'kid', step: 3 };
+  delete journey.emp;
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  renderer.update(kid, sandbox, 0, kid.position);
+  const dock = renderer.root.getObjectByName('zion-homecoming-set')!;
+  const gangway = dock.getObjectByName('zion-ship-gangway') as THREE.Mesh;
+  const gangwayOrigin = gangway.getWorldPosition(new THREE.Vector3());
+  let releases = 0;
+  gangway.geometry.addEventListener('dispose', () => { releases++; });
+
+  Object.assign(journey, { scene: 'm3_emp', actor: 'link', step: 0 });
+  renderer.update(link, sandbox, 1, link.position);
+  assert.equal(releases, 0, 'boarding the Hammer must not release the dock geometry');
+  assert.ok(!renderer.root.getObjectByName('zion-homecoming-set'), 'the retained hangar is outside the visible cabin');
+
+  journey.emp = { firedAt: 12, elapsed: 1.8 }; journey.step = 1;
+  link.currentAction = { type: 'idle', parameters: { dockEmp: 1.8 }, startedAt: 0, duration: 1, progress: 0 };
+  renderer.update(link, sandbox, 2, link.position);
+  const exterior = scene.getObjectByName('hammer-emp-dock')!;
+  assert.equal(exterior.getObjectByName('zion-homecoming-set'), dock);
+  assert.equal(exterior.visible, true);
+  assert.deepEqual(gangway.getWorldPosition(new THREE.Vector3()).toArray(), gangwayOrigin.toArray());
+
+  Object.assign(journey, { scene: 'm3_dock_reunion', step: 0, emp: { firedAt: 12, elapsed: 9 } });
+  Object.assign(link, { position: filmPosition('film_zion_hangar', 20, 20), currentLocation: 'film_zion_hangar', currentAction: null });
+  renderer.update(link, sandbox, 3, link.position);
+  assert.equal(scene.getObjectByName('hammer-emp-dock'), exterior);
+  assert.equal(releases, 0);
+  renderer.update(undefined, undefined, 4);
+  assert.equal(releases, 1);
+  assert.equal(exterior.parent, null);
+
+  Object.assign(journey, { scene: 'm3_gate', actor: 'kid', step: 3 });
+  delete journey.emp;
+  renderer.update(kid, sandbox, 5, kid.position);
+  const pendingGangway = renderer.root.getObjectByName('zion-ship-gangway') as THREE.Mesh;
+  pendingGangway.geometry.addEventListener('dispose', () => { releases++; });
+  Object.assign(journey, { scene: 'm3_emp', actor: 'link', step: 0 });
+  Object.assign(link, { position: filmPosition('film_hammer_deck', -2.8, -16), currentLocation: 'film_hammer_deck' });
+  renderer.update(link, sandbox, 6, link.position);
+  assert.equal(releases, 1);
+  renderer.update(undefined, undefined, 7);
+  assert.equal(releases, 2, 'leaving before the EMP releases the pending hangar');
 });
 
 test('a cold reunion builds one blackout dock and still supports older saves without EMP state', t => {

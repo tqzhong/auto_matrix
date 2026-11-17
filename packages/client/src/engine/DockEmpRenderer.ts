@@ -26,11 +26,12 @@ export class DockEmpRenderer {
   private direction = new THREE.Vector3();
   private up = new THREE.Vector3(0, 1, 0);
   private lastTime?: number;
-  constructor(parent: THREE.Object3D) {
+  constructor(parent: THREE.Object3D, hangar?: ZionHomecomingRenderer) {
     this.group.name = 'hammer-emp-dock'; parent.add(this.group);
     const center = FILM_SETS.film_zion_hangar.center;
     this.group.position.set(center.x, center.y - 1, center.z);
-    this.dock = new ZionHomecomingRenderer(this.group, 'film_zion_hangar');
+    this.dock = hangar ?? new ZionHomecomingRenderer(this.group, 'film_zion_hangar');
+    if (hangar) this.group.add(hangar.group);
     this.swarm.name = 'emp-sentinel-swarm'; this.group.add(this.swarm);
     const steel = new THREE.MeshStandardMaterial({ color: 0x687b83, roughness: .61, metalness: .72 });
     const dark = new THREE.MeshStandardMaterial({ color: 0x25353b, roughness: .55, metalness: .7 });

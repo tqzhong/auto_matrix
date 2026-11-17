@@ -508,7 +508,9 @@ export class FilmSetRenderer {
   private revolutionsPrelude?: RevolutionsPreludeRenderer;
   private dockBriefing?: DockBriefingRenderer;
   private dockEvacuation?: DockEvacuationRenderer;
+  private empHangar?: ZionHomecomingRenderer;
   private empDock?: DockEmpRenderer;
+  private empDockColors?: ColorPreparation & { textureUpload?: Generator<void, boolean> };
   private hammerMonitors?: { face: THREE.MeshStandardMaterial; glyphs: THREE.MeshBasicMaterial };
   private hammerRoute?: HammerRouteRenderer;
   private logosFlight?: LogosFlightRenderer;
@@ -668,10 +670,27 @@ export class FilmSetRenderer {
       (preview, root, eye) => this.prepareDesertHandoff(renderer, camera, cast, sun, preview, root, eye));
   }
   prepareDockEmp(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey?: FilmJourney): void {
-    if (this.currentScene !== 'm3_emp' || journey?.scene !== 'm3_emp' || journey.visiting || !journey.empOperator || journey.emp || this.empDock
+    if (this.currentScene !== 'm3_emp' || journey?.scene !== 'm3_emp' || journey.visiting || !journey.empOperator || journey.emp
       || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    this.empDock = new DockEmpRenderer(this.scene);
-    this.empDock.prepare(renderer, camera, this.scene, journey, ['mifune', 'charra', 'zee'].map(id => this.phoneBodies?.(id)));
+    const prepared = this.empDockColors;
+    if (prepared) {
+      if (!this.prepareStagedColorTexture(renderer, prepared, prepared.textures))
+        this.prepareColorProgram(renderer, camera, prepared, undefined, 'live', true);
+      return;
+    }
+    const dock = this.empDock ??= this.createDockEmp();
+    const cast = ['mifune', 'charra', 'zee'].map(id => this.phoneBodies?.(id));
+    const start = renderer.info.programs?.length ?? 0;
+    dock.prepare(renderer, camera, this.scene, journey, cast);
+    const textures = new Set<THREE.Texture>();
+    this.queueColorTextures(textures, this.colorMeshes([...dock.group.children, ...cast.flatMap(body => body?.children ?? [])], true));
+    const programs = (renderer.info.programs?.slice(start) ?? []) as ColorProgram[];
+    this.empDockColors = { scene: this.scene, meshes: [], programs, textures };
+  }
+  private createDockEmp(): DockEmpRenderer {
+    const dock = new DockEmpRenderer(this.scene, this.empHangar);
+    this.empHangar = undefined;
+    return dock;
   }
   prepareSmithCrater(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey?: FilmJourney): void {
     if (!this.smithFinale || journey?.scene !== 'm3_rain' || journey.visiting || !journey.smithFinale) return;
@@ -3561,6 +3580,9 @@ export class FilmSetRenderer {
       }
       const preparedBaneCopy = set?.id === 'film_industrial_loft' && sceneId === 'm2_bane_copy' && !journey?.visiting ? this.preparedBaneCopy?.renderer : undefined;
       if (preparedBaneCopy) this.preparedBaneCopy = undefined;
+      const empHangar = this.currentScene === 'm3_gate' && this.zion?.set === 'film_zion_hangar'
+        && set?.id === 'film_hammer_deck' && sceneId === 'm3_emp' && !journey?.visiting ? this.zion : undefined;
+      if (empHangar) { empHangar.group.removeFromParent(); this.zion = undefined; }
       const reunionExterior = journey?.scene === 'm3_dock_reunion' && !journey.visiting && Boolean(journey.emp);
       const retainedEmpDock = reunionExterior ? this.empDock : undefined;
       if (retainedEmpDock) this.empDock = undefined;
@@ -3601,6 +3623,7 @@ export class FilmSetRenderer {
       if (resumingDeparture) this.preparedZion = resumingDeparture;
       if (resumingSecondOracle) this.preparedSecondOracle = resumingSecondOracle;
       if (resumingClub) this.preparedClub = resumingClub;
+      this.empHangar = empHangar;
       this.empDock = retainedEmpDock;
       if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
       // LifeInteriors owns the persistent city apartment, even while another actor plays a remote chapter.
@@ -3656,7 +3679,7 @@ export class FilmSetRenderer {
         }
         else if (['film_zion_dock_exit', 'film_zion_command_bunker'].includes(set.id)) this.dockEvacuation = new DockEvacuationRenderer(this.root, set.id === 'film_zion_command_bunker');
         else if (set.id === 'film_zion_personnel') this.dockBriefing = new DockBriefingRenderer(this.root);
-        else if (set.id === 'film_zion_hangar' && reunionExterior) this.empDock ??= new DockEmpRenderer(this.scene);
+        else if (set.id === 'film_zion_hangar' && reunionExterior) this.empDock ??= this.createDockEmp();
         else if (['film_zion_hangar', 'film_zion_council', 'film_zion_residences', 'film_zion_temple', 'film_zion_bedroom', 'film_zion_engineering'].includes(set.id)) {
           this.zion = preparedZion ?? new ZionHomecomingRenderer(this.root, set.id, sceneId);
           if (preparedZion) this.root.add(preparedZion.group);
@@ -3989,7 +4012,10 @@ export class FilmSetRenderer {
       this.hammerMonitors.face.emissiveIntensity = blackout ? 0 : .7;
       this.hammerMonitors.glyphs.visible = !blackout;
     }
-    if (['m3_emp', 'm3_dock_reunion'].includes(this.currentScene ?? '') && empJourney?.emp && !this.empDock) this.empDock = new DockEmpRenderer(this.scene);
+    if (empJourney?.emp && this.empDockColors) {
+      this.empDockColors.textureUpload?.return(false); this.empDockColors = undefined;
+    }
+    if (['m3_emp', 'm3_dock_reunion'].includes(this.currentScene ?? '') && empJourney?.emp && !this.empDock) this.empDock = this.createDockEmp();
     this.empDock?.update(empJourney, cameraPosition, camera);
     if (this.empDock) this.empDock.group.visible = this.empDock.group.visible && (this.currentScene === 'm3_dock_reunion' || !firstPerson && typeof empTime === 'number');
     this.root.visible = !this.empDock?.group.visible;
@@ -6874,6 +6900,8 @@ export class FilmSetRenderer {
     this.oracleAbsorption?.dispose(); this.oracleAbsorption = undefined;
     this.dockEvacuation?.dispose(); this.dockEvacuation = undefined;
     this.dockBriefing?.dispose(); this.dockBriefing = undefined;
+    this.empDockColors?.textureUpload?.return(false); this.empDockColors = undefined;
+    this.empHangar?.dispose(); this.empHangar = undefined;
     this.empDock?.dispose(); this.empDock = undefined;
     this.hammerMonitors = undefined;
     this.hammerRoute?.dispose(); this.hammerRoute = undefined;
