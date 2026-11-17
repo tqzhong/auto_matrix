@@ -200,6 +200,8 @@ type EntryPreparation = {
   buffers?: { meshes: THREE.Mesh[]; geometries: WeakSet<THREE.BufferGeometry>; upload?: Generator<void> };
 };
 type TrainingPreparation = EntryPreparation & { renderer: TrainingSetRenderer; colors?: CastColorPreparation };
+type ZionPreparation = EntryPreparation & { scene: string; renderer: ZionHomecomingRenderer;
+  colors?: CastColorPreparation & { seen: Set<ColorMesh> } };
 type DeckEntryPreparation = EntryPreparation & {
   deck: NebDeckRenderer; colors?: CastColorPreparation; ready: boolean; pendingCabin: Map<THREE.Material, ColorMesh>; normalMeshes?: THREE.Mesh[];
   wakeRoom?: ReloadedOpeningRenderer;
@@ -320,6 +322,7 @@ const ZION_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m2_bane_copy: { scene: 'm2_hamann', step: 2 },
   m2_hamann: { scene: 'm2_oracle_message', step: 2 },
   m2_oracle_message: { scene: 'm2_departure', step: 1 },
+  m3_shaft_seal: { scene: 'm3_temple_defense', step: 1 },
 };
 const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m1_meal: { scene: 'm1_spoon', step: 0 },
@@ -500,8 +503,7 @@ export class FilmSetRenderer {
   private catchSet?: ReloadedCatchRenderer;
   private finale?: ReloadedFinaleRenderer;
   private zion?: ZionHomecomingRenderer;
-  private preparedZion?: { scene: string; renderer: ZionHomecomingRenderer; textureUpload?: Generator<void, boolean>;
-    colors?: CastColorPreparation & { seen: Set<ColorMesh> } };
+  private preparedZion?: ZionPreparation;
   private baneCopy?: BaneCopyRenderer;
   private preparedBaneCopy?: { renderer: BaneCopyRenderer; colors?: CastColorPreparation };
   private logosBane?: LogosBaneRenderer;
@@ -1999,36 +2001,45 @@ export class FilmSetRenderer {
     }
   }
   prepareZionHomecoming(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
-    actor: (id: string) => THREE.Group | undefined, resumeDeparture = false): void {
+    actor: (id: string) => THREE.Group | undefined, resume = false, sourceLights?: LightCulling): void {
     this.prepareBaneCopy(renderer, camera, journey, actor);
     const cut = journey && ZION_CUTS[journey.scene];
     const atSource = journey && cut && this.currentScene === journey.scene && this.current?.id === FILM_SCENE_BY_ID[journey.scene].set;
-    const savedDeparture = resumeDeparture && !this.current && journey?.scene === 'm2_oracle_message'
-      && journey.completed.includes(journey.scene);
-    if (!journey || !cut || journey.visiting || journey.step < cut.step || (!atSource && !savedDeparture)
+    const savedCut = resume && !this.current && journey?.completed.includes(journey.scene);
+    if (!journey || !cut || journey.visiting || journey.step < cut.step || (!atSource && !savedCut)
       || journey.scene === 'm2_bane_copy' && journey.step === 2 && (journey.baneCopy?.progress ?? 0) < .2) {
       this.cancelZionPreparation(); return;
     }
-    const next = FILM_SCENE_BY_ID[cut.scene];
+    const next = FILM_SCENE_BY_ID[cut.scene], defense = next.id === 'm3_temple_defense';
     if (!this.preparedZion) {
-      const target = new ZionHomecomingRenderer(new THREE.Group(), next.set, next.id);
-      target.update({ ...journey, scene: next.id, step: 0 }, 0);
-      this.preparedZion = { scene: next.id, renderer: target };
-      if (renderer.extensions.has('KHR_parallel_shader_compile')) {
-        const colors = this.preparedZion.colors = {
-          ...this.colorPreparation(target.group, [], { playerView: savedDeparture }), actors: new Set<THREE.Group>(), seen: new Set<ColorMesh>(),
-        };
-        const initial = new Set(colors.meshes);
-        const crowdLoaded = () => {
-          if (this.preparedZion?.renderer !== target) return;
-          const meshes = this.colorMeshes([target.group]).filter(mesh => !initial.has(mesh));
-          colors.meshes.push(...meshes); this.queueColorTextures(colors.textures, meshes);
-        };
-        void target.crowdReady?.then(crowdLoaded, crowdLoaded);
-      }
+      const target = new ZionHomecomingRenderer(new THREE.Group(), next.set, next.id, defense);
+      this.preparedZion = { scene: next.id, renderer: target, root: target.group, liveMeshes: [] };
     }
-    const prepared = this.preparedZion, colors = prepared.colors;
-    if (!colors) return;
+    const prepared = this.preparedZion;
+    if (!prepared.renderer.prepareStep() || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.colors) {
+      const target = prepared.renderer;
+      target.update({ ...journey, scene: next.id, step: 0 }, 0);
+      const colors = prepared.colors = {
+        ...this.colorPreparation(target.group, [], { playerView: savedCut, includeBasic: defense }), actors: new Set<THREE.Group>(), seen: new Set<ColorMesh>(),
+      };
+      const initial = new Set(colors.meshes);
+      if (defense) {
+        prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
+        if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+          prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
+          this.queueEntryShadows(prepared, colors.meshes);
+        }
+        colors.meshes.push(this.marker); prepared.liveMeshes.push(this.marker);
+      }
+      const crowdLoaded = () => {
+        if (this.preparedZion?.renderer !== target) return;
+        const meshes = this.colorMeshes([target.group]).filter(mesh => !initial.has(mesh));
+        colors.meshes.push(...meshes); this.queueColorTextures(colors.textures, meshes);
+      };
+      void target.crowdReady?.then(crowdLoaded, crowdLoaded);
+    }
+    const colors = prepared.colors;
     for (const id of [next.actor, ...next.cast]) {
       const group = actor(id); if (!group) continue;
       // The next scene's detailed LOD can still be hidden by distance.
@@ -2043,8 +2054,13 @@ export class FilmSetRenderer {
       if (!meshes.length) continue;
       meshes.forEach(mesh => colors.seen.add(mesh));
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+      if (defense) {
+        prepared.liveMeshes.push(...meshes);
+        this.queueEntryShadows(prepared, meshes);
+      }
     }
-    if (next.id === 'm2_departure') {
+    if (defense) this.prepareStagedEntry(renderer, camera, prepared, colors, atSource ? sourceLights : undefined, 2);
+    else if (next.id === 'm2_departure') {
       this.prepareColorProgram(renderer, camera, colors, undefined, 'live');
       this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2);
     } else this.prepareColorFrame(renderer, camera, colors);
@@ -3536,9 +3552,10 @@ export class FilmSetRenderer {
       const resumingMeetingDeck = resumingScene && sceneId === 'm2_dream' && set?.id === 'film_trinity_roof' && journey?.actor === player?.id
         ? this.preparedMeetingDeck : undefined;
       if (resumingMeetingDeck) this.preparedMeetingDeck = undefined;
-      const resumingDeparture = resumingScene && sceneId === 'm2_oracle_message' && set?.id === 'film_zion_bedroom'
-        && journey?.actor === player?.id && this.preparedZion?.scene === 'm2_departure' ? this.preparedZion : undefined;
-      if (resumingDeparture) this.preparedZion = undefined;
+      const zionCut = sceneId && ZION_CUTS[sceneId];
+      const resumingZionCut = resumingScene && sceneId && zionCut && set?.id === FILM_SCENE_BY_ID[sceneId].set
+        && journey?.actor === player?.id && this.preparedZion?.scene === zionCut.scene ? this.preparedZion : undefined;
+      if (resumingZionCut) this.preparedZion = undefined;
       const nextOracleCut = sceneId && SECOND_ORACLE_CUTS[sceneId];
       const resumingSecondOracle = resumingScene && sceneId && nextOracleCut && set?.id === FILM_SCENE_BY_ID[sceneId].set
         && journey?.actor === player?.id && this.preparedSecondOracle?.scene === nextOracleCut.scene ? this.preparedSecondOracle : undefined;
@@ -3598,9 +3615,9 @@ export class FilmSetRenderer {
       const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall?.renderer : undefined;
       if (preparedMeeting) this.preparedMeetingHall = undefined;
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
-        && sceneId === this.preparedZion.scene && !journey?.visiting ? this.preparedZion.renderer : undefined;
+        && sceneId === this.preparedZion.scene && !journey?.visiting ? this.preparedZion : undefined;
       if (preparedZion) {
-        this.preparedZion?.textureUpload?.return(false); this.preparedZion = undefined;
+        this.preparedZion = undefined; this.releaseEntryPreparation(preparedZion, true);
       }
       const preparedBaneCopy = set?.id === 'film_industrial_loft' && sceneId === 'm2_bane_copy' && !journey?.visiting ? this.preparedBaneCopy?.renderer : undefined;
       if (preparedBaneCopy) this.preparedBaneCopy = undefined;
@@ -3644,7 +3661,7 @@ export class FilmSetRenderer {
       this.preparedOneDeck = resumingOneDeck;
       this.preparedDream = resumingDream;
       this.preparedMeetingDeck = resumingMeetingDeck;
-      if (resumingDeparture) this.preparedZion = resumingDeparture;
+      if (resumingZionCut) this.preparedZion = resumingZionCut;
       if (resumingSecondOracle) this.preparedSecondOracle = resumingSecondOracle;
       if (resumingClub) this.preparedClub = resumingClub;
       this.empHangar = empHangar;
@@ -3705,8 +3722,12 @@ export class FilmSetRenderer {
         else if (set.id === 'film_zion_personnel') this.dockBriefing = new DockBriefingRenderer(this.root);
         else if (set.id === 'film_zion_hangar' && reunionExterior) this.empDock ??= this.createDockEmp();
         else if (['film_zion_hangar', 'film_zion_council', 'film_zion_residences', 'film_zion_temple', 'film_zion_bedroom', 'film_zion_engineering'].includes(set.id)) {
-          this.zion = preparedZion ?? new ZionHomecomingRenderer(this.root, set.id, sceneId);
-          if (preparedZion) this.root.add(preparedZion.group);
+          this.zion = preparedZion?.renderer ?? new ZionHomecomingRenderer(this.root, set.id, sceneId);
+          if (preparedZion) {
+            while (!preparedZion.renderer.prepareStep()) { /* Finish the set if the player arrives early. */ }
+            this.root.add(preparedZion.root);
+            for (const material of preparedZion.shadows?.materials ?? []) this.materials.add(material);
+          }
         }
         else if (set.architecture === 'lobby') {
           this.lobby = preparedLobby?.renderer ?? new LobbySetRenderer(this.root, set);
@@ -6805,8 +6826,8 @@ export class FilmSetRenderer {
     this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedAmbush = undefined;
   }
   private cancelZionPreparation(): void {
-    this.preparedZion?.textureUpload?.return(false);
-    this.preparedZion?.renderer.dispose(); this.preparedZion = undefined;
+    const prepared = this.preparedZion; if (!prepared) return;
+    this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedZion = undefined;
   }
   private cancelBaneCopyPreparation(): void {
     this.preparedBaneCopy?.renderer.dispose(); this.preparedBaneCopy = undefined;

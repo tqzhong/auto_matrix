@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { TEMPLE_DEFENSE, trilogyEpilogueProgress, type FilmJourney } from '@auto_matrix/shared';
-import { batchStaticGeometry } from './StaticGeometry.js';
+import { batchStaticGeometryInFrames } from './StaticGeometry.js';
 
 /** The temple has an open firing bottleneck, not a powered door that can stop the siege. */
 export class TempleDefenseRenderer {
@@ -8,16 +8,28 @@ export class TempleDefenseRenderer {
   private wheels: THREE.Group[] = [];
   private drill = new THREE.Group();
   private ceilingFragments: { mesh: THREE.Mesh; origin: THREE.Vector3; angle: number }[] = [];
-  private rubble: THREE.InstancedMesh;
-  private dust: THREE.InstancedMesh;
+  private rubble!: THREE.InstancedMesh;
+  private dust!: THREE.InstancedMesh;
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
   private lights: THREE.Light[] = [];
   private disposed = false;
+  private construction?: Generator<void>;
 
-  constructor(root: THREE.Group) {
+  constructor(root: THREE.Group, staged = false) {
     this.group.name = 'temple-last-defense'; root.add(this.group);
+    this.construction = this.build();
+    if (!staged) while (!this.prepareStep()) { /* Finish construction for an active temple. */ }
+  }
+
+  prepareStep(): boolean {
+    if (this.construction && !this.construction.next().done) return false;
+    this.construction = undefined;
+    return true;
+  }
+
+  private *build(): Generator<void> {
     const steel = this.surface('metal_plate', 0x687472, .62, .55), dark = this.material(0x2c3436, .73, .3);
     const stone = this.surface('damaged_plaster', 0x615a53, 1, .01), cloth = this.material(0x726759, .95, 0);
     const cave = this.surface('rock_wall_02', 0xa19d97, 1, .01);
@@ -55,8 +67,10 @@ export class TempleDefenseRenderer {
       }
       for (let i = 0; i < 3; i++) { const x = mount.x + (index ? 2.8 : -2.8); this.box(dark, x, .55 + i * .52, mount.z + .4, 1.6, .48, 1.1); this.box(steel, x, .78 + i * .52, mount.z + .4, 1.7, .06, 1.2); }
     }
-    this.cityOutlook(stone, cave, steel, dark, black);
+    yield;
+    yield* this.cityOutlook(stone, cave, steel, dark, black);
     this.cityCeiling(cave, steel);
+    yield;
     this.drill.name = 'temple-city-digger'; this.drill.position.set(0, 38, -105); this.group.add(this.drill);
     const tip = this.mesh(new THREE.ConeGeometry(5.4, 10, 32), steel, this.drill); tip.rotation.z = Math.PI;
     for (let i = 0; i < 7; i++) {
@@ -110,10 +124,17 @@ export class TempleDefenseRenderer {
     const flood = new THREE.SpotLight(0xb3c8d5, 18000, 240, 1.1, .7, 2);
     flood.position.set(-5, 13.3, -57.6); flood.target.position.set(0, -5, -170);
     this.group.add(flood, flood.target); this.lights.push(flood);
-    batchStaticGeometry(this.group, new Set()).forEach(geometry => this.geometries.add(geometry));
+    yield;
+    for (const geometry of batchStaticGeometryInFrames(this.group, new Set())) {
+      if (geometry) this.geometries.add(geometry);
+      yield;
+    }
+    const live = new Set<THREE.BufferGeometry>();
+    this.group.traverse(object => { if (object instanceof THREE.Mesh) live.add(object.geometry); });
+    for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
     this.update(undefined);
   }
-  private cityOutlook(stone: THREE.MeshStandardMaterial, cave: THREE.MeshStandardMaterial, steel: THREE.MeshStandardMaterial, dark: THREE.Material, black: THREE.Material): void {
+  private *cityOutlook(stone: THREE.MeshStandardMaterial, cave: THREE.MeshStandardMaterial, steel: THREE.MeshStandardMaterial, dark: THREE.Material, black: THREE.Material): Generator<void> {
     // The residential shaft is scenery beyond the temple's walking boundary. Keep the central bore and approach open.
     const outside = new THREE.Group(); outside.name = 'temple-city-outlook'; this.group.add(outside);
     const rust = steel.clone(); rust.color.setHex(0xc49a82); rust.roughness = .96; rust.metalness = .05; this.materials.add(rust);
@@ -185,6 +206,7 @@ export class TempleDefenseRenderer {
         this.pipe(steel, point(-7, floor - 2.5, -.7).toArray(), point(0, floor - .5, 3).toArray(), .15, outside, 8);
         this.pipe(steel, point(7, floor - 2.5, -.7).toArray(), point(0, floor - .5, 3).toArray(), .15, outside, 8);
       }
+      yield;
     }
     // Continuous polygonal balconies connect the modules, rather than isolated rings around solid pillars.
     const gallery = new THREE.Shape();
@@ -196,11 +218,14 @@ export class TempleDefenseRenderer {
     gallery.closePath();
     const balcony = new THREE.ExtrudeGeometry(gallery, { depth: .5, bevelEnabled: false }); balcony.rotateX(Math.PI / 2);
     for (const floor of levels) this.mesh(balcony, dark, outside).position.y = floor + .25;
-    for (const floor of levels) for (let i = 0; i < 48; i++) {
-      const a = -1.72 + i * 3.44 / 48, b = -1.72 + (i + 1) * 3.44 / 48;
-      const p = (angle: number, r: number, y: number) => new THREE.Vector3(Math.sin(angle) * r, y, -125 - Math.cos(angle) * r);
-      for (const y of [floor + 1.1, floor + 2.1]) this.pipe(steel, p(a, 67, y).toArray(), p(b, 67, y).toArray(), .07, outside, 8);
-      this.pipe(steel, p(a, 67, floor).toArray(), p(a, 67, floor + 2.1).toArray(), .07, outside, 8);
+    for (const floor of levels) {
+      for (let i = 0; i < 48; i++) {
+        const a = -1.72 + i * 3.44 / 48, b = -1.72 + (i + 1) * 3.44 / 48;
+        const p = (angle: number, r: number, y: number) => new THREE.Vector3(Math.sin(angle) * r, y, -125 - Math.cos(angle) * r);
+        for (const y of [floor + 1.1, floor + 2.1]) this.pipe(steel, p(a, 67, y).toArray(), p(b, 67, y).toArray(), .07, outside, 8);
+        this.pipe(steel, p(a, 67, floor).toArray(), p(a, 67, floor + 2.1).toArray(), .07, outside, 8);
+      }
+      yield;
     }
     for (const side of [-1, 1]) for (const floor of [-37, -11, 2]) {
       this.box(dark, side * 36, floor, -137, 54, .65, 5, outside);
@@ -348,6 +373,7 @@ export class TempleDefenseRenderer {
   }
   dispose(): void {
     if (this.disposed) return; this.disposed = true;
+    this.construction?.return(undefined); this.construction = undefined;
     this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());
     this.textures.forEach(texture => texture.dispose()); this.lights.forEach(light => light.dispose());

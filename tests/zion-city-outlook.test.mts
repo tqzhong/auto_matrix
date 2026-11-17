@@ -29,8 +29,17 @@ test('the rock vault stays solid around the bore and the residential balconies m
 
 test('the deep city shares draw batches, rebuilds deterministically and releases its render resources once', t => {
   const root = new THREE.Group(), renderer = new TempleDefenseRenderer(root);
-  const coldRoot = new THREE.Group(), cold = new TempleDefenseRenderer(coldRoot);
+  const coldRoot = new THREE.Group(), cold = new TempleDefenseRenderer(coldRoot, true);
   t.after(() => { renderer.dispose(); cold.dispose(); });
+  const originalClone = THREE.BufferGeometry.prototype.clone;
+  let copied = 0, peakCopies = 0, ready = false;
+  THREE.BufferGeometry.prototype.clone = function () { copied++; return originalClone.call(this); };
+  try {
+    while (!ready) {
+      copied = 0; ready = cold.prepareStep(); peakCopies = Math.max(peakCopies, copied);
+    }
+  } finally { THREE.BufferGeometry.prototype.clone = originalClone; }
+  assert.ok(peakCopies > 0 && peakCopies <= 64, `one preparation frame copied ${peakCopies} geometries`);
   const city = root.getObjectByName('temple-city-outlook')!, rebuilt = coldRoot.getObjectByName('temple-city-outlook')!;
   const meshes: THREE.Mesh[] = [], resources = new Set<THREE.BufferGeometry | THREE.Material>();
   city.traverse(object => {
@@ -44,7 +53,9 @@ test('the deep city shares draw batches, rebuilds deterministically and releases
   assert.equal(city.children.length, rebuilt.children.length);
   meshes.forEach((mesh, i) => {
     const other = rebuilt.children[i] as THREE.Mesh;
-    assert.deepEqual(mesh.geometry.attributes.position.array, other.geometry.attributes.position.array, 'cold loading must not randomly rebuild the city');
+    for (const attribute of ['position', 'normal', 'uv'])
+      assert.deepEqual(mesh.geometry.attributes[attribute].array, other.geometry.attributes[attribute].array, attribute);
+    assert.deepEqual(mesh.geometry.index?.array, other.geometry.index?.array, 'the staged mesh keeps the original triangles');
   });
   const disposed = new Map([...resources].map(resource => [resource, 0]));
   for (const resource of resources) resource.addEventListener('dispose', () => disposed.set(resource, disposed.get(resource)! + 1));

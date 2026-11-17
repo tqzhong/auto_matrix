@@ -58,18 +58,19 @@ export class ZionHomecomingRenderer {
   private templeDefense?: TempleDefenseRenderer;
   private crowd?: ZionCrowdRenderer;
   private disposed = false;
-  constructor(root: THREE.Group, readonly set: string, scene?: FilmJourney['scene']) {
+  constructor(root: THREE.Group, readonly set: string, scene?: FilmJourney['scene'], stageDefense = false) {
     this.group.name = 'zion-homecoming-set'; root.add(this.group); this.group.add(this.static, this.moving);
     if (set === 'film_zion_hangar') this.dock(scene === 'm2_dock' || scene === 'm2_departure');
     if (set === 'film_zion_council') this.council();
     if (set === 'film_zion_residences') this.residences();
-    if (set === 'film_zion_temple') this.temple(scene);
+    if (set === 'film_zion_temple') this.temple(scene, stageDefense);
     if (set === 'film_zion_bedroom') this.room();
     if (set === 'film_zion_engineering') this.engineering();
     this.batch();
     for (const group of [this.dockEast, this.dockRoof]) if (group) batchStaticGeometry(group, new Set()).forEach(g => this.geometries.add(g));
   }
   get crowdReady(): Promise<void> | undefined { return this.crowd?.ready; }
+  prepareStep(): boolean { return this.templeDefense?.prepareStep() ?? true; }
   private material(color: number, roughness = .85, metalness = .04, emissive = 0, power = 0): THREE.MeshStandardMaterial {
     const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive, emissiveIntensity: power });
     this.materials.add(mat); return mat;
@@ -320,7 +321,7 @@ export class ZionHomecomingRenderer {
     this.sign('RESIDENTS / LEVEL 08', 0, 11.5, -38, 11);
     for (let side of [-1, 1]) for (let i = 0; i < 4; i++) this.pipe(metal, [side * (25 - i * .8), 17, -37], [side * (25 - i * .8), 17, 39], .12);
   }
-  private temple(scene?: FilmJourney['scene']): void {
+  private temple(scene: FilmJourney['scene'] | undefined, stageDefense: boolean): void {
     const stone = this.surface('damaged_plaster', 0xb39473, 7), iron = this.material(0x342a25, .55, .45);
     const amber = this.material(0xfcc08a, .4, .08, 0xf79d4d, 2), cloth = this.material(0x5b493d, .96);
     this.rockShell(96, 116, 55, stone); this.box(stone, 0, -.25, 0, 94, .5, 114);
@@ -331,7 +332,7 @@ export class ZionHomecomingRenderer {
     }
     this.box(cloth, 0, .12, -17, 10, .06, 55);
     this.box(iron, 0, 3.1, -41, 10.3, .35, 4.5, this.static, 'zion-assembly-rostrum');
-    this.templeDefense = new TempleDefenseRenderer(this.moving);
+    this.templeDefense = new TempleDefenseRenderer(this.moving, stageDefense);
     for (const x of [-17, 17]) { this.cylinder(iron, x, 1.4, -23, 2.1, 2.8); this.cylinder(cloth, x, 2.85, -23, 2.15, .16); }
     this.crowd = new ZionCrowdRenderer(this.moving, scene === 'm3_temple_defense' || scene === 'm3_temple_breach');
     this.glow(0xf4b369, 1500, 90, 0, 34, -30); this.glow(0xe6a476, 1100, 75, 0, 22, 34);

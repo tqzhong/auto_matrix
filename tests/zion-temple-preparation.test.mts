@@ -47,13 +47,13 @@ async function setup(t: test.TestContext) {
       preview = next; let count = 0;
       subject.traverse(object => { if (object instanceof THREE.Mesh) { compiled.set(object, (compiled.get(object) ?? 0) + 1); count++; } }); batches.push(count);
     } } as unknown as THREE.WebGLRenderer;
-  const update = () => sets.update(journey.actor === 'neo' ? neo : morpheus, sandbox, 0, undefined, camera.position);
-  const prepare = () => sets.prepareZionHomecoming(graphics, camera, journey, () => undefined);
+  const update = () => sets.update(world.agents.get(journey.actor), sandbox, 0, undefined, camera.position);
+  const prepare = (resume = false) => sets.prepareZionHomecoming(graphics, camera, journey, () => undefined, resume);
   const target = () => (sets as unknown as { preparedZion?: { renderer: ZionHomecomingRenderer } }).preparedZion?.renderer;
   const finish = async () => { pending.splice(0).forEach(resolve => resolve()); await new Promise(resolve => setImmediate(resolve)); };
   update();
   t.after(async () => { sets.dispose(); await finish(); });
-  return { scene, sets, journey, compiled, batches, uploaded, assets, update, prepare, target, finish,
+  return { scene, sets, world, journey, compiled, batches, uploaded, assets, update, prepare, target, finish,
     get preview() { return preview; } };
 }
 
@@ -104,4 +104,44 @@ test('abandoning temple preparation releases late assets without queuing or reat
   assert.equal(h.target(), undefined); assert.equal(audience(target.group).length, 0); assert.equal(h.batches.length, batches);
   assert.equal(releases.size, resources.size); assert.ok([...releases.values()].every(count => count === 1));
   assert.equal(h.scene.getObjectByName('zion-assembly-rostrum'), undefined); assert.equal(h.sets.active?.id, 'film_zion_residences');
+});
+
+for (const resume of [false, true]) test(resume ? 'a completed shaft save readies the defense before taking control'
+  : 'the last defense from the shaft adopts the prepared guns and resting crowd', async t => {
+  const h = await setup(t), shaft = FILM_SCENE_BY_ID.m3_shaft_seal, temple = FILM_SCENE_BY_ID.m3_temple_defense;
+  for (const chapter of [shaft, temple]) Object.assign(h.world.agents.get(chapter.actor)!, {
+    position: filmEntry(chapter), currentLocation: chapter.set, isInMatrix: false,
+  });
+  Object.assign(h.journey, { scene: shaft.id, actor: shaft.actor, step: 0, checkpoint: filmEntry(shaft) });
+  if (resume) h.sets.update(undefined, undefined, 0);
+  else h.update();
+  h.prepare(resume);
+  assert.equal(h.target(), undefined, 'the untouched bunker entrance must not allocate the temple');
+  h.journey.step = resume ? 3 : 1;
+  if (resume) h.journey.completed.push(shaft.id);
+  const before = structuredClone(h.journey);
+  h.prepare(resume);
+  const target = h.target(), gun = target?.group.getObjectByName('temple-artillery-0');
+  assert.ok(target && gun, 'the shaft must prepare the defense version of the temple');
+  assert.ok(!target.group.getObjectByName('temple-city-roof'), 'the first preparation frame must leave the city construction for later frames');
+  assert.equal(h.scene.getObjectByName(gun.name), undefined);
+  assert.deepEqual(h.journey, before);
+  if (resume) {
+    h.update();
+    assert.equal(h.target(), target, 'taking control in the bunker must carry over the pending defense');
+  }
+  for (let frame = 0; frame < 40; frame++) h.prepare();
+  await h.finish();
+  assert.ok(target.group.getObjectByName('temple-city-roof'));
+  const residents = audience(target.group);
+  assert.equal(residents.length, 12);
+  assert.ok(residents.every(mesh => !mesh.morphTexture), 'the defense uses the crowd at rest');
+  for (let frame = 0; frame < 100; frame++) h.prepare();
+  assert.ok(residents.every(mesh => h.compiled.get(mesh) === 1));
+  assert.ok(h.assets.every(({ texture }) => h.uploaded.filter(value => value === texture).length === 1));
+  Object.assign(h.journey, { scene: temple.id, actor: temple.actor, step: 0 });
+  h.update();
+  assert.equal(h.scene.getObjectByName(gun.name), gun);
+  assert.deepEqual(audience(h.scene), residents);
+  assert.equal(h.target(), undefined);
 });
