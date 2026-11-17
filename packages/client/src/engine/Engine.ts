@@ -380,8 +380,9 @@ export class Engine {
       id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling);
     if (meeting?.scene === 'm2_meeting' && player?.id === meeting.actor)
       this.filmSets.prepareCaptainsMeeting(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
-    this.filmSets.prepareZionHomecoming(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
-      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id));
+    const resumeDeparture = onLanding && meeting?.scene === 'm2_oracle_message';
+    this.filmSets.prepareZionHomecoming(this.renderer, this.camera, player?.id === meeting?.actor || resumeDeparture ? meeting : undefined,
+      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id), resumeDeparture);
     this.filmSets.prepareTruthReturn(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
     this.filmSets.prepareDownloadWalk(this.renderer, this.camera, this.lightCulling, player?.id === meeting?.actor ? meeting : undefined,

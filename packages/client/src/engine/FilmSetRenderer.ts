@@ -490,7 +490,8 @@ export class FilmSetRenderer {
   private catchSet?: ReloadedCatchRenderer;
   private finale?: ReloadedFinaleRenderer;
   private zion?: ZionHomecomingRenderer;
-  private preparedZion?: { scene: string; renderer: ZionHomecomingRenderer; colors?: CastColorPreparation & { seen: Set<ColorMesh> } };
+  private preparedZion?: { scene: string; renderer: ZionHomecomingRenderer; textureUpload?: Generator<void, boolean>;
+    colors?: CastColorPreparation & { seen: Set<ColorMesh> } };
   private baneCopy?: BaneCopyRenderer;
   private preparedBaneCopy?: { renderer: BaneCopyRenderer; colors?: CastColorPreparation };
   private logosBane?: LogosBaneRenderer;
@@ -1942,12 +1943,14 @@ export class FilmSetRenderer {
     }
   }
   prepareZionHomecoming(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
-    actor: (id: string) => THREE.Group | undefined): void {
+    actor: (id: string) => THREE.Group | undefined, resumeDeparture = false): void {
     this.prepareBaneCopy(renderer, camera, journey, actor);
     const cut = journey && ZION_CUTS[journey.scene];
-    if (!journey || !cut || journey.visiting || journey.step < cut.step || this.currentScene !== journey.scene
-      || journey.scene === 'm2_bane_copy' && journey.step === 2 && (journey.baneCopy?.progress ?? 0) < .2
-      || this.current?.id !== FILM_SCENE_BY_ID[journey.scene].set) {
+    const atSource = journey && cut && this.currentScene === journey.scene && this.current?.id === FILM_SCENE_BY_ID[journey.scene].set;
+    const savedDeparture = resumeDeparture && !this.current && journey?.scene === 'm2_oracle_message'
+      && journey.completed.includes(journey.scene);
+    if (!journey || !cut || journey.visiting || journey.step < cut.step || (!atSource && !savedDeparture)
+      || journey.scene === 'm2_bane_copy' && journey.step === 2 && (journey.baneCopy?.progress ?? 0) < .2) {
       this.cancelZionPreparation(); return;
     }
     const next = FILM_SCENE_BY_ID[cut.scene];
@@ -1956,7 +1959,9 @@ export class FilmSetRenderer {
       target.update({ ...journey, scene: next.id, step: 0 }, 0);
       this.preparedZion = { scene: next.id, renderer: target };
       if (renderer.extensions.has('KHR_parallel_shader_compile')) {
-        const colors = this.preparedZion.colors = { ...this.colorPreparation(target.group, []), actors: new Set<THREE.Group>(), seen: new Set<ColorMesh>() };
+        const colors = this.preparedZion.colors = {
+          ...this.colorPreparation(target.group, [], { playerView: savedDeparture }), actors: new Set<THREE.Group>(), seen: new Set<ColorMesh>(),
+        };
         const initial = new Set(colors.meshes);
         const crowdLoaded = () => {
           if (this.preparedZion?.renderer !== target) return;
@@ -1966,7 +1971,7 @@ export class FilmSetRenderer {
         void target.crowdReady?.then(crowdLoaded, crowdLoaded);
       }
     }
-    const colors = this.preparedZion.colors;
+    const prepared = this.preparedZion, colors = prepared.colors;
     if (!colors) return;
     for (const id of [next.actor, ...next.cast]) {
       const group = actor(id); if (!group) continue;
@@ -1983,7 +1988,10 @@ export class FilmSetRenderer {
       meshes.forEach(mesh => colors.seen.add(mesh));
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     }
-    this.prepareColorFrame(renderer, camera, colors);
+    if (next.id === 'm2_departure') {
+      this.prepareColorProgram(renderer, camera, colors, undefined, 'live');
+      this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2);
+    } else this.prepareColorFrame(renderer, camera, colors);
   }
   private prepareBaneCopy(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined): void {
@@ -3401,6 +3409,9 @@ export class FilmSetRenderer {
       const resumingMeetingDeck = resumingScene && sceneId === 'm2_dream' && set?.id === 'film_trinity_roof' && journey?.actor === player?.id
         ? this.preparedMeetingDeck : undefined;
       if (resumingMeetingDeck) this.preparedMeetingDeck = undefined;
+      const resumingDeparture = resumingScene && sceneId === 'm2_oracle_message' && set?.id === 'film_zion_bedroom'
+        && journey?.actor === player?.id && this.preparedZion?.scene === 'm2_departure' ? this.preparedZion : undefined;
+      if (resumingDeparture) this.preparedZion = undefined;
       const resumingDream = resumingScene && sceneId === 'm1_final_call' && set?.id === 'film_final_phone' && journey?.actor === player?.id
         ? this.preparedDream : undefined;
       if (resumingDream) this.preparedDream = undefined;
@@ -3457,7 +3468,9 @@ export class FilmSetRenderer {
       if (preparedMeeting) this.preparedMeetingHall = undefined;
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
         && sceneId === this.preparedZion.scene && !journey?.visiting ? this.preparedZion.renderer : undefined;
-      if (preparedZion) this.preparedZion = undefined;
+      if (preparedZion) {
+        this.preparedZion?.textureUpload?.return(false); this.preparedZion = undefined;
+      }
       const preparedBaneCopy = set?.id === 'film_industrial_loft' && sceneId === 'm2_bane_copy' && !journey?.visiting ? this.preparedBaneCopy?.renderer : undefined;
       if (preparedBaneCopy) this.preparedBaneCopy = undefined;
       const reunionExterior = journey?.scene === 'm3_dock_reunion' && !journey.visiting && Boolean(journey.emp);
@@ -3497,6 +3510,7 @@ export class FilmSetRenderer {
       this.preparedOneDeck = resumingOneDeck;
       this.preparedDream = resumingDream;
       this.preparedMeetingDeck = resumingMeetingDeck;
+      if (resumingDeparture) this.preparedZion = resumingDeparture;
       if (resumingClub) this.preparedClub = resumingClub;
       this.empDock = retainedEmpDock;
       if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
@@ -6653,6 +6667,7 @@ export class FilmSetRenderer {
     this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedAmbush = undefined;
   }
   private cancelZionPreparation(): void {
+    this.preparedZion?.textureUpload?.return(false);
     this.preparedZion?.renderer.dispose(); this.preparedZion = undefined;
   }
   private cancelBaneCopyPreparation(): void {

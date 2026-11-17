@@ -24,21 +24,22 @@ function setup(t: test.TestContext) {
     const hidden = new THREE.Mesh(geometry, material); hidden.name = id + '-unused-hidden-prop'; hidden.visible = false; group.add(hidden); unrelated.push(hidden);
     cast.set(id, group);
   }
-  const compiled = new Set<THREE.Mesh>(), batches: number[] = [], target = new THREE.WebGLRenderTarget(2, 2);
+  const compiled = new Set<THREE.Mesh>(), batches: number[] = [], uploads: THREE.Texture[] = [], target = new THREE.WebGLRenderTarget(2, 2);
   let current: THREE.WebGLRenderTarget | null = target, preview: THREE.Scene | undefined, ready = false, uniforms = 0;
   const program = { isReady: () => ready, getUniforms: () => { uniforms++; } }, programs: typeof program[] = [];
   const graphics = { extensions: { has: () => true }, info: { programs }, properties: { get: () => ({}) },
     getRenderTarget: () => current, setRenderTarget: (value: THREE.WebGLRenderTarget | null) => { current = value; },
+    initTexture: (texture: THREE.Texture) => { uploads.push(texture); },
     compile(subject: THREE.Group, _camera: THREE.Camera, next: THREE.Scene) {
       preview = next; let count = 0; subject.traverse(object => { if (object instanceof THREE.Mesh) { compiled.add(object); count++; } }); batches.push(count);
       if (!programs.length) programs.push(program);
     } } as unknown as THREE.WebGLRenderer;
   const update = () => sets.update(neo, sandbox, 0, neo.position, camera.position);
-  const prepare = () => sets.prepareZionHomecoming(graphics, camera, journey, id => cast.get(id));
+  const prepare = (resume = false) => sets.prepareZionHomecoming(graphics, camera, journey, id => cast.get(id), resume);
   const departure = () => { journey.step = 4; journey.reloaded!.phase = 'departure_ready'; update(); };
   update();
   t.after(() => { sets.dispose(); geometry.dispose(); material.dispose(); target.dispose(); });
-  return { scene, sets, camera, neo, journey, cast, costumes, unrelated, compiled, batches, target, update, prepare, departure,
+  return { scene, sets, camera, neo, journey, cast, costumes, unrelated, compiled, batches, uploads, material, target, update, prepare, departure,
     get preview() { return preview; }, get current() { return current; }, get uniforms() { return uniforms; }, set ready(value: boolean) { ready = value; } };
 }
 
@@ -87,6 +88,46 @@ test('dock preparation queries only ready programs and disposes the detached set
   h.sets.prepareZionHomecoming({} as THREE.WebGLRenderer, h.camera, undefined, () => undefined);
   assert.equal(disposed, once, 'abandoning a preparation twice cannot dispose it twice');
   assert.equal(h.scene.getObjectByName('zion-docked-nebuchadnezzar'), undefined);
+});
+
+test('a completed bedroom save prepares the departure dock before taking control and preserves it across both entries', t => {
+  const h = setup(t), bedroom = FILM_SCENE_BY_ID.m2_oracle_message, departure = FILM_SCENE_BY_ID.m2_departure;
+  const fill = new THREE.DirectionalLight(); fill.visible = false;
+  h.scene.add(new THREE.DirectionalLight(), fill);
+  Object.assign(h.journey, { scene: bedroom.id, step: 1 }); delete h.journey.reloaded;
+  h.sets.update(undefined, { neoLife: { journey: h.journey } } as SandboxState, 0);
+  h.prepare(true);
+  assert.equal(h.preview, undefined, 'the landing screen only prepares departure after the disk is stowed');
+  h.journey.step = bedroom.steps.length;
+  h.journey.completed.push(bedroom.id);
+  const saved = JSON.stringify(h.journey);
+  const texture = new THREE.Texture({ width: 1024, height: 1024, complete: true });
+  texture.needsUpdate = true; h.material.map = texture;
+  t.after(() => texture.dispose());
+  h.prepare(true);
+  assert.deepEqual(h.uploads, [texture], 'the departure textures must prepare while shader compilation is still underway');
+  for (let frame = 0; frame < 40; frame++) h.prepare(true);
+  const dock = h.preview?.getObjectByName('zion-docked-nebuchadnezzar');
+  assert.ok(dock, 'the completed disk save must prepare the dock on the landing screen');
+  const lights = h.preview?.children.filter(light => light instanceof THREE.DirectionalLight && light.visible);
+  assert.equal(lights?.length, 2, 'the prepared dock must include the fill light that turns on after taking control');
+  assert.equal(fill.visible, false);
+  assert.equal(h.sets.active, undefined);
+  assert.equal(JSON.stringify(h.journey), saved);
+  let disposed = 0;
+  dock.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.addEventListener('dispose', () => disposed++); });
+
+  Object.assign(h.neo, { position: filmEntry(bedroom), currentLocation: bedroom.set, isInMatrix: false });
+  h.update();
+  assert.equal(h.sets.active?.id, bedroom.set);
+  assert.equal(h.scene.getObjectByName(dock.name), undefined);
+  assert.equal(disposed, 0);
+
+  Object.assign(h.journey, { scene: departure.id, step: 0 });
+  Object.assign(h.neo, { position: filmEntry(departure), currentLocation: departure.set });
+  h.update();
+  assert.equal(h.scene.getObjectByName(dock.name), dock);
+  assert.equal(disposed, 0);
 });
 
 test('the arrival dock keeps thirteen light slots while approaching Kid, turning and finishing the objectives', t => {
