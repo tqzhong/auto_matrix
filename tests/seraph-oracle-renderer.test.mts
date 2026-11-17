@@ -227,12 +227,28 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     sets.update(undefined, sandbox, 1);
     assert.equal(abandonedDisposals, 1);
   });
-  await t.test('the flight prepares the garage and keeps the same car after the cut', () => {
+  await t.test('the flight prepares the close garage cast and keeps the same car after the cut', t => {
+    const twin = new THREE.Group(), keymaker = new THREE.Group();
+    const twinCoat = new THREE.Mesh(body.geometry, body.material);
+    const standIn = new THREE.Mesh(body.geometry, body.material);
+    twin.visible = keymaker.visible = false;
+    twin.add(twinCoat); keymaker.add(standIn);
+    libraryCast.set('twin1', twin); libraryCast.set('keymaker', keymaker);
+    t.after(() => { libraryCast.delete('twin1'); libraryCast.delete('keymaker'); });
     enter('m2_mountain', 2);
     journey.mountain = { phase: 'ready', elapsed: 0, x: 0, z: 245, altitude: 0, attempt: 0 };
     preview = undefined; prepare(); assert.ok(!preview);
     Object.assign(journey.mountain, { phase: 'flying', elapsed: 2, z: 112, altitude: 48 });
     const car = warm('garage-chase-car');
+    assert(compiled.has(twinCoat));
+    assert.equal(twin.visible, false);
+    assert(!compiled.has(standIn));
+    const head = new THREE.Mesh(body.geometry, body.material), jacket = new THREE.Mesh(body.geometry, body.material);
+    head.name = 'keymaker-detailed-head'; jacket.name = 'keymaker-detailed-body';
+    standIn.visible = false; keymaker.add(head, jacket);
+    for (let i = 0; i < 15; i++) prepare();
+    assert(compiled.has(head) && compiled.has(jacket));
+    assert.equal(keymaker.visible, false);
     const garageSlots = pointSlots(preview!);
     journey.garage = { ...newGarageEscape(), x: 1.2, z: -10 };
     enter('m2_garage', 1);
@@ -241,6 +257,17 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     assert.equal(car.position.x, 1.2);
     assert.equal(car.position.z, -10);
     delete journey.garage;
+    delete journey.mountain;
+  });
+  await t.test('a returned mountain save keeps its prepared garage when Neo takes control', () => {
+    enter('m2_mountain', 3);
+    journey.mountain = { phase: 'arrived', elapsed: 8, x: 0, z: -310, altitude: 45, attempt: 0 };
+    sets.update(undefined, sandbox, 0);
+    const car = warm('garage-chase-car', true);
+    enter('m2_mountain', 3);
+    assert.equal(scene.getObjectByName(car.name), undefined);
+    enter('m2_garage', 0);
+    assert.equal(scene.getObjectByName(car.name), car);
     delete journey.mountain;
   });
   await t.test('terminal work prepares the white corridor and adopts the live door', t => {
