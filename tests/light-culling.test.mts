@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import lightFragmentSource from 'three/src/renderers/shaders/ShaderChunk/lights_fragment_begin.glsl.js';
-import { APU_RIG, APU_ROUTE, BANE_INQUIRY, BASEMENT, DIGGERS, DOCK_BRIEFING, DOCK_GUNNERY, DOCK_RELOAD, FILM_SCENE_BY_ID, FILM_SETS, TRAINMAN_CHASE, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newDockReload, newGarageEscape, newHammerFlight, newHammerGunnery, newSmithFinale, newTrainmanChase, newUpperDigger, trainmanPassingTrain, type AirRescueEncounter, type BasementEncounter, type FilmJourney, type SandboxState, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { APU_RIG, APU_ROUTE, BANE_INQUIRY, BASEMENT, DIGGERS, DOCK_BRIEFING, DOCK_GUNNERY, DOCK_RELOAD, FILM_SCENE_BY_ID, FILM_SETS, TRAINMAN_CHASE, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newDockReload, newGarageEscape, newHammerFlight, newHammerGunnery, newLogosFlight, newSmithFinale, newTrainmanChase, newUpperDigger, trainmanPassingTrain, type AirRescueEncounter, type BasementEncounter, type FilmJourney, type SandboxState, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -36,6 +36,43 @@ function view() {
   };
   return { scene, camera, culling, before, after, light };
 }
+
+test('the Logos keeps its two point-light slots as the engines cut out and restart', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m3_sun;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const trinity = world.agents.get(scene.actor)!;
+  trinity.isInMatrix = false;
+  const flight = newLogosFlight('sun');
+  flight.altitude = 56;
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: trinity.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: filmEntry(scene), reflections: {}, lastText: '', logos: flight };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const sample = () => {
+    trinity.position = filmStepPosition(scene, scene.steps[0], journey);
+    const { x, y, z } = trinity.position;
+    h.camera.position.set(x, y + 3, z + 7);
+    h.camera.lookAt(x, y + 1, z - 8);
+    assert.equal(renderer.update(trinity, sandbox, 0, trinity.position)?.id, 'film_machine_defense');
+    h.culling.minimumPointSlots = renderer.minimumPointSlots;
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    const intensities: number[] = [];
+    h.before();
+    try {
+      h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) intensities.push(light.intensity); });
+    } finally { h.after(); }
+    return intensities.sort((a, b) => a - b);
+  };
+  assert.deepEqual(sample(), [9, 32]);
+  flight.altitude = 58.5;
+  flight.ignition!.phase = 'offline';
+  assert.deepEqual(sample(), [0, 9]);
+  flight.stage = 'sun'; flight.altitude = 64;
+  assert.deepEqual(sample(), [0, 9]);
+  flight.stage = 'stall'; flight.altitude = 42; flight.ignition!.phase = 'running';
+  assert.deepEqual(sample(), [9, 32]);
+});
 
 test('the missing ship interior leaves the same light slot count through a failed evacuation and retry', t => {
   const h = view(), renderer = new FilmSetRenderer(h.scene);

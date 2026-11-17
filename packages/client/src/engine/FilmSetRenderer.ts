@@ -610,6 +610,8 @@ export class FilmSetRenderer {
     if (this.ambush) return AMBUSH_POINT_SLOTS;
     if (this.club) return CLUB_POINT_SLOTS;
     if (this.logosBane) return LOGOS_CARGO_POINT_SLOTS;
+    // Keep the cockpit program when the engine lamp goes dark in the clouds.
+    if (this.logosFlight) return 2;
     // Six corridor and lift lamps plus the objective.
     if (this.dockBriefing) return DOCK_BRIEFING_POINT_SLOTS;
     // Reuse the dock approach programs when the cockpit and reload views cull fixtures.
