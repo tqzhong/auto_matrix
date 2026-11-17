@@ -10,6 +10,7 @@ import { contactOracleAbsorption } from '../packages/client/src/agents/OracleAbs
 import { OracleSmithAppearance } from '../packages/client/src/agents/OracleSmithAppearance.js';
 import { OracleAbsorptionRenderer } from '../packages/client/src/engine/OracleAbsorptionRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -160,6 +161,55 @@ test('the assimilated Smith keeps his actual shoes planted during the saved seat
     appearance.update({ ...state, role: 'oracle' }, false); assert.deepEqual(appearance.replica.getObjectByName('head')!.matrixWorld.elements, before);
   }
   appearance.update({ ...state, role: 'oracle' }, true); assert.equal(appearance.replica.visible, false, 'replacement body must not block its own first-person view');
+});
+
+test('the hidden Oracle replacement links its actual color and shadow programs before it appears', async t => {
+  const h = await setup(t), scene = new THREE.Scene(), lighting = new LightCulling(scene);
+  scene.fog = new THREE.FogExp2(0x24271e, .006);
+  const state = { ...newOracleAbsorption(3, 47), phase: 'coating' as const, elapsed: 2.45, coating: .49, invasion: 44 };
+  h.frame(state);
+  const appearance = new OracleSmithAppearance(h.rigs.oracle, h.rigs.smith.hero!, scene);
+  t.after(() => { appearance.dispose(); lighting.dispose(); });
+  appearance.update({ ...state, role: 'oracle' }, false);
+  const face = appearance.replica.getObjectByName('Anatomical_head_and_hands');
+  assert.ok(face instanceof THREE.SkinnedMesh && face.material instanceof THREE.MeshStandardMaterial && face.castShadow);
+  const surface = face.material, depth = face.customDepthMaterial!;
+  const key = surface.customProgramCacheKey();
+  let frame = 0;
+  const linked = new Map<THREE.Material, number>(), cached = new Map<THREE.Material, number>();
+  const withFog = new Set<THREE.Material>();
+  const compiled: { isReady(): boolean; getUniforms(): void }[] = [];
+  const renderer = {
+    extensions: { has: () => true }, properties: { get: () => ({}) }, info: { programs: compiled }, debug: { checkShaderErrors: false },
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }, getRenderTarget: () => null, setRenderTarget() {},
+    compile(subject: THREE.Object3D, _camera: THREE.Camera, target: THREE.Scene) {
+      subject.traverse(object => {
+        if (!(object instanceof THREE.Mesh) || Array.isArray(object.material) || linked.has(object.material)) return;
+        const material = object.material;
+        linked.set(material, frame);
+        if (target.fog) withFog.add(material);
+        compiled.push({ isReady: () => true, getUniforms: () => { cached.set(material, frame); } });
+      });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const camera = new THREE.PerspectiveCamera();
+  assert.equal(typeof appearance.prepareReplacement, 'function', 'the hidden replacement needs a render preparation step');
+  for (; frame < 80; frame++) {
+    appearance.prepareReplacement(renderer, camera, lighting);
+    assert.equal(appearance.replica.visible, false);
+  }
+  for (const material of [surface, depth]) {
+    assert.ok(linked.has(material) && cached.get(material)! > linked.get(material)! + 1);
+  }
+  assert.ok(new Set(linked.values()).size > 1, 'the actual actor must be split over several frames');
+  assert.equal(surface.customProgramCacheKey(), key);
+  assert.ok(withFog.has(surface) && !withFog.has(depth), 'shadow preparation must match the actual fog-free depth pass');
+  assert.equal(depth.side, THREE.BackSide);
+  const count = linked.size;
+  appearance.update({ ...state, role: 'oracle', phase: 'laughing', coating: 1 }, false);
+  appearance.prepareReplacement(renderer, camera, lighting);
+  assert.equal(appearance.replica.visible, true);
+  assert.equal(linked.size, count);
 });
 
 test('the actual Smith hand clears the blouse throughout approach and withdrawal and recovers a saved contact', async t => {

@@ -578,6 +578,9 @@ export class AgentRenderer {
   prepareSmithEntrance(renderer: THREE.WebGLRenderer, camera: THREE.Camera): void {
     this.smithEnding?.prepareEntrance(renderer, camera, this.scene);
   }
+  prepareOracleReplacement(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling): void {
+    this.oracleSmith?.prepareReplacement(renderer, camera, lighting);
+  }
   protectHelAttendant(attendant?: THREE.Object3D, state?: HelCoatcheckEncounter): void {
     const entry = this.agents.get('seraph'); if (!entry) return;
     poseHelProtection(entry.rig, entry.state.controller || entry.state.status !== 'alive' ? undefined : attendant, state);

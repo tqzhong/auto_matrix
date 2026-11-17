@@ -7,6 +7,7 @@ import { METACORTEX, metacortexLiftLocked } from '@auto_matrix/shared';
 import { officeCustodyActive, officeCustodyLocked } from '@auto_matrix/shared';
 import { arrestCarPose } from '@auto_matrix/shared';
 import { spoonLessonBend } from '@auto_matrix/shared';
+import { ORACLE_ABSORPTION } from '@auto_matrix/shared';
 import { wetwallLocked, sixthLocked, SIXTH } from '@auto_matrix/shared';
 import { reloadedLocked, zionTempleSpeechActive } from '@auto_matrix/shared';
 import { trainmanChaseActive, trainmanChaseLocked, helGarageActive, helGarageLocked } from '@auto_matrix/shared';
@@ -482,6 +483,9 @@ export class Engine {
     if (this.running) this.filmSets.prepareSmithCrater(this.renderer, this.camera, meeting);
     if (filmSet?.id === 'film_smith_avenue' && meeting?.scene === 'm3_rain' && !meeting.visiting && meeting.smithFinale?.phase === 'approach')
       this.agentRenderer.prepareSmithEntrance(this.renderer, this.camera);
+    if (filmSet?.id === 'film_oracle_home' && meeting?.scene === 'm3_oracle_absorbed' && !meeting.visiting && meeting.step === 3
+      && (meeting.oracleAbsorption?.invasion ?? 0) >= ORACLE_ABSORPTION.approachSeconds)
+      this.agentRenderer.prepareOracleReplacement(this.renderer, this.camera, this.lightCulling);
     const preparingLafayetteNormals = liveMatrixJourney?.scene === 'm1_bug' && filmSet?.id === 'film_extraction_car'
       && ['parked', 'exiting', 'outside'].includes(liveMatrixJourney.meeting?.phase ?? '');
     const hotelNormals = hotelPreparation && !preparingHotelTextures ? this.filmSets.openingHotelNormalMeshes : undefined;

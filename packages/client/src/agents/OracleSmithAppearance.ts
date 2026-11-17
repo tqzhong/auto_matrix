@@ -1,10 +1,14 @@
 import * as THREE from 'three';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { absorptionSmooth, type OracleAbsorptionGesture } from '@auto_matrix/shared';
+import type { LightCulling } from '../engine/LightCulling.js';
+import { cacheReadyProgramLocations, preserveProgramBindings } from '../engine/PrepareShaderProgram.js';
 import { smithCodeSurface, smithCodeUniforms } from '../engine/SmithCodeSurface.js';
 import { reach } from './SpoonPerformance.js';
 import type { CharacterRig } from './CharacterModel.js';
 import type { HeroRig } from './HeroModel.js';
+
+type ReplacementProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 
 /** Coating follows the woman's real silhouette; the replacement uses the shipped Smith body. */
 export class OracleSmithAppearance {
@@ -18,6 +22,7 @@ export class OracleSmithAppearance {
   private materials = new Set<THREE.Material>();
   private skeletons = new Set<THREE.Skeleton>();
   private view: THREE.Object3D;
+  private preparation?: { gpu: THREE.WebGLRenderer['properties']; meshes: THREE.Mesh[]; programs: ReplacementProgram[]; ready?: ReplacementProgram };
   constructor(private oracle: CharacterRig, private smith: HeroRig, parent: THREE.Scene) {
     this.replica = clone(smith.root) as THREE.Group; this.replica.name = 'smith-assimilated-oracle'; parent.add(this.replica);
     this.replica.traverse(object => { if (object instanceof THREE.Bone) { this.bones.set(object.name, object); this.rest.set(object.name, object.position.clone()); } if (object instanceof THREE.SkinnedMesh) this.skeletons.add(object.skeleton); });
@@ -35,6 +40,49 @@ export class OracleSmithAppearance {
       const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: material.map, alphaTest: material.alphaTest });
       smithCodeSurface(depth, uniforms, replica); object.customDepthMaterial = depth; this.materials.add(depth);
     });
+  }
+  prepareReplacement(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling): void {
+    if (this.replica.visible || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (this.preparation?.gpu !== renderer.properties) {
+      const meshes: THREE.Mesh[] = [];
+      for (const part of this.replica.children) part.traverseVisible(object => {
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && object.material.visible) meshes.push(object);
+      });
+      this.preparation = { gpu: renderer.properties, meshes, programs: [] };
+    }
+    const preparation = this.preparation, programs = renderer.info.programs ?? [];
+    const ready = preparation.ready; preparation.ready = undefined;
+    if (ready && programs.includes(ready)) { cacheReadyProgramLocations(renderer, ready); return; }
+    const linked = preparation.programs.findIndex(program => programs.includes(program) && program.isReady());
+    if (linked >= 0) {
+      // Leave a frame between the readiness check and uniform reflection.
+      [preparation.ready] = preparation.programs.splice(linked, 1);
+      return;
+    }
+    const batch = preparation.meshes.splice(0, 3);
+    if (!batch.length) return;
+    const subject = new THREE.Group(), shadow = new THREE.Group(), casters: THREE.Mesh[] = [];
+    for (const mesh of batch) {
+      const surface = mesh.material as THREE.MeshStandardMaterial, depth = mesh.customDepthMaterial;
+      if (!renderer.shadowMap.enabled || !mesh.castShadow || !(depth instanceof THREE.MeshDepthMaterial)) continue;
+      const side = renderer.shadowMap.type === THREE.VSMShadowMap ? surface.side
+        : [THREE.BackSide, THREE.FrontSide, THREE.DoubleSide][surface.side];
+      depth.side = surface.shadowSide ?? side;
+      depth.alphaMap = surface.alphaMap;
+      casters.push(mesh instanceof THREE.SkinnedMesh ? new THREE.SkinnedMesh(mesh.geometry, depth) : new THREE.Mesh(mesh.geometry, depth));
+    }
+    subject.traverse = visit => batch.forEach(visit);
+    shadow.traverse = visit => casters.forEach(visit);
+    const previous = renderer.getRenderTarget(), target = new THREE.WebGLRenderTarget(1, 1), start = programs.length;
+    const restore = preserveProgramBindings(renderer, [...batch, ...casters]);
+    try {
+      renderer.setRenderTarget(target);
+      lighting.compileSubject(renderer, camera, subject, undefined, undefined, 'isolated');
+      if (casters.length) lighting.compileSubject(renderer, camera, shadow, undefined, undefined, 'depth');
+    } finally {
+      restore(); renderer.setRenderTarget(previous); target.dispose();
+    }
+    preparation.programs.push(...programs.slice(start) as ReplacementProgram[]);
   }
   update(state: OracleAbsorptionGesture, firstPerson: boolean): void {
     // Detailed heads can finish loading after the replacement was created.
