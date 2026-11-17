@@ -3,6 +3,7 @@ import { BOOK_DOOR } from './book-door.js';
 import { OPENING_ESCAPE, OPENING_PHONE, OPENING_ROOF_EXIT, WELLS_CURB } from './opening-escape.js';
 import { OPENING_HOTEL, openingHotelTraceTime } from './opening-hotel.js';
 import { CATCH } from './reloaded-catch.js';
+import { MOBIL_LUGGAGE } from './mobil-station.js';
 import { ZION_BOARDING } from './zion-homecoming.js';
 import { ZION_ENGINEERING, type EngineeringEncounter } from './zion-engineering.js';
 import { ZION_MESSAGE, type ZionMessageEncounter } from './zion-message.js';
@@ -782,6 +783,11 @@ export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: 
   if (scene.id === 'm1_room303' && !journey?.visiting && (journey?.openingHotel?.phase === 'answering'
     || journey?.step === 0 && openingHotelTraceTime(journey.openingHotel) !== undefined)) return false;
   if (scene.id === 'm1_phone_escape' && !journey?.visiting && journey?.openingPhone && journey.openingPhone.phase !== 'running') return false;
+  if (scene.id === 'm3_trainman' && step === scene.steps[0] && !journey?.visiting) {
+    const { center } = FILM_SETS[scene.set];
+    const gap = Math.hypot(position.x - center.x - MOBIL_LUGGAGE.x, position.z - center.z - MOBIL_LUGGAGE.z);
+    if (gap < .72 || gap > 1.45) return false;
+  }
   if (scene.id === 'm3_maggie_discovery') return Boolean(journey?.maggieDiscovery && ['call', 'ready', 'empty', 'report', 'return'].includes(journey.maggieDiscovery.phase)
     && !journey.maggieDiscovery.paused && !journey.maggieDiscovery.unavailable && filmStepNear(scene, step, position, matrix, journey));
   if (scene.id === 'm3_zion_prepare') return Boolean(journey?.zionDeployment && ['ready', 'question', 'review', 'hope'].includes(journey.zionDeployment.phase)

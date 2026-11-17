@@ -85,7 +85,7 @@ import { CONSTRUCT, CONSTRUCT_FURNITURE, constructGuidePose, constructArrivalTex
 import { catchLocked, newCatch } from '@auto_matrix/shared';
 import { awakeningDuration, mirrorTime } from '@auto_matrix/shared';
 import { SENTINEL_SIGNAL, SIGNAL_OBSTACLES, signalLocked, type WorldStructure } from '@auto_matrix/shared';
-import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, recoveryCrewPose, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
+import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, filmStepActionReady, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, recoveryCrewPose, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, OFFICE_RETREAT_WINDOW, officeCrossingPose, officeRetreat, officeRetreatReady, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, redDressAttention, stepRedDress, TRAINING_SECONDS, DOJO_COMBO_WINDOW,
   lobbyLocked, meleeReach, groundHeight, MIRROR_SEAT, MIRROR_TRINITY, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
@@ -7342,8 +7342,7 @@ export class FilmStorySystem {
       if (state.mobil!.luggage!.phase !== 'ready') return '正在提起行李；暂停会保留当前动作。';
       if (!this.near(agent, this.scene!.steps[0])) return '先走近长椅旁的箱子。';
       const center = FILM_SETS[this.scene!.set].center;
-      const gap = Math.hypot(agent.position.x - center.x - MOBIL_LUGGAGE.x, agent.position.z - center.z - MOBIL_LUGGAGE.z);
-      if (gap > 1.45 || gap < .72) return '站到箱子旁边，留出俯身提起它的位置。';
+      if (!filmStepActionReady(this.scene!, this.scene!.steps[0], agent.position, agent.isInMatrix, state)) return '站到箱子旁边，留出俯身提起它的位置。';
       state.mobil!.luggage = { phase: 'lifting', elapsed: 0,
         approach: { x: agent.position.x - center.x, z: agent.position.z - center.z,
           yaw: Math.atan2(center.x + MOBIL_LUGGAGE.x - agent.position.x, center.z + MOBIL_LUGGAGE.z - agent.position.z) } };

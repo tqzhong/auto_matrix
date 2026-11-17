@@ -52,7 +52,7 @@ import { DEUS_PACT, deusPactDialogue, deusPactLocked } from '@auto_matrix/shared
 import { SMITH_FINALE, smithFinaleLocked, smithFinaleDialogue, smithOracleRestored } from '@auto_matrix/shared';
 import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/shared';
 import { truckWeaponsText, truckHoodText } from '@auto_matrix/shared';
-import { MOBIL_FAMILY_QUESTIONS, MOBIL_LUGGAGE, mobilFamilyText, mobilLuggageText, mobilReunionRoot, mobilReunionText } from '@auto_matrix/shared';
+import { MOBIL_FAMILY_QUESTIONS, mobilFamilyText, mobilLuggageText, mobilReunionRoot, mobilReunionText } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 function renderFilmAtlas(journey: FilmJourney, scene: FilmScene, unavailable: boolean): string {
@@ -97,12 +97,11 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Mobil Ave · 终于重逢</h3><p>Neo 视角 · 回到她身边</p></header><article class="film-now"><div><p>${mobilReunionText(journey.mobil, journey.step)}</p><div class="film-controls">${action}</div></div></article></div>`;
   }
   if (scene.id === 'm3_trainman' && !journey.visiting && journey.step <= 2 && journey.mobil) {
-    const state = journey.mobil, step = scene.steps[journey.step], close = filmStepNear(scene, step, player.position, player.isInMatrix, journey);
-    const center = FILM_SETS[scene.set].center, gap = Math.hypot(player.position.x - center.x - MOBIL_LUGGAGE.x, player.position.z - center.z - MOBIL_LUGGAGE.z);
+    const state = journey.mobil, step = scene.steps[journey.step], ready = filmStepActionReady(scene, step, player.position, player.isInMatrix, journey);
     const action = player.id !== journey.actor ? button('resume', '接回 Neo 的视角')
       : state.phase !== 'stopped' || state.elapsed < .65 || state.luggage?.phase === 'lifting' ? '<p>鼠标观察 · V 切换视角 · 暂停保留当前动作</p>'
-        : journey.step === 0 ? button('act', '握住提手，提起箱子', !close || gap > 1.45 || gap < .72)
-          : journey.step === 1 ? '<p>WASD 提着行李走到车门，鼠标观察，V 切换视角。</p>' : button('act', '尝试跟随家人登车', !close);
+        : journey.step === 0 ? button('act', '握住提手，提起箱子', !ready)
+          : journey.step === 1 ? '<p>WASD 提着行李走到车门，鼠标观察，V 切换视角。</p>' : button('act', '尝试跟随家人登车', !ready);
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Mobil Ave · 迟到的列车</h3><p>Neo 视角 · 一家人的行李与出路</p></header><article class="film-now"><div><p>${mobilLuggageText(state, journey.step)}</p><div class="film-controls">${action}</div></div></article></div>`;
   }
   if (scene.id === 'm3_family' && !journey.visiting) {
