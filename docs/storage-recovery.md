@@ -2,17 +2,20 @@
 
 ## 2026-11-18 本机清理
 
-项目的 `output/` 已清理，卷可用空间从约 29.3 GiB 增至 108.2 GiB。开发录制和测试按需重新创建 `output/`，该目录继续由 Git 忽略。
+项目的 `output/` 已清理，卷可用空间从约 29.3 GiB 增至 108.2 GiB。开发复验使用项目外的临时目录，核查完成后删除临时副本。游戏的手动录制仍写入由 Git 忽略的 `output/`。
 
 同级本机目录 `../auto_matrix-recovery-2026-11-18/` 保存第 120 节点暴雨大道续档、第 126 节点和平结局档、89 个经过完整冷读的场景入口，以及不可直接由游戏源码重建的制作资料。制作归档附有路径清单和 SHA-256。序章混音和人物审查所需的原模型、脚本、清单可从归档按原路径提取。人物审查和历史截图链接需要相应的本地文件。
 
+暴雨决战复验新增 `story-121/` 和 `story-122/`，分别保存最后交锋与停战入口。续档使用各自的 `world.json` 和 `memories/`，冷读结果见对应的核对索引。坠落、同化替换、先知恢复与锡安切场的复测存档以压缩文件保存在对应目录。复验运行器与后续尾声脚本保存在 `verification-tools-1118bd/`。两张已核对的画面和其余临时运行副本在核查后清理。
+
 原 5173 试玩从 `output/` 读取预览构建。清理后用已提交源码重建并迁出运行目录和存档，默认端口保持 5173。上述本机目录的 `local-preview-runtime/` 提供客户端和服务端，`local-preview-data/` 保存试玩世界。切换后用 HTTP 核对页面、角色素材和 85 人世界，原保存刻恢复一致。
 
-从项目根目录恢复选定的文件。
+在项目根目录执行以下命令，把指定资料提取到临时目录。
 
 ```sh
 recovery_dir=../auto_matrix-recovery-2026-11-18
-tar -xf "$recovery_dir/production-materials.tar.zst" \
+matrix_review_dir=$(mktemp -d "${TMPDIR:-/tmp}/auto-matrix-review.XXXXXX")
+tar -xf "$recovery_dir/production-materials.tar.zst" -C "$matrix_review_dir" \
   output/gameplay/first-film-office-2026-11-04/machine-pact-live-1118bc
 ```
 
