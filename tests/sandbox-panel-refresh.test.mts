@@ -171,12 +171,12 @@ test('the Club Hel VIP handoff keeps the continue button attached while companio
   ui.renderPanel(); assert.equal(next.connected, false); assert.equal(body.action('film:next'), undefined);
 });
 
-test('a failed Club Hel breakout keeps the retry button attached until the encounter restarts', () => {
+test('Club Hel keeps the breakout retry and release handoff attached while encounter clocks advance', () => {
   const { ui, body, sandbox, world } = fixture();
   const trinity = world.agents.get('trinity')!; sandbox.enter(trinity); ui.player = trinity;
   trinity.position = filmPosition('film_club_hel', 0, -29); trinity.isInMatrix = true;
   const helBargain: HelBargainEncounter = { phase: 'failed', elapsed: 0, lastTick: 0, attempts: 0 };
-  sandbox.state.neoLife!.journey = { version: 1, scene: 'm3_hel_bargain', actor: trinity.id, step: 3, completed: ['m3_hel_entry'],
+  const journey = sandbox.state.neoLife!.journey = { version: 1, scene: 'm3_hel_bargain', actor: trinity.id, step: 3, completed: ['m3_hel_entry'],
     enteredAt: 0, reflections: {}, lastText: '', checkpoint: trinity.position, helBargain };
   ui.renderPanel(); const retry = body.action('film:retry'); assert.ok(retry && !retry.disabled);
   for (let frame = 1; frame <= 20; frame++) {
@@ -187,6 +187,12 @@ test('a failed Club Hel breakout keeps the retry button attached until the encou
   Object.assign(helBargain, { phase: 'ready', attempts: 1 });
   ui.renderPanel(); assert.equal(retry.connected, false); assert.equal(body.action('film:retry'), undefined);
   assert.ok(body.action('film:act'));
+  Object.assign(helBargain, { phase: 'released' });
+  journey.step = FILM_SCENE_BY_ID.m3_hel_bargain.steps.length;
+  ui.renderPanel(); const next = body.action('film:next'); assert.ok(next && !next.disabled);
+  helBargain.lastTick++; ui.renderPanel();
+  assert.equal(next.connected, true, 'the encounter clock detached the return-to-Mobil button during a click');
+  assert.equal(body.action('film:next'), next);
 });
 
 test('the captains journal keeps both exit choices attached until evacuation begins', () => {
