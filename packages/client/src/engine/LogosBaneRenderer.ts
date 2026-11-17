@@ -132,6 +132,11 @@ export class LogosBaneRenderer {
     this.goldBody = asset.scene; this.goldBody.name = 'logos-gold-smith-body'; this.gold.add(asset.scene);
   }
 
+  moveTo(parent: THREE.Group): void {
+    this.parent = parent;
+    if (this.root.parent !== parent) parent.add(this.root);
+  }
+
   update(encounter: BaneEncounter | undefined, step: number, _time: number, avatars?: (id: string) => THREE.Object3D | undefined, neoFirstPerson = false): void {
     const phase = encounter?.phase ?? 'ready', state = encounter?.physical, beat = logosBaneBeat(encounter);
     const cut = !['ready', 'gun_warning'].includes(phase), injured = logosBaneInjured(encounter), dark = neoFirstPerson && injured;

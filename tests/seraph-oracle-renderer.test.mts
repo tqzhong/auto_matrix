@@ -31,9 +31,10 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   let preview: THREE.Scene | undefined, castCompiled = false, offstageSeraph: THREE.Group | undefined, offstageHost: THREE.Group | undefined;
   const libraryCast = new Map<string, THREE.Group>();
   const compiled = new Set<THREE.Object3D>();
+  const uploads = new Set<THREE.Texture>();
   const compileCounts = new Map<THREE.Object3D, number>();
   const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
-    setRenderTarget() {}, initTexture() {}, properties: { get: () => ({}) },
+    setRenderTarget() {}, initTexture(texture: THREE.Texture) { uploads.add(texture); }, properties: { get: () => ({}) },
     compile(subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) {
       target.traverseVisible(object => { if (object instanceof THREE.Scene) preview = object; });
       subject.traverse(mesh => {
@@ -508,6 +509,41 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     delete journey.maggieDiscovery;
     enter('m2_departure', 0);
     assert.equal(disposals, 1);
+  });
+  await t.test('the saved investigation prepares the actual Logos cargo bay and its crew before the cut', () => {
+    const atlas = new THREE.Texture({ width: 2048, complete: true }); atlas.needsUpdate = true;
+    const knit = new THREE.Mesh(body.geometry, new THREE.MeshStandardMaterial({ map: atlas })); knit.name = 'neo-logos-sweater';
+    const shadowMap = new THREE.Texture({ width: 64, complete: true });
+    const shadow = new THREE.Mesh(body.geometry, new THREE.MeshBasicMaterial({ map: shadowMap, transparent: true, toneMapped: false }));
+    let materialsDisposed = 0, shadowsDisposed = 0;
+    knit.material.addEventListener('dispose', () => materialsDisposed++);
+    shadow.material.addEventListener('dispose', () => shadowsDisposed++);
+    const warmLogos = () => sets.prepareSecondOracle(graphics, camera, journey, id => id === 'neo' ? cast : undefined,
+      true, undefined, () => ({ shadow, garments: () => [knit] }));
+    enter('m3_maggie_discovery', 4); preview = undefined; warmLogos(); assert.ok(!preview);
+    enter('m3_maggie_discovery', 5); sets.update(undefined, sandbox, 0);
+    compiled.clear(); uploads.clear();
+    for (let i = 0; i < 120; i++) warmLogos();
+    const cargo = preview?.getObjectByName('logos-bane-cargo-bay');
+    assert.ok(cargo, 'the actual Logos cargo bay must already be staged when restoring Hammer');
+    assert.ok(!scene.getObjectByName(cargo.name));
+    assert.ok(compiled.has(shadow), 'the shared contact shadow program must be prepared for the Logos lights');
+    assert.ok(compiled.has(body) && compiled.has(knit) && uploads.has(atlas));
+    const hatch = cargo.getObjectByName('logos-engineering-hatch')!, deck = hatch.children[0] as THREE.Mesh;
+    const slots = pointSlots(preview!);
+    let disposals = 0; deck.geometry.addEventListener('dispose', () => disposals++);
+    enter('m3_maggie_discovery', 5); assert.ok(!scene.getObjectByName(cargo.name));
+    enter('m3_bane', 0);
+    assert.equal(scene.getObjectByName(cargo.name), cargo);
+    assert.equal(scene.getObjectByName(hatch.name), hatch); assert.equal(hatch.rotation.z, 0);
+    assert.equal(pointSlots(scene), slots); assert.equal(sets.stablePointSlots, true);
+    assert.equal(sets.minimumPointSlots, slots);
+    journey.bane = { phase: 'defeated', elapsed: 0, attempts: 0, checkpoint: 'blind', hits: 2, focus: 0, counters: 2, lastStrike: -1 };
+    enter('m3_bane', 3); assert.ok(hatch.rotation.z > 1);
+    delete journey.bane;
+    enter('m2_departure', 0); assert.equal(disposals, 1); assert.equal(materialsDisposed, 1);
+    assert.equal(shadowsDisposed, 0);
+    atlas.dispose(); shadow.material.dispose(); shadowMap.dispose();
   });
   enter('m2_departure', 4);
   const abandoned = warm('m2_seraph-keyed-door') as THREE.Mesh;
