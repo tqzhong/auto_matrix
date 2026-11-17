@@ -2464,6 +2464,7 @@ export class SandboxUI {
     const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
     const journey = life?.journey;
     const stableFilmPanel = helGarageActive(journey) || journey?.scene === 'm1_bridge' && journey.bridgeTail?.phase === 'failed'
+      || trainmanChaseActive(journey) && journey?.helChase?.performance?.phase === 'failed'
       || journey?.scene === 'm2_meeting' && !journey.visiting && journey.reloaded?.phase === 'evacuate_ready';
     const stableJournal = life && stableFilmPanel && (this.panel === 'journal' || this.panel === 'map')
       ? renderNeoLife(player, state, this.time) : undefined;

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
-import { APARTMENT_NETWORK, filmPosition, newReloaded } from '@auto_matrix/shared';
+import { APARTMENT_NETWORK, TRAINMAN_CHASE, filmPosition, newReloaded, newTrainmanChase } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -39,7 +39,7 @@ function fixture(panel = 'journal') {
   const ui = Object.assign(Object.create(SandboxUI.prototype), { root, player, state: sandbox.state,
     panel, selectedFilm: 1, signature: '', time: 7500, tick: 0 });
   ui.renderPanel();
-  return { ui, body, sandbox, player };
+  return { ui, body, sandbox, player, world };
 }
 
 test('traffic movement preserves the open daily journal action targets between pointer down and click', () => {
@@ -130,6 +130,26 @@ test('a failed bridge keeps its retry button attached while background story clo
   sandbox.state.neoLife!.journey!.bridgeTail!.attempts = 2; ui.renderPanel();
   assert.equal(retry.connected, false, 'a changed attempt count must still update the visible menu');
   assert.match(body.innerHTML, /第 3 次尝试/);
+});
+
+test('a Trainman timeout keeps its retry button attached until the retry changes the visible pursuit', () => {
+  const { ui, body, sandbox, world } = fixture();
+  const seraph = world.agents.get('seraph')!; sandbox.enter(seraph); ui.player = seraph;
+  seraph.position = filmPosition(TRAINMAN_CHASE.set, -30, 18); seraph.isInMatrix = true;
+  const chase = newTrainmanChase(); chase.phase = 'failed'; chase.remaining = 0;
+  const helChase = { phase: 'running' as const, elapsed: 0, lastTick: 0, performance: chase };
+  sandbox.state.neoLife!.journey = { version: 1, scene: 'm3_trainman_chase', actor: seraph.id, step: 1, completed: [],
+    enteredAt: 0, reflections: {}, lastText: '', checkpoint: seraph.position, helChase };
+  ui.renderPanel(); const retry = body.action('film:retry'); assert.ok(retry && !retry.disabled);
+  body.scrollTop = 120;
+  for (let frame = 1; frame <= 20; frame++) {
+    chase.age += .05; helChase.lastTick = frame; ui.time += 50; ui.tick = frame; ui.renderPanel();
+  }
+  assert.equal(retry.connected, true, 'pursuit clocks detached the retry button during a click');
+  assert.equal(body.action('film:retry'), retry); assert.equal(body.scrollTop, 120);
+  chase.phase = 'running'; chase.attempts++; chase.remaining = TRAINMAN_CHASE.pursuitSeconds;
+  ui.renderPanel(); assert.equal(retry.connected, false); assert.equal(body.action('film:retry'), undefined);
+  assert.match(body.innerHTML, /Shift 奔跑追出车门/);
 });
 
 test('the captains journal keeps both exit choices attached until evacuation begins', () => {
