@@ -480,7 +480,7 @@ export class FilmSetRenderer {
   private meeting?: MeetingSetRenderer;
   private preparedBridge?: { renderer: MeetingSetRenderer; gpu: THREE.WebGLRenderer['properties']; bufferUpload?: Generator<void>;
     drawing?: { eye: THREE.PerspectiveCamera; colors: CastColorPreparation; lighting: LightCulling;
-      buffers: (THREE.Mesh | THREE.Line)[]; geometries: WeakSet<THREE.BufferGeometry>;
+      buffers: (THREE.Mesh | THREE.Line)[]; geometries: WeakSet<THREE.BufferGeometry>; readyPrograms: Set<ColorProgram>;
       shadows?: { materials: Set<THREE.MeshDepthMaterial>; seen: Set<string>; apartment: THREE.Mesh[]; bridge: THREE.Mesh[] } };
     textureUpload?: Generator<void, boolean> };
   private hotel?: LafayetteApproachRenderer;
@@ -1016,12 +1016,21 @@ export class FilmSetRenderer {
       const colors = { ...this.colorPreparation(prepared.renderer.root, [], { includeBasic: true, shadowSun, playerView: resume }), actors: new Set<THREE.Group>() };
       const lighting = new LightCulling(colors.scene); lighting.stablePointSlots = true;
       const buffers: (THREE.Mesh | THREE.Line)[] = [], geometries = new WeakSet<THREE.BufferGeometry>();
-      prepared.drawing = { eye, colors, lighting, buffers, geometries };
+      prepared.drawing = { eye, colors, lighting, buffers, geometries, readyPrograms: new Set() };
       if (parallel && apartmentLights && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
         const materials = new Set<THREE.MeshDepthMaterial>(), seen = new Set<string>();
         const casters = shadowCasterProxies(colors.meshes, materials, seen);
         prepared.drawing.shadows = { materials, seen, apartment: casters.slice(), bridge: casters };
       }
+      // Repeated rigid trim shares a program; keep the full geometry upload queue below.
+      const materials = new Set<THREE.Material>();
+      colors.meshes = colors.meshes.filter(mesh => {
+        if (!(mesh instanceof THREE.Mesh) || mesh.constructor !== THREE.Mesh || Array.isArray(mesh.material)
+          || mesh.material.vertexColors || mesh.geometry.hasAttribute('tangent')
+          || Object.keys(mesh.geometry.morphAttributes).length) return true;
+        if (materials.has(mesh.material)) return false;
+        materials.add(mesh.material); return true;
+      });
       const rain: ColorSubject[] = [];
       prepared.renderer.root.traverseVisible(object => {
         if (!(object instanceof THREE.Mesh || object instanceof THREE.Line)) return;
@@ -1033,7 +1042,7 @@ export class FilmSetRenderer {
       colors.meshes.push(this.marker);
       if (shadow) colors.meshes.push(...this.colorMeshes([shadow], true));
     }
-    const { eye, colors, lighting, shadows, buffers, geometries } = prepared.drawing;
+    const { eye, colors, lighting, shadows, buffers, geometries, readyPrograms } = prepared.drawing;
     const cast = [journey.actor, ...FILM_SCENE_BY_ID.m1_bridge.cast].map(actor);
     const arriving: ColorMesh[] = [];
     for (const group of [tail, ...cast]) {
@@ -1056,11 +1065,22 @@ export class FilmSetRenderer {
       if (geometries.has(mesh.geometry)) continue;
       buffers.push(mesh); geometries.add(mesh.geometry);
     }
+    const ready = readyPrograms.values().next().value;
+    // Poll the whole queue together, then reflect one previously completed link per frame.
+    if (parallel) colors.programs = colors.programs.filter(program => {
+      if (!program.program) return false;
+      if (!program.isReady()) return true;
+      readyPrograms.add(program); return false;
+    });
     // The first shadow pass still uses the apartment lights. Later passes use the bridge lights.
     if (parallel && !(shadows && apartmentLights && (
       !resume && this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.apartment }, apartmentLights, 'depth')
-      || this.linkColorBatch(renderer, eye, { ...colors, meshes: shadows.bridge }, lighting, 'depth'))))
-      this.prepareColorProgram(renderer, eye, colors, lighting, 'isolated', true, [this.marker, shadow]);
+      || this.linkColorBatch(renderer, eye, { ...colors, meshes: shadows.bridge }, lighting, 'depth')))) {
+      if (ready) {
+        readyPrograms.delete(ready);
+        if (ready.program) cacheReadyProgramLocations(renderer, ready);
+      } else this.linkColorBatch(renderer, eye, colors, lighting, 'isolated', [this.marker, shadow]);
+    }
     if (buffers.length) prepared.bufferUpload ??= prepareMeshBuffers(renderer, eye, buffers);
     if (prepared.bufferUpload?.next().done) prepared.bufferUpload = undefined;
     if (!stagingHair) this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2);

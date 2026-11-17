@@ -117,6 +117,60 @@ test('the bridge prepares cast buffers, both shadow layouts and the rain program
   assert.equal(released, depth.size);
 });
 
+test('bridge preparation links each shared scenery material once without skipping geometry uploads', t => {
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.after(() => { globalThis.document = document; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(), sun = new THREE.DirectionalLight();
+  scene.add(sun, new THREE.DirectionalLight());
+  const film = new FilmSetRenderer(scene);
+  t.after(() => film.dispose());
+  const journey = { scene: 'm1_wake_again', actor: 'neo', wakeCall: { phase: 'leaving' } } as FilmJourney;
+  const links = new Map<THREE.Material, number>(), reflected = new Set<THREE.Material>();
+  const geometries = new Set<THREE.BufferGeometry>(), uploaded = new Set<THREE.BufferGeometry>();
+  const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  let target: THREE.WebGLRenderTarget | null = null, complete = false;
+  const renderer = {
+    properties: { get: () => ({}) }, info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
+    shadowMap: { enabled: false },
+    getRenderTarget: () => target, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
+    setRenderTarget: (value: typeof target) => { target = value; },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    render(bufferScene: THREE.Scene) {
+      for (const object of bufferScene.children) if (object instanceof THREE.Mesh || object instanceof THREE.Line) uploaded.add(object.geometry);
+    },
+    compile(subject: THREE.Object3D) {
+      subject.traverse(object => {
+        if (!(object instanceof THREE.Mesh) || object.constructor !== THREE.Mesh || Array.isArray(object.material)) return;
+        const material = object.material;
+        if (!(material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshBasicMaterial)) return;
+        if (material.vertexColors || object.geometry.hasAttribute('tangent') || Object.keys(object.geometry.morphAttributes).length) return;
+        links.set(material, (links.get(material) ?? 0) + 1);
+        if (links.get(material) === 1) programs.push({ program: {}, isReady: () => complete, getUniforms() { reflected.add(material); } });
+      });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  for (let frame = 0; frame < 400; frame++) film.prepareBridge(renderer, camera, journey, () => undefined, sun, undefined, undefined, undefined, true);
+  assert.ok(links.size > 20, 'prepare the actual street, bridge, hotel and vehicle materials');
+  for (const [material, count] of links) assert.equal(count, 1, `shared material ${material.name || material.type} should not delay other programs`);
+  assert.equal(reflected.size, 0, 'never query uniforms before parallel compilation completes');
+  complete = true;
+  film.prepareBridge(renderer, camera, journey, () => undefined, sun, undefined, undefined, undefined, true);
+  assert.equal(reflected.size, 0, 'leave a frame after compilation reports completion');
+  for (let count = 1; count <= programs.length; count++) {
+    film.prepareBridge(renderer, camera, journey, () => undefined, sun, undefined, undefined, undefined, true);
+    assert.equal(reflected.size, count, 'query one previously completed program each frame without idle gaps');
+  }
+  assert.equal(reflected.size, links.size);
+  const prepared = film as unknown as { preparedBridge: { renderer: MeetingSetRenderer } };
+  prepared.preparedBridge.renderer.root.traverse(object => {
+    if (object instanceof THREE.Mesh || object instanceof THREE.Line) geometries.add(object.geometry);
+  });
+  assert.deepEqual(uploaded, geometries, 'all original scenery geometry still uploads even when a material is shared');
+  assert.equal(target, null);
+});
+
 test('Adams Street renders the local cast while the separate city is hidden', t => {
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
