@@ -48,6 +48,7 @@ import { podThirdPersonCamera } from './PodCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
 import { openingHotelPistolLowering, openingHotelPistolRest } from '../agents/HelPistolModel.js';
 import { ZION_ENGINEERING } from '@auto_matrix/shared';
+import { zionMessageDisk, zionMessageHandle } from '@auto_matrix/shared';
 import { upperDiggerEye, upperDiggerLookBack } from '../agents/UpperDiggerPerformance.js';
 import { ambushCompanyStep } from '@auto_matrix/shared';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
@@ -3285,6 +3286,16 @@ export class PlayerControls {
       const pitch = interview?.pinned ? THREE.MathUtils.lerp(this.pitch, -Math.PI / 2 + this.pitch * .6, interview.pinned)
         : THREE.MathUtils.lerp(this.pitch, .67, reload);
       this.camera.lookAt(target.x + Math.sin(this.yaw) * Math.cos(pitch), target.y - Math.sin(pitch), target.z + Math.cos(this.yaw) * Math.cos(pitch));
+    } else if (zionMessage?.role === 'neo' && ['unlatching', 'opening', 'taking', 'transfer', 'stowing'].includes(zionMessage.phase)
+      && !this.dragging && now - this.lastLook > 700) {
+      // Frame the contact from the open side of the aisle, beside Neo's silhouette.
+      const atDoor = zionMessage.phase === 'unlatching' || zionMessage.phase === 'opening';
+      const point = atDoor ? zionMessageHandle(zionMessage.door) : zionMessageDisk(zionMessage);
+      const { center } = FILM_SETS.film_zion_bedroom;
+      const focus = new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z).lerp(this.cameraTarget, .24);
+      const eye = new THREE.Vector3(this.position.x + (atDoor ? -4.2 : 5), this.position.y + 4.4, this.position.z - 3.6);
+      this.camera.position.lerp(eye, resetCamera ? 1 : 1 - Math.exp(-10 * delta));
+      this.camera.lookAt(focus);
     } else if (this.templeSpeech && !this.dragging && now - this.lastLook > 700 && this.motion.speed < .1) {
       // Look over the rostrum so the speaker and the listening rows share the shot.
       const eye = new THREE.Vector3(this.position.x + 3.2, this.position.y + 9.3, this.position.z - 9);

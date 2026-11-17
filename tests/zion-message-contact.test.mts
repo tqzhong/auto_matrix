@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SETS, ZION_CAST, ZION_MESSAGE, ZION_MESSAGE_ROLES, newZionMessage, zionMessageTrinity, filmPosition, type FilmJourney, type ZionMessageEncounter, type ZionMessageGesture } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { ZionHomecomingRenderer } from '../packages/client/src/engine/ZionHomecomingRenderer.js';
+import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -82,6 +83,62 @@ test('the single disk stays under the actual holder palm while offered, received
   }
   const done = newZionMessage(2); h.pose(done); assert.equal(h.root.getObjectByName('oracle-message-disk')!.visible, false);
   assert.equal(misses.length, 0, JSON.stringify(misses.slice(0, 8)));
+});
+
+test('the Zion message follow camera keeps the door handle and the disk clear of Neo', async t => {
+  const h = await setup(t);
+  const canvas = Object.assign(new EventTarget(), { matches: () => false });
+  const document = Object.assign(new EventTarget(), globalThis.document, { pointerLockElement: canvas, hidden: false, exitPointerLock() {} });
+  globalThis.document = document;
+  const keyboard = Object.assign(window, { matches: () => false });
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const controls = new PlayerControls(canvas as unknown as HTMLCanvasElement, camera, () => {}, () => {});
+  const opening = [.26, .55, .88].map(door => {
+    const state = newZionMessage();
+    Object.assign(state, { phase: 'opening', door, elapsed: door * ZION_MESSAGE.opening });
+    state.bodies.trinity = zionMessageTrinity(door);
+    return state;
+  });
+  const receiving = (['taking', 'transfer', 'stowing'] as const).map(phase => {
+    const state = newZionMessage(1);
+    Object.assign(state, { phase, elapsed: .36, owner: phase === 'taking' ? 'ballard' : 'neo' });
+    state.bodies.neo.yaw = Math.atan2(state.bodies.ballard.x - state.bodies.neo.x, state.bodies.ballard.z - state.bodies.neo.z);
+    return state;
+  });
+  try {
+    for (const aspect of [16 / 9, 720 / 1024]) for (const state of [...opening, ...receiving]) {
+      h.pose(state);
+      const neo = h.renderer.getAgentState('neo')!, group = h.renderer.getAgent('neo')!;
+      camera.aspect = aspect; camera.updateProjectionMatrix(); controls.release(); controls.possess(neo);
+      const frame = () => {
+        controls.update(1 / 60, neo, group, false);
+        controls.syncTrainmanChaseCamera(group, h.root);
+        h.scene.updateMatrixWorld(true); camera.updateMatrixWorld(true);
+      };
+      frame();
+      const name = state.phase === 'opening' ? 'zion-message-door-handle' : 'oracle-message-disk';
+      const subject = h.root.getObjectByName(name)!;
+      const center = subject.getWorldPosition(new THREE.Vector3()), vector = center.clone().sub(camera.position);
+      const ray = new THREE.Raycaster(camera.position, vector.clone().normalize(), .08, vector.length() - .16);
+      const blocked = ray.intersectObjects([h.renderer.getAgentBody('neo')!, h.root], true).filter(hit => {
+        for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (object === subject || !object.visible) return false;
+        return true;
+      });
+      const screen = center.project(camera), label = `${aspect} ${state.phase} ${state.door}`;
+      assert.ok(Math.abs(screen.x) < .9 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1, label);
+      assert.deepEqual(blocked.map(hit => hit.object.name), [], label + ': the actual interaction is hidden in the follow view');
+      if (state.phase === 'taking') {
+        const defaultView = camera.position.clone();
+        document.dispatchEvent(Object.assign(new Event('mousemove'), { movementX: 150, movementY: 20 }));
+        frame();
+        assert.ok(camera.position.distanceTo(defaultView) > 1, 'mouse look takes over the automatic framing');
+        keyboard.dispatchEvent(Object.assign(new Event('keydown'), { code: 'KeyV', repeat: false }));
+        frame();
+        assert.equal(controls.firstPerson, true);
+        assert.ok(Math.hypot(camera.position.x - neo.position.x, camera.position.z - neo.position.z) < 1);
+      }
+    }
+  } finally { controls.dispose(); }
 });
 
 test('Zee and Link hand over one visible charm using their delivered wrists', async t => {
