@@ -2466,6 +2466,7 @@ export class SandboxUI {
     const stableFilmPanel = helGarageActive(journey) || journey?.scene === 'm1_bridge' && journey.bridgeTail?.phase === 'failed'
       || trainmanChaseActive(journey) && journey?.helChase?.performance?.phase === 'failed'
       || journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.step >= FILM_SCENE_BY_ID.m3_hel_entry.steps.length
+      || journey?.scene === 'm3_hel_bargain' && !journey.visiting && journey.helBargain?.phase === 'failed'
       || journey?.scene === 'm2_meeting' && !journey.visiting && journey.reloaded?.phase === 'evacuate_ready';
     const stableJournal = life && stableFilmPanel && (this.panel === 'journal' || this.panel === 'map')
       ? renderNeoLife(player, state, this.time) : undefined;
