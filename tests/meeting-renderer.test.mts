@@ -10,7 +10,7 @@ import { MeetingSetRenderer } from '../packages/client/src/engine/MeetingSetRend
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-test('cold bridge return stages the original street and late pursuer textures before leaving the car', t => {
+for (const checkpoint of ['arrival', 'departure'] as const) test(`cold bridge ${checkpoint} stages the street and late cast textures`, t => {
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
   t.after(() => { globalThis.document = document; });
@@ -19,10 +19,17 @@ test('cold bridge return stages the original street and late pursuer textures be
   });
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(), sun = new THREE.DirectionalLight(); scene.add(sun);
   const film = new FilmSetRenderer(scene); t.after(() => film.dispose());
-  const journey = { scene: 'm1_bridge', actor: 'neo', meeting: { phase: 'leaving', elapsed: 2.1, roadTime: 3, bugged: true, approach: { x: 4, z: -12.35, yaw: Math.PI } } } as FilmJourney;
+  const encounter = checkpoint === 'arrival' ? { bridgeArrival: { phase: 'approaching', elapsed: 1 } } :
+    { meeting: { phase: 'leaving', elapsed: 2.1, roadTime: 3, bugged: true, approach: { x: 4, z: -12.35, yaw: Math.PI } } };
+  const journey = { scene: 'm1_bridge', actor: 'neo',
+    office: { outcome: checkpoint === 'arrival' ? 'escaped' : 'captured' }, ...encounter } as FilmJourney;
   const tail = new THREE.Group(), geometry = new THREE.BoxGeometry(), map = new THREE.Texture({ width: 1024, height: 1024 }); map.needsUpdate = true;
   const hair = new THREE.MeshStandardMaterial({ map }); tail.add(new THREE.Mesh(geometry, hair));
-  t.after(() => { geometry.dispose(); hair.dispose(); map.dispose(); });
+  const player = new THREE.Group(), torsoMap = new THREE.Texture({ width: 2048, height: 2048 }); torsoMap.needsUpdate = true;
+  const skin = new THREE.MeshStandardMaterial({ map: torsoMap });
+  const torso = new THREE.SkinnedMesh(geometry, skin); torso.name = 'Office_torso'; torso.visible = false;
+  torso.bind(new THREE.Skeleton(), new THREE.Matrix4()); player.add(torso);
+  t.after(() => { geometry.dispose(); hair.dispose(); map.dispose(); skin.dispose(); torsoMap.dispose(); });
   const uploaded = new WeakMap<THREE.Texture, number>(), uploads: THREE.Texture[] = [];
   let target: THREE.WebGLRenderTarget | null = null;
   const renderer = { properties: { get: (texture: THREE.Texture) => ({ __version: uploaded.get(texture) }) },
@@ -31,13 +38,20 @@ test('cold bridge return stages the original street and late pursuer textures be
     setRenderTarget: (value: typeof target) => { target = value; }, render() {}, compile() {},
     initTexture(texture: THREE.Texture) { uploads.push(texture); uploaded.set(texture, texture.version); },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = (actor?: THREE.Group) => film.prepareBridge(renderer, camera, journey, () => undefined, sun, undefined, undefined, actor, true);
+  const prepare = (neo?: THREE.Group, pursuer?: THREE.Group) => film.prepareBridge(renderer, camera, journey,
+    id => id === 'neo' ? neo : undefined, sun, undefined, undefined, pursuer, true);
+  if (checkpoint === 'arrival') {
+    const tracked = { ...journey, office: { ...journey.office!, outcome: 'captured' as const } };
+    film.prepareBridge(renderer, camera, tracked, () => undefined, sun, undefined, undefined, tail, true);
+    assert.ok(!film['preparedBridge'], 'a tracked approach keeps the existing street preparation while its pursuer is present');
+    assert.equal(uploads.length, 0);
+  }
   assert.equal(film['meeting'], undefined, 'a cold landing has not built its active street yet');
   const before = JSON.stringify(journey);
   prepare();
   assert.ok(film['preparedBridge']?.renderer.root.getObjectByName('meeting-bridge-runoff'), 'finish the hidden saved street before possession can adopt it');
   for (let frame = 0; frame < 400; frame++) prepare();
-  assert.ok(film['preparedBridge'], 'build the saved departure before possession creates its active set');
+  assert.ok(film['preparedBridge'], 'build the saved street before possession creates its active set');
   const prepared = film['preparedBridge']!.renderer, root = prepared.root, expected = new Set<THREE.Texture>();
   root.traverseVisible(object => {
     if (!(object instanceof THREE.Mesh) || Array.isArray(object.material)) return;
@@ -48,13 +62,15 @@ test('cold bridge return stages the original street and late pursuer textures be
   assert.ok(expected.size > 0);
   assert.deepEqual(new Set(uploads), expected, 'prepare every decoded map used by the actual bridge and hotel');
   const count = uploads.length;
-  for (let frame = 0; frame < 40; frame++) prepare(tail);
-  assert.equal(uploads.length, count + 1); assert.equal(uploads.at(-1), map, 'a late pursuer joins the existing preparation');
+  for (let frame = 0; frame < 40; frame++) prepare(player, checkpoint === 'departure' ? tail : undefined);
+  assert.deepEqual(new Set(uploads.slice(count)), new Set(checkpoint === 'departure' ? [map, torsoMap] : [torsoMap]),
+    'prepare the late player torso before the first boarding pose reveals it');
+  assert.equal(torso.visible, false); assert.equal(torso.parent, player);
   assert.equal(film['preparedBridge']!.renderer, prepared); assert.equal(tail.parent, null);
   assert.equal(JSON.stringify(journey), before, 'preparation retains the saved car position and action clock');
   assert.equal(root.parent !== scene, true, 'offstage preparation keeps the live scene separate');
   film.prepareBridge(renderer, camera, undefined, () => undefined, sun);
-  assert.equal(root.parent, null, 'leaving the saved departure releases the staged scenery');
+  assert.equal(root.parent, null, 'leaving the saved bridge releases the staged scenery');
 });
 
 test('bridge preparation builds the street over several steps and adopts the same scenery on entry', t => {
