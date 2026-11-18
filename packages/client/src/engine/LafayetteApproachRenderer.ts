@@ -177,7 +177,7 @@ export class LafayetteApproachRenderer {
       const material = object.material as THREE.Material; const list = batches.get(material) ?? []; list.push(geometry); batches.set(material, list); meshes.push(object);
     } });
     for (const mesh of meshes) { mesh.removeFromParent(); this.geometries.delete(mesh.geometry); }
-    for (const [material, geometries] of batches) { const geometry = mergeGeometries(geometries); geometries.forEach(g => g.dispose()); if (geometry) this.mesh(geometry, material, undefined, root); }
+    for (const [material, geometries] of batches) { const geometry = mergeGeometries(geometries); geometries.forEach(g => g.dispose()); if (geometry) { geometry.computeBoundingSphere(); this.mesh(geometry, material, undefined, root); } }
   }
   update(hotel: HotelApproach | undefined, height: number, exterior = false): void {
     const progress = hotel?.door === undefined ? hotel ? 0 : 1 : hotel.door / LAFAYETTE.doorSeconds;

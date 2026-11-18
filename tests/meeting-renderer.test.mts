@@ -25,6 +25,16 @@ test('bridge preparation builds the street over several steps and adopts the sam
   assert.equal(ready, true, 'all scenery is constructed before the camera cuts to the bridge');
   const mesh = prepared.root.getObjectByProperty('isMesh', true) as THREE.Mesh;
   assert.ok(mesh);
+  const large: THREE.BufferGeometry[] = [];
+  prepared.root.traverse(object => {
+    if (object instanceof THREE.Mesh && object.geometry.attributes.position.count > 20000) large.push(object.geometry);
+  });
+  assert.ok(large.length > 0, 'include the actual dense bridge batches');
+  for (const geometry of large) {
+    const reference = geometry.clone(); reference.computeBoundingSphere();
+    try { assert.deepEqual(geometry.boundingSphere, reference.boundingSphere, 'prepare the exact culling bound before the first visible draw'); }
+    finally { reference.dispose(); }
+  }
   let disposed = 0;
   mesh.geometry.addEventListener('dispose', () => disposed++);
   prepared.attach(parent);
@@ -73,6 +83,8 @@ test('the bridge prepares cast buffers, both shadow layouts and the rain program
       assert.ok(bufferScene.children.length <= 4);
       for (const object of bufferScene.children) if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
         assert.equal((object.material as THREE.Material).visible, false);
+        if (object.constructor === THREE.Mesh && object.geometry.attributes.position.count > 20000)
+          assert.ok(object.geometry.boundingSphere, 'dense bridge and hotel geometry must be bounded before upload');
         uploaded.set(object.geometry, (uploaded.get(object.geometry) ?? 0) + 1);
       }
     },

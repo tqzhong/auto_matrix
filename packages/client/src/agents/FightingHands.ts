@@ -8,7 +8,7 @@ interface MaterialPoint { id: number; amount: number; interval: number; u: numbe
 interface Finger { joints: number[]; radius: number[]; rest: HandCurve; vertices: MaterialPoint[]; metacarpal?: THREE.Vector3 }
 interface Hand {
   side: string; wrist: number; cacheable: boolean; pistolCacheable: boolean; bones: number[][]; caps: number[][]; axes: THREE.Vector3[][];
-  vertices: number[]; ranges: { start: number; count: number }[]; influences: number[]; faces: number[][]; offsets: Map<number, number>; triangles: Uint32Array; fingers: Finger[]; palm: number[];
+  vertices: number[]; ranges: { start: number; count: number }[]; influences: number[]; skinJoints: number[]; faces: number[][]; offsets: Map<number, number>; triangles: Uint32Array; fingers: Finger[]; palm: number[];
   opposition?: { nail: THREE.Vector3; pad: THREE.Vector3; radial: THREE.Vector3; clearance: number };
 }
 interface Binding { attributes: Attributes; hands: Hand[]; groups: number[]; groupCount: number }
@@ -212,9 +212,13 @@ function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
       if (last && last.start + last.count === id) last.count++;
       else ranges.push({ start: id, count: 1 });
     }
-    const influences = new Set([wrist, ...bones.flat()]);
-    for (const weights of [source, a]) for (const id of vertices) for (let k = 0; k < 4; k++)
-      if (weights.skinWeight.getComponent(id, k) !== 0) influences.add(weights.skinIndex.getComponent(id, k));
+    const influences = new Set([wrist, ...bones.flat()]), skinJoints = new Set<number>();
+    for (const weights of [source, a]) for (const id of vertices) for (let k = 0; k < 4; k++) {
+      const joint = weights.skinIndex.getComponent(id, k);
+      // The existing blend also evaluates zero-weight slots.
+      skinJoints.add(joint);
+      if (weights.skinWeight.getComponent(id, k) !== 0) influences.add(joint);
+    }
     const offsets = new Map(vertices.map((id, i) => [id, i]));
     const roots = bones.slice(1).map(joints => {
       const points = joints.slice(0, 2).map(j => new THREE.Vector3().setFromMatrixPosition(skin.skeleton.boneInverses[j].clone().invert()).applyMatrix4(inverse));
@@ -240,7 +244,7 @@ function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
       const id = faces[face][corner], at = face * 6 + corner * 2;
       triangles[at] = offsets.get(id)! * 15 + 3; triangles[at + 1] = normalGroups[id] * 3;
     }
-    return { side, wrist, cacheable, pistolCacheable, bones, caps, axes, vertices, ranges, influences: [...influences], faces, offsets, triangles, fingers, palm, opposition };
+    return { side, wrist, cacheable, pistolCacheable, bones, caps, axes, vertices, ranges, influences: [...influences], skinJoints: [...skinJoints], faces, offsets, triangles, fingers, palm, opposition };
   });
   return { attributes: a, hands, groups: normalGroups, groupCount: normalKeys.size };
 }
@@ -545,7 +549,9 @@ export class FightingHands {
     const outputIndices = this.output.skinIndex.array, outputWeights = this.output.skinWeight.array;
     const wrist = skin.skeleton.bones[hand.wrist], inverse = wrist.matrixWorld.clone().invert();
     const toWrist = inverse.clone().multiply(skin.matrixWorld), transform = toWrist.elements, back = toWrist.clone().invert().elements;
-    const frames = skin.skeleton.bones.map((bone, j) => skin.bindMatrixInverse.clone().multiply(bone.matrixWorld).multiply(skin.skeleton.boneInverses[j]).multiply(skin.bindMatrix).elements);
+    const frames: number[][] = [];
+    for (const joint of hand.skinJoints) frames[joint] = skin.bindMatrixInverse.clone().multiply(skin.skeleton.bones[joint].matrixWorld)
+      .multiply(skin.skeleton.boneInverses[joint]).multiply(skin.bindMatrix).elements;
     for (const [ordinal, id] of hand.vertices.entries()) {
       let aa = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0, i = 0, x = 0, y = 0, z = 0;
       for (let k = 0; k < 4; k++) {

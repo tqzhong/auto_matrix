@@ -566,7 +566,7 @@ export class MeetingSetRenderer {
         return part.applyMatrix4(transform.multiplyMatrices(inverse, mesh.matrixWorld));
       });
       const geometry = mergeGeometries(parts); parts.forEach(part => part.dispose());
-      if (geometry) this.mesh(root, geometry, material);
+      if (geometry) { geometry.computeBoundingSphere(); this.mesh(root, geometry, material); }
       yield;
     }
   }
