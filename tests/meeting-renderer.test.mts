@@ -10,6 +10,53 @@ import { MeetingSetRenderer } from '../packages/client/src/engine/MeetingSetRend
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
+test('cold bridge return stages the original street and late pursuer textures before leaving the car', t => {
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.after(() => { globalThis.document = document; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => {
+    const map = new THREE.Texture({ width: 1024, height: 1024 }); map.needsUpdate = true; return map;
+  });
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(), sun = new THREE.DirectionalLight(); scene.add(sun);
+  const film = new FilmSetRenderer(scene); t.after(() => film.dispose());
+  const journey = { scene: 'm1_bridge', actor: 'neo', meeting: { phase: 'leaving', elapsed: 2.1, roadTime: 3, bugged: true, approach: { x: 4, z: -12.35, yaw: Math.PI } } } as FilmJourney;
+  const tail = new THREE.Group(), geometry = new THREE.BoxGeometry(), map = new THREE.Texture({ width: 1024, height: 1024 }); map.needsUpdate = true;
+  const hair = new THREE.MeshStandardMaterial({ map }); tail.add(new THREE.Mesh(geometry, hair));
+  t.after(() => { geometry.dispose(); hair.dispose(); map.dispose(); });
+  const uploaded = new WeakMap<THREE.Texture, number>(), uploads: THREE.Texture[] = [];
+  let target: THREE.WebGLRenderTarget | null = null;
+  const renderer = { properties: { get: (texture: THREE.Texture) => ({ __version: uploaded.get(texture) }) },
+    info: { programs: [] }, debug: { checkShaderErrors: true }, extensions: { has: () => true }, shadowMap: { enabled: false },
+    getRenderTarget: () => target, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
+    setRenderTarget: (value: typeof target) => { target = value; }, render() {}, compile() {},
+    initTexture(texture: THREE.Texture) { uploads.push(texture); uploaded.set(texture, texture.version); },
+  } as unknown as THREE.WebGLRenderer;
+  const prepare = (actor?: THREE.Group) => film.prepareBridge(renderer, camera, journey, () => undefined, sun, undefined, undefined, actor, true);
+  assert.equal(film['meeting'], undefined, 'a cold landing has not built its active street yet');
+  const before = JSON.stringify(journey);
+  prepare();
+  assert.ok(film['preparedBridge']?.renderer.root.getObjectByName('meeting-bridge-runoff'), 'finish the hidden saved street before possession can adopt it');
+  for (let frame = 0; frame < 400; frame++) prepare();
+  assert.ok(film['preparedBridge'], 'build the saved departure before possession creates its active set');
+  const prepared = film['preparedBridge']!.renderer, root = prepared.root, expected = new Set<THREE.Texture>();
+  root.traverseVisible(object => {
+    if (!(object instanceof THREE.Mesh) || Array.isArray(object.material)) return;
+    const material = object.material as THREE.MeshStandardMaterial;
+    for (const texture of [material.map, material.normalMap, material.bumpMap, material.roughnessMap, material.alphaMap])
+      if (texture?.image?.width >= 1024 && texture.version > 0) expected.add(texture);
+  });
+  assert.ok(expected.size > 0);
+  assert.deepEqual(new Set(uploads), expected, 'prepare every decoded map used by the actual bridge and hotel');
+  const count = uploads.length;
+  for (let frame = 0; frame < 40; frame++) prepare(tail);
+  assert.equal(uploads.length, count + 1); assert.equal(uploads.at(-1), map, 'a late pursuer joins the existing preparation');
+  assert.equal(film['preparedBridge']!.renderer, prepared); assert.equal(tail.parent, null);
+  assert.equal(JSON.stringify(journey), before, 'preparation retains the saved car position and action clock');
+  assert.equal(root.parent !== scene, true, 'offstage preparation keeps the live scene separate');
+  film.prepareBridge(renderer, camera, undefined, () => undefined, sun);
+  assert.equal(root.parent, null, 'leaving the saved departure releases the staged scenery');
+});
+
 test('bridge preparation builds the street over several steps and adopts the same scenery on entry', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const parent = new THREE.Group(), prepared = new MeetingSetRenderer(undefined, false);

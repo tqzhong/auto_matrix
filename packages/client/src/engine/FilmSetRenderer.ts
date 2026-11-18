@@ -995,7 +995,9 @@ export class FilmSetRenderer {
     actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight, shadow?: THREE.Mesh, apartmentLights?: LightCulling,
     tail?: THREE.Group, resume = false): void {
     const call = journey?.wakeCall;
-    if (journey?.scene !== 'm1_wake_again' || journey.visiting || !call || ['waking', 'ringing'].includes(call.phase)) {
+    const departure = resume && journey?.scene === 'm1_bridge' && journey.meeting?.phase === 'leaving';
+    const calling = journey?.scene === 'm1_wake_again' && call && !['waking', 'ringing'].includes(call.phase);
+    if (!journey || (!calling && !departure) || journey.visiting) {
       this.cancelBridgePreparation(); return;
     }
     if (this.preparedBridge?.gpu !== renderer.properties) this.cancelBridgePreparation();
@@ -1007,15 +1009,17 @@ export class FilmSetRenderer {
       if (mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshStandardMaterial && mesh.material.map?.image)
         hairMaps.add(mesh.material.map);
     }
-    const stagingHair = this.prepareStagedColorTexture(renderer, prepared, hairMaps, 2);
-    if (!prepared.renderer.prepareStep()) return;
+    const stagingHair = this.prepareStagedColorTexture(renderer, prepared, hairMaps, departure ? 8 : 2);
+    if (departure) {
+      while (!prepared.renderer.prepareStep()) { /* Build the saved set on the landing before it can be adopted. */ }
+    } else if (!prepared.renderer.prepareStep()) return;
     if (!prepared.drawing) {
       const set = FILM_SETS.film_adams_bridge, entry = filmEntry(FILM_SCENE_BY_ID.m1_bridge);
       const eye = camera.clone();
       eye.position.set(entry.x, entry.y + 5.6, entry.z + 8);
       eye.lookAt(entry.x, entry.y + 2.2, set.center.z);
       prepared.renderer.root.position.set(set.center.x, set.center.y - 1, set.center.z);
-      prepared.renderer.update({ ...journey, scene: 'm1_bridge', bridgeArrival: { phase: 'approaching', elapsed: 0 } }, 0);
+      prepared.renderer.update(departure ? journey : { ...journey, scene: 'm1_bridge', bridgeArrival: { phase: 'approaching', elapsed: 0 } }, 0);
       const colors = { ...this.colorPreparation(prepared.renderer.root, [], { includeBasic: true, shadowSun, playerView: resume }), actors: new Set<THREE.Group>() };
       const lighting = new LightCulling(colors.scene); lighting.stablePointSlots = true;
       const buffers: (THREE.Mesh | THREE.Line)[] = [], geometries = new WeakSet<THREE.BufferGeometry>();
@@ -1068,7 +1072,7 @@ export class FilmSetRenderer {
       if (geometries.has(mesh.geometry)) continue;
       buffers.push(mesh); geometries.add(mesh.geometry);
     }
-    const ready = readyPrograms.values().next().value;
+    const ready = Array.from(readyPrograms).slice(0, departure ? 4 : 1);
     // Poll the whole queue together, then reflect one previously completed link per frame.
     if (parallel) colors.programs = colors.programs.filter(program => {
       if (!program.program) return false;
@@ -1079,14 +1083,18 @@ export class FilmSetRenderer {
     if (parallel && !(shadows && apartmentLights && (
       !resume && this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.apartment }, apartmentLights, 'depth')
       || this.linkColorBatch(renderer, eye, { ...colors, meshes: shadows.bridge }, lighting, 'depth')))) {
-      if (ready) {
-        readyPrograms.delete(ready);
-        if (ready.program) cacheReadyProgramLocations(renderer, ready);
+      if (ready.length) {
+        for (const program of ready) {
+          readyPrograms.delete(program);
+          if (program.program) cacheReadyProgramLocations(renderer, program);
+        }
       } else this.linkColorBatch(renderer, eye, colors, lighting, 'isolated', [this.marker, shadow]);
     }
     if (buffers.length) prepared.bufferUpload ??= prepareMeshBuffers(renderer, eye, buffers);
-    if (prepared.bufferUpload?.next().done) prepared.bufferUpload = undefined;
-    if (!stagingHair) this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2);
+    for (let batch = 0; batch < (departure ? 4 : 1) && prepared.bufferUpload; batch++)
+      if (prepared.bufferUpload.next().done) prepared.bufferUpload = undefined;
+    if (!stagingHair) for (let batch = 0; batch < (departure ? 4 : 1); batch++)
+      if (!this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) break;
   }
   prepareMatrixEscape(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {

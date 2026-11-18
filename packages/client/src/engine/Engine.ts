@@ -321,6 +321,7 @@ export class Engine {
     const openingHandoff = openingPhone?.phase === 'connected' || openingPhone?.phase === 'done';
     const resumeApartment = resumeOnLanding && meeting?.scene === 'm1_wake_up';
     const resumeBridge = resumeOnLanding && meeting?.scene === 'm1_wake_again';
+    const resumeBridgeReturn = resumeOnLanding && meeting?.scene === 'm1_bridge';
     const savedWells = resumeOnLanding && meeting?.scene === 'm1_phone_escape' ? meeting.openingPhone : undefined;
     // Pose the offstage Neo after Wells first draws, or while the save is still on the landing screen.
     const apartmentPosePhone = filmSet?.id === 'film_wells_phone' && filmSet === previousSet ? openingPhone : savedWells;
@@ -360,11 +361,11 @@ export class Engine {
         id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareInterrogation(this.renderer, this.camera, liveMatrixJourney,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
-    if (resumeOnLanding && meeting?.scene === 'm1_bridge') this.sandboxRenderer.prepareBridgeTail();
-    this.filmSets.prepareBridge(this.renderer, this.camera, liveMatrixJourney ?? (resumeBridge ? meeting : undefined),
+    const bridgeReturnTail = resumeBridgeReturn ? this.sandboxRenderer.prepareBridgeTail() : undefined;
+    this.filmSets.prepareBridge(this.renderer, this.camera, liveMatrixJourney ?? (resumeBridge || resumeBridgeReturn ? meeting : undefined),
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id),
       this.lightingSystem.directionalLight, this.agentRenderer.getAgentShadow('neo'), this.lightCulling,
-      liveMatrixJourney?.scene === 'm1_wake_again' || resumeBridge ? this.sandboxRenderer.prepareBridgeTail() : undefined, resumeBridge);
+      liveMatrixJourney?.scene === 'm1_wake_again' || resumeBridge ? this.sandboxRenderer.prepareBridgeTail() : bridgeReturnTail, resumeBridge || resumeBridgeReturn);
     const resumeGovernment = resumeOnLanding && (meeting?.scene === 'm1_lobby' || meeting?.scene === 'm1_smith_question' || meeting?.scene === 'm1_helicopter');
     this.filmSets.prepareGovernment(this.renderer, this.camera, player?.id === meeting?.actor || resumeGovernment ? meeting : undefined,
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight,
