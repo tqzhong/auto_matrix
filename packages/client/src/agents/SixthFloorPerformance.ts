@@ -32,7 +32,13 @@ export function poseSixthFloor(rig: CharacterRig, gesture?: SixthGesture): void 
       new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2));
   } else if (role === 'smith' && phase === 'grapple' && gesture.contact) {
     const contact = new THREE.Vector3(gesture.contact.x, gesture.contact.y, gesture.contact.z);
-    for (const side of ['R', 'L'] as const) hand(side, contact.clone().add(new THREE.Vector3(side === 'R' ? -.16 : .16, 0, .12)), forwardHand, .35);
+    // Bring the palms around the sides of the neck and angle the fingers above the collar.
+    const neckGrip = forwardHand.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -.57));
+    for (const side of ['R', 'L'] as const) {
+      const sign = side === 'R' ? 1 : -1;
+      const inward = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -sign * .9).multiply(neckGrip);
+      hand(side, contact.clone().add(new THREE.Vector3(-sign * .32, .15, .16)), inward, .35);
+    }
   } else if (role === 'citizen_4' || role === 'citizen_14') {
     if (phase === 'replacing' && role === 'citizen_4') {
       bone('chest').rotation.z = Math.sin(elapsed * 28) * .12; bone('head').rotation.x = -.28 + Math.sin(elapsed * 21) * .08;

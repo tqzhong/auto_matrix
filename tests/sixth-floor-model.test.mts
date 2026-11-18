@@ -11,6 +11,8 @@ import { PlayerControls } from '../packages/client/src/player/PlayerControls.js'
 import { poseBathroom } from '../packages/client/src/agents/BathroomPerformance.js';
 import { SixthFloorRenderer } from '../packages/client/src/engine/SixthFloorRenderer.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { fingerGroups } from './helpers/fighting-hand-fixture.mjs';
+import { crossings } from './helpers/hand-self-contact.mjs';
 
 async function models(t: test.TestContext) {
   const assets = new Map();
@@ -82,7 +84,7 @@ test('actual bathroom skeletons keep skin, shoes and clothing above the tiles du
   t.diagnostic(`Delivered-model animation CPU: ${(animationMs / samples).toFixed(2)} ms/character (${samples} samples; not browser fps).`);
 });
 
-test('Smith delivered palms actually reach Neo neck at the saved grapple checkpoint', async t => {
+test('Smith reaches through the wall opening at the saved grapple checkpoint', async t => {
   const h = await models(t), neo = h.characters.create(h.world.agents.get('neo')!), smith = h.characters.create(h.world.agents.get('smith')!);
   await new Promise(resolve => setImmediate(resolve)); const center = FILM_SETS.film_ambush_house.center;
   for (const [role, rig] of [['neo', neo], ['smith', smith]] as const) {
@@ -94,13 +96,6 @@ test('Smith delivered palms actually reach Neo neck at the saved grapple checkpo
     }
     rig.root.position.set(center.x + root.x, center.y - 1 + root.y, center.z + root.z); rig.root.rotation.y = root.yaw;
     h.characters.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, sixth: input }, 4);
-  }
-  neo.root.updateWorldMatrix(true, true);
-  const neck = neo.hero!.bones.get('head')!.localToWorld(new THREE.Vector3(0, -.17, .04));
-  for (const side of ['R', 'L']) {
-    const contact = neck.clone().add(new THREE.Vector3(side === 'R' ? -.16 : .16, 0, .12));
-    const palm = smith.hero!.bones.get(`wrist_${side}`)!.localToWorld(new THREE.Vector3(0, -.19, .035));
-    assert.ok(palm.distanceTo(contact) < .14, `${side} hand is grabbing empty space: ${palm.distanceTo(contact)}, neck=${neck.toArray()}`);
   }
   const errors: string[] = [], vertex = new THREE.Vector3();
   smith.root.updateWorldMatrix(true, true);
@@ -117,6 +112,64 @@ test('Smith delivered palms actually reach Neo neck at the saved grapple checkpo
     }
   });
   assert.deepEqual(errors, [], 'Smith feet and clothing must remain in the bathroom while his arms pass through the gunfire hole');
+});
+
+test('Smith fingers reach Neo’s neck without crossing his skin, collar or coat', async t => {
+  const h = await models(t), neo = h.characters.create(h.world.agents.get('neo')!), smith = h.characters.create(h.world.agents.get('smith')!);
+  await new Promise(resolve => setImmediate(resolve));
+  const center = FILM_SETS.film_ambush_house.center;
+  const wetwall = { role: 'neo', phase: 'done', elapsed: 0, start: { x: -18, y: -37, z: -26.9 }, entry: 7.8, progress: 22.6, hanging: true, freed: true } as const;
+  const posedFaces = (mesh: THREE.SkinnedMesh, include: (ids: number[]) => boolean) => {
+    const faces: Parameters<typeof crossings>[0] = [], index = mesh.geometry.index!, vertices = new Map<number, THREE.Vector3>();
+    const vertex = (id: number) => {
+      if (!vertices.has(id)) vertices.set(id, mesh.localToWorld(mesh.getVertexPosition(id, new THREE.Vector3())));
+      return vertices.get(id)!;
+    };
+    for (let i = 0; i < index.count; i += 3) {
+      const ids = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
+      if (!include(ids)) continue;
+      const points = ids.map(vertex);
+      faces.push({ face: i / 3, ids, points, box: new THREE.Box3().setFromPoints(points) });
+    }
+    return faces;
+  };
+  const hands = ['R', 'L'].map(side => fingerGroups(smith.hero!, side));
+  const surfaces = neo.hero!.wardrobe.filter(part => /Tailored.coat.upper|Black.crew.neck|Anatomical_head_and_hands/i.test(part.mesh.name));
+  assert.equal(surfaces.length, 3);
+  for (const elapsed of [.46, .77, 1.2, 1.79]) {
+    const pose = (rig: typeof neo, role: 'neo' | 'smith', contact?: THREE.Vector3) => {
+      const sixth = { ...gesture(role, 'grapple'), elapsed, contact }, root = sixthPose(sixth);
+      rig.root.position.set(center.x + root.x, center.y - 1 + root.y, center.z + root.z);
+      rig.root.rotation.y = root.yaw;
+      h.characters.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, sixth, wetwall: role === 'neo' ? wetwall : undefined }, 4);
+      rig.root.updateMatrixWorld(true);
+    };
+    pose(neo, 'neo');
+    const neck = neo.hero!.bones.get('head')!.localToWorld(new THREE.Vector3(0, -.17, .04));
+    pose(smith, 'smith', neck);
+    assert.ok(surfaces.every(({ mesh }) => mesh.visible));
+    const targets = surfaces.map(({ mesh }) => ({ name: mesh.name, faces: posedFaces(mesh, () => true) }));
+    const nearby = targets.flatMap(({ faces }) => faces.filter(face => face.box.distanceToPoint(neck) < .6));
+    const triangle = new THREE.Triangle(), closest = new THREE.Vector3();
+    for (const { skin, digits, tips } of hands) {
+      const fingers = posedFaces(skin, ids => ids.every(id => digits[id] >= 0) && ids.some(id => digits[id] > 0));
+      assert.ok(fingers.length > 1000);
+      for (const { name, faces } of targets) {
+        const crossed = crossings(fingers, faces, false);
+        assert.equal(crossed.count, 0, `${elapsed}s: Smith's fingers cross ${name} at ${JSON.stringify(crossed.examples)}`);
+      }
+      let gap = Infinity;
+      for (const ids of tips) {
+        const step = Math.max(1, Math.floor(ids.length / 15));
+        for (let i = 0; i < ids.length; i += step) {
+          const point = skin.localToWorld(skin.getVertexPosition(ids[i], new THREE.Vector3()));
+          for (const { box, points: [a, b, c] } of nearby) if (box.distanceToPoint(point) < gap)
+            gap = Math.min(gap, triangle.set(a, b, c).closestPointToPoint(point, closest).distanceTo(point));
+        }
+      }
+      assert.ok(gap < .04, `${elapsed}s: Smith's hand loses contact with the neck by ${gap}`);
+    }
+  }
 });
 
 test('Neo camera and local body retain the sixth-floor firing position and aim across first-person switching', async t => {
