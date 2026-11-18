@@ -12,7 +12,12 @@ export function createLoungeChair(leather: THREE.Material): THREE.Group {
   };
   const box = (surface: THREE.Material, x: number, y: number, z: number, w: number, h: number, d: number, bevel: number) =>
     mesh(new RoundedBoxGeometry(w, h, d, 2, Math.min(bevel, w / 3, h / 3, d / 3)), surface, x, y, z);
-  const sphere = (surface: THREE.Material, x: number, y: number, z: number, radius: number) => mesh(new THREE.SphereGeometry(radius, 16, 10), surface, x, y, z);
+  const spheres = new Map<number, THREE.SphereGeometry>();
+  const sphere = (surface: THREE.Material, x: number, y: number, z: number, radius: number) => {
+    let geometry = spheres.get(radius);
+    if (!geometry) { geometry = new THREE.SphereGeometry(radius, 16, 10); spheres.set(radius, geometry); }
+    return mesh(geometry, surface, x, y, z);
+  };
   const pipe = (points: number[][], radius: number, surface: THREE.Material) =>
     mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(point => new THREE.Vector3(...point))), 20, radius, 8, false), surface, 0, 0, 0);
   const seam = material(0x43221c, .88); const trim = material(0x604c32, .72, .3); const frame = material(0x281c17, .64);
@@ -37,14 +42,17 @@ export function createLoungeChair(leather: THREE.Material): THREE.Group {
   const surface = (u: number, v: number, back = false): number[] => {
     const sx = u * (1.56 + .22 * Math.sin(v * Math.PI * .85));
     const sy = 1.45 + v * (3.5 + .4 * (1 - u * u));
-    const radius = Math.min(...buttons.map(([bu, bv]) => ((u - bu) / .46) ** 2 + ((v - bv) / .12) ** 2));
+    const z = -.94 - .55 * v + .62 * u ** 4 * Math.sin(v * Math.PI * .9);
+    if (back) return [sx, sy, z - .46];
+    let radius = Infinity;
+    for (const [bu, bv] of buttons) radius = Math.min(radius, ((u - bu) / .46) ** 2 + ((v - bv) / .12) ** 2);
     // Intersecting diagonal folds form the diamonds between the recessed
     // buttons. The creases and pillows belong to one closed padded surface.
     const a = u / .46 + (v - .16) / .24, b = u / .46 - (v - .16) / .24;
     const dome = Math.abs(Math.sin(Math.PI * a) * Math.sin(Math.PI * b)) ** 1.5;
     const edge = Math.max(0, Math.min(1, v / .1, (1 - v) / .06));
     const padded = edge * (.025 + .175 * dome - .1 * Math.exp(-radius * 60));
-    return [sx, sy, -.94 - .55 * v + .62 * u ** 4 * Math.sin(v * Math.PI * .9) + (back ? -.46 : padded)];
+    return [sx, sy, z + padded];
   };
   const columns = 64, rows = 96, count = (columns + 1) * (rows + 1);
   for (let side = 0; side < 2; side++) for (let row = 0; row <= rows; row++) for (let col = 0; col <= columns; col++) {
@@ -91,7 +99,8 @@ export function createLoungeChair(leather: THREE.Material): THREE.Group {
   const originals = new Set<THREE.BufferGeometry>();
   for (const child of root.children as THREE.Mesh<THREE.BufferGeometry, THREE.Material>[]) {
     child.updateMatrix(); originals.add(child.geometry);
-    const transformed = child.geometry.clone().applyMatrix4(child.matrix);
+    // A derived geometry's clone constructs a default mesh before copying its buffers.
+    const transformed = new THREE.BufferGeometry().copy(child.geometry).applyMatrix4(child.matrix);
     const piece = transformed.index ? transformed : mergeVertices(transformed, 1e-6);
     if (piece !== transformed) transformed.dispose();
     const list = parts.get(child.material) ?? []; list.push(piece); parts.set(child.material, list);

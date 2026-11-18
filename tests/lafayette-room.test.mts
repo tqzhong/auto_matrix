@@ -11,6 +11,55 @@ import type { PodSetRenderer } from '../packages/client/src/engine/PodSetRendere
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
+test('Lafayette uploads Morpheus in rows and releases the partial allocation when the approach ends', t => {
+  class Bitmap { width = 2048; height = 2048; }
+  const previous = globalThis.ImageBitmap, bitmap = new Bitmap();
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  t.after(() => { if (previous) globalThis.ImageBitmap = previous; else Reflect.deleteProperty(globalThis, 'ImageBitmap'); });
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  const morpheus = new THREE.Group(), skin = new THREE.Texture(bitmap as unknown as ImageBitmap);
+  skin.flipY = false; skin.needsUpdate = true;
+  const face = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ map: skin }));
+  face.name = 'Anatomical_head_and_hands'; morpheus.add(face); morpheus.visible = false;
+  t.after(() => { film.dispose(); lighting.dispose(); face.geometry.dispose(); face.material.dispose(); skin.dispose(); });
+  const journey = { scene: 'm1_bug', actor: 'neo', meeting: { phase: 'outside' } } as FilmJourney;
+  const camera = new THREE.PerspectiveCamera(), source = skin.source;
+  const rows: number[] = [], complete: THREE.Texture[] = [], released: THREE.Texture[] = [];
+  const resident = new WeakMap<THREE.Texture, { __webglTexture: object; __version: number }>();
+  const renderer = {
+    extensions: { has: () => false }, info: { programs: [] }, capabilities: { maxTextureSize: 4096 },
+    properties: { get: (texture: THREE.Texture) => resident.get(texture) ?? {} },
+    state: { bindTexture() {}, unbindTexture() {} },
+    getContext: () => ({ pixelStorei() {}, generateMipmap() {},
+      texSubImage2D(_target: number, _level: number, _x: number, row: number, width: number, height: number,
+        _format: number, _type: number, image: Bitmap) {
+        assert.equal(image, bitmap); assert.deepEqual([width, height], [2048, 256]); rows.push(row);
+      } }),
+    initTexture(texture: THREE.Texture) {
+      resident.set(texture, { __webglTexture: {}, __version: texture.version });
+      if (texture.source.dataReady) complete.push(texture);
+      else texture.addEventListener('dispose', () => released.push(texture));
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const start = () => {
+    film['meeting'] = { update() {}, dispose() {} } as NonNullable<FilmSetRenderer['meeting']>;
+    film['preparedLafayette'] = { room: new FilmSetRenderer(new THREE.Scene()), lights: film['lafayetteRoomLights'](), meshes: [], programs: [] };
+  };
+  const prepare = () => film.prepareLafayette(renderer, camera, lighting, journey, undefined, morpheus);
+  start(); prepare();
+  assert.deepEqual(rows, [0], 'begin with one strip while the face remains hidden');
+  assert.equal(resident.has(skin), false);
+  film.update(undefined, undefined, 0);
+  assert.equal(released.length, 1); assert.notEqual(released[0], skin); assert.equal(skin.source, source);
+  rows.length = 0;
+  start();
+  for (let frame = 0; frame < 8; frame++) { prepare(); assert.equal(rows.length, frame + 1); }
+  assert.deepEqual(rows, [0, 256, 512, 768, 1024, 1280, 1536, 1792]);
+  assert.deepEqual(complete, [skin]); assert.equal(released.length, 2);
+  assert.equal(face.material.map, skin); assert.equal(skin.image, bitmap);
+  prepare(); assert.equal(rows.length, 8); assert.deepEqual(complete, [skin]);
+});
+
 test('Lafayette prepares the visible actor in batches with the room lights that are reused at arrival', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;

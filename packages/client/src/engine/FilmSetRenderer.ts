@@ -167,7 +167,7 @@ type LafayettePreparation = {
   programs: ColorProgram[];
   room?: FilmSetRenderer;
   roomSteps?: Generator<void>;
-  skin?: { texture: THREE.Texture; version: number; gpu: THREE.WebGLRenderer['properties'] };
+  skin?: { texture: THREE.Texture; version: number; gpu: THREE.WebGLRenderer['properties']; upload?: Generator<void, boolean> };
 };
 type ColorPreparation = {
   scene: THREE.Scene;
@@ -3281,11 +3281,18 @@ export class FilmSetRenderer {
     // The room's key light uses this map in the depth pass before Morpheus appears in the main view.
     const face = morpheus?.getObjectByName('Anatomical_head_and_hands');
     const texture = face instanceof THREE.Mesh && face.material instanceof THREE.MeshStandardMaterial ? face.material.map : null;
-    const skin = prepared.skin;
-    if (texture?.image && texture.version > 0 && (skin?.texture !== texture || skin.version !== texture.version || skin.gpu !== renderer.properties)) {
-      renderer.initTexture(texture);
-      prepared.skin = { texture, version: texture.version, gpu: renderer.properties };
+    let skin = prepared.skin;
+    if (skin && (skin.texture !== texture || skin.version !== texture.version || skin.gpu !== renderer.properties)) {
+      skin.upload?.return(false);
+      prepared.skin = skin = undefined;
     }
+    if (!skin && texture?.image && texture.version > 0) {
+      prepared.skin = skin = { texture, version: texture.version, gpu: renderer.properties };
+      const image = bitmapUploadImage(renderer, texture);
+      if (image) skin.upload = stageBitmapTexture(renderer, texture, image);
+      else renderer.initTexture(texture);
+    }
+    if (skin?.upload?.next().done) skin.upload = undefined;
   }
   private prepareLafayetteEntryShadow(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, morpheus?: THREE.Group): void {
     if (!morpheus || !renderer.extensions.has('KHR_parallel_shader_compile') || !renderer.shadowMap.enabled || renderer.shadowMap.type === THREE.VSMShadowMap) return;
@@ -3426,6 +3433,7 @@ export class FilmSetRenderer {
   }
   private cancelLafayettePreparation(): void {
     const prepared = this.preparedLafayette;
+    prepared?.skin?.upload?.return(false);
     if (prepared?.room) prepared.room.dispose();
     else prepared?.lights.shell.traverse(object => { if (object instanceof THREE.Light) object.dispose(); });
     this.preparedLafayette = undefined;
@@ -3627,7 +3635,10 @@ export class FilmSetRenderer {
         preparedBridge.bufferUpload?.return(undefined); preparedBridge.textureUpload?.return(false); preparedBridge.drawing?.lighting.dispose();
       }
       const lafayetteRoom = set?.id === 'film_lafayette' ? this.preparedLafayette : undefined;
-      if (lafayetteRoom) this.preparedLafayette = undefined;
+      if (lafayetteRoom) {
+        lafayetteRoom.skin?.upload?.return(false);
+        this.preparedLafayette = undefined;
+      }
       const preparedPods = set?.architecture === 'pods' && sceneId === 'm1_pod' && !journey?.visiting ? this.preparedPods : undefined;
       if (preparedPods) this.preparedPods = undefined;
       const awakening = this.preparedAwakening;

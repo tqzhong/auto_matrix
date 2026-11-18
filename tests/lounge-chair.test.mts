@@ -4,6 +4,26 @@ import * as THREE from 'three';
 import { CONSTRUCT, CONSTRUCT_FURNITURE, FILM_SETS, PILL_ROOM, filmBlocked, filmPosition } from '@auto_matrix/shared';
 import { createLoungeChair } from '../packages/client/src/engine/LoungeChair.js';
 
+test('the wingback uses one geometry per radius for its repeated rounded details', t => {
+  const radii = new Map<number, number>();
+  const attribute = THREE.SphereGeometry.prototype.setAttribute;
+  t.mock.method(THREE.SphereGeometry.prototype, 'setAttribute', function (this: THREE.SphereGeometry, name: string, value: THREE.BufferAttribute) {
+    if (name === 'position') {
+      const radius = this.parameters.radius;
+      radii.set(radius, (radii.get(radius) ?? 0) + 1);
+    }
+    return attribute.call(this, name, value);
+  });
+  const leather = new THREE.MeshStandardMaterial(), chair = createLoungeChair(leather);
+  t.after(() => {
+    chair.traverse(object => { if (object instanceof THREE.Mesh) { object.geometry.dispose(); if (object.material !== leather) object.material.dispose(); } });
+    leather.dispose();
+  });
+  assert.deepEqual([...radii.keys()].sort((a, b) => a - b), [.025, .038, .046, .072, .108, .285]);
+  assert.ok([...radii.values()].every(count => count === 1), 'each repeated sphere should use its original template');
+  assert.equal(chair.children.length, 4, 'keep the original material batches');
+});
+
 test('the wingback upholstery has deep tufted cushions and a closed padded rear', () => {
   const leather = new THREE.MeshStandardMaterial();
   const chair = createLoungeChair(leather); chair.updateMatrixWorld(true);
