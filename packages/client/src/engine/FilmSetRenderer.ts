@@ -50,6 +50,7 @@ import { MIRROR_FRAME, mirrorTime } from '@auto_matrix/shared';
 import { ambushApproachTarget, ambushEscapeTarget } from '@auto_matrix/shared';
 import { ORACLE_REQUEST, oracleRequestLocked, ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS, ORACLE_ENTRANCE, ORACLE_ENTRANCE_WALLS, oracleArrivalDoor, oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
+import { ORACLE_COURTYARD_SEAT_HEIGHT } from '../agents/CharacterMotion.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, OFFICE_RETREAT_WINDOW, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { OPENING_HOTEL, openingHotelBreachTime, openingHotelDoorAngle, openingHotelGlassBroken, openingHotelGlassTime, openingHotelHallOfficer, openingHotelHallTime, openingHotelLanded, openingHotelPhoneHeld, openingHotelPickupPose, openingHotelTraceTime, openingRoofGlassBroken, type OpeningHotelPickupGesture, type OpeningPursuitCast } from '@auto_matrix/shared';
 import { OPENING_ROOF_EXIT, OPENING_ROOF_STAIRS, openingRoofStairHeight } from '@auto_matrix/shared';
@@ -2363,7 +2364,7 @@ export class FilmSetRenderer {
     }
     if (journey.scene === 'm2_backup' && journey.step === 1 && journey.trinityTerminal?.phase === 'ready' && !this.preparedSecondOracle) return;
     const next = FILM_SCENE_BY_ID[cut.scene];
-    const teaEntry = next.id === 'm2_seraph', leVraiEntry = next.id === 'm2_merovingian';
+    const teaEntry = next.id === 'm2_seraph', courtyardEntry = next.id === 'm2_bench', leVraiEntry = next.id === 'm2_merovingian';
     const libraryEntry = next.id === 'm2_library', chateauEntry = next.id === 'm2_chateau';
     const garageEntry = next.id === 'm2_garage', architectEntry = next.id === 'm2_architect', medicalEntry = next.id === 'm2_medical';
     const helGarageEntry = next.id === 'm3_hel_garage';
@@ -2372,7 +2373,7 @@ export class FilmSetRenderer {
     const helEntry = helGarageEntry || helElevatorEntry;
     const logosEntry = next.id === 'm3_bane', hammerEntry = next.id === 'm3_hammer_tunnels';
     const shipEntry = logosEntry || hammerEntry;
-    const isolatedEntry = firstOracle || teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || architectEntry || medicalEntry || helEntry || shipEntry;
+    const isolatedEntry = firstOracle || teaEntry || courtyardEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || architectEntry || medicalEntry || helEntry || shipEntry;
     if (!this.preparedSecondOracle) {
       const set = FILM_SETS[next.set], { x, y, z } = set.center;
       const room = new FilmSetRenderer(new THREE.Scene());
@@ -2395,7 +2396,7 @@ export class FilmSetRenderer {
       for (const texture of prepared.room.textures) if (!texture.image) return;
       const room = prepared.room;
       const colors = this.colorPreparation(room.root, [], {
-        includeBasic: teaEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || medicalEntry || helEntry || shipEntry
+        includeBasic: teaEntry || courtyardEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || medicalEntry || helEntry || shipEntry
           || Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
         playerView: savedCut,
       });
@@ -2425,7 +2426,8 @@ export class FilmSetRenderer {
             || hammerEntry && (id === 'niobe' || id === 'roland');
           if ((detailed || medicalEntry && id === 'maggie') && !group.getObjectByName(`${id}-detailed-head`)) continue;
           if (detailed && !group.getObjectByName(`${id}-detailed-body`)) continue;
-          if (detailed || libraryEntry || garageEntry || architectEntry || medicalEntry || helEntry || shipEntry) {
+          if (courtyardEntry && id === 'oracle' && !group.getObjectByName('oracle-first-detailed-head')) continue;
+          if (detailed || courtyardEntry || libraryEntry || garageEntry || architectEntry || medicalEntry || helEntry || shipEntry) {
             meshes = this.colorMeshes(group.children, true);
           } else {
             meshes = [];
@@ -6813,11 +6815,14 @@ export class FilmSetRenderer {
     }
     for (const z of [-31, -7, 18]) this.box(this.mat(0x48514e), 2, .065, z, 31, .018, .1);
     // The Oracle's bench is the interaction anchor, with the folded lead in reach.
-    for (const z of [-20.8, -20, -19.2]) this.box(benchPaint, -9, 1.45, z, 4.5, .25, .67);
-    for (const y of [2.1, 2.7, 3.3]) this.box(benchPaint, -9, y, -21.12, 4.5, .48, .24);
+    const seat = ORACLE_COURTYARD_SEAT_HEIGHT;
+    for (const z of [-20.64, -20.16, -19.68]) this.box(benchPaint, -9, seat - .1, z, 4.5, .2, .44);
+    for (const y of [1.52, 2.08, 2.64]) this.box(benchPaint, -9, y, -21.05, 4.5, .48, .24);
     for (const x of [-11.1, -6.9]) {
-      this.box(iron, x, .78, -20, .23, 1.55, 1.7);
-      this.box(iron, x, 2.05, -19.6, .28, .18, 2.1);
+      this.box(iron, x, seat / 2, -20, .23, seat, 1.7);
+      this.box(iron, x, 1.45, -21.03, .15, 2.9, .18);
+      this.box(iron, x, 1.18, -19.3, .15, .55, .22);
+      this.box(iron, x, 1.5, -20, .28, .18, 2.4);
     }
     for (const x of [-15, -12, -2]) {
       const bird = new THREE.Group(); bird.userData.dynamic = true; bird.name = 'courtyard-startled-bird'; bird.position.set(x, 0, -14 + (x % 3)); this.root.add(bird);
@@ -6831,8 +6836,8 @@ export class FilmSetRenderer {
     this.mesh(new THREE.BoxGeometry(.42, .1, .42), iron, 0, .16, 0, staff);
     this.courtyardStaff = staff;
     const note = new THREE.Group(); note.userData.dynamic = true; note.name = 'oracle-second-folded-lead'; this.root.add(note);
-    this.mesh(new THREE.BoxGeometry(.7, .035, .48), this.white, -7.3, 1.65, -19.45, note).rotation.y = -.22;
-    this.mesh(new THREE.BoxGeometry(.45, .022, .018), iron, -7.3, 1.68, -19.23, note);
+    this.mesh(new THREE.BoxGeometry(.7, .035, .48), this.white, -7.3, seat + .018, -19.8, note).rotation.y = -.22;
+    this.mesh(new THREE.BoxGeometry(.45, .022, .018), iron, -7.3, seat + .048, -19.58, note);
     this.oracleLetter = note;
     for (const x of [8, 16]) {
       this.box(iron, x, 5.7, -17, .16, 11.4, .16);

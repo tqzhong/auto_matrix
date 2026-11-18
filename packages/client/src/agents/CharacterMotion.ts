@@ -96,6 +96,7 @@ export interface MotionInput {
   oracleRestored?: boolean;
   oracleRevolutions?: boolean;
   oracleKitchen?: boolean;
+  oracleBench?: boolean;
   oracleRequest?: import('@auto_matrix/shared').OracleRequestGesture;
   oracleLast?: import('@auto_matrix/shared').OracleLastGesture;
   baneInquiry?: import('@auto_matrix/shared').BaneInquiryGesture;
@@ -257,6 +258,8 @@ export function solveLeg(z: number, height: number): { hip: number; knee: number
   const hip = -Math.atan2(z, height) - Math.acos(clamp((upper * upper + reach * reach - lower * lower) / (2 * upper * reach), -1, 1));
   return { hip, knee, ankle: -hip - knee };
 }
+
+export const ORACLE_COURTYARD_SEAT_HEIGHT = .95;
 
 export const ARCHITECT_WALK_CYCLE = 2 * .75 / .62;
 
@@ -431,6 +434,15 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     return { legs: [0, 1].map(() => ({ hip: 0, knee: 0, ankle: 0 })),
       arms: [0, 1].map(i => ({ shoulder: .03, elbow: .08, outward: (i ? 1 : -1) * .14, grip: 0 })),
       hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.oracleBench) {
+    const hipHeight = ORACLE_COURTYARD_SEAT_HEIGHT + .31;
+    // The scene opens with the Oracle already seated, including on a paused load.
+    Object.assign(state, newMotion(), { seated: 1 });
+    return { legs: [0, 1].map(() => solveLeg(.94, hipHeight - .17)),
+      arms: [0, 1].map(i => ({ shoulder: -.43, elbow: -.82, outward: (i ? 1 : -1) * .12, grip: .05 })),
+      hipHeight, twist: 0, lean: .04, sway: 0, lunge: 0, roll: 0, headTurn: 0,
       moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
   }
   if (input.mobilStation && (input.seated || input.mobilSeat !== undefined && (input.mobilSeat > 0 || input.speed === 0))) {

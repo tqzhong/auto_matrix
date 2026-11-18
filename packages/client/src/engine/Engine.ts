@@ -448,7 +448,8 @@ export class Engine {
       || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_stop_sentinels' || meeting?.scene === 'm3_trainman_chase'
       || meeting?.scene === 'm3_hel_garage' || meeting?.scene === 'm3_maggie_discovery' || meeting?.scene === 'm3_bane');
     this.filmSets.prepareSecondOracle(this.renderer, this.camera, player?.id === meeting?.actor || resumeSecondOracle ? meeting : undefined,
-      id => (id === 'seraph' && meeting?.scene === 'm2_departure' || id === 'bane' && meeting?.scene === 'm3_maggie_discovery'
+      id => (id === 'seraph' && meeting?.scene === 'm2_departure' || id === 'oracle' && meeting?.scene === 'm2_backdoors'
+        || id === 'bane' && meeting?.scene === 'm3_maggie_discovery'
         || (id === 'niobe' || id === 'roland') && meeting?.scene === 'm3_bane')
         ? this.agentRenderer.getAgentDetail(id)
         : this.agentRenderer.getAgentHero(id) ?? (meeting?.scene === 'm2_burly' || meeting?.scene === 'm2_persephone'

@@ -1218,6 +1218,7 @@ export class AgentRenderer {
       input.oracleRevolutions = id === 'oracle' && state.currentLocation === 'film_oracle_home'
         && ['m3_oracle_request', 'm3_oracle_last', 'm3_oracle_absorbed'].includes(journey?.visiting ?? journey?.scene ?? '');
       input.oracleKitchen = id === 'oracle' && state.currentLocation === 'film_oracle_home' && !input.oracleRevolutions;
+      input.oracleBench = id === 'oracle' && scene === 'm2_bench' && state.currentLocation === 'film_oracle_courtyard' && input.seated;
       input.oracleRequest = state.currentAction?.parameters.oracleRequest as MotionInput['oracleRequest'];
       input.oracleLast = state.currentAction?.parameters.oracleLast as MotionInput['oracleLast'];
       input.baneInquiry = state.currentAction?.parameters.baneInquiry as MotionInput['baneInquiry'];
@@ -1258,7 +1259,8 @@ export class AgentRenderer {
       input.smithProjection = id === 'bane' && state.isInMatrix && state.faction === 'machines';
       input.prepareDetailedCast = !journey?.visiting && (this.playerId === journey?.actor
         && (id === 'hamann' && journey?.scene === 'm2_bane_copy' && (journey.step > 2 || journey.step === 2 && (journey.baneCopy?.progress ?? 0) >= .2)
-          || id === 'seraph' && journey?.scene === 'm2_departure' && journey.step >= 4)
+          || id === 'seraph' && journey?.scene === 'm2_departure' && journey.step >= 4
+          || id === 'oracle' && journey?.scene === 'm2_backdoors' && journey.step >= 1)
         || id === 'keymaker' && (journey?.scene === 'm2_persephone' && journey.step >= 3
           || journey?.scene === 'm2_mountain' && journey.step >= 2)
           && (!this.playerId || this.playerId === journey.actor)

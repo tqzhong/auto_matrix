@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { BURLY, FILM_SCENE_BY_ID, FILM_SETS, HEL_ELEVATOR, filmEntry, helElevatorFloor, newCatch, newGarageEscape, newHelGarage, newMaggieDiscovery, newTrainmanChase, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { BURLY, FILM_SCENE_BY_ID, FILM_SETS, HEL_ELEVATOR, SERAPH_ORACLE, filmEntry, filmPosition, helElevatorFloor, newCatch, newGarageEscape, newHelGarage, newMaggieDiscovery, newTrainmanChase, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
@@ -109,6 +110,21 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     enter('m2_seraph', 0);
     assert.equal(scene.getObjectByName(door.name), door);
     assert.equal(pointSlots(scene), slots);
+  });
+
+  await t.test('the courtyard prepares the offstage Oracle once her first head arrives', t => {
+    const oracle = new THREE.Group(), outfit = new THREE.Mesh(body.geometry, body.material);
+    oracle.visible = false; oracle.add(outfit); libraryCast.set('oracle', oracle);
+    t.after(() => { libraryCast.delete('oracle'); enter('m2_departure', 3); prepare(); preview = undefined; });
+    enter('m2_backdoors', 1);
+    warm('oracle-second-folded-lead');
+    assert.ok(!compiled.has(outfit), 'wait for the first Oracle head with the courtyard cast');
+
+    const head = new THREE.Group(), face = new THREE.Mesh(body.geometry, body.material);
+    head.name = 'oracle-first-detailed-head'; head.add(face); oracle.add(head);
+    for (let i = 0; i < 100; i++) prepare();
+    assert.ok(compiled.has(outfit) && compiled.has(face), 'prepare the actual Oracle body and head before the courtyard cut');
+    assert.equal(oracle.visible, false);
   });
 
   enter('m2_departure', 3); prepare(); assert.ok(!preview);
@@ -642,6 +658,59 @@ test('the tea house renders its occupants and leaves actors elsewhere in the wor
 
   renderer.update(.02);
   assert.equal(renderer.getAgent('agent_jones')!.visible, true);
+});
+
+test('a paused courtyard save restores the Oracle against the actual bench and floor', t => {
+  const previous = globalThis.document;
+  const context = { fillRect() {}, strokeRect() {}, fillText() {}, putImageData() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }) };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  t.after(() => { globalThis.document = previous; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const scene = new THREE.Scene(), renderer = new AgentRenderer(scene), sets = new FilmSetRenderer(scene), world = new WorldState();
+  t.after(() => { renderer.dispose(); sets.dispose(); });
+  new AgentManager(world).initializeAllAgents();
+  const beat = FILM_SCENE_BY_ID.m2_bench, neo = world.agents.get('neo')!, oracle = world.agents.get('oracle')!;
+  const { bench, oracle: chair } = SERAPH_ORACLE.yard;
+  Object.assign(neo, { position: filmPosition(beat.set, bench.x, bench.z), currentLocation: beat.set, isInMatrix: true });
+  Object.assign(oracle, { position: filmPosition(beat.set, chair.x, chair.z), currentLocation: beat.set, isInMatrix: true, rotation: 0,
+    currentAction: { type: 'idle', parameters: { seated: true }, startedAt: 0, duration: 100000, progress: .01 } });
+  const journey: FilmJourney = { version: 1, scene: beat.id, actor: 'neo', step: 1, completed: ['m2_backdoors'],
+    enteredAt: 0, checkpoint: neo.position, reflections: {}, lastText: '' };
+  const sandbox = { neoLife: { journey } } as SandboxState, camera = new THREE.PerspectiveCamera();
+  camera.position.set(neo.position.x, neo.position.y + 2, neo.position.z);
+  renderer.updateAgent('neo', neo); renderer.updateAgent('oracle', oracle); renderer.setPlayer('neo');
+  sets.update(neo, sandbox, 0); renderer.update(0, camera, 0, 0, journey); scene.updateMatrixWorld(true);
+  const rig = renderer['agents'].get('oracle')!.rig, point = new THREE.Vector3();
+  const down = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0));
+  const floor = sets.root.position.y;
+  const topAt = (x: number, z: number) => {
+    down.ray.origin.set(x, floor + 3, z);
+    return down.intersectObject(sets.root, true)[0]?.point.y ?? floor;
+  };
+  assert.equal(rig.motion.seated, 1, 'the first paused frame must honor the saved seated action');
+  for (let i = 0; i < rig.hips.length; i++) {
+    const hip = rig.hips[i].getWorldPosition(new THREE.Vector3()), knee = rig.knees[i].getWorldPosition(new THREE.Vector3());
+    const seat = topAt(hip.x, hip.z);
+    assert.ok(hip.y - seat > .19 && hip.y - seat < .32);
+    assert.ok(knee.z - hip.z > .75 && topAt(knee.x, knee.z) < seat - .45, 'the knees clear the front slat');
+    assert.ok(Math.abs(new THREE.Box3().setFromObject(rig.ankles[i], true).min.y - floor) < .03, 'the shoes rest on the floor');
+    const trousers = rig.hips[i].children.find(object => object instanceof THREE.SkinnedMesh) as THREE.SkinnedMesh;
+    const positions = trousers.geometry.getAttribute('position');
+    let lowest = Infinity;
+    for (let vertex = 0; vertex < positions.count; vertex++) {
+      if (positions.getY(vertex) < -.58) continue;
+      trousers.localToWorld(trousers.getVertexPosition(vertex, point));
+      if (Math.abs(topAt(point.x, point.z) - seat) < .01) lowest = Math.min(lowest, point.y - seat);
+    }
+    assert.ok(lowest > -.025 && lowest < .07, `the upper leg sits on the slats with ${lowest} clearance`);
+  }
+
+  oracle.currentAction = null;
+  renderer.updateAgent('oracle', oracle);
+  for (let i = 0; i < 75; i++) renderer.update(.016, camera, 1, 1, journey);
+  assert.ok(rig.motion.seated < .01, 'clearing the seated action releases the pose for departure');
 });
 
 test('the first Smith copies reuse the actor model cache and take their prepared rigs from the pool', t => {
