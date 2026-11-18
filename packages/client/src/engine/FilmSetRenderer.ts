@@ -4788,12 +4788,25 @@ export class FilmSetRenderer {
   private imageMaterial(id: string, fallback: number, repeat = false, tint = 0xffffff): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color: fallback, roughness: .96 });
     const materials = this.materials; materials.add(material);
+    const apply = (texture: THREE.Texture) => {
+      if (!materials.has(material)) return;
+      material.map = texture; material.color.setHex(tint); material.needsUpdate = true;
+    };
+    const key = `image:${id}:${repeat}`;
+    const cached = this.hotelSurfaceSources.get(key);
+    if (cached) {
+      if (cached.texture.image) apply(cached.texture);
+      else cached.onLoad.push(() => apply(cached.texture));
+      return material;
+    }
+    const onLoad: (() => void)[] = [];
     const texture = new THREE.TextureLoader().load(`/assets/film-materials/${id}.jpg`, loaded => {
       if (!materials.has(material)) { loaded.dispose(); return; }
-      material.map = loaded; material.color.setHex(tint); material.needsUpdate = true;
+      apply(loaded); onLoad.splice(0).forEach(ready => ready());
     });
     texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8;
     if (repeat) texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    this.hotelSurfaceSources.set(key, { texture, onLoad });
     this.textures.add(texture); return material;
   }
   private mesh(geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number, parent = this.root): THREE.Mesh {

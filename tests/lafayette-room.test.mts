@@ -470,7 +470,16 @@ test('Lafayette uses the room-owned construction buffers for the two chairs and 
 });
 
 test('Lafayette windows, fireplace and tracking passage have matching visible geometry and access', t => {
-  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  let wallpaperLoads = 0;
+  let wallpaper: THREE.Texture | undefined, finishWallpaper: (() => void) | undefined;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string, onLoad?: (texture: THREE.Texture) => void) => {
+    const texture = new THREE.Texture();
+    if (url.endsWith('/lafayette-wallpaper-v1.jpg')) {
+      wallpaperLoads++; wallpaper = texture;
+      finishWallpaper = () => onLoad?.(texture);
+    }
+    return texture;
+  });
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} }) }) } as unknown as Document;
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -478,6 +487,16 @@ test('Lafayette windows, fireplace and tracking passage have matching visible ge
   const renderer = new FilmSetRenderer(new THREE.Scene());
   try {
     renderer.update(neo, undefined, 0); renderer.root.updateMatrixWorld(true);
+    assert.equal(wallpaperLoads, 1, 'wallpaper should be requested once per room');
+    const panels = new Set<THREE.MeshStandardMaterial>();
+    renderer.root.traverse(object => {
+      if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
+        && object.material.color.getHex() === 0x5b6251) panels.add(object.material);
+    });
+    assert.equal(panels.size, 2);
+    assert.ok(finishWallpaper && wallpaper);
+    finishWallpaper();
+    assert.ok([...panels].every(material => material.map === wallpaper && material.color.getHex() === 0xa0a58e));
     const ray = new THREE.Raycaster();
     const blockers = (point: THREE.Vector3, direction: THREE.Vector3, distance: number) => {
       ray.set(renderer.root.localToWorld(point), direction); ray.far = distance;
