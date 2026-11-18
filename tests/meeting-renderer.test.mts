@@ -170,9 +170,15 @@ test('bridge preparation builds the street over several steps and adopts the sam
 });
 
 test('the bridge prepares cast buffers, both shadow layouts and the rain programs before entry', t => {
-  const document = globalThis.document;
+  const document = globalThis.document, previousBitmap = globalThis.ImageBitmap;
+  class Bitmap { width = 2048; height = 2048; }
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
-  t.after(() => { globalThis.document = document; });
+  t.after(() => {
+    globalThis.document = document;
+    if (previousBitmap) globalThis.ImageBitmap = previousBitmap;
+    else Reflect.deleteProperty(globalThis, 'ImageBitmap');
+  });
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(), sun = new THREE.DirectionalLight(), roomLamp = new THREE.SpotLight();
   sun.castShadow = roomLamp.castShadow = true; scene.add(sun, roomLamp);
@@ -185,19 +191,38 @@ test('the bridge prepares cast buffers, both shadow layouts and the rain program
   t.after(() => { geometry.dispose(); surface.dispose(); });
   const jacket = new THREE.SkinnedMesh(geometry, surface); jacket.name = 'Tailored_coat_upper'; jacket.visible = false; jacket.castShadow = true; actor.add(jacket);
   jacket.bind(new THREE.Skeleton(), new THREE.Matrix4());
-  const tail = new THREE.Group(), tailGeometry = new THREE.BoxGeometry(), tailMesh = new THREE.Mesh(tailGeometry, surface); tail.add(tailMesh);
-  t.after(() => tailGeometry.dispose());
-  const journey = { scene: 'm1_wake_again', actor: 'neo', wakeCall: { phase: 'leaving' } } as FilmJourney;
+  const [hair, bump] = [new Bitmap(), new Bitmap()].map(image => {
+    const texture = new THREE.Texture(image); texture.flipY = false; texture.needsUpdate = true; return texture;
+  });
+  const tail = new THREE.Group(), tailGeometry = new THREE.BoxGeometry(), tailSurface = new THREE.MeshStandardMaterial({ map: hair, bumpMap: bump });
+  const tailMesh = new THREE.Mesh(tailGeometry, tailSurface); tailMesh.name = 'short04'; tail.add(tailMesh);
+  t.after(() => { tailGeometry.dispose(); tailSurface.dispose(); hair.dispose(); bump.dispose(); });
+  const journey = { scene: 'm1_wake_again', actor: 'neo', wakeCall: { phase: 'pickup' } } as FilmJourney;
   let target: THREE.WebGLRenderTarget | null = null, onLanding = true;
   const depth = new Map<THREE.MeshDepthMaterial, Set<string>>(), effects = new Map<string, THREE.Object3D>();
   const uploaded = new Map<THREE.BufferGeometry, number>();
+  const textures = new WeakMap<THREE.Texture, { __version: number; __webglTexture: object }>();
+  const rowsByImage = new Map<Bitmap, number>();
+  let frameRows = 0, frameSubmissions = 0;
   const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  const gl = { LINK_STATUS: 0x8b82, TEXTURE_2D: 0x0de1, UNPACK_SKIP_ROWS: 0x0cf3, RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
+    getProgramParameter: () => true, pixelStorei() {}, generateMipmap() {},
+    texSubImage2D(_target: number, _level: number, _x: number, y: number, width: number, height: number,
+      _format: number, _type: number, image: Bitmap) {
+      assert.deepEqual([width, y, height], [2048, rowsByImage.get(image) ?? 0, 256]);
+      frameRows++; rowsByImage.set(image, y + height);
+    },
+  };
   const renderer = {
-    properties: { get: () => ({}) }, info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
+    properties: { get: (texture: THREE.Texture) => textures.get(texture) ?? {} },
+    info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true }, capabilities: { maxTextureSize: 4096 },
     shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
+    state: { bindTexture() {}, unbindTexture() {} },
+    initTexture(texture: THREE.Texture) { textures.set(texture, { __version: texture.version, __webglTexture: {} }); },
     getRenderTarget: () => target, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
     setRenderTarget: (value: typeof target) => { target = value; },
     render(bufferScene: THREE.Scene) {
+      frameSubmissions++;
       assert.ok(bufferScene.children.length <= 4);
       for (const object of bufferScene.children) if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
         assert.equal((object.material as THREE.Material).visible, false);
@@ -206,8 +231,9 @@ test('the bridge prepares cast buffers, both shadow layouts and the rain program
         uploaded.set(object.geometry, (uploaded.get(object.geometry) ?? 0) + 1);
       }
     },
-    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    getContext: () => gl,
     compile(subject: THREE.Object3D, _eye: THREE.Camera, view: THREE.Scene) {
+      frameSubmissions++;
       let points = 0, spots = 0, directional = 0;
       view.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; if (object instanceof THREE.SpotLight) spots++; if (object instanceof THREE.DirectionalLight) directional++; });
       if (view.fog) assert.equal(directional, 2, 'the landing prepares both player light slots before possession');
@@ -225,14 +251,23 @@ test('the bridge prepares cast buffers, both shadow layouts and the rain program
           effects.set(object.name || 'rain', object); entersProgram = true;
         }
       });
-      if (entersProgram) programs.push({ program: {}, isReady: () => true, getUniforms() { reflected++; } });
+      if (entersProgram) programs.push({ program: {}, isReady: () => true, getUniforms() { reflected++; frameSubmissions++; } });
     },
   } as unknown as THREE.WebGLRenderer;
   let reflected = 0;
-  for (let frame = 0; frame < 120; frame++) {
+  for (let frame = 0; frame < 144; frame++) {
     onLanding = frame < 60; fill.visible = !onLanding;
+    frameRows = frameSubmissions = 0;
     film.prepareBridge(renderer, camera, journey, id => id === 'neo' ? actor : undefined, sun, undefined, lighting,
       frame >= 92 ? tail : undefined, onLanding);
+    if (frameRows > 0) {
+      assert.equal(frameRows, 1, 'submit one strip on a live handset frame');
+      assert.equal(frameSubmissions, 0, 'do not stack detached shader or buffer work with a live handset upload');
+    }
+  }
+  for (const texture of [hair, bump]) {
+    assert.equal(rowsByImage.get(texture.image), 2048, 'finish the original texture before entry');
+    assert.equal(textures.get(texture)?.__version, texture.version);
   }
   assert(depth.size >= 3);
   assert([...depth.values()].every(layouts => layouts.has('4/1') && layouts.has('12/7')));

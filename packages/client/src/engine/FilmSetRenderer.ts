@@ -1024,7 +1024,8 @@ export class FilmSetRenderer {
         hairMaps.add(mesh.material.map);
     }
     const batches = savedBridge ? 4 : 1;
-    const stagingHair = this.prepareStagedColorTexture(renderer, prepared, hairMaps, 2 * batches);
+    const stagingHair = this.prepareStagedColorTexture(renderer, prepared, hairMaps, resume ? 2 * batches : 1);
+    if (stagingHair && !resume) return;
     if (savedBridge) {
       while (!prepared.renderer.prepareStep()) { /* Build the saved set on the landing before it can be adopted. */ }
     } else if (!prepared.renderer.prepareStep()) return;
@@ -1087,6 +1088,7 @@ export class FilmSetRenderer {
       if (geometries.has(mesh.geometry)) continue;
       buffers.push(mesh); geometries.add(mesh.geometry);
     }
+    if (!resume && this.prepareStagedColorTexture(renderer, prepared, colors.textures)) return;
     const ready = Array.from(readyPrograms).slice(0, batches);
     // Give each completed link a frame before reflecting its uniforms.
     if (parallel) colors.programs = colors.programs.filter(program => {
@@ -1108,7 +1110,7 @@ export class FilmSetRenderer {
     if (buffers.length) prepared.bufferUpload ??= prepareMeshBuffers(renderer, eye, buffers);
     for (let batch = 0; batch < batches && prepared.bufferUpload; batch++)
       if (prepared.bufferUpload.next().done) prepared.bufferUpload = undefined;
-    if (!stagingHair) for (let batch = 0; batch < batches; batch++)
+    if (resume && !stagingHair) for (let batch = 0; batch < batches; batch++)
       if (!this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) break;
   }
   private prepareBridgeApproach(renderer: THREE.WebGLRenderer, camera: THREE.Camera, cast: (THREE.Group | undefined)[],
