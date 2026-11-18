@@ -89,6 +89,28 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     assert.equal(coat.visible, false);
   });
 
+  await t.test('a boarded save keeps the tea house built on the landing screen through possession', t => {
+    t.after(() => { journey.completed.pop(); enter('m2_departure', 3); prepare(); preview = undefined; });
+    enter('m2_departure', 4);
+    sets.update(undefined, sandbox, 0);
+    preview = undefined;
+    for (let i = 0; i < 120; i++) prepare(true);
+    assert.ok(!preview, 'the landing page waits until boarding is complete');
+
+    const boarded = FILM_SCENE_BY_ID.m2_departure.steps.length;
+    journey.step = boarded;
+    journey.completed.push('m2_departure');
+    const saved = structuredClone(journey);
+    const door = warm('m2_seraph-keyed-door', true);
+    const slots = pointSlots(preview!);
+    assert.deepEqual(journey, saved);
+    enter('m2_departure', boarded);
+    assert.equal(scene.getObjectByName(door.name), undefined);
+    enter('m2_seraph', 0);
+    assert.equal(scene.getObjectByName(door.name), door);
+    assert.equal(pointSlots(scene), slots);
+  });
+
   enter('m2_departure', 3); prepare(); assert.ok(!preview);
   enter('m2_departure', 4);
   const teaDoor = warm('m2_seraph-keyed-door');
@@ -590,6 +612,36 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   const restored = scene.getObjectByName(teaDoor.name);
   assert.ok(restored && restored !== abandoned);
   assert.equal(restored.parent!.rotation.y, -Math.PI / 2);
+});
+
+test('the tea house renders its occupants and leaves actors elsewhere in the world offstage', t => {
+  const previous = globalThis.document;
+  const context = { fillRect() {}, strokeRect() {}, fillText() {}, putImageData() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }) };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  t.after(() => { globalThis.document = previous; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(HeroModels.prototype, 'create', async () => undefined);
+  t.mock.method(CharacterModels.prototype, 'animate', () => {});
+  const renderer = new AgentRenderer(new THREE.Scene()), world = new WorldState();
+  t.after(() => renderer.dispose());
+  new AgentManager(world).initializeAllAgents();
+  const tea = FILM_SCENE_BY_ID.m2_seraph, hotel = FILM_SCENE_BY_ID.m1_room303;
+  for (const [id, beat] of [['neo', tea], ['seraph', tea], ['agent_jones', hotel]] as const) {
+    const state = world.agents.get(id)!;
+    Object.assign(state, { position: filmEntry(beat), currentLocation: beat.set, isInMatrix: true });
+    renderer.updateAgent(id, state);
+  }
+  renderer.setPlayer('neo');
+  const journey: FilmJourney = { version: 1, scene: tea.id, actor: 'neo', step: 0, completed: ['m2_departure'],
+    enteredAt: 0, checkpoint: filmEntry(tea), reflections: {}, lastText: '' };
+  renderer.update(.02, undefined, 1, 0, journey);
+  assert.equal(renderer.getAgent('neo')!.visible, true);
+  assert.equal(renderer.getAgent('seraph')!.visible, true);
+  assert.equal(renderer.getAgent('agent_jones')!.visible, false);
+
+  renderer.update(.02);
+  assert.equal(renderer.getAgent('agent_jones')!.visible, true);
 });
 
 test('the first Smith copies reuse the actor model cache and take their prepared rigs from the pool', t => {

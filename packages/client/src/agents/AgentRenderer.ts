@@ -686,11 +686,12 @@ export class AgentRenderer {
     const playerSet = player && this.playerId === journey?.actor && player.isInMatrix === this.matrix
       && ((scene === 'm1_pod' || scene === 'm1_sentinels') && !this.matrix
         || (scene === 'm1_construct' || scene === 'm1_truth_exit' || scene === 'm1_jump' || scene === 'm1_red_dress' || scene === 'm1_bullet_dodge'
-          || scene === 'm2_meeting' && player.currentLocation === 'film_captains_meeting') && this.matrix)
+          || scene === 'm2_meeting' && player.currentLocation === 'film_captains_meeting'
+          || scene === 'm2_seraph' && player.currentLocation === 'film_seraph_teahouse') && this.matrix)
       ? filmSetAt(player.position, this.matrix)?.id : undefined;
     const isolatedSet = playerSet === 'film_power_plant_pods' || playerSet === 'film_white_construct'
       || playerSet === 'film_jump_roofs' || playerSet === 'film_red_dress_plaza' || playerSet === 'film_service_tunnels'
-      || playerSet === 'film_government_roof' || playerSet === 'film_captains_meeting' ? playerSet : undefined;
+      || playerSet === 'film_government_roof' || playerSet === 'film_captains_meeting' || playerSet === 'film_seraph_teahouse' ? playerSet : undefined;
     const roof = journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     const roofExit = player?.currentAction?.parameters.roofExit as MotionInput['roofExit'];
     const rooftopRun = openingSet === 'film_hotel_roofs' && roof?.phase === 'running' && !roofExit
