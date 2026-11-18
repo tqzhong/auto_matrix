@@ -3287,6 +3287,13 @@ export class PlayerControls {
       const pitch = interview?.pinned ? THREE.MathUtils.lerp(this.pitch, -Math.PI / 2 + this.pitch * .6, interview.pinned)
         : THREE.MathUtils.lerp(this.pitch, .67, reload);
       this.camera.lookAt(target.x + Math.sin(this.yaw) * Math.cos(pitch), target.y - Math.sin(pitch), target.z + Math.cos(this.yaw) * Math.cos(pitch));
+    } else if (this.motion.persephone?.role === 'neo' && this.motion.persephone.phase === 'enacting'
+      && state.currentLocation === 'film_le_vrai' && !this.dragging && now - this.lastLook > 700) {
+      // Keep the eye and both actors on the inside of the washroom screen.
+      const { center } = FILM_SETS.film_le_vrai;
+      const eye = new THREE.Vector3(center.x + 23.65, center.y + 3.35, center.z + (this.camera.aspect < .85 ? 28.3 : 27.2));
+      this.camera.position.lerp(eye, resetCamera ? 1 : 1 - Math.exp(-10 * delta));
+      this.camera.lookAt(center.x + 22.75, center.y + 2.45, center.z + 22.15);
     } else if (bookDoor?.role === 'neo' && ['reaching', 'unlatching', 'grasping', 'opening', 'releasing'].includes(bookDoor.phase)
       && !this.dragging && now - this.lastLook > 700) {
       // Look through the opening from the side of Neo as the contact moves with the shelf.

@@ -2403,7 +2403,8 @@ export class FilmSetRenderer {
       for (const texture of room.architectRoom?.screenTextures ?? []) colors.textures.add(texture);
       prepared.colors = { ...colors, actors: new Set(), preserveStockSkinning: helElevatorEntry };
       if (isolatedEntry) {
-        colors.meshes.push(this.marker);
+        if (libraryEntry) colors.meshes.unshift(this.marker);
+        else colors.meshes.push(this.marker);
         if (room.chateauVolley) colors.meshes.push(...this.colorMeshes(room.chateauVolley.children));
         prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
         if (medicalEntry || shipEntry) prepared.liveMeshes = [this.marker];
@@ -2444,13 +2445,16 @@ export class FilmSetRenderer {
             garments.forEach(mesh => prepared.room.materials.add(mesh.material));
           }
           if (!meshes.length && !garments.length) continue;
-          colors.actors.add(group); colors.meshes.unshift(...meshes, ...garments);
+          colors.actors.add(group);
+          // Keep the first objective ahead of arriving cast meshes on a quick office handoff.
+          const start = libraryEntry && colors.meshes[0] === this.marker ? 1 : 0;
+          colors.meshes.splice(start, 0, ...meshes, ...garments);
           this.queueColorTextures(colors.textures, [...meshes, ...garments]);
           prepared.liveMeshes?.push(...meshes);
         }
         const deferBindings = garageEntry || architectEntry || medicalEntry || helEntry || shipEntry;
         this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated', deferBindings,
-          prepared.liveMeshes ?? (deferBindings ? [this.marker] : undefined));
+          prepared.liveMeshes ?? (deferBindings || libraryEntry ? [this.marker] : undefined));
         this.prepareStagedColorTexture(renderer, prepared, colors.textures, 4);
         return;
       }

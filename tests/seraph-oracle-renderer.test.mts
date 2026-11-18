@@ -191,9 +191,12 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     libraryCast.set('cain', cain); libraryCast.set('keymaker', keymaker);
     t.after(() => { libraryCast.clear(); enter('m2_persephone', 2); prepare(); physical.dispose(); });
     enter('m2_persephone', 4);
-    warm('keymaker-book-door');
-    assert(compiled.has(guard), 'prepare the hidden guard with the library lights');
-    assert(compiled.has(sets.goalMarker), 'prepare the objective ring before the cut');
+    compiled.clear();
+    for (let i = 0; i < 120 && !compiled.size; i++) prepare();
+    assert([...compiled][0] === sets.goalMarker, 'the first preparation batch starts with the entry objective');
+    for (let i = 0; i < 120; i++) prepare();
+    assert(preview?.getObjectByName('keymaker-book-door'));
+    assert(compiled.has(body) && compiled.has(guard), 'prepare the player and hidden guard with the library lights');
     const detailed = ['body', 'head'].map(part => {
       const mesh = new THREE.Mesh(body.geometry, body.material);
       mesh.name = 'keymaker-detailed-' + part; keymaker.add(mesh); return mesh;
@@ -630,7 +633,7 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   assert.equal(restored.parent!.rotation.y, -Math.PI / 2);
 });
 
-test('the tea house renders its occupants and leaves actors elsewhere in the world offstage', t => {
+test('the tea house and library render their occupants and leave actors elsewhere offstage', t => {
   const previous = globalThis.document;
   const context = { fillRect() {}, strokeRect() {}, fillText() {}, putImageData() {}, createRadialGradient: () => ({ addColorStop() {} }),
     createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }) };
@@ -655,6 +658,21 @@ test('the tea house renders its occupants and leaves actors elsewhere in the wor
   assert.equal(renderer.getAgent('neo')!.visible, true);
   assert.equal(renderer.getAgent('seraph')!.visible, true);
   assert.equal(renderer.getAgent('agent_jones')!.visible, false);
+
+  renderer.update(.02);
+  assert.equal(renderer.getAgent('agent_jones')!.visible, true);
+
+  const library = FILM_SCENE_BY_ID.m2_library;
+  for (const id of ['neo', 'keymaker']) {
+    const state = world.agents.get(id)!;
+    Object.assign(state, { position: filmEntry(library), currentLocation: library.set, isInMatrix: true });
+    renderer.updateAgent(id, state);
+  }
+  Object.assign(journey, { scene: library.id, checkpoint: filmEntry(library) });
+  renderer.update(.02, undefined, 1, 0, journey);
+  assert.equal(renderer.getAgent('neo')!.visible, true);
+  assert.equal(renderer.getAgent('keymaker')!.visible, true);
+  assert.equal(renderer.getAgent('agent_jones')!.visible, false, 'an actor outside the library must not enter its draw lists');
 
   renderer.update(.02);
   assert.equal(renderer.getAgent('agent_jones')!.visible, true);

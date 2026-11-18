@@ -115,6 +115,48 @@ test('the cold Oracle return camera cannot put the apartment lintel between Neo 
   } finally { renderer.dispose(); }
 });
 
+test('the resumed Le Vrai exchange keeps both actors in view past the washroom partition', t => {
+  const game = setup(t, .9), room = 'film_le_vrai';
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  game.document.createElement = () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {},
+    beginPath() {}, closePath() {}, moveTo() {}, lineTo() {}, stroke() {}, ellipse() {}, fill() {} }) });
+  const performance = { phase: 'enacting' as const, role: 'neo' as const, route: 'memory' as const, elapsed: .73, attempts: 1 };
+  Object.assign(game.state, { position: filmPosition(room, 22.1, 21.8), currentLocation: room, isAwakened: true,
+    currentAction: { type: 'idle', parameters: { persephone: performance }, startedAt: 8867, duration: 1, progress: 0 } });
+  const journey: FilmJourney = { version: 1, scene: 'm2_persephone', actor: 'neo', step: 2, persephone: performance,
+    enteredAt: 8842, completed: [], reflections: {}, lastText: '', checkpoint: game.state.position };
+  const renderer = new FilmSetRenderer(new THREE.Scene());
+  t.after(() => renderer.dispose());
+  renderer.update(game.state, { neoLife: { journey }, structures: [] } as unknown as SandboxState, 0);
+  renderer.root.updateWorldMatrix(true, true);
+  const before = structuredClone(game.state);
+  for (const aspect of [16 / 9, 720 / 1024]) {
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.3, .05, false);
+    game.camera.updateMatrixWorld(true);
+    for (const [x, z] of [[22.1, 21.8], [23.4, 22.5]]) for (const height of [2.15, 3.15]) {
+      const target = new THREE.Vector3().copy(filmPosition(room, x, z)); target.y += height;
+      const direction = target.clone().sub(game.camera.position);
+      const blocked = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - .05)
+        .intersectObject(renderer.root, true).some(hit => hit.object.visible);
+      assert.equal(blocked, false, `washroom geometry blocks ${x}/${z} at height ${height} and aspect ${aspect}`);
+      const screen = target.project(game.camera);
+      assert.ok(Math.abs(screen.x) < .85 && Math.abs(screen.y) < .9 && Math.abs(screen.z) < 1);
+    }
+    const third = game.camera.position.clone();
+    game.key('KeyV'); game.key('KeyV', false); game.step(.1, .05, false);
+    assert.ok(game.controls.firstPerson && game.camera.position.distanceTo(third) > 1);
+    assert.ok(Math.abs(angle(game.yaw(), game.state.rotation)) < .02, 'V preserves the player eye direction');
+    game.key('KeyV'); game.key('KeyV', false);
+    game.step(.75, .05, false);
+    game.document.pointerLockElement = game.canvas;
+    const framedYaw = game.yaw();
+    game.event(game.document, 'mousemove', { movementX: 180, movementY: 0 }); game.step(.1, .05, false);
+    assert.ok(Math.abs(angle(game.yaw(), framedYaw)) > .3, 'the player can look away during the exchange');
+    game.document.pointerLockElement = null;
+  }
+  assert.deepEqual(game.state, before);
+});
+
 test('Mobil reunion keeps both saved partners in the third-person frame and V preserves free first-person look', t => {
   const game = setup(t), center = FILM_SETS.film_mobil_station.center;
   const reunion: MobilReunion = { phase: 'embracing', elapsed: 3.25,
