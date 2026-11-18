@@ -362,11 +362,13 @@ export class AgentRenderer {
     this.wellsCastPreparation?.steps?.return(undefined);
     this.wellsCastPreparation = undefined;
   }
-  prepareOpeningApartmentActor(): boolean {
+  prepareOpeningApartmentActor(resumeDeparture = false): boolean {
     const neo = this.agents.get('neo'), hero = neo?.rig.hero;
     if (!neo || !hero || neo.rig.detail.visible || this.preparedOpeningApartment.has(hero.root)) return false;
     const state = neo.state;
-    if (!state.isInMatrix || state.status !== 'alive' || state.controller || state.currentAction
+    const call = state.currentAction?.parameters.wakeCall as MotionInput['wakeCall'];
+    if (!state.isInMatrix || state.status !== 'alive' || state.controller
+      || state.currentAction && !(resumeDeparture && call?.phase === 'leaving')
       || !['neo_apartment', 'film_anderson_flat'].includes(state.currentLocation)) return false;
     // Only prepare the loaded offstage rig. The distant representation and actor clock stay live.
     this.models.prepareApartmentIdle(hero);

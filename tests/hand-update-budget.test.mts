@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { WebGLAttributes } from 'three/src/renderers/webgl/WebGLAttributes.js';
+import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, wakeCallRoot } from '@auto_matrix/shared';
 import { actor } from './helpers/fighting-hand-fixture.mjs';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
+import { HandCurve } from '../packages/client/src/agents/HandCurve.js';
 
 test('the offstage Neo pose avoids deforming both hands on the first apartment frame', async t => {
   const warm = await actor('neo'), cold = await actor('neo');
@@ -36,6 +38,51 @@ test('the offstage Neo pose avoids deforming both hands on the first apartment f
   assert.equal(renderer.prepareOpeningApartmentActor(), false);
   const skin = (h: typeof warm) => h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
   for (const [name, tolerance] of [['position', 1e-6], ['normal', 1e-5], ['skinIndex', 0], ['skinWeight', 0]] as const) {
+    const a = skin(warm).geometry.getAttribute(name).array, b = skin(cold).geometry.getAttribute(name).array;
+    assert.equal(a.length, b.length);
+    for (let i = 0; i < a.length; i++) assert.ok(Math.abs(a[i] - b[i]) <= tolerance, `${name} at ${i}`);
+  }
+});
+
+test('second-call departure prepares the idle hand shape offstage before the bridge first draws', async t => {
+  const warm = await actor('neo'), cold = await actor('neo');
+  t.after(() => { warm.models.dispose(); cold.models.dispose(); });
+  const call = { phase: 'leaving' as const, elapsed: 2.443, nightmare: true };
+  const action = { type: 'idle', parameters: { wakeCall: call }, startedAt: 1300, duration: 1, progress: 0 };
+  const state = { currentLocation: 'film_anderson_flat', controller: null as string | null, currentAction: action, status: 'alive', isInMatrix: true };
+  const detail = new THREE.Group(), motion = newMotion(); detail.add(warm.rig.root);
+  const renderer = Object.assign(Object.create(AgentRenderer.prototype), {
+    agents: new Map([['neo', { state, rig: { detail, hero: warm.rig, motion } }]]),
+    models: Object.assign(Object.create(CharacterModels.prototype), { heroes: warm.models }),
+    preparedOpeningApartment: new WeakSet(),
+  }) as AgentRenderer;
+  assert.equal(renderer.prepareOpeningApartmentActor(true), false, 'keep the visible actor in the saved door animation');
+  detail.visible = false; state.controller = 'other-player';
+  assert.equal(renderer.prepareOpeningApartmentActor(true), false, 'another player owns the body');
+  state.controller = null;
+  assert.equal(renderer.prepareOpeningApartmentActor(), false, 'ordinary apartment preparation still rejects story actions');
+  state.currentAction = { ...action, parameters: { wakeCall: { ...call, phase: 'listening' } } } as typeof action;
+  assert.equal(renderer.prepareOpeningApartmentActor(true), false, 'only prepare the saved departure');
+  state.currentAction = action;
+  const before = JSON.stringify({ state, motion });
+  assert.equal(renderer.prepareOpeningApartmentActor(true), true, 'prepare the loaded offstage departure before possession');
+  assert.equal(JSON.stringify({ state, motion }), before, 'preparation must not advance the saved action or actor clock');
+  assert.equal(renderer.prepareOpeningApartmentActor(true), false, 'prepare each loaded model once');
+  const center = FILM_SETS.film_anderson_flat.center, at = wakeCallRoot(call), entry = filmEntry(FILM_SCENE_BY_ID.m1_bridge);
+  for (const h of [warm, cold]) {
+    h.rig.root.position.set(center.x + at.x, center.y - 1, center.z + at.z); h.rig.root.rotation.y = at.yaw;
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, homeClothes: true, glasses: false, wakeCall: call }, clock = newMotion();
+    h.models.animate(h.rig, advanceMotion(clock, input, 0), clock, input, 0);
+    h.rig.root.position.copy(entry); h.rig.root.rotation.y = Math.PI;
+  }
+  const sample = t.mock.method(HandCurve.prototype, 'sample');
+  const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, homeClothes: false, glasses: false };
+  for (const h of [warm, cold]) {
+    const clock = newMotion(); h.models.animate(h.rig, advanceMotion(clock, input, 0), clock, input, 0);
+    if (h === warm) { assert.equal(sample.mock.callCount(), 0, 'the first bridge frame reuses the prepared finger curves'); sample.mock.restore(); }
+  }
+  for (const [name, tolerance] of [['position', 1e-6], ['normal', 1e-5], ['skinIndex', 0], ['skinWeight', 0]] as const) {
+    const skin = (h: typeof warm) => h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
     const a = skin(warm).geometry.getAttribute(name).array, b = skin(cold).geometry.getAttribute(name).array;
     assert.equal(a.length, b.length);
     for (let i = 0; i < a.length; i++) assert.ok(Math.abs(a[i] - b[i]) <= tolerance, `${name} at ${i}`);

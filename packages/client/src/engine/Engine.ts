@@ -320,6 +320,7 @@ export class Engine {
     const openingPhone = liveMatrixJourney?.scene === 'm1_phone_escape' ? liveMatrixJourney.openingPhone : undefined;
     const openingHandoff = openingPhone?.phase === 'connected' || openingPhone?.phase === 'done';
     const resumeApartment = resumeOnLanding && meeting?.scene === 'm1_wake_up';
+    const resumeBridge = resumeOnLanding && meeting?.scene === 'm1_wake_again';
     const savedWells = resumeOnLanding && meeting?.scene === 'm1_phone_escape' ? meeting.openingPhone : undefined;
     // Pose the offstage Neo after Wells first draws, or while the save is still on the landing screen.
     const apartmentPosePhone = filmSet?.id === 'film_wells_phone' && filmSet === previousSet ? openingPhone : savedWells;
@@ -334,6 +335,7 @@ export class Engine {
     this.filmSets.prepareWellsCastPrograms(this.renderer, this.camera, this.lightCulling, openingPhone, wellsCast);
     const preparingApartment = preparingWellsCast
       || (openingHandoff || resumeApartment || apartmentPosePhone && apartmentPosePhone.phase !== 'failed') && this.agentRenderer.prepareOpeningApartmentActor()
+      || resumeBridge && this.agentRenderer.prepareOpeningApartmentActor(true)
       || this.voxelRenderer.interiors.prepareApartmentReturn(this.renderer, this.camera, this.scene, this.sandbox?.neoLife, neoAtHome,
       apartmentCast ? [this.agentRenderer.getAgentHero('choi'), this.agentRenderer.getAgentHero('dujour'),
         this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentDistant('neo')]
@@ -358,7 +360,6 @@ export class Engine {
         id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareInterrogation(this.renderer, this.camera, liveMatrixJourney,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
-    const resumeBridge = resumeOnLanding && meeting?.scene === 'm1_wake_again';
     this.filmSets.prepareBridge(this.renderer, this.camera, liveMatrixJourney ?? (resumeBridge ? meeting : undefined),
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id),
       this.lightingSystem.directionalLight, this.agentRenderer.getAgentShadow('neo'), this.lightCulling,
