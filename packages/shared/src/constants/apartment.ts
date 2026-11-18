@@ -68,11 +68,13 @@ export function apartmentSleepWeight(contact: ApartmentContact): number {
   if (contact.phase === 'arrival') return 1;
   return contact.phase === 'signal' ? 1 - smooth(Math.max(0, Math.min(1, (contact.elapsed - .55) / 1.05))) : 0;
 }
-export function savedSeatedApartmentAction(contact: ApartmentContact | undefined, action: AgentState['currentAction'], role: string): boolean {
-  if (contact?.chairMotion !== 'seated' || !apartmentAtComputer(contact.phase) || action?.type !== 'idle') return false;
+export function savedApartmentIdle(journey: FilmJourney | undefined, action: AgentState['currentAction'], role: string): boolean {
+  const contact = journey?.contact;
+  if (!contact || journey.scene !== 'm1_wake_up' || journey.visiting || action?.type !== 'idle' || action.parameters.resolved !== true) return false;
+  if (role === journey.actor && (!apartmentLocked(journey) || action.parameters.player !== true)) return false;
   const saved = action.parameters.contact as ApartmentGesture | undefined;
   return saved?.role === role && saved.phase === contact.phase && saved.elapsed === contact.elapsed
-    && saved.chairMotion === contact.chairMotion && saved.propMotion === contact.propMotion;
+    && saved.chairMotion === contact.chairMotion && saved.propMotion === contact.propMotion && saved.paid === contact.paid;
 }
 function computerFoot(t: number, side: 'R' | 'L') {
   const sign = side === 'R' ? 1 : -1;

@@ -19,6 +19,7 @@ import { garageCarPose, garageRiderPose, newGarageEscape, stepGarageEscape } fro
 import { CATCH, catchRoot, catchText, newCatch, type CatchEncounter } from '@auto_matrix/shared';
 import { morningRoot, morningText, morningWakePose, type MorningRoutine } from '@auto_matrix/shared';
 import { wakeCallRoot, wakeCallText, type WakeCall } from '@auto_matrix/shared';
+import { APARTMENT, apartmentText, type ApartmentContact } from '@auto_matrix/shared';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fingerprint = (data: string) => createHash('sha256').update(data).digest('hex');
@@ -550,6 +551,48 @@ for (const [mode, phase] of [['commute', 'travel'], ['daily', 'closing'], ['lega
     const deadline = Date.now() + 5000;
     while ((await client.world()).agents.neo.controller) {
       assert.ok(Date.now() < deadline, 'the paused passenger was not released'); await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    check(await client.world()); await server.stop();
+  });
+}
+
+for (const savedAction of ['matching', 'missing', 'stale'] as const) {
+  test(`paused apartment disc retrieval restores ${savedAction} cast actions`, { timeout: 30000 }, async context => {
+    const savedFixture = await fixture(context, 'm1_wake_up', 'contact-book');
+    const { checkpoint } = savedFixture, journey = checkpoint.sandbox.neoLife.journey;
+    const contact: ApartmentContact = { phase: 'retrieving', elapsed: .984, chairMotion: 'stepping', propMotion: 'minidisc' };
+    journey.contact = contact; journey.lastText = apartmentText(contact);
+    const roles = ['neo', 'choi', 'dujour'] as const;
+    const expected = roles.map(role => {
+      const actor = checkpoint.agents[role], pose = APARTMENT[role === 'neo' ? 'book' : role];
+      actor.position = filmPosition(FILM_SCENE_BY_ID.m1_wake_up.set, pose.x, pose.z); actor.rotation = pose.yaw;
+      actor.velocity = { x: 0, y: 0, z: 0 };
+      const parameters = { ...(role === 'neo' ? { player: true } : {}), resolved: true, contact: { ...contact, role } };
+      const recovered = { type: 'idle', parameters, startedAt: checkpoint.tick, duration: 1, progress: 0 };
+      const saved = { ...recovered, startedAt: checkpoint.tick - 1, progress: role === 'neo' ? 0 : 1 };
+      actor.currentAction = savedAction === 'matching' ? saved : savedAction === 'missing' ? null
+        : { ...saved, parameters: { ...parameters, contact: { ...parameters.contact, elapsed: .1 } } };
+      return savedAction === 'matching' ? saved : recovered;
+    });
+    journey.checkpoint = { ...checkpoint.agents.neo.position };
+    checkpoint.simulation = { running: false, speed: 1 };
+    await writeFile(savedFixture.file, JSON.stringify(checkpoint));
+    const check = (state: WorldStateFull) => {
+      assert.equal(state.simulation!.running, false); assert.equal(state.simulation!.tick, checkpoint.tick);
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.contact, contact);
+      for (const [index, role] of roles.entries()) {
+        assert.deepEqual(state.agents[role].currentAction, expected[index], `${role} must keep its saved or reconstructed performance`);
+        assert.deepEqual(state.agents[role].position, checkpoint.agents[role].position);
+        assert.equal(state.agents[role].rotation, checkpoint.agents[role].rotation);
+      }
+    };
+    const server = start(context, savedFixture.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+    const client = await controls(context, server);
+    check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+    client.socket.disconnect();
+    const deadline = Date.now() + 5000;
+    while ((await client.world()).agents.neo.controller) {
+      assert.ok(Date.now() < deadline, 'the paused actor must be released'); await new Promise(resolve => setTimeout(resolve, 20));
     }
     check(await client.world()); await server.stop();
   });

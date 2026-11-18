@@ -2,7 +2,7 @@ import { savedSeraphDoorAction } from './story/SeraphDoorSystem.js';
 import { savedChateauAction, savedMountainAction } from './story/ChateauMountainPose.js';
 import { savedBookDoorAction } from './story/BookDoorSystem.js';
 import { savedPersephoneAction } from './story/PersephonePose.js';
-import { SERAPH_DOOR_ROLES, openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneHeld, openingHotelTraceTime, savedSeatedApartmentAction, seraphDoorActive } from '@auto_matrix/shared';
+import { SERAPH_DOOR_ROLES, openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneHeld, openingHotelTraceTime, savedApartmentIdle, seraphDoorActive } from '@auto_matrix/shared';
 import express from 'express';
 import { createServer } from 'node:http';
 import path from 'node:path';
@@ -429,7 +429,7 @@ async function main(): Promise<void> {
         || checkpoint.simulation?.running === false && savedOraclePropAction(journey, agent.state)
         || checkpoint.simulation?.running === false && savedEngineeringAction(journey, agent.state)
         || workdayLocked(journey) && savedWorkdayIdle(journey.workday, agent.state.currentAction)
-        || savedSeatedApartmentAction(journey.contact, agent.state.currentAction, id)
+        || savedApartmentIdle(journey, agent.state.currentAction, id)
         || heldPhone(journey) && agent.state.currentAction?.type === 'idle' && agent.state.currentAction.parameters.phone
         || windowOpening(journey) && agent.state.currentAction?.parameters.window !== undefined
         || windowCrossing(journey) && agent.state.currentAction?.parameters.crossing !== undefined

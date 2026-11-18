@@ -98,7 +98,7 @@ import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interroga
 import { BRIDGE_TAIL, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_CAST, MEETING_DRIVE_SECONDS, MEETING_TIMING, bridgeArrivalPose, meetingBoardPoint, meetingCarPose, meetingLocked, meetingRollRoadTime, meetingRoot, type MeetingEncounter, type MeetingGesture } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText, type OfficeWorkday, type OfficeWorkdayGesture } from '@auto_matrix/shared';
-import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentAtComputer, apartmentComputerPose, apartmentText, savedSeatedApartmentAction, wakeCallDoor, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, insideLifeRoom, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
+import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentAtComputer, apartmentComputerPose, apartmentText, savedApartmentIdle, wakeCallDoor, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, insideLifeRoom, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
 import { MORNING, morningLocked, morningRoot, morningWakePose, morningText, type FilmJourney } from '@auto_matrix/shared';
 import { SENTINEL_CAST, SENTINEL_TIMING, SENTINEL_POWER, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
@@ -2046,13 +2046,13 @@ export class FilmStorySystem {
       const pose = actor.id === 'choi' ? APARTMENT.choi : APARTMENT.dujour;
       this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
       if (actor.id === 'dujour' && apartmentAfter(contact, 'invitation')) actor.rotation = pose.yaw + (.35 - pose.yaw) * (contact.phase === 'invitation' ? Math.min(1, contact.elapsed / 2) : 1);
-      actor.currentAction = dt === 0 && savedSeatedApartmentAction(contact, saved, actor.id) ? saved
+      actor.currentAction = dt === 0 && savedApartmentIdle(state, saved, actor.id) ? saved
         : { type: 'idle', parameters: { resolved: true, contact: { ...contact, role: actor.id } }, startedAt: tick, duration: 1, progress: 0 };
     }
     if (apartmentLocked(state)) {
       const pose = apartmentAtComputer(contact.phase) ? apartmentComputerPose(contact) : contact.phase === 'retrieving' ? contact.propMotion === 'minidisc' ? APARTMENT.book : { x: 6, z: 3.95, yaw: 0 } : contact.phase === 'opening' ? { x: 1.4, z: 10.6, yaw: 0 } : APARTMENT.door;
       agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.rotation = pose.yaw; agent.velocity = { x: 0, y: 0, z: 0 };
-      if (dt > 0 || !savedSeatedApartmentAction(contact, agent.currentAction, 'neo'))
+      if (dt > 0 || !savedApartmentIdle(state, agent.currentAction, 'neo'))
         agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, contact: { ...contact, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
       state.checkpoint = { ...agent.position };
     }
