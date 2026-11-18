@@ -60,6 +60,61 @@ test('Lafayette uploads Morpheus in rows and releases the partial allocation whe
   prepare(); assert.equal(rows.length, 8); assert.deepEqual(complete, [skin]);
 });
 
+test('Lafayette stages the retained Trinity face map before the lower hallway reveals it', t => {
+  class Bitmap { width = 2048; height = 2048; }
+  const previous = globalThis.ImageBitmap, image = new Bitmap();
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  const trinity = new THREE.Group(), skin = new THREE.Texture(image);
+  skin.flipY = false; skin.needsUpdate = true;
+  const source = skin.source, face = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ map: skin }));
+  face.name = 'Anatomical_head_and_hands'; trinity.add(face); trinity.visible = false;
+  const agents = Object.assign(Object.create(AgentRenderer.prototype), { getAgentHero: (id: string) => id === 'trinity' ? trinity : undefined }) as AgentRenderer;
+  const rows: number[] = [], released: THREE.Texture[] = [];
+  const allocations = new Map<THREE.Source, object>();
+  const resident = new WeakMap<THREE.Texture, { __webglTexture: object }>();
+  const gpu = {
+    properties: { get: (texture: THREE.Texture) => resident.get(texture) ?? {} },
+    capabilities: { maxTextureSize: 4096 }, state: { bindTexture() {}, unbindTexture() {} },
+    getContext: () => ({ pixelStorei() {}, generateMipmap() {},
+      texSubImage2D(_target: number, _level: number, _x: number, row: number, width: number, height: number,
+        _format: number, _type: number, bitmap: Bitmap) {
+        assert.equal(bitmap, image); assert.deepEqual([width, height], [2048, 256]); rows.push(row);
+      } }),
+    initTexture(texture: THREE.Texture) {
+      if (!texture.source.dataReady) {
+        assert.equal(allocations.has(texture.source), false);
+        allocations.set(texture.source, {});
+        texture.addEventListener('dispose', () => released.push(texture));
+      }
+      const allocation = allocations.get(texture.source);
+      assert.ok(allocation);
+      resident.set(texture, { __webglTexture: allocation });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const journey = { scene: 'm1_pills', actor: 'neo', step: 0, hotel: { progress: 0 } } as FilmJourney;
+  const prepare = (value?: FilmJourney) => agents.prepareLafayetteGuideTextures?.(gpu, value);
+  t.after(() => {
+    prepare(); face.geometry.dispose(); face.material.dispose(); skin.dispose();
+    if (previous) globalThis.ImageBitmap = previous;
+    else Reflect.deleteProperty(globalThis, 'ImageBitmap');
+  });
+  prepare({ ...journey, visiting: 'm1_pills' });
+  assert.deepEqual(rows, []);
+  prepare(journey);
+  assert.deepEqual(rows, [0], 'a lower hallway save should begin with a single 256-row upload');
+  assert.equal(resident.has(skin), false);
+  prepare();
+  assert.equal(released.length, 1); assert.equal(skin.source, source);
+  rows.length = 0;
+  for (let frame = 0; frame < 8; frame++) { prepare(journey); assert.equal(rows.length, frame + 1); }
+  assert.deepEqual(rows, [0, 256, 512, 768, 1024, 1280, 1536, 1792]);
+  assert.equal(released.length, 2);
+  assert.equal(resident.get(skin)?.__webglTexture, resident.get(released[1])?.__webglTexture);
+  assert.equal(face.material.map, skin); assert.equal(skin.image, image); assert.equal(trinity.visible, false);
+  prepare(journey); prepare(); prepare(journey);
+  assert.equal(rows.length, 8);
+});
+
 test('Lafayette prepares the visible actor in batches with the room lights that are reused at arrival', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;

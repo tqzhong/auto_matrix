@@ -101,6 +101,7 @@ export class AgentRenderer {
   private models = new CharacterModels();
   private preparedOpeningApartment = new WeakSet<THREE.Group>();
   private preparedLafayetteGuide = new WeakSet<THREE.Group>();
+  private lafayetteGuideTextures?: { gpu: THREE.WebGLRenderer['properties']; trinity: THREE.Group; steps?: Generator<void> };
   private hotelCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; pursuit: boolean; heroes: THREE.Group[]; steps?: Generator<void> };
   private cityChasePreparation?: { gpu: THREE.WebGLRenderer['properties']; smith: THREE.Group; steps?: Generator<void> };
   private wellsCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; heroes: THREE.Group[]; meshes: THREE.Mesh[]; steps?: Generator<void> };
@@ -362,6 +363,22 @@ export class AgentRenderer {
   private cancelWellsCastPreparation(): void {
     this.wellsCastPreparation?.steps?.return(undefined);
     this.wellsCastPreparation = undefined;
+  }
+  prepareLafayetteGuideTextures(renderer: THREE.WebGLRenderer, journey?: FilmJourney): void {
+    const trinity = journey?.scene === 'm1_pills' && !journey.visiting && journey.step === 0 && !journey.hotel?.entered
+      ? this.getAgentHero('trinity') : undefined;
+    if (!trinity) { this.cancelLafayetteGuideTextures(); return; }
+    let prepared = this.lafayetteGuideTextures;
+    if (!prepared || prepared.trinity !== trinity || prepared.gpu !== renderer.properties) {
+      this.cancelLafayetteGuideTextures();
+      this.lafayetteGuideTextures = prepared = { gpu: renderer.properties, trinity,
+        steps: this.prepareCastMaps(renderer, [trinity], ['Anatomical_head_and_hands']) };
+    }
+    if (prepared.steps?.next().done) prepared.steps = undefined;
+  }
+  private cancelLafayetteGuideTextures(): void {
+    this.lafayetteGuideTextures?.steps?.return(undefined);
+    this.lafayetteGuideTextures = undefined;
   }
   prepareOpeningApartmentActor(resumeDeparture = false): boolean {
     const neo = this.agents.get('neo'), hero = neo?.rig.hero;
@@ -1681,6 +1698,7 @@ export class AgentRenderer {
     this.agents.delete(id);
   }
   dispose(): void {
+    this.cancelLafayetteGuideTextures();
     this.cancelOpeningHotelTextures();
     this.cancelCityChaseTextures();
     this.cancelWellsCastPreparation();

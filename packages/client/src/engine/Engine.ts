@@ -310,6 +310,7 @@ export class Engine {
     this.sandboxRenderer.showOpeningHotelHall(openingHotelHallTime(openingHotel, openingTrace));
     const onLanding = !this.playerControls?.id && !meeting?.visiting && document.body.classList.contains('landing');
     const resumeOnLanding = this.matrix && onLanding;
+    this.agentRenderer.prepareLafayetteGuideTextures(this.renderer, liveMatrixJourney ?? (resumeOnLanding ? meeting : undefined));
     const lafayettePhase = meeting?.scene === 'm1_bug' ? meeting.meeting?.phase : undefined;
     if (resumeOnLanding && (lafayettePhase === 'parked' || lafayettePhase === 'exiting' || lafayettePhase === 'outside')
       || lafayettePhase === 'outside' && liveMatrixJourney === meeting && filmSet === previousSet)
