@@ -78,7 +78,7 @@ export class GovernmentSetRenderer {
   private light(light: THREE.Light, parent = this.group): THREE.Light { this.lights.add(light); parent.add(light); return light; }
 
   private buildOffice(): void {
-    this.box(this.group, this.carpet, 0, -.18, 0, 48, .36, 54, 'government-office-floor');
+    this.box(this.group, this.carpet, 0, -.18, 0, 48, .36, AIR_RESCUE.office.floorDepth, 'government-office-floor');
     this.box(this.group, this.white, 0, 13.7, 0, 48, .45, 54, 'government-office-ceiling');
     for (const x of [-23.7, 23.7]) this.box(this.group, this.darkConcrete, x, 6.8, 0, .6, 13.6, 54);
     this.box(this.group, this.darkConcrete, 0, 6.8, 26.7, 48, 13.6, .6);

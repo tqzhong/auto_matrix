@@ -25,6 +25,7 @@ export type AirRescueGesture = AirRescueEncounter & { role: AirRescueRole };
 export const AIR_RESCUE = {
   office: {
     flightZ: -41.5,
+    floorDepth: 54,
     approach: 2.6,
     fire: 3.6,
     leapAt: .8,

@@ -1448,8 +1448,15 @@ export class AgentRenderer {
         const head = entry.rig.hero?.bones.get('head') ?? entry.rig.head;
         head.rotation.x = -1.05 * truckPose.airborne;
       }
+      // The floor-plane shadow has no receiver beyond the rescue ledges.
+      const outsideRescueOffice = input.airRescue?.kind === 'office' && state.currentLocation === 'film_government_office'
+        && entry.group.position.z < FILM_SETS.film_government_office.center.z - AIR_RESCUE.office.floorDepth / 2;
+      const outsideRescueRoof = input.airRescue?.kind === 'roof' && state.currentLocation === 'film_government_roof'
+        && entry.group.position.x < FILM_SETS.film_government_roof.center.x + AIR_RESCUE.roof.parapet.x - AIR_RESCUE.roof.parapet.width / 2;
       entry.shadow.position.y = floor - entry.group.position.y - .97;
-      entry.shadow.visible = !input.oracleRestored && !sixthRoot?.hidden && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !mountainFlying && !catchFlying && !coma && !pod && !epilogueCarried && !input.truckPassenger && !input.wetwall?.hanging;
+      entry.shadow.visible = !input.oracleRestored && !sixthRoot?.hidden && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel
+        && !mountainFlying && !catchFlying && !coma && !pod && !epilogueCarried && !input.truckPassenger && !input.wetwall?.hanging
+        && !outsideRescueOffice && !outsideRescueRoof;
       entry.shadow.scale.setScalar(1 + Math.max(0, entry.group.position.y - floor) * .04);
       const selected = id === this.selected;
       entry.label.visible = !physical && !sixthRoot?.hidden && id !== this.playerId && state.status === 'alive' && !state.currentAction?.parameters.filmDuel && (selected || (!this.playerId && dist < 90 && (['neo', 'trinity', 'smith', 'morpheus'].includes(id) || state.currentAction?.type === 'talk_to')));

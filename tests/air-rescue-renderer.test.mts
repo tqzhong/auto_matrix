@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { AIR_RESCUE, airRescueRoot, type AirRescueEncounter, type CombatImpact, type FilmJourney } from '@auto_matrix/shared';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { AIR_RESCUE, FILM_SETS, airRescueRoot, type AirRescueEncounter, type AirRescueRole, type CombatImpact, type FilmJourney } from '@auto_matrix/shared';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import type { GameAudio } from '../packages/client/src/engine/GameAudio.js';
 import { GovernmentSetRenderer } from '../packages/client/src/engine/GovernmentSetRenderer.js';
 import { GunfireEffects } from '../packages/client/src/engine/GunfireEffects.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
 
 const journey = (scene: 'm1_helicopter' | 'm1_rooftop_rescue'): FilmJourney => ({
   version: 1, scene, actor: 'neo', step: 0, completed: [], enteredAt: 0,
@@ -125,6 +129,37 @@ test('the rooftop cast stays clear of the HVAC and the pull lifts Trinity over t
   state.elapsed = AIR_RESCUE.roof.pulling;
   const trinity = airRescueRoot(state, 'trinity'), neo = airRescueRoot(state, 'neo');
   assert.ok(Math.hypot(trinity.x - neo.x, trinity.z - neo.z) >= 1.8);
+});
+
+test('the rescue cast loses its contact shadows beyond the facade and regains them on the roof', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {},
+    fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
+  }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actors = new AgentRenderer(new THREE.Scene());
+  t.after(() => { actors.dispose(); globalThis.document = document; });
+  const shadows = (scene: 'm1_helicopter' | 'm1_rooftop_rescue', phase: AirRescueEncounter['phase'], elapsed: number, roles: AirRescueRole[]) => {
+    const story = journey(scene), rescue = story.airRescue!;
+    Object.assign(rescue, { phase, elapsed });
+    const set = FILM_SETS[rescue.kind === 'office' ? 'film_government_office' : 'film_government_roof'];
+    for (const role of roles) {
+      const pose = airRescueRoot(rescue, role), actor = world.agents.get(role)!;
+      actor.currentLocation = set.id; actor.isInMatrix = true; actor.rotation = pose.yaw;
+      actor.position = { x: set.center.x + pose.x, y: set.center.y + pose.y, z: set.center.z + pose.z };
+      actor.currentAction = { type: 'idle', startedAt: 0, duration: 1, progress: 0, parameters: { airRescue: { ...rescue, role } } };
+      actors.updateAgent(role, actor);
+    }
+    actors.update(0, undefined, 0, 0, story);
+    return roles.map(role => actors.getAgentShadow(role)!.visible);
+  };
+  const office = shadows('m1_helicopter', 'catching', 2, ['neo', 'morpheus', 'trinity', 'smith']);
+  const hanging = shadows('m1_rooftop_rescue', 'pulling', 3, ['trinity', 'neo', 'morpheus']);
+  const landed = shadows('m1_rooftop_rescue', 'done', AIR_RESCUE.roof.pulling, ['trinity', 'neo', 'morpheus']);
+  assert.deepEqual([office, hanging, landed], [[false, false, false, true], [false, true, true], [true, true, true]]);
 });
 
 test('the mounted minigun impact keeps debris and tracers while using the authored flash light', t => {
