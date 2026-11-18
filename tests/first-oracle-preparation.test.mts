@@ -46,8 +46,8 @@ function fixture(t: TestContext) {
     },
     initTexture(map: THREE.Texture) { work.push('texture'); uploads.push(map); uploaded.set(map, map.version); },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = () => {
-    const count = work.length; film.prepareSecondOracle(gpu, camera, journey, id => actors.get(id));
+  const prepare = (resume = false) => {
+    const count = work.length; film.prepareSecondOracle(gpu, camera, journey, id => actors.get(id), resume);
     const frame = work.slice(count);
     assert.ok(frame.filter(item => item === 'compile' || item === 'bindings').length <= 1);
     assert.ok(frame.filter(item => item === 'texture').length <= 1 && frame.filter(item => item === 'strip').length <= 4);
@@ -107,6 +107,26 @@ test('first Oracle preparation rebuilds GPU bindings and releases cancellation r
   const room = [...h.rooms][0], mesh = room.getObjectByName('oracle-floating-alphabet-blocks')!.getObjectByProperty('isMesh', true) as THREE.Mesh;
   let disposed = 0; mesh.geometry.addEventListener('dispose', () => disposed++);
   h.journey.scene = 'm1_construct'; h.prepare(); assert.equal(disposed, 1); assert.equal(room.parent, null);
+});
+
+test('a completed meal save prepares the apartment on the landing page and carries its door into play', t => {
+  const h = fixture(t);
+  Object.assign(h.film, { current: undefined, currentScene: undefined });
+  h.journey.actor = 'neo'; h.journey.step = 2; h.journey.interlude!.phase = 'done'; h.journey.interlude!.elapsed = 10.9;
+  h.ready();
+  for (let i = 0; i < 160; i++) h.prepare(true);
+  const door = [...h.rooms][0]?.getObjectByName('oracle-apartment-door');
+  assert.ok(door, 'the apartment is prepared before Neo is possessed');
+
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  Object.assign(neo, { position: { ...FILM_SETS.film_neb_deck.center }, currentLocation: 'film_neb_deck', isInMatrix: false });
+  h.film.update(neo, { structures: [], neoLife: { journey: h.journey } } as unknown as SandboxState, 0);
+  h.prepare();
+  const arrival = { ...h.journey, scene: 'm1_spoon', step: 0, interlude: undefined } as FilmJourney;
+  Object.assign(neo, { position: { ...FILM_SETS.film_oracle_home.center }, currentLocation: 'film_oracle_home', isInMatrix: true });
+  h.film.update(neo, { structures: [], neoLife: { journey: arrival } } as unknown as SandboxState, 0);
+  assert.equal(h.film.root.getObjectByName('oracle-apartment-door'), door);
 });
 
 test('entering the Oracle apartment adopts its original interactive props and releases them once', t => {

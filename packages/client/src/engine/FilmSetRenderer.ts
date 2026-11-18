@@ -2349,7 +2349,7 @@ export class FilmSetRenderer {
     const approachingGarage = journey?.scene !== 'm2_mountain' || flight?.phase === 'arrived'
       || flight?.phase === 'flying' && flight.z <= MOUNTAIN.launch.z - 30;
     const atSource = journey && cut && this.currentScene === journey.scene && this.current?.id === FILM_SCENE_BY_ID[journey.scene].set;
-    const savedCut = resume && !this.current && (journey?.scene === 'm2_persephone' || journey?.scene === 'm2_mountain'
+    const savedCut = resume && !this.current && (firstOracle || journey?.scene === 'm2_persephone' || journey?.scene === 'm2_mountain'
       || journey?.scene === 'm2_key_door' || journey?.scene === 'm2_stop_sentinels' || journey?.scene === 'm3_trainman_chase'
       || journey?.scene === 'm3_hel_garage' || journey?.scene === 'm3_maggie_discovery' || journey?.scene === 'm3_bane');
     if (!journey || !cut || journey.visiting || journey.step < cut.step || (!atSource && !savedCut) || !approachingGarage

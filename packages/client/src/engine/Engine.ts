@@ -442,7 +442,7 @@ export class Engine {
     const resumeMeal = onLanding && meeting?.scene === 'm1_steak';
     this.filmSets.prepareMeal(this.renderer, this.camera, player?.id === meeting?.actor || resumeMeal ? meeting : undefined,
       id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling, resumeMeal);
-    const resumeSecondOracle = resumeOnLanding && (meeting?.scene === 'm2_persephone' || meeting?.scene === 'm2_mountain'
+    const resumeSecondOracle = onLanding && meeting?.scene === 'm1_meal' || resumeOnLanding && (meeting?.scene === 'm2_persephone' || meeting?.scene === 'm2_mountain'
       || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_stop_sentinels' || meeting?.scene === 'm3_trainman_chase'
       || meeting?.scene === 'm3_hel_garage' || meeting?.scene === 'm3_maggie_discovery' || meeting?.scene === 'm3_bane');
     this.filmSets.prepareSecondOracle(this.renderer, this.camera, player?.id === meeting?.actor || resumeSecondOracle ? meeting : undefined,
