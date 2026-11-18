@@ -17,8 +17,15 @@ import { CREW_MEAL } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
 function posedNeedleSurface(source: THREE.SkinnedMesh, geometry = source.geometry): (ray: THREE.Raycaster) => THREE.Vector3 | undefined {
-  const skin = geometry === source.geometry ? source : source.clone(false);
-  skin.geometry = geometry; skin.matrixWorld.copy(source.matrixWorld); skin.skeleton.update();
+  const skin = geometry === source.geometry ? source : new THREE.SkinnedMesh(geometry, source.material);
+  if (skin !== source) {
+    // Copy the pose without serializing the full geometry stored in userData.
+    skin.skeleton = source.skeleton;
+    skin.bindMatrix.copy(source.bindMatrix); skin.bindMatrixInverse.copy(source.bindMatrixInverse);
+    skin.morphTargetInfluences = source.morphTargetInfluences;
+    skin.layers.mask = source.layers.mask; skin.matrixWorld.copy(source.matrixWorld);
+  }
+  skin.skeleton.update();
   const count = geometry.attributes.position.count, positions = new Float64Array(count * 3), point = new THREE.Vector3();
   const worldX = new Float64Array(count), worldZ = new Float64Array(count);
   for (let index = 0; index < count; index++) {

@@ -79,14 +79,19 @@ test('twenty therapy needles meet the shipped cheek, torso and arm skin while th
       const visibleNeck = neckRay.intersectObject(head)[0];
       assert.ok(visibleNeck && visibleNeck.point.distanceTo(fullNeck.point) < .02, 'head culling cannot cut the lower neck out of the exposed body');
       const firstRoot = new THREE.Group(), first = new NebDeckRenderer(firstRoot);
+      const shown = head.geometry, full = head.userData.contactSkinGeometry as THREE.BufferGeometry;
+      assert.notEqual(shown, full, 'the cold view must sample skin outside its visible geometry');
+      const serialize = t.mock.method(full, 'toJSON');
       try {
         first.update(journey, 1000, rig.root); firstRoot.updateMatrixWorld(true);
+        assert.equal(serialize.mock.callCount(), 0, 'sampling the complete skin must not serialize its vertex buffers');
+        assert.equal(head.geometry, shown, 'needle contact must leave the first-person view masked');
         for (let i = 12; i < 16; i++) {
           const warm = root.getObjectByName(`neb-medical-needle-tip-${i}`)!.getWorldPosition(new THREE.Vector3());
           const resumed = firstRoot.getObjectByName(`neb-medical-needle-tip-${i}`)!.getWorldPosition(new THREE.Vector3());
           assert.ok(warm.distanceTo(resumed) < .02, `first-person cold load loses cheek needle ${i}`);
         }
-      } finally { first.dispose(); }
+      } finally { serialize.mock.restore(); first.dispose(); }
     }
   } finally { renderer.dispose(); models.dispose(); }
 });
