@@ -130,6 +130,33 @@ test('low partitions conceal a crouched body but not a standing head, and crouch
   assert.equal(moved.position.y, p.y); assert.ok(p.z - moved.position.z < .2);
 });
 
+test('an office input gap stops movement without exposing a crouched player behind a partition', () => {
+  const route = setup(); route.office();
+  const neo = route.neo(), guard = route.sandbox.state.threats.find(threat => threat.id === 'office:0')!;
+  route.sandbox.state.threats = [guard];
+  guard.position = filmPosition('film_metacortex_floor', -16, -2); guard.yaw = 0;
+  neo.position = filmPosition('film_metacortex_floor', -16, 5);
+  route.state().office!.searchAt = route.tick();
+  const crouching = { x: 0, z: 1, yaw: 0, sprint: false, jump: false, crouch: true, sequence: 1, location: neo.currentLocation };
+  route.players.receiveInput('neo-player', crouching);
+  route.players.step(.05, true, route.tick());
+  assert.equal(neo.currentAction?.type, 'move_to');
+  assert.equal(neo.currentAction?.parameters.crouching, true);
+  const stopped = { ...neo.position };
+  route.players.step(.05, true, route.tick(), Date.now() + 800);
+  assert.deepEqual(neo.position, stopped, 'old movement must not carry on');
+  assert.equal(neo.currentAction?.type, 'idle');
+  route.advance();
+  assert.equal(route.state().office?.alert, 0, 'a dropped input packet must not expose Neo above cover');
+  assert.equal(neo.currentAction?.parameters.crouching, true);
+
+  route.players.receiveInput('neo-player', { ...crouching, z: 0, crouch: false, sequence: 2 });
+  route.players.step(.05, true, route.tick(), Date.now() + 800);
+  assert.equal(neo.currentAction?.parameters.crouching, false, 'an accepted release must still stand even after a delayed tick');
+  route.advance();
+  assert.equal(route.state().office?.searches?.[0]?.source, 'sight', 'the guard can still notice a deliberate stand');
+});
+
 test('exposure triggers capture rather than death; interrogation persists the tracking device', () => {
   const h = setup(); h.office(); h.advance(8);
   const guard = h.sandbox.state.threats.find(t => t.id === 'office:0')!;

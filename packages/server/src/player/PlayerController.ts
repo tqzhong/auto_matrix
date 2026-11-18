@@ -587,9 +587,10 @@ export class PlayerController {
       session.stagger = Math.max(0, session.stagger - dt);
       const stale = now - session.lastInput > 300;
       const changedLocation = session.input.location !== undefined && session.input.location !== agent.currentLocation;
-      let input = stale || changedLocation ? { ...idleInput(), yaw: changedLocation ? agent.rotation : session.input.yaw } : session.input;
-      if (computer) { session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.yaw = agent.rotation; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       const lesson = this.sandbox?.life.film.state;
+      let input = stale || changedLocation ? { ...idleInput(), yaw: changedLocation ? agent.rotation : session.input.yaw,
+        crouch: !changedLocation && session.input.crouch === true && savedOfficeCrouchAction(lesson, agent) } : session.input;
+      if (computer) { session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.yaw = agent.rotation; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       const sparring = session.strike && lesson?.scene === 'm1_dojo' && lesson.dojo?.dodged
         ? this.sandbox!.state.threats.find(threat => threat.scene === lesson.scene && threat.character === 'morpheus') : undefined;
       if (sparring) {
