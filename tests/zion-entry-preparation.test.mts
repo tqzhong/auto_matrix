@@ -74,6 +74,20 @@ test('dock preparation covers the real-world costumes and a late actor while lea
   assert.ok(h.batches.every(count => count <= 4), 'existing per-frame compilation batches remain bounded');
 });
 
+test('a resumed meeting starts dock texture uploads while the first shader is still linking', t => {
+  const h = setup(t), meeting = FILM_SCENE_BY_ID.m2_meeting;
+  h.sets.update(undefined, undefined, 0);
+  h.journey.step = meeting.steps.length; h.journey.completed.push(meeting.id); h.journey.reloaded!.phase = 'done';
+  const texture = new THREE.Texture({ width: 1024, height: 1024, complete: true });
+  texture.needsUpdate = true; h.material.map = texture;
+  t.after(() => texture.dispose());
+
+  h.prepare(true);
+  assert.ok(h.preview?.getObjectByName('zion-docked-nebuchadnezzar'));
+  assert.equal(h.uniforms, 0, 'a linking program must remain asynchronous');
+  assert.deepEqual(h.uploads, [texture], 'a linking program must not delay the first dock texture upload');
+});
+
 test('dock preparation queries only ready programs and disposes the detached set when control leaves the story', t => {
   const h = setup(t); h.departure(); h.prepare();
   const dock = h.preview?.getObjectByName('zion-docked-nebuchadnezzar'); assert.ok(dock);

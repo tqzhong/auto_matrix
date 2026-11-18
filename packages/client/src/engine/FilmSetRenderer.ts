@@ -2229,7 +2229,7 @@ export class FilmSetRenderer {
       }
     }
     if (defense) this.prepareStagedEntry(renderer, camera, prepared, colors, atSource ? sourceLights : undefined, 2);
-    else if (next.id === 'm2_departure') {
+    else if (next.id === 'm2_dock' || next.id === 'm2_departure') {
       this.prepareColorProgram(renderer, camera, colors, undefined, 'live');
       this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2);
     } else this.prepareColorFrame(renderer, camera, colors);
