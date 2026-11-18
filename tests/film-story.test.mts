@@ -2945,6 +2945,8 @@ test('the red-dress lesson requires noticing, looking back and acknowledging the
   assert.equal(woman.status, 'disconnected', 'the woman herself is replaced');
   assert.equal(civilian.status, 'alive', 'a different bystander is not replaced'); assert.equal(smith.status, 'alive');
   assert.ok(Math.abs(h.actor().rotation - Math.PI) < .001, 'the program cannot force Neo to look back');
+  const turning = structuredClone(state.training);
+  h.command('act'); assert.deepEqual(state.training, turning, 'tapping G cannot substitute for turning toward Smith');
   frames(10, smith, 1.2, true); assert.equal(state.training!.attention!.phase, 'turning', 'looking at the ground cannot notice the gunman');
   frames(4, smith); assert.equal(state.training!.attention!.phase, 'frozen');
   const saved = JSON.parse(JSON.stringify(h.sandbox.state)), training = structuredClone(state.training);
@@ -2954,7 +2956,9 @@ test('the red-dress lesson requires noticing, looking back and acknowledging the
   h.players.possess('film-player', 'neo', h.tick()); frames(70, smith);
   assert.equal(state.training!.elapsed, TRAINING_SECONDS.red_dress); assert.equal(state.step, 1, 'elapsed time alone cannot pass the lesson');
   assert.equal(state.training!.attention!.clock, training!.attention!.clock, 'the crowd stays on the observed frame during the explanation');
-  frames(1, smith, 0, true); assert.equal(state.step, 2); assert.ok(state.completed.includes(scene.id));
+  h.command('act'); assert.equal(state.step, 2, 'a single interaction acknowledges the finished explanation');
+  assert.equal(smith.currentAction?.parameters.training.attention.phase, 'done');
+  frames(1, smith, 0, true); assert.equal(state.completed.filter(id => id === scene.id).length, 1);
 });
 
 test('a missed red-dress pass can be replayed and unavailable Morpheus cannot be resurrected', () => {
@@ -2968,6 +2972,12 @@ test('a missed red-dress pass can be replayed and unavailable Morpheus cannot be
   assert.equal(state.training!.elapsed, 5.3);
   h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI / 2, focus: true, sprint: false, jump: false, sequence: 61 }); h.players.step(.1, true, h.tick());
   assert.equal(state.training!.elapsed, 0); assert.equal(state.training!.attention!.misses, 1); assert.equal(state.training!.attention!.noticed, false);
+  for (let sequence = 62; sequence < 122; sequence++) {
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI / 2, sprint: false, jump: false, sequence }); h.players.step(.1, true, h.tick());
+  }
+  assert.equal(state.training!.elapsed, 5.3);
+  h.command('act'); assert.equal(state.training!.elapsed, 0, 'a single interaction also replays the missed pass');
+  h.command('act'); assert.equal(state.training!.attention!.misses, 2, 'a repeated interaction cannot reset a pass already in progress');
   const mentor = h.world.agents.get('morpheus')!; mentor.status = 'dead'; mentor.health = 0;
   h.players.step(.1, true, h.tick()); assert.equal(state.training!.elapsed, 0); assert.equal(mentor.status, 'dead'); assert.equal(mentor.health, 0);
 });

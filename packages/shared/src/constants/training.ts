@@ -51,13 +51,27 @@ export function redDressFrame(training: Pick<TrainingPerformance, 'elapsed' | 'a
   return training.attention && training.attention.phase !== 'walking' ? RED_DRESS_PROGRAM.walk : Math.min(RED_DRESS_PROGRAM.walk, training.elapsed);
 }
 
+export function confirmRedDress(training: TrainingPerformance): boolean {
+  const attention = training.attention;
+  if (!training.started || !attention) return false;
+  if (attention.phase === 'frozen' && training.elapsed >= TRAINING_SECONDS.red_dress) {
+    attention.phase = 'done';
+    return true;
+  }
+  if (attention.phase === 'walking' && !attention.noticed && training.elapsed >= RED_DRESS_PROGRAM.walk) {
+    training.elapsed = 0; attention.clock = 0; attention.look = 0; attention.misses++;
+    return true;
+  }
+  return false;
+}
+
 export function stepRedDress(training: TrainingPerformance, input: { yaw: number; pitch?: number; focus?: boolean } | undefined, dt: number): void {
   const attention = training.attention!;
   if (dt <= 0 || !training.started || attention.phase === 'done') return;
   if (input) attention.yaw = input.yaw;
   if (attention.phase === 'frozen') {
     training.elapsed = Math.min(TRAINING_SECONDS.red_dress, training.elapsed + dt);
-    if (training.elapsed >= TRAINING_SECONDS.red_dress && input?.focus) attention.phase = 'done';
+    if (input?.focus) confirmRedDress(training);
     return;
   }
   attention.clock += dt;
@@ -70,9 +84,7 @@ export function stepRedDress(training: TrainingPerformance, input: { yaw: number
   if (attention.phase === 'walking') {
     if (attention.look >= .5) attention.noticed = true;
     if (training.elapsed >= RED_DRESS_PROGRAM.walk && attention.noticed) { attention.phase = 'turning'; attention.look = 0; }
-    else if (training.elapsed >= RED_DRESS_PROGRAM.walk && input?.focus) {
-      training.elapsed = 0; attention.clock = 0; attention.look = 0; attention.misses++;
-    }
+    else if (input?.focus) confirmRedDress(training);
   } else if (attention.look >= .35) {
     attention.phase = 'frozen'; attention.look = 0; training.elapsed = RED_DRESS_PROGRAM.reveal;
   }

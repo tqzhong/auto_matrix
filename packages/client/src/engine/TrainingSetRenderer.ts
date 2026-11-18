@@ -268,10 +268,17 @@ export class TrainingSetRenderer {
     const facade = this.material(new THREE.MeshStandardMaterial({ color: 0x56605d, roughness: .82, metalness: .08 }));
     const windows = this.material(new THREE.MeshStandardMaterial({ color: 0x182c30, roughness: .32, metalness: .48, emissive: 0x071111, emissiveIntensity: .32 }));
     this.surface(facade, 'damaged_plaster', 4);
+    const skylineBuilding = (parent: THREE.Object3D, x: number, z: number, width: number, roof: number, depth: number, name: string) => {
+      const height = roof - JUMP_STREET.base;
+      const { geometry } = this.box(parent, facade, x, roof - height / 2, z, width, height, depth, name);
+      const { normal, uv } = geometry.attributes;
+      // Keep the original plaster scale on the upper facade as it extends down to the street.
+      for (let i = 0; i < uv.count; i++) if (normal.getY(i) === 0) uv.setY(i, 1 + (uv.getY(i) - 1) * height / roof);
+    };
     for (let index = 0; index < 16; index++) {
       const side = index % 2 ? 1 : -1; const width = 14 + index % 3 * 3; const depth = 12 + index % 2 * 3;
       const x = side * (47 + index % 3 * 12); const z = -48 - Math.floor(index / 2) * 16; const height = 15 + index % 5 * 4;
-      this.box(city, facade, x, height / 2, z, width, height, depth, 'jump-city-building');
+      skylineBuilding(city, x, z, width, height, depth, 'jump-city-building');
       for (let y = 3; y < height - 2; y += 3.2) {
         const pane = this.box(city, windows, x - side * (width / 2 + .045), y, z, .09, 1.35, depth - 1.2, 'jump-city-window-band');
         this.skylineLights.push(pane);
@@ -280,7 +287,7 @@ export class TrainingSetRenderer {
     const distant = new THREE.Group(); distant.name = 'jump-distant-roofline'; distant.position.z = -88; set.add(distant);
     for (const side of [-1, 1]) {
       const wing = new THREE.Group(); wing.name = `jump-distant-${side < 0 ? 'west' : 'east'}-wing`; wing.position.set(side * 48, 0, side * 5); distant.add(wing);
-      this.box(wing, facade, 0, 9, 0, 20, 18, 14, 'jump-distant-building');
+      skylineBuilding(wing, 0, 0, 20, 18, 14, 'jump-distant-building');
       for (let y = 3; y < 16; y += 3.2) this.box(wing, windows, -side * 10.05, y, 0, .09, 1.35, 12.5, 'jump-distant-window-band');
       this.cylinder(wing, roofMetal, -side * 3.4, 21, 0, 1.3, 5.5, 16, 'jump-distant-tank');
       this.box(wing, concrete, side * 5.2, 20.1, 0, 7.2, .35, 9.4, 'jump-distant-roof');

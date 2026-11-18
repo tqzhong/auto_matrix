@@ -134,6 +134,22 @@ test('the roof city backdrops blend without casting solid shadows or hiding near
   } finally { renderer.dispose(); }
 });
 
+test('the jump skyline facades reach the canyon street below their authored rooftop heights', () => {
+  const root = new THREE.Group(), renderer = new TrainingSetRenderer(root, 'm1_jump');
+  try {
+    const streetY = root.getObjectByName('jump-canyon-floor')!.getWorldPosition(new THREE.Vector3()).y;
+    const city: number[] = [], distant: number[] = [];
+    root.traverse(object => {
+      if (object.name !== 'jump-city-building' && object.name !== 'jump-distant-building') return;
+      const bounds = new THREE.Box3().setFromObject(object);
+      assert.equal(bounds.min.y, streetY, `${object.name} floats above the street`);
+      (object.name === 'jump-city-building' ? city : distant).push(bounds.max.y);
+    });
+    assert.deepEqual(city, Array.from({ length: 16 }, (_, index) => 15 + index % 5 * 4));
+    assert.deepEqual(distant, [18, 18]);
+  } finally { renderer.dispose(); }
+});
+
 test('the dojo, roof gap and red-dress plaza are dedicated physical training sets', () => {
   const dojoRoot = new THREE.Group(); const dojo = new TrainingSetRenderer(dojoRoot, 'm1_dojo');
   try {
