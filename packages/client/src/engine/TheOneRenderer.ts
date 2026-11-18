@@ -258,7 +258,7 @@ export class TheOneRenderer {
         const pulse = .88 + Math.sin(encounter.elapsed * 9) * .12; this.codeShell.scale.set(pulse, 1, pulse);
       }
       if (this.burst) {
-        this.burst.visible = encounter.kind === 'return' && encounter.phase === 'burst';
+        this.burst.visible = encounter.kind === 'return' && encounter.phase === 'burst' && Boolean(encounter.smithBurst);
         const spread = THREE.MathUtils.smoothstep(encounter.elapsed, .65, THE_ONE.return.burst);
         this.burst.children.forEach((child, index) => { const origin = child.userData.origin as THREE.Vector3; child.position.copy(origin).multiplyScalar(1 + spread * 3.8); child.rotation.y = index + spread * 9; });
       }

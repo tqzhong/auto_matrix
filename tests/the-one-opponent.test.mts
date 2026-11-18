@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { filmPosition, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
+import { filmPosition, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { newMotion } from '../packages/client/src/agents/CharacterMotion.js';
@@ -17,7 +17,7 @@ function setup(t: test.TestContext, withActor = true) {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const rigs: CharacterRig[] = [];
   t.mock.method(CharacterModels.prototype, 'create', () => {
-    const rig = { root: new THREE.Group(), motion: newMotion(), hero: { root: new THREE.Group() } } as CharacterRig;
+    const rig = { root: new THREE.Group(), head: new THREE.Group(), motion: newMotion(), hero: { root: new THREE.Group(), bones: new Map() } } as CharacterRig;
     rigs.push(rig); return rig;
   });
   const animate = t.mock.method(CharacterModels.prototype, 'animate', () => {});
@@ -90,4 +90,43 @@ test('a cold counter borrows the existing skeleton container while its detailed 
   rig.hero = hero;
   h.sandbox.update(0, new THREE.PerspectiveCamera(), true, 0, false);
   h.sync([]); assert.ok(root.parent === host && rig.hero === hero);
+});
+
+test('the saved code impact removes Smith from 303 through the exit retry', t => {
+  const h = setup(t), body = h.actors.getAgent('smith')!;
+  const journey: FilmJourney = {
+    version: 1, scene: 'm1_return', actor: 'neo', step: 1, enteredAt: 0, completed: ['m1_death'],
+    checkpoint: { ...h.smith.position }, reflections: {}, lastText: '',
+    theOne: { kind: 'return', phase: 'burst', elapsed: .8, attempt: 1, checkpoint: 'bullets',
+      signal: 0, hits: 3, blocks: 1, deadline: 0, altitude: 0, flightX: 0, flightZ: 0, resolved: [] },
+  };
+  h.smith.currentAction = null;
+  h.actors.updateAgent('smith', h.smith, journey);
+  h.actors.update(0, undefined, 0, 0, journey);
+  assert.equal(body.visible, true, 'Smith is still intact on the lead-in');
+
+  const impact = journey.theOne!;
+  impact.elapsed = 1.2; impact.smithBurst = true;
+  const before = structuredClone(h.smith);
+  h.actors.update(0, undefined, 0, 0, journey);
+  assert.equal(body.visible, false);
+  impact.phase = 'exit_run'; impact.checkpoint = 'exit'; impact.attempt++;
+  h.actors.updateAgent('smith', h.smith, journey);
+  assert.equal(body.visible, false, 'a newly synced exit retry still has no intact Smith');
+  h.actors.update(0, undefined, 0, 0, journey);
+  assert.equal(body.visible, false);
+  assert.deepEqual(h.smith, before);
+
+  journey.step = 2; delete impact.smithBurst;
+  h.actors.update(0, undefined, 0, 0, journey);
+  assert.equal(body.visible, false, 'the saved exit step also identifies a completed fight in older saves');
+
+  h.smith.controller = 'another-player';
+  h.actors.updateAgent('smith', h.smith, journey);
+  h.actors.update(0, undefined, 0, 0, journey);
+  assert.equal(body.visible, true, 'the cut cannot hide another player');
+  h.smith.controller = undefined;
+  h.actors.updateAgent('smith', h.smith);
+  h.actors.update(0);
+  assert.equal(body.visible, true, 'the same actor can appear in later scenes');
 });

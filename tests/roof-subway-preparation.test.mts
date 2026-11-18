@@ -229,8 +229,9 @@ test('subway phone debris preparation cancels and disposes each actual shard onc
   assert.equal(disposed, 1); assert.equal(root.parent, null);
 });
 
-test('street pursuit uploads Smith’s skin, hair and coat in strips before his first draw', t => {
+test('Smith’s texture preparation continues from the street to 303 and supports a cold revival', t => {
   const h = fixture(t, 'city');
+  h.journey.scene = 'm1_city_chase';
   class Bitmap { width = 2048; height = 2048; }
   const previous = globalThis.ImageBitmap;
   globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
@@ -256,13 +257,19 @@ test('street pursuit uploads Smith’s skin, hair and coat in strips before his 
       resident.set(texture, {}); if (!original.includes(texture)) texture.addEventListener('dispose', () => disposals.push(texture));
     },
   });
-  const prepare = (active = true) => agent.prepareCityChaseTextures?.(h.gpu, active);
+  const prepare = (active = true) => agent.prepareSmithTextures(h.gpu, active ? h.journey : undefined);
   t.after(() => prepare(false));
   prepare(); assert.deepEqual(rows, []);
   hero = smith; prepare();
   assert.deepEqual(rows, [0], 'the first available Smith map must stage only its first strip');
   assert.equal(resident.has(original[0]), false);
-  prepare(false); assert.equal(disposals.length, 1, 'leaving the chase cancels the partial allocation');
+  h.journey.scene = 'm1_death'; prepare();
+  assert.deepEqual(rows, [0, 256], '303 can continue the upload begun before the street cut');
+  h.journey.visiting = 'm1_death'; prepare();
+  assert.equal(disposals.length, 1, 'leaving the main route cancels the partial allocation');
+  delete h.journey.visiting;
+  h.journey.theOne = { kind: 'death', phase: 'revive', elapsed: 0, attempt: 0, checkpoint: 'door',
+    signal: 1, hits: 0, blocks: 0, deadline: 0, altitude: 0, flightX: 0, flightZ: 0, resolved: [] };
   rows.length = 0;
   for (let frame = 0; frame < 32; frame++) prepare();
   const mapRows = [0, 256, 512, 768, 1024, 1280, 1536, 1792];

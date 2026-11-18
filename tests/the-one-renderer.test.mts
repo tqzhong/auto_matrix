@@ -30,7 +30,9 @@ test('room 303 owns the door, exit phone, gunfire damage, stopped volley and cod
   assert.equal(root.getObjectByName('one-code-shell')!.visible, true); assert.equal(bullets.visible, true);
   const revival = theOneRoot(journey('death', 'done').theOne!, 'neo');
   assert.ok(bullets.children.every(bullet => bullet.position.z < revival.z - .8), 'the stopped rounds stay in front of the revived Neo');
-  state.theOne!.phase = 'burst'; state.theOne!.elapsed = 1.2; state.theOne!.smithBurst = true; renderer.update(state, 4);
+  state.theOne!.phase = 'burst'; state.theOne!.elapsed = .8; renderer.update(state, 4);
+  assert.equal(root.getObjectByName('one-smith-burst')!.visible, false, 'fragments wait for the saved impact');
+  state.theOne!.elapsed = 1.2; state.theOne!.smithBurst = true; renderer.update(state, 4);
   assert.equal(root.getObjectByName('one-smith-burst')!.visible, true);
   renderer.dispose(); assert.equal(root.children.length, 0);
 });

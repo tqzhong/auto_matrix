@@ -103,7 +103,7 @@ export class AgentRenderer {
   private preparedLafayetteGuide = new WeakSet<THREE.Group>();
   private lafayetteGuideTextures?: { gpu: THREE.WebGLRenderer['properties']; trinity: THREE.Group; steps?: Generator<void> };
   private hotelCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; pursuit: boolean; heroes: THREE.Group[]; steps?: Generator<void> };
-  private cityChasePreparation?: { gpu: THREE.WebGLRenderer['properties']; smith: THREE.Group; steps?: Generator<void> };
+  private smithTexturePreparation?: { gpu: THREE.WebGLRenderer['properties']; smith: THREE.Group; steps?: Generator<void> };
   private wellsCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; heroes: THREE.Group[]; meshes: THREE.Mesh[]; steps?: Generator<void> };
   private fallenFloorShapes = new WeakMap<THREE.Object3D, Float32Array>();
   private custody = new OfficeCustodyPerformance();
@@ -139,9 +139,11 @@ export class AgentRenderer {
     this.shadowMaterial = new THREE.MeshBasicMaterial({ map: this.shadowTexture, transparent: true, opacity: .55, depthWrite: false, toneMapped: false });
   }
 
-  private bodyPresent(state: AgentState): boolean {
+  private bodyPresent(state: AgentState, journey?: FilmJourney): boolean {
     // The film set renders the collective as machinery, never as a second human below the platform.
     if (state.id === 'deus_ex_machina' && state.currentLocation === 'film_machine_core') return false;
+    if (state.id === 'smith' && state.currentLocation === 'film_heart_hotel' && !state.controller
+      && journey?.scene === 'm1_return' && !journey.visiting && (journey.theOne?.smithBurst || journey.step >= 2)) return false;
     if (state.status !== 'disconnected') return true;
     const epilogue = state.currentAction?.parameters.epilogue as MotionInput['epilogue'];
     return state.id === 'neo' && !state.isInMatrix && state.currentLocation === 'film_machine_core'
@@ -217,7 +219,7 @@ export class AgentRenderer {
     entry.sixthElapsed = (state.currentAction?.parameters.sixth as MotionInput['sixth'])?.elapsed;
     entry.bathroomElapsed = (state.currentAction?.parameters.bathroom as MotionInput['bathroom'])?.elapsed;
     entry.state = state;
-    entry.group.visible = state.isInMatrix === this.matrix && this.bodyPresent(state);
+    entry.group.visible = state.isInMatrix === this.matrix && this.bodyPresent(state, journey);
   }
 
   setSelected(id: string | null): void { this.selected = id; }
@@ -293,20 +295,21 @@ export class AgentRenderer {
     this.hotelCastPreparation?.steps?.return(undefined);
     this.hotelCastPreparation = undefined;
   }
-  prepareCityChaseTextures(renderer: THREE.WebGLRenderer, active: boolean): void {
+  prepareSmithTextures(renderer: THREE.WebGLRenderer, journey?: FilmJourney): void {
+    const active = journey && !journey.visiting && (journey.scene === 'm1_city_chase' || journey.scene === 'm1_death');
     const smith = active ? this.getAgentHero('smith') : undefined;
-    if (!smith) { this.cancelCityChaseTextures(); return; }
-    let prepared = this.cityChasePreparation;
+    if (!smith) { this.cancelSmithTextures(); return; }
+    let prepared = this.smithTexturePreparation;
     if (!prepared || prepared.smith !== smith || prepared.gpu !== renderer.properties) {
-      this.cancelCityChaseTextures();
+      this.cancelSmithTextures();
       const names = ['Anatomical_head_and_hands', 'short04', 'Tailored_coat_upper'];
-      this.cityChasePreparation = prepared = { gpu: renderer.properties, smith, steps: this.prepareCastMaps(renderer, [smith], names, true) };
+      this.smithTexturePreparation = prepared = { gpu: renderer.properties, smith, steps: this.prepareCastMaps(renderer, [smith], names, true) };
     }
     if (prepared.steps?.next().done) prepared.steps = undefined;
   }
-  private cancelCityChaseTextures(): void {
-    this.cityChasePreparation?.steps?.return(undefined);
-    this.cityChasePreparation = undefined;
+  private cancelSmithTextures(): void {
+    this.smithTexturePreparation?.steps?.return(undefined);
+    this.smithTexturePreparation = undefined;
   }
   get wellsCastMeshes(): readonly THREE.Mesh[] | undefined { return this.wellsCastPreparation?.meshes; }
   prepareWellsCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, phone?: OpeningPhoneEncounter): boolean {
@@ -836,7 +839,7 @@ export class AgentRenderer {
       const phoneFailed = journey?.scene === 'm1_phone_escape' && !journey.visiting && journey.actor === id && journey.openingPhone?.phase === 'failed' && Boolean(journey.openingPhone.answer || journey.openingPhone.hit);
       const rescueBystander = journey?.scene === 'm2_catch' && !journey.visiting && state.currentLocation === 'film_trinity_roof'
         && !['neo', 'trinity', 'agent_thompson'].includes(id) && !state.controller;
-      const bodyPresent = this.bodyPresent(state);
+      const bodyPresent = this.bodyPresent(state, journey);
       // This street is rendered on its own. Keep the entire route and the adjacent hotel cast.
       const streetSet = adamsStreet && state.isInMatrix ? filmSetAt(state.position, true) : undefined;
       entry.group.visible = state.isInMatrix === this.matrix && bodyPresent && !phoneExit && !rescueBystander
@@ -1708,7 +1711,7 @@ export class AgentRenderer {
   dispose(): void {
     this.cancelLafayetteGuideTextures();
     this.cancelOpeningHotelTextures();
-    this.cancelCityChaseTextures();
+    this.cancelSmithTextures();
     this.cancelWellsCastPreparation();
     this.cancelOfficeCastTexture();
     this.preparedOfficeActors = undefined;
