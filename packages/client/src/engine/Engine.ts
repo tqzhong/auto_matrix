@@ -419,6 +419,8 @@ export class Engine {
     this.filmSets.prepareJump(this.renderer, this.camera, trainingJourney,
       id => ({ model: this.agentRenderer.getAgentHero(id), shadow: this.agentRenderer.getAgentShadow(id) }),
       this.lightingSystem.directionalLight, this.lightCulling, resumeTraining);
+    this.filmSets.prepareJumpControls(this.renderer, this.camera, trainingJourney,
+      this.agentRenderer.getAgentBody('neo'), this.lightCulling);
     this.filmSets.prepareRedDress(this.renderer, this.camera, trainingJourney,
       id => ({ model: this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), shadow: this.agentRenderer.getAgentShadow(id) }),
       this.lightCulling, resumeTraining);

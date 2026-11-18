@@ -445,6 +445,11 @@ export class FilmSetRenderer {
   private training?: TrainingSetRenderer;
   private preparedDojo?: { root: THREE.Group; renderer: TrainingSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedJump?: TrainingPreparation;
+  private preparedJumpControls?: ColorPreparation & {
+    gpu: THREE.WebGLRenderer['properties']; actor: THREE.Group;
+    versions: WeakMap<THREE.Mesh, { material: THREE.Material; version: number }>;
+    textureUpload?: Generator<void, boolean>;
+  };
   private preparedRedDress?: TrainingPreparation & { assetsReady: boolean };
   private preparedSentinel?: EntryPreparation & { renderer: SentinelSetRenderer; colors?: CastColorPreparation };
   private preparedSentinelControls?: ColorPreparation & {
@@ -1689,6 +1694,30 @@ export class FilmSetRenderer {
       this.queueColorTextures(colors.textures, meshes); this.queueEntryShadows(prepared, meshes);
     }
     this.prepareStagedEntry(renderer, camera, prepared, colors, inDojo ? sourceLights : undefined);
+  }
+  prepareJumpControls(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    actor: THREE.Group | undefined, lighting: LightCulling): void {
+    if (!actor || this.currentScene !== 'm1_jump' || journey?.scene !== 'm1_jump' || journey.training?.kind !== 'jump'
+      || !trainingLocked(journey) || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+      this.cancelJumpControlsPreparation(); return;
+    }
+    let prepared = this.preparedJumpControls;
+    if (!prepared || prepared.gpu !== renderer.properties || prepared.actor !== actor) {
+      this.cancelJumpControlsPreparation();
+      prepared = this.preparedJumpControls = { gpu: renderer.properties, actor, scene: this.scene,
+        meshes: [], programs: [], textures: new Set(), versions: new WeakMap(), preserveStockSkinning: true };
+    }
+    // The demonstration frames Morpheus. Use Neo's actual body before the camera returns to him.
+    const meshes = this.colorMeshes(actor.children);
+    for (const mesh of meshes) {
+      const material = mesh.material, queued = prepared.versions.get(mesh);
+      if (queued?.material === material && queued.version === material.version) continue;
+      prepared.versions.set(mesh, { material, version: material.version });
+      if (!prepared.meshes.includes(mesh)) prepared.meshes.push(mesh);
+      this.queueColorTextures(prepared.textures, [mesh]);
+    }
+    if (!this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true, meshes))
+      this.prepareStagedColorTexture(renderer, prepared, prepared.textures);
   }
   prepareRedDress(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => EntryCast, sourceLights?: LightCulling, resume = false): void {
@@ -7022,6 +7051,10 @@ export class FilmSetRenderer {
     const prepared = this.preparedJump; if (!prepared) return;
     this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedJump = undefined;
   }
+  private cancelJumpControlsPreparation(): void {
+    this.preparedJumpControls?.textureUpload?.return(false);
+    this.preparedJumpControls = undefined;
+  }
   private cancelRedDressPreparation(): void {
     const prepared = this.preparedRedDress; if (!prepared) return;
     this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedRedDress = undefined;
@@ -7148,6 +7181,7 @@ export class FilmSetRenderer {
     this.cancelClubPreparation();
     this.cancelDojoPreparation();
     this.cancelJumpPreparation();
+    this.cancelJumpControlsPreparation();
     this.cancelRedDressPreparation();
     this.cancelSentinelPreparation();
     this.cancelSentinelControlsPreparation();

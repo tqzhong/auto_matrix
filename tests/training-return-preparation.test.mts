@@ -89,3 +89,33 @@ test('the return keeps sixteen light slots when the objective returns after the 
   const gpu={compile:(_root:THREE.Object3D,_camera:THREE.Camera,view:THREE.Scene)=>{let count=0;view.traverseVisible(object=>{if(object instanceof THREE.PointLight)count++;});counts.push(count);}} as unknown as THREE.WebGLRenderer;
   const marker=(h.film as unknown as {markerLight:THREE.PointLight}).markerLight; for(const visible of [false,true,false]){marker.visible=visible;marker.intensity=visible?5:0;lighting.compileSubject(gpu,new THREE.PerspectiveCamera(),h.film.root);}assert.deepEqual(counts,[16,16,16]);
 });
+
+test('Morpheus’s demo prepares the existing player before rooftop control returns', t => {
+  const h = fixture(t), camera = new THREE.PerspectiveCamera(), lighting = new LightCulling(h.scene);
+  t.after(() => lighting.dispose()); lighting.minimumPointSlots = h.film.minimumPointSlots;
+  const actor = new THREE.Group(); actor.visible = false; h.scene.add(actor);
+  const mesh = new THREE.Mesh(h.geometry, h.skin.material); actor.add(mesh);
+  const texture = mesh.material.map!, work: string[] = [];
+  let target: THREE.WebGLRenderTarget | null = null;
+  const gpu = { properties: { get: () => ({}) }, info: { programs: [] }, extensions: { has: () => true },
+    getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
+    compile(subject: THREE.Object3D, _camera: THREE.Camera, lights: THREE.Scene) {
+      let slots = 0; lights.traverseVisible(object => { if (object instanceof THREE.PointLight) slots++; });
+      assert.equal(slots, 2);
+      const meshes: THREE.Object3D[] = []; subject.traverse(object => meshes.push(object));
+      assert.deepEqual(meshes, [mesh]); work.push('compile');
+    },
+    initTexture(value: THREE.Texture) { assert.equal(value, texture); work.push('texture'); },
+  } as unknown as THREE.WebGLRenderer;
+  const journey = { ...h.journey, training: { kind: 'jump', started: true, elapsed: 3.1 } } as FilmJourney;
+  const prepare = () => {
+    const count = work.length;
+    h.film.prepareJumpControls(gpu, camera, journey, actor, lighting);
+    assert.ok(work.length - count <= 1);
+    assert.equal(target, null); assert.equal(mesh.parent, actor); assert.equal(actor.visible, false);
+  };
+  prepare(); prepare(); prepare();
+  assert.deepEqual(work, ['compile', 'texture']);
+  journey.training!.elapsed = 6; prepare();
+  assert.deepEqual(work, ['compile', 'texture']);
+});
