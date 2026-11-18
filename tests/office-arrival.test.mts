@@ -149,11 +149,14 @@ test('the captured route prepares the actual bridge pursuer while Neo is still i
   assert.equal(group.parent, null);
   const bridge = structuredClone(waiting);
   bridge.neoLife!.journey!.scene = 'm1_bridge';
+  bridge.neoLife!.journey!.bridgeTail = { phase: 'tracking', alert: 0, lastTick: 0, attempts: 0, spawned: true };
   const threat: SandboxThreat = { id: 'bridge:tail', scene: 'm1_bridge', kind: 'agent', patrol: true, yaw: Math.PI,
     position: FILM_SETS.film_adams_bridge.center, matrix: true, health: 80, maxHealth: 80, target: 'neo', stunUntil: 0, lastStrike: -10 };
   bridge.threats.push(threat);
   enemies.sync(bridge, agents);
   assert.equal(group.parent, scene);
+  assert.ok(enemies.prepareBridgeTail() === rig.hero!.root, 'offer the same active pursuer for approach texture preparation');
+  assert.equal(animate.mock.callCount(), 1, 'preparation keeps the active pursuit pose');
   enemies.sync({ ...bridge, threats: [] }, agents);
   assert.equal(group.parent, null);
   enemies.sync(bridge, agents);

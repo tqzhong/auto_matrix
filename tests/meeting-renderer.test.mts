@@ -24,7 +24,8 @@ for (const checkpoint of ['arrival', 'departure'] as const) test(`cold bridge ${
   const journey = { scene: 'm1_bridge', actor: 'neo',
     office: { outcome: checkpoint === 'arrival' ? 'escaped' : 'captured' }, ...encounter } as FilmJourney;
   const tail = new THREE.Group(), geometry = new THREE.BoxGeometry(), map = new THREE.Texture({ width: 1024, height: 1024 }); map.needsUpdate = true;
-  const hair = new THREE.MeshStandardMaterial({ map }); tail.add(new THREE.Mesh(geometry, hair));
+  const hair = new THREE.MeshStandardMaterial({ map });
+  const tailHead = new THREE.Mesh(geometry, hair); tailHead.name = 'Anatomical_head_and_hands'; tail.add(tailHead);
   const player = new THREE.Group(), torsoMap = new THREE.Texture({ width: 2048, height: 2048 }); torsoMap.needsUpdate = true;
   const skin = new THREE.MeshStandardMaterial({ map: torsoMap });
   const torso = new THREE.SkinnedMesh(geometry, skin); torso.name = 'Office_torso'; torso.visible = false;
@@ -41,10 +42,16 @@ for (const checkpoint of ['arrival', 'departure'] as const) test(`cold bridge ${
   const prepare = (neo?: THREE.Group, pursuer?: THREE.Group) => film.prepareBridge(renderer, camera, journey,
     id => id === 'neo' ? neo : undefined, sun, undefined, undefined, pursuer, true);
   if (checkpoint === 'arrival') {
-    const tracked = { ...journey, office: { ...journey.office!, outcome: 'captured' as const } };
-    film.prepareBridge(renderer, camera, tracked, () => undefined, sun, undefined, undefined, tail, true);
-    assert.ok(!film['preparedBridge'], 'a tracked approach keeps the existing street preparation while its pursuer is present');
-    assert.equal(uploads.length, 0);
+    const tracked = { ...journey, office: { ...journey.office!, outcome: 'captured' as const },
+      bridgeTail: { phase: 'tracking' as const, alert: 0, lastTick: 0, attempts: 0, spawned: true } };
+    const saved = JSON.stringify(tracked);
+    for (let frame = 0; frame < 4; frame++) film.prepareBridge(renderer, camera, tracked,
+      id => id === 'neo' ? player : undefined, sun, undefined, undefined, tail, true);
+    assert.ok(!film['preparedBridge'], 'the tracked approach prepares the cast without the full street');
+    assert.equal(uploads.length, 2, 'prepare the pursuer and the hidden boarding torso before the first draw');
+    assert.deepEqual(new Set(uploads), new Set([map, torsoMap]));
+    assert.equal(tail.parent, null); assert.equal(torso.visible, false); assert.equal(JSON.stringify(tracked), saved);
+    uploads.length = 0; uploaded.delete(torsoMap);
   }
   assert.equal(film['meeting'], undefined, 'a cold landing has not built its active street yet');
   const before = JSON.stringify(journey);

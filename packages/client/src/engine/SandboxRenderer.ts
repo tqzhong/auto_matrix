@@ -297,6 +297,8 @@ export class SandboxRenderer {
   }
   prepareBridgeTail(): THREE.Group | undefined {
     const journey = this.state?.neoLife?.journey;
+    if (journey?.scene === 'm1_bridge' && !journey.visiting && !journey.meeting && journey.bridgeTail?.phase === 'tracking')
+      return this.enemies.get('bridge:tail')?.rig?.hero?.root;
     const call = journey?.scene === 'm1_wake_again' && journey.wakeCall && !['waking', 'ringing'].includes(journey.wakeCall.phase);
     const departure = journey?.scene === 'm1_bridge' && journey.meeting?.phase === 'leaving';
     if ((!call && !departure) || journey?.visiting || !(journey?.office?.bugged ?? journey?.office?.outcome === 'captured')) return;

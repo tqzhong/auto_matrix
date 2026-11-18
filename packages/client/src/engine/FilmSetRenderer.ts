@@ -309,6 +309,8 @@ type OpeningPreparation = {
   };
 };
 const OFFICE_STREET_COLOR_MESHES = ['Red_dress_satin', 'Red_dress_hair', 'Red_dress_eyes'] as const;
+const BRIDGE_APPROACH_MESHES = new Set(['Anatomical_head_and_hands', 'Anatomical_wrist_skin', 'short04', 'high-poly',
+  'Tailored_coat_upper', 'Tailored_trousers', 'Black_crew_neck', 'Fitted_leather_jacket', 'shoes01']);
 const OFFICE_DESCENT_ACTORS = [
   ['citizen_2', OFFICE_STREET_COLOR_MESHES],
   ['agent_jackson', ['smith-glasses-lens--1', 'short04']],
@@ -479,6 +481,8 @@ export class FilmSetRenderer {
   private interrogation?: InterrogationSetRenderer;
   private preparedInterrogation?: { renderer: InterrogationSetRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private meeting?: MeetingSetRenderer;
+  private preparedBridgeApproach?: Omit<CastColorPreparation, 'meshes'> & { gpu: THREE.WebGLRenderer['properties']; meshes: ColorMesh[];
+    textureUpload?: Generator<void, boolean> };
   private preparedBridge?: { renderer: MeetingSetRenderer; gpu: THREE.WebGLRenderer['properties']; bufferUpload?: Generator<void>;
     drawing?: { eye: THREE.PerspectiveCamera; colors: CastColorPreparation; lighting: LightCulling;
       buffers: (THREE.Mesh | THREE.Line)[]; geometries: WeakSet<THREE.BufferGeometry>; readyPrograms: Set<ColorProgram>;
@@ -994,6 +998,12 @@ export class FilmSetRenderer {
   prepareBridge(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight, shadow?: THREE.Mesh, apartmentLights?: LightCulling,
     tail?: THREE.Group, resume = false): void {
+    if (journey?.scene === 'm1_bridge' && !journey.visiting && !journey.meeting && journey.bridgeTail?.phase === 'tracking') {
+      this.cancelBridgePreparation();
+      this.prepareBridgeApproach(renderer, camera, [...FILM_SCENE_BY_ID.m1_bridge.cast.map(actor), tail], actor(journey.actor), apartmentLights);
+      return;
+    }
+    this.cancelBridgeApproach();
     const call = journey?.wakeCall;
     const tracked = journey?.office?.bugged ?? journey?.office?.outcome === 'captured';
     const savedBridge = resume && journey?.scene === 'm1_bridge' && (!tracked || journey.meeting?.phase === 'leaving');
@@ -1097,6 +1107,27 @@ export class FilmSetRenderer {
       if (prepared.bufferUpload.next().done) prepared.bufferUpload = undefined;
     if (!stagingHair) for (let batch = 0; batch < batches; batch++)
       if (!this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) break;
+  }
+  private prepareBridgeApproach(renderer: THREE.WebGLRenderer, camera: THREE.Camera, cast: (THREE.Group | undefined)[],
+    player: THREE.Group | undefined, lights?: LightCulling): void {
+    if (this.preparedBridgeApproach?.gpu !== renderer.properties) this.cancelBridgeApproach();
+    const prepared = this.preparedBridgeApproach ??= {
+      gpu: renderer.properties, scene: this.scene, actors: new Set(), meshes: [], programs: [], textures: new Set(),
+    };
+    for (const group of [...cast, player]) {
+      if (!group || prepared.actors.has(group)) continue;
+      const meshes = group === player ? [] : this.colorMeshes(group.children).filter(mesh => BRIDGE_APPROACH_MESHES.has(mesh.name));
+      const torso = group === player ? group.getObjectByName('Office_torso') : undefined;
+      if (torso instanceof THREE.Mesh && torso.material instanceof THREE.MeshStandardMaterial) meshes.push(torso);
+      if (!meshes.length) continue;
+      prepared.actors.add(group); prepared.meshes.push(...meshes); this.queueColorTextures(prepared.textures, meshes);
+    }
+    this.prepareStagedColorTexture(renderer, prepared, prepared.textures, 2);
+    if (this.current?.id === 'film_adams_bridge' && lights && renderer.extensions.has('KHR_parallel_shader_compile')
+      && (prepared.meshes.length || prepared.programs.length || prepared.readyProgram)) {
+      // Link against the actual street lights while the car and pursuer approach.
+      this.prepareColorProgram(renderer, camera, prepared, lights, 'isolated', true, prepared.meshes.slice(0, 4));
+    }
   }
   prepareMatrixEscape(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
@@ -6914,6 +6945,10 @@ export class FilmSetRenderer {
     this.preparedInterrogation?.lighting?.dispose();
     this.preparedInterrogation?.renderer.dispose(); this.preparedInterrogation = undefined;
   }
+  private cancelBridgeApproach(): void {
+    this.preparedBridgeApproach?.textureUpload?.return(false);
+    this.preparedBridgeApproach = undefined;
+  }
   private cancelBridgePreparation(): void {
     const prepared = this.preparedBridge; if (!prepared) return;
     prepared.bufferUpload?.return(undefined); prepared.textureUpload?.return(false);
@@ -7090,5 +7125,5 @@ export class FilmSetRenderer {
     this.root.clear(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.hotelSurfaceSources.clear(); this.materialCache.clear(); this.moving = [];
   }
-  dispose(): void { this.cancelCommuteOutfit(); this.clear(); this.root.removeFromParent(); this.marker.removeFromParent(); this.markerLight.removeFromParent(); this.marker.geometry.dispose(); (this.marker.material as THREE.Material).dispose(); this.markerLight.dispose(); this.officeTowerDepth?.dispose(); this.officeStreetDepth?.dispose(); }
+  dispose(): void { this.cancelCommuteOutfit(); this.cancelBridgeApproach(); this.clear(); this.root.removeFromParent(); this.marker.removeFromParent(); this.markerLight.removeFromParent(); this.marker.geometry.dispose(); (this.marker.material as THREE.Material).dispose(); this.markerLight.dispose(); this.officeTowerDepth?.dispose(); this.officeStreetDepth?.dispose(); }
 }
