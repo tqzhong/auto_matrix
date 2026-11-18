@@ -376,7 +376,8 @@ export class Engine {
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id),
       this.lightingSystem.directionalLight, this.agentRenderer.getAgentShadow('neo'), this.lightCulling,
       bridgeTail, resumeBridge || resumeBridgeReturn);
-    const resumeGovernment = resumeOnLanding && (meeting?.scene === 'm1_lobby' || meeting?.scene === 'm1_smith_question' || meeting?.scene === 'm1_helicopter');
+    const resumeGovernment = resumeOnLanding && (meeting?.scene === 'm1_lobby' || meeting?.scene === 'm1_smith_question'
+      || meeting?.scene === 'm1_bullet_dodge' || meeting?.scene === 'm1_helicopter');
     this.filmSets.prepareGovernment(this.renderer, this.camera, player?.id === meeting?.actor || resumeGovernment ? meeting : undefined,
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight,
       this.lightCulling, id => this.agentRenderer.getAgentShadow(id));

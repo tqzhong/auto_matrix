@@ -911,7 +911,7 @@ export class FilmSetRenderer {
     const questioning = (inLobby || !this.current) && journey?.scene === 'm1_lobby' && journey.lobby?.phase === 'cleared';
     const roofFight = (!this.current || this.current.id === 'film_government_office') && journey?.scene === 'm1_smith_question'
       && ['alarm_ready', 'alarm', 'done'].includes(journey.government?.phase ?? '');
-    const helicopter = this.current?.id === 'film_government_roof' && journey?.scene === 'm1_bullet_dodge'
+    const helicopter = (!this.current || this.current.id === 'film_government_roof') && journey?.scene === 'm1_bullet_dodge'
       && ['download_ready', 'downloading', 'done'].includes(journey.government?.phase ?? '');
     const rooftop = (!this.current || this.current.id === 'film_government_office') && journey?.scene === 'm1_helicopter'
       && ['catching', 'done'].includes(journey.airRescue?.phase ?? '');
@@ -3843,6 +3843,7 @@ export class FilmSetRenderer {
       const resumingGovernment = resumingScene && journey?.actor === player?.id
         && (set?.id === 'film_government_lobby' && sceneId === 'm1_lobby' && journey?.lobby?.phase === 'cleared'
           || set?.id === 'film_government_office' && sceneId === 'm1_smith_question' && this.preparedGovernment?.scene === 'm1_bullet_dodge'
+          || set?.id === 'film_government_roof' && sceneId === 'm1_bullet_dodge' && this.preparedGovernment?.scene === 'm1_helicopter'
           || set?.id === 'film_government_office' && sceneId === 'm1_helicopter' && this.preparedGovernment?.scene === 'm1_rooftop_rescue')
         ? this.preparedGovernment : undefined;
       const escapeTarget = this.preparedMatrixEscape?.renderer.setId;
