@@ -3731,6 +3731,12 @@ export class FilmSetRenderer {
     // Both chapters continue on the same damaged avenue and reflection pass.
     if (this.smithFinale && set?.id === 'film_smith_avenue' && !journey?.visiting
       && this.currentScene === 'm3_rain' && sceneId === 'm3_surrender') this.currentScene = sceneId;
+    if (this.neb && this.crosscutDeck?.renderer === this.neb && set?.id === 'film_neb_deck' && !journey?.visiting
+      && this.currentScene === 'm1_unplugged' && sceneId === 'm1_rescue_decision') {
+      this.crosscutTv?.dispose();
+      this.crosscutTv = undefined; this.crosscutDeck = undefined;
+      this.currentScene = sceneId;
+    }
     const keepCrosscut = crosscutActive(journey) && (set?.id === 'film_tv_repair' || set?.id === 'film_neb_deck');
     if (set?.id !== this.current?.id || sceneId !== this.currentScene || !keepCrosscut && Boolean(this.crosscutTv || this.crosscutDeck)) {
       const visit = this.preparedOpeningVisit;

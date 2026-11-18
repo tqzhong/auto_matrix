@@ -56,7 +56,7 @@ test('Cypher betrayal has physical jacks, per-person signals and a timed counter
   } finally { renderer.dispose(); }
 });
 
-for (const visit of [false, true]) test(`the intercut reuses both rooms and releases them when ${visit ? 'visiting a scene' : 'the rescue begins'}`, t => {
+for (const visit of [false, true]) test(`the intercut reuses both rooms and releases ${visit ? 'both on a visit' : 'the shop before the rescue briefing'}`, t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const renderer = new FilmSetRenderer(new THREE.Scene()), direct = new FilmSetRenderer(new THREE.Scene());
   t.after(() => { renderer.dispose(); direct.dispose(); });
@@ -108,9 +108,25 @@ for (const visit of [false, true]) test(`the intercut reuses both rooms and rele
   assert.ok(renderer.root.getObjectByName(deck.name) === deck, 'Tank takes over on the retained ship');
   assert.equal(shopDisposals, 0); assert.equal(deckDisposals, 0); assert.equal(shadowDisposals, 0);
   assert.equal(sunShadowDisposals, 0, 'the retained daylight shadow must survive each intercut');
-  if (visit) state.visiting = 'm1_unplugged';
-  else { state.scene = 'm1_rescue_decision'; delete state.tvExit; }
-  renderer.update(tank, sandbox, 25);
+  if (visit) {
+    state.visiting = 'm1_unplugged';
+    renderer.update(tank, sandbox, 25);
+  } else {
+    neo.position = filmPosition('film_neb_deck', 0, 28.8); neo.isInMatrix = false;
+    state.actor = neo.id; cut.phase = 'done'; cut.trinityOut = cut.neoOut = true;
+    renderer.update(neo, sandbox, 25);
+    state.scene = 'm1_rescue_decision'; state.step = 0;
+    state.rescue = { phase: 'briefing_ready', elapsed: 0 }; delete state.tvExit;
+    renderer.update(neo, sandbox, 26);
+    assert.equal(renderer.root.getObjectByName(deck.name)?.id, deck.id, 'keep the deck from the actual return');
+    assert.equal(deckDisposals, 0);
+    assert.equal(renderer.root.getObjectByName('neb-betrayal-scene')?.visible, false);
+    const projector = renderer.root.getObjectByName('neb-rescue-briefing')!;
+    direct.update(neo, sandbox, 26);
+    assert.ok(projector.visible);
+    assert.deepEqual(snapshot(projector), snapshot(direct.root.getObjectByName(projector.name)!));
+    renderer.update(undefined, undefined, 27);
+  }
   assert.equal(shopDisposals, 1); assert.equal(deckDisposals, 1); assert.equal(shadowDisposals, 1);
   assert.equal(sunShadowDisposals, 1, 'leaving the intercut must release the retained daylight shadow once');
 });
