@@ -212,7 +212,7 @@ export class MatrixEscapeRenderer {
 
     const truck = new THREE.Group(); truck.name = 'matrix-city-garbage-truck'; truck.visible = false; truck.position.set(6.8, 0, 30); this.group.add(truck); this.truck = truck;
     this.box(truck, this.material(0x435f50, .72, .32), 0, 2.8, 2.3, 7.8, 5.6, 10.5); this.box(truck, this.steel, 0, 3.2, -4.25, 7.4, 6.4, 4.1);
-    this.box(truck, this.black, 0, 4.15, -6.35, 6.5, 2.3, .2); this.box(truck, this.glass, 0, 4.2, -6.48, 5.9, 1.85, .05);
+    this.box(truck, this.black, 0, 4.15, -6.35, 6.5, 2.3, .2); this.box(truck, this.backedGlass, 0, 4.2, -6.48, 5.9, 1.85, .05);
     for (const x of [-3.25, 3.25]) for (const z of [-4.3, 4.8]) { const wheel = this.cylinder(truck, this.black, x, 1.05, z, 1.08, .72); wheel.rotation.z = Math.PI / 2; }
     for (const x of [-2.3, 2.3]) this.sphere(truck, this.amber, x, 2.1, -6.55, .28);
 

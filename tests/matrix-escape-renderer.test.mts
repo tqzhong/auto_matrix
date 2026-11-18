@@ -159,6 +159,20 @@ test('city route renders distinct market, failed phones, fire escapes, garbage t
   renderer.dispose(); assert.equal(root.children.length, 0);
 });
 
+test('the backed truck windshield keeps its reflective finish without a transmission pass', t => {
+  const root = new THREE.Group(); const renderer = new MatrixEscapeRenderer(root, 'film_escape_streets');
+  t.after(() => renderer.dispose());
+  const truck = root.getObjectByName('matrix-city-garbage-truck')!;
+  const windshield = truck.children.find(object => object instanceof THREE.Mesh && object.material instanceof THREE.MeshPhysicalMaterial) as THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial>;
+  assert.ok(windshield.material.clearcoat > 0 && windshield.material.transparent);
+  const center = windshield.getWorldPosition(new THREE.Vector3());
+  const ray = new THREE.Raycaster(center.clone().add(new THREE.Vector3(0, 0, -.1)), new THREE.Vector3(0, 0, 1));
+  root.updateMatrixWorld(true);
+  const backing = ray.intersectObject(truck, true).find(hit => hit.object !== windshield);
+  assert.ok(backing && backing.point.z - center.z > 0 && backing.point.z - center.z < .05);
+  assert.equal(windshield.material.transmission, 0);
+});
+
 test('the saved truck dodge clears the actual body and wheels before the truck passes Neo', t => {
   const root = new THREE.Group(); const renderer = new MatrixEscapeRenderer(root, 'film_escape_streets');
   t.after(() => renderer.dispose());
