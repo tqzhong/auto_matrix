@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, LAFAYETTE, type FilmJourney } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 
@@ -20,8 +20,9 @@ function fixture() {
   const off = new THREE.PointLight(0xf6d99c, 0, 5); off.visible = false; scene.add(...lights, off);
   const markerMaterial = new THREE.MeshBasicMaterial();
   const marker = new THREE.Mesh(geometry, markerMaterial); marker.visible = false; scene.add(marker);
+  const hotel = { root };
   const film = Object.assign(Object.create(FilmSetRenderer.prototype), {
-    scene, root, marker, markerLight: off, hotel: { root }, current: FILM_SETS.film_lafayette, textures: new Set([texture]),
+    scene, root, marker, markerLight: off, hotel, current: FILM_SETS.film_lafayette, textures: new Set([texture]),
   }) as FilmSetRenderer;
   const lighting = new LightCulling(scene), camera = new THREE.PerspectiveCamera();
   const journey = { scene: 'm1_pills' } as FilmJourney;
@@ -48,7 +49,7 @@ function fixture() {
     },
     initTexture(map: THREE.Texture) { work.push('texture'); uploaded.set(map, map.version); },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = (height = 15) => {
+  const prepare = (height = 1 + LAFAYETTE.upper - LAFAYETTE.rise) => {
     const before = work.length;
     film.prepareLafayetteUpper(renderer, camera, lighting, journey, height, actors, crew);
     assert.ok(work.length - before <= 1, 'one compile, binding or texture upload per frame');
@@ -57,7 +58,7 @@ function fixture() {
     assert.equal(marker.visible, false); assert.equal(off.intensity, 0);
     assert.equal(renderer.debug.checkShaderErrors, true);
   };
-  return { scene, root, marker, actors, crew, film, renderer, lighting, journey, texture, work, batches, prepare,
+  return { scene, root, hotel, marker, actors, crew, film, renderer, lighting, journey, texture, work, batches, prepare,
     mesh: (name: string) => { const mesh = new THREE.Mesh(geometry, material); mesh.name = name; return mesh; },
     ready: () => { ready = true; },
     replaceGpu: () => { uploaded = new WeakMap(); renderer.properties = properties() as THREE.WebGLRenderer['properties']; },
@@ -83,6 +84,26 @@ test('upper Lafayette prepares the future chair light and both stair layouts, on
   const count = h.work.length;
   t.mock.method(h.scene, 'traverseVisible', () => assert.fail('completed preparation must stop traversing the scene'));
   for (let i = 0; i < 8; i++) h.prepare(); assert.equal(h.work.length, count);
+});
+
+test('Lafayette stairs link the eight-light cast and landing before the upstairs room maps decode', t => {
+  const h = fixture(); t.after(h.dispose);
+  const stairs = h.hotel.root = new THREE.Group(), handrail = h.mesh('stair-handrail');
+  h.root.add(stairs); stairs.add(handrail);
+  const ownMeshes = [...h.actors.flatMap(group => group.children), handrail, h.marker];
+  h.texture.image = null;
+  const seventhFloor = 1 + 6 * LAFAYETTE.rise;
+  for (let frame = 0; frame < 3; frame++) h.prepare(seventhFloor);
+  assert.deepEqual(h.batches.map(batch => batch.slots), [8, 8, 8]);
+  assert.deepEqual(h.batches.flatMap(batch => batch.meshes), ownMeshes);
+  h.ready();
+  for (let frame = 0; frame < 40; frame++) h.prepare(seventhFloor);
+  assert.deepEqual(h.batches.map(batch => batch.slots), [8, 8, 8, 4, 4, 4]);
+  assert.equal(h.work.includes('texture'), false);
+  h.prepare(); assert.equal(h.batches.length, 6);
+  h.texture.image = { width: 2048, height: 2048 };
+  for (let frame = 0; frame < 16; frame++) h.prepare();
+  assert.ok(h.batches.slice(6).some(batch => batch.slots === 9 && batch.meshes.includes(h.root.children[0])));
 });
 
 test('upper preparation waits for the right phase and decoded room maps, then rebuilds for a new GPU', t => {
