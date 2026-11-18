@@ -136,9 +136,16 @@ export class ReloadedOpeningRenderer {
     }
     for (let z = -11; z <= 27; z += 10) { this.box(black, 0, 12.35, z, 5.6, .3, 1.6); this.box(light, 0, 12.1, z, 5.1, .06, 1.15); this.light(0xc3d9b9, 95, 20, 0, 11.7, z); }
     const glass = new THREE.MeshPhysicalMaterial({ color: 0x9cbcb8, roughness: .15, metalness: .35, transparent: true, opacity: .32, side: THREE.DoubleSide, depthWrite: false }); this.materials.add(glass);
-    this.glass = this.box(glass, 0, 5.4, -18.1, 29, 10.8, .08, this.group, 'dream-intact-window');
-    for (let x = -15; x <= 15; x += 5) this.box(metal, x, -30, -18, .16, 86, .35);
-    for (let y = -72; y <= 12; y += 6) this.box(metal, 0, y, -18, 30, .16, .4);
+    this.glass = this.box(glass, 0, 5.4, RELOADED.dreamWindowZ, 10, 10.8, .08, this.group, 'dream-intact-window');
+    for (const x of [-9.75, 9.75]) this.box(glass, x, 5.4, RELOADED.dreamWindowZ, 9.5, 10.8, .08);
+    for (const x of [-15, -10, -5, 5, 10, 15]) this.box(metal, x, -30, -18, .16, 86, .35);
+    // The central opening is one clear pane, with the mullion and rail ending at its perimeter.
+    this.box(metal, 0, -36.5, -18, .16, 73, .35);
+    this.box(metal, 0, 11.9, -18, .16, 2.2, .35);
+    for (let y = -72; y <= 12; y += 6) {
+      if (y === 6) for (const x of [-10, 10]) this.box(metal, x, y, -18, 10, .16, .4);
+      else this.box(metal, 0, y, -18, 30, .16, .4);
+    }
     for (const x of [-10, 10]) this.box(glass, x, -31, -18.05, 10, 84, .08);
     this.box(glass, 0, -40.5, -18.05, 10, 63, .08);
     this.box(this.material(0x253635, .42, .25), 0, -75, -33, 98, .3, 31);
@@ -189,14 +196,16 @@ export class ReloadedOpeningRenderer {
     const state = journey?.reloaded && !journey.visiting ? journey.reloaded : newReloaded(this.set === 'film_trinity_roof' ? 'dream' : 'meeting');
     if (journey?.visiting && state.kind === 'meeting') state.phase = 'done';
     if (this.set === 'film_trinity_roof') {
-      const falling = ['falling', 'dream_hit', 'done'].includes(state.phase); const breaking = state.phase === 'breaking';
-      if (this.glass) this.glass.visible = !falling && !(breaking && state.elapsed > .35);
-      this.shards.visible = falling || breaking; const t = falling ? Math.min(RELOADED.fall, state.phase === 'falling' ? state.elapsed : RELOADED.fall) : state.elapsed * .35;
+      const falling = ['falling', 'dream_hit', 'done'].includes(state.phase);
+      const trinity = reloadedRoot(state, 'trinity');
+      const broken = falling || state.phase === 'breaking' && trinity.z <= RELOADED.dreamWindowZ + .5;
+      if (this.glass) this.glass.visible = !broken;
+      this.shards.visible = broken; const t = falling ? Math.min(RELOADED.fall, state.phase === 'falling' ? state.elapsed : RELOADED.fall) : state.elapsed * .35;
       this.shards.children.forEach((shard, i) => { const angle = i * 2.4; shard.position.set(Math.sin(angle) * (1.1 + i % 6 * .42) + state.drift * .5, 2.8 + Math.cos(angle) * 2.1 - 1.1 * t * t, -19 - t * (1.1 + i % 4 * .14)); shard.rotation.set(i + t, i * .5 + t * .7, i * .3 + t * 1.5); });
       const pose = reloadedRoot(state, 'agent_johnson'); this.sight.position.set(pose.x, pose.y + 2.4, pose.z); this.sight.rotation.x = Math.PI / 2;
       const beat = RELOADED.dreamShots.find(beat => !state.shots.includes(beat) && !state.missed.includes(beat));
       this.sight.visible = state.phase === 'falling' && beat !== undefined; this.sight.scale.setScalar(beat === undefined ? 1 : .5 + Math.min(2, Math.abs(beat - state.elapsed)));
-      const trinity = reloadedRoot(state, 'trinity'); this.flash.position.set(trinity.x, trinity.y, trinity.z); this.flash.visible = state.phase === 'falling' && state.shotAge < .2;
+      this.flash.position.set(trinity.x, trinity.y, trinity.z); this.flash.visible = state.phase === 'falling' && state.shotAge < .2;
     } else if (this.set === 'film_captains_meeting') {
       const open = state.phase === 'breach' ? THREE.MathUtils.smoothstep(state.elapsed, 1.9, RELOADED.breach) : ['combat', 'departure_ready', 'departing', 'done', 'failed'].includes(state.phase) ? 1 : 0;
       this.door.rotation.y = open * 1.45; this.door.rotation.z = state.phase === 'breach' ? Math.sin(state.elapsed * 31) * .025 : 0;

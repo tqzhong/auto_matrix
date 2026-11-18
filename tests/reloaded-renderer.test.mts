@@ -54,6 +54,37 @@ test('renderer uses saved dream time, opens the real door and releases all owned
   }
 });
 
+test('the pursuer crosses the broken middle pane after Trinity and clears the fixed frame', t => {
+  const view = new ReloadedOpeningRenderer(new THREE.Group(), 'film_trinity_roof');
+  t.after(() => view.dispose());
+  const state = journey('dream'), dream = state.reloaded!;
+  dream.phase = 'breaking'; dream.actionStart = { x: .7, y: 0, z: -12.6, yaw: Math.PI };
+  const window = view.group.getObjectByName('dream-intact-window')!;
+  const shards = view.group.getObjectByName('dream-glass-shards')!;
+  const atWindow = (x: number, y: number) => {
+    const ray = new THREE.Raycaster(new THREE.Vector3(x, y, window.position.z - 2), new THREE.Vector3(0, 0, 1), 0, 4);
+    const meshes: THREE.Object3D[] = [];
+    view.group.traverseVisible(object => { if (object instanceof THREE.Mesh && object.parent !== shards) meshes.push(object); });
+    return ray.intersectObjects(meshes, false);
+  };
+  dream.elapsed = .25; view.update(state); view.group.updateMatrixWorld(true);
+  assert.ok(reloadedRoot(dream, 'agent_johnson').z > window.position.z + 2, 'Johnson must start inside the maintenance level');
+  assert.equal(window.visible, true); assert.equal(shards.visible, false);
+  assert.ok(atWindow(0, 3).some(hit => hit.object === window));
+
+  dream.elapsed = .64; view.update(state); view.group.updateMatrixWorld(true);
+  assert.ok(reloadedRoot(dream, 'trinity').z < window.position.z);
+  assert.ok(reloadedRoot(dream, 'agent_johnson').z > window.position.z);
+  assert.equal(window.visible, false); assert.equal(shards.visible, true);
+  for (const y of [1, 3, 6]) assert.equal(atWindow(0, y).length, 0, `the cleared opening at y=${y}`);
+  for (const x of [-8, 8]) assert.ok(atWindow(x, 3).length, 'adjacent panes stay in place');
+
+  dream.elapsed = RELOADED.breakGlass;
+  const leaving = reloadedRoot(dream, 'agent_johnson');
+  assert.ok(leaving.z < window.position.z);
+  assert.deepEqual(reloadedRoot({ ...dream, phase: 'falling', elapsed: 0 }, 'agent_johnson'), leaving);
+});
+
 test('fall cameras remain outside the facade and first person turns with the input heading', () => {
   const state = { ...newReloaded('dream'), phase: 'falling' as const, elapsed: 4, drift: 2 };
   const root = reloadedRoot(state, 'trinity'); const position = filmPosition(root.set, root.x, root.z); position.y += root.y;
@@ -253,18 +284,27 @@ test('the meeting defers offscreen skin shading and resumes it when the camera t
   const renderer = new AgentRenderer(new THREE.Scene());
   t.after(() => { renderer.dispose(); globalThis.document = originalDocument; });
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, persephone = world.agents.get('persephone')!;
+  neo.position = filmPosition('film_captains_meeting', 0, 2); neo.isInMatrix = true; neo.currentLocation = 'film_captains_meeting';
   const observer = world.agents.get('citizen_1')!;
   observer.position = filmPosition('film_captains_meeting', 8, 28); observer.isInMatrix = true; observer.currentLocation = 'film_captains_meeting';
-  renderer.updateAgent(observer.id, observer); renderer.setPlayer('neo');
+  for (const actor of [neo, observer, persephone]) renderer.updateAgent(actor.id, actor);
+  renderer.setPlayer('neo');
+  const observerBody = renderer.getAgentBody(observer.id);
   const flags: boolean[] = [];
-  t.mock.method(renderer['models'], 'animate', (_rig, _delta, input) => flags.push(Boolean(input.skipSkinContinuity)));
+  t.mock.method(renderer['models'], 'animate', (rig, _delta, input) => {
+    if (rig.root === observerBody) flags.push(Boolean(input.skipSkinContinuity));
+  });
   const state = journey('meeting'); state.reloaded!.phase = 'combat';
   const camera = new THREE.PerspectiveCamera(60, 16 / 9, .1, 120);
   camera.position.copy(filmPosition('film_captains_meeting', 0, 2)); camera.position.y += 3;
   camera.lookAt(camera.position.x, camera.position.y, camera.position.z - 10); renderer.update(.02, camera, 1, 0, state);
   assert.equal(renderer.getAgent(observer.id)?.visible, true);
+  assert.equal(renderer.getAgent(persephone.id)?.visible, false, 'the hall draws only its own occupants');
   camera.lookAt(observer.position.x, observer.position.y + 2, observer.position.z); renderer.update(.02, camera, 1, 0, state);
   assert.deepEqual(flags, [true, false]);
+  renderer.update(.02, camera, 1, 0);
+  assert.equal(renderer.getAgent(persephone.id)?.visible, true, 'other routes recover the normal Matrix view');
 });
 
 test('completed scene revisits retain their environment without replaying the current encounter', () => {

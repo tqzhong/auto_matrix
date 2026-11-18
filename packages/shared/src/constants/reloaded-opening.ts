@@ -13,7 +13,7 @@ export interface ReloadedOpening {
 }
 export type ReloadedGesture = ReloadedOpening & { role: string };
 export const RELOADED = {
-  breakGlass: 1.15, fall: 7.4, impact: 1.1, dreamShots: [1.3, 3.2, 5.1], shotWindow: .65,
+  dreamWindowZ: -18.1, breakGlass: 1.15, fall: 7.4, impact: 1.1, dreamShots: [1.3, 3.2, 5.1], shotWindow: .65,
   wake: 2.8, conversation: 5.5, connect: 2.2, report: 8.6, earpiece: 3.2, breach: 3.6, evacuation: 9,
   strike: 1.65, recovery: 1.25, dodgeWindow: .48, departure: 4.5,
   retreat: { turn: .28, walk: 1.35, coverZ: -9 },
@@ -95,6 +95,11 @@ export function reloadedRoot(state: ReloadedOpening, role: string) {
           start.z + (-24 - start.z) * progress, turnTo(start.yaw, 0, progress));
       }
       return dream(state.drift, -1.15 * t * t, -24 - t * .55, 0);
+    }
+    if (['approach', 'window_ready', 'breaking'].includes(state.phase)) {
+      const delay = .35;
+      const chase = state.phase === 'breaking' ? smooth((state.elapsed - delay) / (RELOADED.breakGlass - delay)) : 0;
+      return dream(1.5 + 4.9 * (1 - chase), 3 * chase, -21 + 10.5 * (1 - chase), Math.PI);
     }
     return dream(1.5, 3 - 1.15 * Math.max(0, t - .8) ** 2, -21 - t * .55, Math.PI);
   }
