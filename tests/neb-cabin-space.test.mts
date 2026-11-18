@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { CABIN, CABIN_WALLS, CABIN_ROUTE_LENGTH, cabinGuidePose, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
+import { CABIN, CABIN_WALLS, CABIN_ROUTE_LENGTH, FILM_SETS, cabinGuidePose, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 
 test('the cabin grate is the visible walking surface rather than being buried underneath the older hull plates', () => {
@@ -66,4 +67,64 @@ test('cabin surfaces keep usable fallback colors until loaded, reject late image
   let disposals = 0; textures.forEach(texture => texture.addEventListener('dispose', () => disposals++));
   renderer.dispose(); renderer.dispose(); assert.equal(disposals, textures.length, 'each owned texture is released once');
   callbacks.get(clothPath)!(returned.get(clothPath)!); assert.equal(cloth.map, null, 'an image arriving after disposal cannot attach to the old cabin');
+});
+
+test('medical recovery prepares the existing cabin maps, first-view cast and new shadow casters ahead of the cut', t => {
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), deck = new NebDeckRenderer(film.root);
+  const camera = new THREE.PerspectiveCamera();
+  const journey = { scene: 'm1_recovery', actor: 'neo', step: 0, awakening: { kind: 'recovery', elapsed: 8, started: true } } as FilmJourney;
+  Object.assign(film, { neb: deck, current: FILM_SETS.film_neb_deck, currentScene: journey.scene });
+  deck.update(journey, 0);
+  const cabin = film.root.getObjectByName('neb-waking-cabin')!;
+  const steel = cabin.getObjectByName('neb-cabin-bulkhead-4-neb-cabin-painted-steel') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  const cotton = cabin.getObjectByName('neb-cabin-bed-neb-cabin-cotton') as typeof steel;
+  const map = new THREE.Texture({ width: 1254, height: 1254 }); map.needsUpdate = true;
+  const model = new THREE.Group(), geometry = new THREE.BoxGeometry(), skin = new THREE.MeshStandardMaterial();
+  const boots = new THREE.SkinnedMesh(geometry, skin); boots.name = 'shoes01'; boots.visible = false; boots.castShadow = true; model.add(boots);
+  const sweater = new THREE.SkinnedMesh(geometry, new THREE.MeshStandardMaterial()); sweater.castShadow = true;
+  const effects: string[] = [], color = new Set<THREE.Material>(), depth = new Set<THREE.Material>(), uploaded = new Map<THREE.Texture, { __version: number }>();
+  const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  let target: THREE.WebGLRenderTarget | null = null, copies = 0, disposed = 0;
+  sweater.material.addEventListener('dispose', () => disposed++);
+  const renderer = {
+    properties: { get: (value: THREE.Texture) => uploaded.get(value) ?? {} }, info: { programs }, extensions: { has: () => true },
+    debug: { checkShaderErrors: true }, getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
+    getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
+    initTexture: (texture: THREE.Texture) => { effects.push('upload'); uploaded.set(texture, { __version: texture.version }); },
+    compile: (subject: THREE.Object3D, eye: THREE.Camera, view: THREE.Scene) => {
+      assert.notEqual(view, scene); assert.equal(eye, camera);
+      let spots = 0, slots = 0;
+      view.traverseVisible(object => {
+        if (object instanceof THREE.PointLight) slots++;
+        if (object instanceof THREE.SpotLight && object.castShadow) spots++;
+      });
+      assert.equal(slots, 8); assert.equal(spots, 1);
+      subject.traverse(object => {
+        assert.ok(object instanceof THREE.Mesh && !Array.isArray(object.material));
+        (object.material instanceof THREE.MeshDepthMaterial ? depth : color).add(object.material);
+      });
+      effects.push('compile'); programs.push({ program: {}, isReady: () => true, getUniforms: () => effects.push('bindings') });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  t.after(() => { film.dispose(); geometry.dispose(); skin.dispose(); map.dispose(); });
+  const cast = (id: string) => id === 'neo' ? { model, garments: () => { copies++; return [sweater]; } } : {};
+  const prepare = () => {
+    const before = effects.length;
+    film.prepareCabinArrival?.(renderer, camera, journey, cast);
+    assert.ok(effects.length - before <= 1, 'only one batch, binding or texture per frame');
+    assert.equal(target, null); assert.equal(boots.visible, false); assert.equal(sweater.parent, null);
+    assert.equal(film.root.getObjectByName('neb-waking-cabin'), cabin);
+  };
+  for (let frame = 0; frame < 40; frame++) prepare();
+  assert.ok(!color.has(steel.material) && !color.has(cotton.material), 'wait for the actual mapped variants');
+  steel.material.map = steel.material.bumpMap = map;
+  cotton.material.map = cotton.material.bumpMap = map;
+  for (let frame = 0; frame < 80; frame++) prepare();
+  assert.ok(uploaded.has(map), 'upload the original cabin texture before the player moves into the room');
+  assert.ok([steel.material, cotton.material, boots.material, sweater.material].every(material => color.has(material)));
+  assert.ok([...depth].some(material => (material as THREE.MeshDepthMaterial).map === map));
+  assert.equal(copies, 1); assert.equal(disposed, 0);
+  journey.scene = 'm1_cabin'; prepare(); assert.equal(disposed, 0, 'the cut must keep the warmed garment programs for their first draw');
+  film.update(undefined, undefined, 0); assert.equal(disposed, 1, 'leaving the deck releases the temporary garment material');
 });

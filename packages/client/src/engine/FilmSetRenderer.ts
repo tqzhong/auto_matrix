@@ -246,6 +246,7 @@ const MEAL_ENTRY_MESHES = new Set([
   'Tank_face', 'Tank_ribbed_shirt', 'Tank_harness', 'Tank_curled_hair', 'neo-logos-sweater', 'Tailored_trousers',
 ]);
 const NEB_CABIN_MATERIALS = new Set(['neb-cabin-painted-steel', 'neb-cabin-cotton']);
+const NEB_CABIN_CAST_MESHES = new Set(['high-poly', 'shoes01', 'Anatomical_wrist_skin']);
 const RESTAURANT_ENTRY_PRIORITY = new Map([
   'steak-wine-base', 'cypher-restaurant-floor', 'cypher-anatomical-head', 'cypher-teeth-lower', 'Anatomical_head_and_hands', 'cypher-restaurant-window',
   'cypher-restaurant-city-matte', 'cypher-restaurant-night', 'shoes01',
@@ -425,6 +426,11 @@ export class FilmSetRenderer {
   private preparedPods?: PodSetRenderer;
   private neb?: NebDeckRenderer;
   private preparedAwakening?: AwakeningSetPreparation;
+  private preparedCabinArrival?: CastColorPreparation & {
+    gpu: THREE.WebGLRenderer['properties']; lighting: LightCulling; surfaces: Map<THREE.Material, ColorMesh>; liveMeshes: ColorMesh[];
+    depth: THREE.Mesh[]; depthVariants: Set<string>; materials: Set<THREE.Material>;
+    textureUpload?: Generator<void, boolean>;
+  };
   private preparedTruthReturn?: { scene: 'm1_truth_return' | 'm1_jump_return'; root: THREE.Group; deck: NebDeckRenderer;
     ready: boolean; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedDownloadWalk?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties']; textureUpload?: Generator<void, boolean> };
@@ -1240,6 +1246,57 @@ export class FilmSetRenderer {
       prepared.colors.textures.add(material.map); prepared.pendingCabin.delete(material);
     }
     this.prepareCastColors(renderer, camera, prepared.colors, ['neo', 'trinity', 'morpheus', 'tank', 'cypher', 'dozer'], actor, prepared);
+  }
+  prepareCabinArrival(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney,
+    actor: (id: string) => ShipEntryCast): void {
+    if (!this.neb || this.currentScene !== 'm1_recovery' || journey.scene !== 'm1_recovery' || journey.visiting
+      || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    let prepared = this.preparedCabinArrival;
+    if (!prepared || prepared.gpu !== renderer.properties) {
+      this.cancelCabinArrival();
+      const cabin = this.root.getObjectByName('neb-waking-cabin');
+      if (!cabin) return;
+      const surfaces = new Map<THREE.Material, ColorMesh>();
+      for (const mesh of this.colorMeshes([cabin])) if (NEB_CABIN_MATERIALS.has(mesh.material.name)) surfaces.set(mesh.material, mesh);
+      const colors = this.colorPreparation(new THREE.Group(), []);
+      this.root.traverseVisible(light => { if (light instanceof THREE.SpotLight) colors.scene.add(light.clone()); });
+      // The waking view has eight points, including the one reserved by colorPreparation.
+      for (let slot = 1; slot < RECOVERY_POINT_SLOTS; slot++) colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
+      const lighting = new LightCulling(colors.scene); lighting.enabled = false;
+      prepared = this.preparedCabinArrival = { ...colors, gpu: renderer.properties, lighting, surfaces,
+        actors: new Set(), liveMeshes: [], preserveStockSkinning: true,
+        depth: [], depthVariants: new Set(), materials: new Set() };
+    }
+    const meshes: ColorMesh[] = [];
+    for (const [material, mesh] of prepared.surfaces) {
+      if (!mesh.material.map?.image) continue;
+      prepared.surfaces.delete(material); meshes.push(mesh); prepared.liveMeshes.push(mesh);
+    }
+    let preparingCast = false;
+    for (const id of ['neo', 'morpheus']) {
+      const { model, garments } = actor(id);
+      if (!model || !garments || prepared.actors.has(model)) continue;
+      const live: ColorMesh[] = [];
+      model.traverse(object => {
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && NEB_CABIN_CAST_MESHES.has(object.name)) live.push(object);
+      });
+      const clothes = garments();
+      for (const mesh of clothes) prepared.materials.add(mesh.material);
+      prepared.actors.add(model); prepared.liveMeshes.push(...live); meshes.push(...live, ...clothes);
+      preparingCast = true;
+      break;
+    }
+    if (meshes.length) {
+      prepared.meshes.push(...meshes); this.queueColorTextures(prepared.textures, meshes);
+      if (renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+        const materials = new Set<THREE.MeshDepthMaterial>();
+        prepared.depth.push(...shadowCasterProxies(meshes, materials, prepared.depthVariants));
+        materials.forEach(material => prepared.materials.add(material));
+      }
+    }
+    if (preparingCast || this.prepareStagedColorTexture(renderer, prepared, prepared.textures)) return;
+    if (prepared.depth.length && this.linkColorBatch(renderer, camera, { ...prepared, meshes: prepared.depth }, prepared.lighting, 'depth')) return;
+    this.prepareColorProgram(renderer, camera, prepared, prepared.lighting, 'isolated', true, prepared.liveMeshes);
   }
   prepareAwakeningHandoff(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, sun: THREE.DirectionalLight, sourceLights?: LightCulling,
@@ -6943,6 +7000,14 @@ export class FilmSetRenderer {
     this.preparedAwakening = undefined;
     this.releaseAwakeningPreparation(prepared); prepared.deck?.dispose(); prepared.construct?.dispose();
   }
+  private cancelCabinArrival(): void {
+    // Keep the temporary garment programs alive through the cabin's first draw.
+    this.preparedCabinArrival?.textureUpload?.return(false);
+    this.preparedCabinArrival?.lighting.dispose();
+    this.preparedCabinArrival?.scene.traverse(light => { if (light instanceof THREE.Light) light.dispose(); });
+    this.preparedCabinArrival?.materials.forEach(material => material.dispose());
+    this.preparedCabinArrival = undefined;
+  }
   private cancelClubPreparation(): void {
     const prepared = this.preparedClub; if (!prepared) return;
     this.preparedClub = undefined; prepared.textureUpload?.return(false); prepared.lighting?.dispose();
@@ -7076,6 +7141,7 @@ export class FilmSetRenderer {
     this.cancelDreamPreparation();
     this.cancelMeetingDeckPreparation();
     this.cancelAwakeningPreparation();
+    this.cancelCabinArrival();
     this.cancelDesertPreparation();
     this.cancelTruthReturnPreparation();
     this.cancelDownloadWalkPreparation();
