@@ -53,7 +53,7 @@ function fixture(t: TestContext, roof = false, withShadows = false) {
         depthBatches.push({ points, meshes: depth });
       } else {
         assert.equal(colors.environment, scene.environment); assert.equal(colors.fog, scene.fog);
-        assert.equal(points, 1); assert.equal(shadows, roof ? 2 : 1); assert.ok(root); roots.add(root);
+        assert.equal(points, roof ? 2 : 1); assert.equal(shadows, roof ? 2 : 1); assert.ok(root); roots.add(root);
         assert.equal(scene.children.includes(root), false, 'the future government set must stay offstage');
       }
       if (meshes.includes(skin)) assert.match(material.customProgramCacheKey(), /actor-local-skin-v1$/);

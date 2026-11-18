@@ -111,3 +111,36 @@ test('Jones falls onto the roof and the returned pilot remains on the deck when 
   const upright = pose('citizen_11', 1.1);
   assert.ok(Math.abs(upright.rotation.x) < .01 && bounds(upright).max.y - floor > 3, 'a pre-impact pose cannot retain a previous fall');
 });
+
+test('the roof duel keeps the interrogation cast out of the skyline until the office returns', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {},
+    fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
+  }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actors = new AgentRenderer(new THREE.Scene());
+  t.after(() => { actors.dispose(); globalThis.document = previous; });
+  const neo = world.agents.get('neo')!;
+  for (const id of ['neo', 'trinity', 'agent_jones', 'morpheus', 'smith', 'agent_brown']) {
+    const actor = world.agents.get(id)!;
+    actor.currentLocation = ['neo', 'trinity', 'agent_jones'].includes(id) ? 'film_government_roof' : 'film_government_office';
+    actor.position = filmPosition(actor.currentLocation, 0, id === 'agent_jones' ? -8.8 : 2.5); actor.isInMatrix = true;
+    actors.updateAgent(id, actor);
+  }
+  actors.setPlayer(neo.id);
+  actors.update(0, undefined, 0, 0, journey('m1_bullet_dodge'));
+  for (const id of ['neo', 'trinity', 'agent_jones']) assert.equal(actors.getAgent(id)!.visible, true, id);
+  for (const id of ['morpheus', 'smith', 'agent_brown']) assert.equal(actors.getAgent(id)!.visible, false, id);
+
+  neo.currentLocation = 'film_government_office';
+  neo.position = filmPosition('film_government_office');
+  actors.updateAgent(neo.id, neo);
+  actors.update(0, undefined, 0, 0, {
+    ...journey('m1_bullet_dodge'), scene: 'm1_helicopter', government: undefined,
+    airRescue: { kind: 'office', phase: 'ready', elapsed: 0, attempt: 0, suppression: 0, bursts: 0 },
+  });
+  for (const id of ['morpheus', 'smith', 'agent_brown']) assert.equal(actors.getAgent(id)!.visible, true, id);
+});

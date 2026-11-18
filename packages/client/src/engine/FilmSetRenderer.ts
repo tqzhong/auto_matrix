@@ -211,6 +211,7 @@ type EntryCast = { model?: THREE.Group; shadow?: THREE.Mesh };
 type ShipEntryCast = EntryCast & { garments?: () => ColorMesh[] };
 const JUMP_ENTRY_MESHES = new Set(['jump-tower-windows', 'jump-canyon-avenue', 'jump-city-matte']);
 const QUESTIONING_POINT_SLOTS = 1;
+const ROOF_GUN_LINE_POINT_SLOTS = 2;
 const LOGOS_CARGO_POINT_SLOTS = 7;
 const DOCK_BATTLE_POINT_SLOTS = 20;
 const DOCK_BRIEFING_POINT_SLOTS = 7;
@@ -645,6 +646,7 @@ export class FilmSetRenderer {
     // The screen, three loadouts and objective share one layout throughout the reveal.
     if (this.current?.id === 'film_white_construct' && this.currentScene === 'm1_guns') return 5;
     if (this.current?.id === 'film_government_office' && this.currentScene === 'm1_smith_question') return QUESTIONING_POINT_SLOTS;
+    if (this.current?.id === 'film_government_roof' && this.currentScene === 'm1_bullet_dodge') return ROOF_GUN_LINE_POINT_SLOTS;
     // The hotel lamp and the market muzzle flash share this layout.
     if (this.matrixEscape?.setId === 'film_escape_streets') return CITY_CHASE_POINT_SLOTS;
     if (this.current?.id === 'film_kungfu_dojo' && this.currentScene === 'm1_dojo') return 1;
@@ -943,6 +945,8 @@ export class FilmSetRenderer {
       prepared.lighting.stablePointSlots = !questioning && !roofFight;
       // The alarm and the window objective take turns using this slot.
       if (questioning) prepared.lighting.minimumPointSlots = QUESTIONING_POINT_SLOTS;
+      // The cockpit lamp and a muzzle flash can overlap on the gun line.
+      if (roofFight) prepared.lighting.minimumPointSlots = ROOF_GUN_LINE_POINT_SLOTS;
       prepared.gpu = renderer.properties;
     }
     const colors = prepared.colors, meshes = new Set<ColorMesh>(), contacts: THREE.Mesh[] = [];

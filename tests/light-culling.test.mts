@@ -526,6 +526,39 @@ test('Smith’s interrogation keeps one point-light slot as its real alarm and o
   assert.deepEqual(energies, [[0], [5], [95], [0]]);
 });
 
+test('the rooftop gun line keeps two point-light slots through the first flash and retry', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m1_bullet_dodge, center = FILM_SETS[scene.set].center;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get(scene.actor)!;
+  neo.position = filmEntry(scene); neo.currentLocation = scene.set; neo.isInMatrix = true;
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: neo.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: { ...neo.position }, reflections: {}, lastText: '', government: { kind: 'rooftop', phase: 'ready', elapsed: 0, attempt: 0 } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  h.camera.position.set(center.x, center.y + 4, center.z + 12);
+  h.camera.lookAt(center.x, center.y + 2, center.z - 12);
+  const read = () => {
+    renderer.update(neo, sandbox, 0, neo.position, h.camera.position, undefined, false, 12000, h.camera);
+    h.culling.minimumPointSlots = renderer.minimumPointSlots; h.culling.stablePointSlots = renderer.stablePointSlots;
+    const energies: number[] = [];
+    h.before();
+    try { h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) energies.push(light.intensity); }); }
+    finally { h.after(); }
+    return energies.sort((a, b) => a - b);
+  };
+  const idle = read(), flash = new THREE.PointLight(0xffd495, 85, 9);
+  flash.position.set(center.x, center.y + 3, center.z + 2); h.scene.add(flash);
+  journey.government!.phase = 'opening';
+  const fired = read();
+  h.scene.remove(flash); flash.dispose();
+  const after = read();
+  journey.government = { kind: 'rooftop', phase: 'ready', elapsed: 0, attempt: 1 };
+  assert.deepEqual([idle, fired, after, read()], [[0, 5], [5, 85], [0, 5], [0, 5]]);
+  renderer.update(undefined, undefined, 0);
+  assert.equal(renderer.minimumPointSlots, 0);
+});
+
 test('the market gunshot uses a reserved point-light slot before and after the flash', t => {
   const h = view(), renderer = new FilmSetRenderer(h.scene);
   t.after(() => { h.culling.dispose(); renderer.dispose(); });
