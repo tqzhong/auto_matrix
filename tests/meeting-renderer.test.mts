@@ -10,6 +10,54 @@ import { MeetingSetRenderer } from '../packages/client/src/engine/MeetingSetRend
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
+test('Lafayette prepares the existing drive textures before the sedan moves', async t => {
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  const loads: (() => void)[] = [];
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (url, onLoad) => {
+    const texture = new THREE.Texture();
+    loads.push(() => { texture.image = { width: 1024, height: 1024, url }; texture.needsUpdate = true; onLoad?.(texture); });
+    return texture;
+  });
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(), lights = new LightCulling(scene);
+  const film = new FilmSetRenderer(scene); t.after(() => { film.dispose(); lights.dispose(); globalThis.document = document; });
+  const street = new MeetingSetRenderer(film.root); film['meeting'] = street;
+  const hotel = street['hotel']!;
+  const uploads: THREE.Texture[] = [], uploaded = new WeakMap<THREE.Texture, number>();
+  const renderer = {
+    properties: { get: (texture: THREE.Texture) => ({ __version: uploaded.get(texture) }) },
+    initTexture(texture: THREE.Texture) { uploads.push(texture); uploaded.set(texture, texture.version); },
+  } as unknown as THREE.WebGLRenderer;
+  const journey = { scene: 'm1_bug', actor: 'neo', meeting: { phase: 'done', elapsed: 0, bugged: false, roadTime: 10.4 } } as FilmJourney;
+  const prepare = () => film.prepareLafayette(renderer, camera, lights, journey);
+  prepare(); assert.equal(uploads.length, 0, 'undecoded textures stay queued');
+  loads.forEach(finish => finish());
+  const maps = new Set<THREE.Texture>();
+  hotel.root.traverse(object => {
+    if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
+    for (const texture of [object.material.map, object.material.normalMap, object.material.roughnessMap])
+      if (texture?.image?.width >= 1024) maps.add(texture);
+  });
+  assert.ok(maps.size > 0);
+  await t.test('the two plaster samplers share each decoded image and retain their tiling', () => {
+    for (const kind of ['color', 'normal', 'roughness']) {
+      const variants = [...maps].filter(texture => texture.image.url.endsWith(`damaged_plaster-${kind}.jpg`));
+      assert.deepEqual(variants.map(texture => texture.repeat.x).sort(), [3, 8]);
+      assert.ok(variants[0].source === variants[1].source, `share the decoded ${kind} image`);
+      assert.equal(variants[0].source.version, 1, 'alias creation keeps the shared image version');
+    }
+  });
+  await t.test('one original texture per frame becomes resident while the car waits', () => {
+    const clock = JSON.stringify(journey);
+    for (let frame = 0; frame < 40; frame++) {
+      const before = uploads.length; prepare(); assert.ok(uploads.length - before <= 1);
+    }
+    assert.equal(uploads.length, maps.size, 'prepare the textures owned by the hotel');
+    assert.deepEqual(new Set(uploads), maps); assert.equal(film['meeting'], street);
+    assert.equal(JSON.stringify(journey), clock);
+  });
+});
+
 for (const checkpoint of ['arrival', 'departure'] as const) test(`cold bridge ${checkpoint} stages the street and late cast textures`, t => {
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;

@@ -400,6 +400,7 @@ export class FilmSetRenderer {
   private officeTowerDepth?: THREE.MeshDepthMaterial;
   private officeStreetDepth?: THREE.MeshDepthMaterial;
   private preparedLafayette?: LafayettePreparation;
+  private preparedLafayetteDrive?: { source: ReadonlySet<THREE.Texture>; gpu: THREE.WebGLRenderer['properties']; pending: Set<THREE.Texture> };
   private preparedLafayetteEntryShadow?: { actor: THREE.Group; gpu: THREE.WebGLRenderer['properties']; programs: ColorProgram[] };
   private preparedSecondOracle?: {
     scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation;
@@ -3228,7 +3229,16 @@ export class FilmSetRenderer {
     this.preparedOffice = undefined;
   }
   prepareLafayette(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey?: FilmJourney, actor?: THREE.Group, morpheus?: THREE.Group): void {
-    if (journey?.scene !== 'm1_bug' || journey.visiting || journey.meeting?.phase !== 'outside') return;
+    const phase = journey?.scene === 'm1_bug' && !journey.visiting ? journey.meeting?.phase : undefined;
+    const textures = phase && ['scanning', 'located', 'removing', 'discarding', 'done', 'driving'].includes(phase)
+      ? this.meeting?.lafayetteTextures : undefined;
+    if (textures) {
+      let prepared = this.preparedLafayetteDrive;
+      if (prepared?.source !== textures || prepared.gpu !== renderer.properties)
+        this.preparedLafayetteDrive = prepared = { source: textures, gpu: renderer.properties, pending: new Set(textures) };
+      this.prepareColorTexture(renderer, prepared.pending);
+    } else this.preparedLafayetteDrive = undefined;
+    if (phase !== 'outside') return;
     if (this.hotel && this.approach?.root.visible) {
       this.prepareLafayetteEntryShadow(renderer, camera, lighting, morpheus);
       return;
@@ -6998,7 +7008,7 @@ export class FilmSetRenderer {
     this.preparedOfficeConnection = undefined;
     this.preparedOfficeWindow = undefined;
     this.preparedOfficeDescent = undefined;
-    this.cancelLafayettePreparation();
+    this.cancelLafayettePreparation(); this.preparedLafayetteDrive = undefined;
     this.cancelOpeningPreparation();
     this.cancelOpeningRoofRetry();
     this.cancelOpeningVisit();

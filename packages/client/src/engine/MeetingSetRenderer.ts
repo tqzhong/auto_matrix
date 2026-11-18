@@ -39,6 +39,7 @@ export class MeetingSetRenderer {
     this.construction = undefined;
     return true;
   }
+  get lafayetteTextures(): ReadonlySet<THREE.Texture> | undefined { return this.hotel?.surfaceTextures; }
   attach(parent: THREE.Group): void {
     while (!this.prepareStep()) { /* Finish construction after a cold load. */ }
     parent.add(this.root);

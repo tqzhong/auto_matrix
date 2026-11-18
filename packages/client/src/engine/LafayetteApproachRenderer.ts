@@ -15,10 +15,28 @@ export class LafayetteApproachRenderer {
   constructor(parent: THREE.Group, offset: THREE.Vector3, exterior = false) {
     parent.add(this.root); this.root.position.copy(offset); this.root.add(this.static);
     const mat = (color: number, roughness = .8, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
+    const loader = new THREE.TextureLoader();
+    const images = new Map<string, { texture: THREE.Texture; aliases: THREE.Texture[] }>();
+    const share = (texture: THREE.Texture, original: THREE.Texture) => {
+      // Keep each sampler's transform without invalidating the shared image.
+      texture.needsUpdate = true; texture.source = original.source;
+    };
     const pbr = (id: string, color: number, repeat: number, roughness = .8) => {
       const material = mat(color, roughness);
       for (const [key, name] of [['map', 'color'], ['normalMap', 'normal'], ['roughnessMap', 'roughness']] as const) {
-        const texture = new THREE.TextureLoader().load(`/assets/film-materials/${id}-${name}.jpg`);
+        const path = `/assets/film-materials/${id}-${name}.jpg`, cached = images.get(path);
+        let texture: THREE.Texture;
+        if (cached) {
+          texture = new THREE.Texture();
+          if (cached.texture.image) share(texture, cached.texture);
+          else cached.aliases.push(texture);
+        } else {
+          const aliases: THREE.Texture[] = [];
+          texture = loader.load(path, loaded => {
+            for (const alias of aliases.splice(0)) share(alias, loaded);
+          });
+          images.set(path, { texture, aliases });
+        }
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(repeat, repeat); texture.anisotropy = 4;
         if (key === 'map') texture.colorSpace = THREE.SRGBColorSpace;
         material[key] = texture; this.textures.add(texture);
@@ -179,6 +197,7 @@ export class LafayetteApproachRenderer {
     for (const mesh of meshes) { mesh.removeFromParent(); this.geometries.delete(mesh.geometry); }
     for (const [material, geometries] of batches) { const geometry = mergeGeometries(geometries); geometries.forEach(g => g.dispose()); if (geometry) { geometry.computeBoundingSphere(); this.mesh(geometry, material, undefined, root); } }
   }
+  get surfaceTextures(): ReadonlySet<THREE.Texture> { return this.textures; }
   update(hotel: HotelApproach | undefined, height: number, exterior = false): void {
     const progress = hotel?.door === undefined ? hotel ? 0 : 1 : hotel.door / LAFAYETTE.doorSeconds;
     this.door.position.x = LAFAYETTE.door.x - lafayetteKnockPose(hotel?.knock ?? 0).strike * .035;
