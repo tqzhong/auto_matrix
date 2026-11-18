@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SETS, filmPosition, lafayetteWelcomeRoot, type LafayetteWelcomeGesture } from '@auto_matrix/shared';
 import { advanceMotion, newMotion, type MotionInput } from '../packages/client/src/agents/CharacterMotion.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { actor } from './helpers/fighting-hand-fixture.mts';
@@ -41,6 +42,47 @@ function surfaceState(root: THREE.Group) {
   });
   return result;
 }
+
+test('Lafayette prepares the waiting Morpheus fit while his rig is offstage', async t => {
+  const warm = await actor('morpheus'), cold = await actor('morpheus');
+  t.after(() => { warm.models.dispose(); cold.models.dispose(); });
+  const group = new THREE.Group(), body = new THREE.Group(); group.add(body); body.add(warm.rig.root);
+  group.position.set(2050, -94, 2389); body.position.y = -1; body.rotation.y = .7;
+  const state = { status: 'alive', isInMatrix: false, controller: null as string | null };
+  const motion = newMotion(); motion.time = 8;
+  const renderer = Object.assign(Object.create(AgentRenderer.prototype), {
+    matrix: true,
+    agents: new Map([['morpheus', { group, body, state, rig: { hero: warm.rig, motion } }]]),
+    models: Object.assign(Object.create(CharacterModels.prototype), { heroes: warm.models }),
+    preparedLafayetteGuide: new WeakSet(),
+  }) as AgentRenderer;
+  const prepare = () => renderer.prepareLafayetteGuideActor();
+  assert.equal(prepare(), false, 'the visible actor must retain his current pose');
+  group.visible = false; state.controller = 'another-player';
+  assert.equal(prepare(), false, 'another player owns the actor');
+  state.controller = null; state.isInMatrix = true;
+  assert.equal(prepare(), false, 'the actor is already in the Matrix');
+  state.isInMatrix = false;
+  const before = JSON.stringify({ position: group.position, body: body.position, rotation: body.rotation, state, motion });
+  const fit = t.mock.method(warm.models['regularCoatTails'].get(warm.rig)!, 'containHull');
+  assert.equal(prepare(), true, 'fit the loaded waiting actor before the first guide draw');
+  const fitted = fit.mock.callCount(); assert.ok(fitted > 0);
+  assert.equal(prepare(), false, 'only prepare once for this rig');
+  assert.equal(group.visible, false);
+  assert.equal(JSON.stringify({ position: group.position, body: body.position, rotation: body.rotation, state, motion }), before);
+
+  const welcome = { role: 'morpheus', phase: 'approach', elapsed: 0 } as const;
+  const at = lafayetteWelcomeRoot(welcome, welcome.role), position = filmPosition('film_lafayette', at.x, at.z);
+  group.position.copy(position); body.rotation.y = at.yaw; group.updateMatrixWorld(true);
+  const coldGroup = new THREE.Group(), coldBody = new THREE.Group(); coldGroup.add(coldBody); coldBody.add(cold.rig.root);
+  coldGroup.position.copy(position); coldBody.position.y = -1; coldBody.rotation.y = at.yaw; coldGroup.updateMatrixWorld(true);
+  for (const h of [warm, cold]) {
+    const input = { ...idle, welcome }, live = newMotion();
+    h.models.animate(h.rig, advanceMotion(live, input, 1 / 60), live, input, 1 / 60);
+  }
+  assert.equal(fit.mock.callCount(), fitted, 'the normal first frame reuses the full fitted coat');
+  assert.deepEqual(surfaceState(warm.rig.root), surfaceState(cold.rig.root));
+});
 
 test('all visible greeting surfaces and paused buffers restore exactly on all three actual rigs', async t => {
   for (const role of ['morpheus', 'neo', 'trinity'] as const) {

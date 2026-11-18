@@ -5,7 +5,7 @@ import { poseHammerPatient } from './HammerPatientPerformance.js';
 import { poseHelProtection } from './HelCoatcheckPerformance.js';
 import type { HelCoatcheckEncounter } from '@auto_matrix/shared';
 import { AIR_RESCUE, HEL_DISARM, HEL_TRIO, OPENING_ESCAPE, OPENING_HOTEL, OPENING_ROOF_EXIT, WELLS_AFTERMATH, helDanceDoorDuration, helDanceDoorLocked, openingHotelAlleyGuard, openingHotelClimbed, openingHotelDiveMotion, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
-import { FILM_SCENES, FILM_SCENE_BY_ID, filmSetAt } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SCENE_BY_ID, filmPosition, filmSetAt, lafayetteWelcomeRoot } from '@auto_matrix/shared';
 import { contactMobilStrike } from './MobilRefusalPerformance.js';
 import { contactMobilFamily } from './MobilFamilyPerformance.js';
 import { poseFreewayTransferContact } from './FreewayPickupContact.js';
@@ -100,6 +100,7 @@ export class AgentRenderer {
   private openingRoofAttempt?: number;
   private models = new CharacterModels();
   private preparedOpeningApartment = new WeakSet<THREE.Group>();
+  private preparedLafayetteGuide = new WeakSet<THREE.Group>();
   private hotelCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; pursuit: boolean; heroes: THREE.Group[]; steps?: Generator<void> };
   private cityChasePreparation?: { gpu: THREE.WebGLRenderer['properties']; smith: THREE.Group; steps?: Generator<void> };
   private wellsCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; heroes: THREE.Group[]; meshes: THREE.Mesh[]; steps?: Generator<void> };
@@ -371,8 +372,28 @@ export class AgentRenderer {
       || state.currentAction && !(resumeDeparture && call?.phase === 'leaving')
       || !['neo_apartment', 'film_anderson_flat'].includes(state.currentLocation)) return false;
     // Only prepare the loaded offstage rig. The distant representation and actor clock stay live.
-    this.models.prepareApartmentIdle(hero);
+    this.models.prepareHiddenHero(hero, { homeClothes: true });
     this.preparedOpeningApartment.add(hero.root);
+    return true;
+  }
+  prepareLafayetteGuideActor(): boolean {
+    const entry = this.agents.get('morpheus'), hero = entry?.rig.hero;
+    if (!this.matrix || !entry || !hero || entry.group.visible || entry.state.isInMatrix
+      || entry.state.status !== 'alive' || entry.state.controller || this.preparedLafayetteGuide.has(hero.root)) return false;
+    const { group, body } = entry;
+    const welcome = { role: 'morpheus', phase: 'approach', elapsed: 0 } as const;
+    const at = lafayetteWelcomeRoot(welcome, welcome.role), position = filmPosition('film_lafayette', at.x, at.z);
+    const previousPosition = group.position.clone(), previousBody = body.position.clone(), previousRotation = body.rotation.clone();
+    try {
+      // The coat fit uses world matrices. Prepare it at the actual greeting point on the hidden rig.
+      group.position.copy(position); body.position.set(0, -1, 0); body.rotation.set(0, at.yaw, 0, 'XYZ');
+      group.updateMatrixWorld(true);
+      this.models.prepareHiddenHero(hero, { welcome });
+      this.preparedLafayetteGuide.add(hero.root);
+    } finally {
+      group.position.copy(previousPosition); body.position.copy(previousBody); body.rotation.copy(previousRotation);
+      group.updateMatrixWorld(true);
+    }
     return true;
   }
   getNearbyOfficeActor(id: string, camera: THREE.Camera): THREE.Group | undefined {
