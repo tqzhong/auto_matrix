@@ -3256,7 +3256,12 @@ export class FilmSetRenderer {
       if (batch.length) {
         const programs = renderer.info.programs, start = programs?.length ?? 0;
         prepared.lights.shell.position.set(x, y - 1, z);
-        this.compileColorBatch(renderer, batch, subject => lighting.compileSubject(renderer, camera, subject, prepared.lights.shell));
+        // Keep the room's light counts out of the current street shadow pass.
+        const restore = preserveProgramBindings(renderer, batch);
+        try {
+          this.compileColorBatch(renderer, batch,
+            subject => lighting.compileSubject(renderer, camera, subject, prepared.lights.shell, undefined, 'isolated'));
+        } finally { restore(); }
         if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
         return;
       }

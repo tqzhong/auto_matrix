@@ -86,6 +86,7 @@ test('Lafayette prepares the visible actor in batches with the room lights that 
   const eyes = new THREE.SkinnedMesh(geometry, eyeMaterial); morpheus.add(eyes); morpheus.visible = false;
   t.after(() => { skin.dispose(); skinMaterial.dispose(); eyeMaterial.dispose(); });
   const eye = new THREE.PerspectiveCamera(), batches: THREE.Object3D[][] = [];
+  scene.fog = new THREE.FogExp2(0x303030, .01);
   const children = [...scene.children];
   let key: THREE.SpotLight | undefined;
   let firstReady = false;
@@ -93,9 +94,13 @@ test('Lafayette prepares the visible actor in batches with the room lights that 
   const uploads: THREE.Texture[] = [];
   const depthMaterials: THREE.MeshDepthMaterial[] = [];
   const programs: { isReady: () => boolean; getUniforms: () => void }[] = [];
+  const streetProgram = {}, roomProgram = {};
+  const streetSpots: THREE.SpotLight[] = [];
+  const liveBindings = { currentProgram: streetProgram, lightsStateVersion: 1,
+    uniforms: { spotLights: { value: streetSpots } }, programs: new Map([['street', streetProgram]]) };
   const webgl = {
     info: { programs }, debug: { checkShaderErrors: false },
-    properties: {},
+    properties: { get: (surface: THREE.Material) => surface === material ? liveBindings : {} },
     extensions: { has: () => true }, getRenderTarget: () => null, setRenderTarget() {},
     shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
     initTexture: (texture: THREE.Texture) => uploads.push(texture),
@@ -114,10 +119,18 @@ test('Lafayette prepares the visible actor in batches with the room lights that 
         programs.push({ isReady: () => true, getUniforms: () => { bindings.push(3); } });
         return;
       }
+      assert.ok(target !== scene, 'room preparation must keep the live shadow layout on the street scene');
+      assert.equal(target.fog, scene.fog);
       batches.push(batch);
       target.traverseVisible(object => { if (object instanceof THREE.SpotLight && object.intensity === 1900) key = object; });
       assert.ok(key, 'the room shadow light must be present in the program variant');
       assert.equal(key.getWorldPosition(new THREE.Vector3()).y, FILM_SETS.film_lafayette.center.y - 1 + 9.4);
+      if (batch.some(object => object instanceof THREE.Mesh && object.material === material)) {
+        liveBindings.currentProgram = roomProgram;
+        liveBindings.lightsStateVersion = 2;
+        liveBindings.uniforms.spotLights.value = [key];
+        liveBindings.programs.set('room', roomProgram);
+      }
       if (programs.length === 0) programs.push(
         { isReady: () => firstReady, getUniforms: () => { bindings.push(1); } },
         { isReady: () => true, getUniforms: () => { bindings.push(2); } },
@@ -128,6 +141,10 @@ test('Lafayette prepares the visible actor in batches with the room lights that 
   for (let i = 0; i < 4; i++) {
     prepare();
     assert.deepEqual(scene.children, children, 'preparation cannot light the street');
+    assert.equal(liveBindings.currentProgram, streetProgram);
+    assert.equal(liveBindings.lightsStateVersion, 1);
+    assert.equal(liveBindings.uniforms.spotLights.value, streetSpots);
+    assert.equal(liveBindings.programs.get('room'), roomProgram);
   }
   assert.deepEqual(batches.map(batch => batch.length), [4, 4, 4, 4]);
   assert.deepEqual(batches.flat().slice(0, 6), actor.children.slice(0, 6));
