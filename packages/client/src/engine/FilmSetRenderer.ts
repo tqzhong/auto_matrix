@@ -409,7 +409,9 @@ export class FilmSetRenderer {
   };
   private courtyardCastColors?: CastColorPreparation;
   private preparedLafayetteGround?: { meshes: ColorMesh[]; programs: ColorProgram[] };
-  private preparedLafayetteLanding?: { meshes: ColorMesh[]; programs: ColorProgram[] };
+  private preparedLafayetteLanding?: {
+    gpu: THREE.WebGLRenderer['properties']; meshes: ColorMesh[]; casters: THREE.Mesh[]; programs: ColorProgram[];
+  };
   private preparedLafayetteUpper?: ColorPreparation & {
     gpu: THREE.WebGLRenderer['properties']; neo: THREE.Group; trinity: THREE.Group; sceneId: FilmJourney['scene'];
     crew: readonly (THREE.Group | undefined)[]; eightMeshes?: ColorMesh[]; fourMeshes?: ColorMesh[];
@@ -3466,14 +3468,23 @@ export class FilmSetRenderer {
     const street = this.approach?.root, hotel = this.hotel, [neo, trinity] = actors;
     if (!street?.visible || !hotel || journey.scene !== 'm1_pills' || journey.visiting || height < LAFAYETTE_SECOND_FLOOR_Y
       || height >= LAFAYETTE_THIRD_FLOOR_Y || !neo || !trinity || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    const prepared = this.preparedLafayetteLanding ??= { meshes: this.colorMeshes([neo, trinity, hotel.root]), programs: [] };
+    let prepared = this.preparedLafayetteLanding;
+    if (!prepared || prepared.gpu !== renderer.properties) {
+      const meshes = this.colorMeshes([neo, trinity, hotel.root]);
+      const materials = new Set<THREE.MeshDepthMaterial>();
+      const casters = renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
+        ? shadowCasterProxies(meshes, materials) : [];
+      for (const material of materials) this.materials.add(material);
+      this.preparedLafayetteLanding = prepared = { gpu: renderer.properties, meshes, casters, programs: [] };
+    }
     const programs = renderer.info.programs;
     const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
     if (ready >= 0) {
       cacheReadyProgramLocations(renderer, prepared.programs.splice(ready, 1)[0]);
       return;
     }
-    const batch = prepared.meshes.splice(0, 4), start = programs?.length ?? 0;
+    const depth = !prepared.meshes.length;
+    const batch = (depth ? prepared.casters : prepared.meshes).splice(0, 4), start = programs?.length ?? 0;
     if (!batch.length) return;
     const eye = camera.clone(); eye.position.y += LAFAYETTE.rise;
     const lowerPointSlots = lighting.minimumPointSlots;
@@ -3481,7 +3492,8 @@ export class FilmSetRenderer {
       street.visible = false;
       lighting.minimumPointSlots = 0;
       hotel.updateLights(height - 1 + LAFAYETTE.rise);
-      this.compileColorBatch(renderer, batch, subject => lighting.compileSubject(renderer, eye, subject, undefined, undefined, 'isolated'));
+      this.compileColorBatch(renderer, batch,
+        subject => lighting.compileSubject(renderer, eye, subject, undefined, undefined, depth ? 'depth' : 'isolated'));
       if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
     } finally {
       street.visible = true;

@@ -252,6 +252,10 @@ test('Lafayette prepares the ground and third-floor light layouts without changi
   const geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial();
   t.after(() => { geometry.dispose(); material.dispose(); });
   for (const actor of actors) for (let i = 0; i < 3; i++) actor.add(new THREE.Mesh(geometry, material));
+  const cuff = new THREE.SkinnedMesh(geometry, material);
+  cuff.castShadow = true;
+  actors[0].remove(actors[0].children[0]); actors[0].add(cuff);
+  scene.fog = new THREE.FogExp2(0x303030, .01);
   const eye = new THREE.PerspectiveCamera(); eye.position.y = 12;
   const pointLights = () => {
     const lights: THREE.PointLight[] = [];
@@ -299,20 +303,31 @@ test('Lafayette prepares the ground and third-floor light layouts without changi
   assert.deepEqual(bindings, [2, 1], 'only one binding preparation runs in a frame');
   assert.deepEqual(groundBatches, [16, 16, 16], 'binding preparation occupies its own frame');
   assert.equal(debug.checkShaderErrors, true);
-  const batches: THREE.Object3D[][] = [];
-  let landingReady = false;
+  const batches: THREE.Object3D[][] = [], depthBatches: THREE.Mesh[][] = [];
+  let landingReady = false, depthReady = false;
   const webgl = {
-    info: { programs }, debug, getContext,
+    info: { programs }, debug, getContext, properties: {},
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
     extensions: { has: () => true }, getRenderTarget: () => null, setRenderTarget() {},
     compile(subject: THREE.Object3D, camera: THREE.Camera, target: THREE.Scene) {
       assert.ok(target !== scene, 'the next-floor layout must also use a separate render state');
-      assert.equal(target.fog, scene.fog);
-      assert.equal(target.environment, scene.environment);
       assert.equal(approach.root.visible, false);
       assert.equal(lighting.minimumPointSlots, 0, 'the next floor prepares without the lower-floor reserve');
       assert.equal(camera.position.y, eye.position.y + LAFAYETTE.rise);
       assert.equal(hotel.lights[0].position.y, before[0][1] + LAFAYETTE.rise);
-      const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object)); batches.push(batch);
+      const batch: THREE.Mesh[] = [];
+      subject.traverse(object => { assert.ok(object instanceof THREE.Mesh); batch.push(object); });
+      assert.ok(batch.length > 0 && batch.length <= 4);
+      if (batch[0].material instanceof THREE.MeshDepthMaterial) {
+        assert.equal(target.fog, null);
+        assert.ok(batch.every(mesh => mesh.material instanceof THREE.MeshDepthMaterial && mesh.material.depthPacking === THREE.RGBADepthPacking));
+        depthBatches.push(batch);
+        if (depthBatches.length === 1) programs.push(program(5, () => depthReady));
+        return;
+      }
+      assert.equal(target.fog, scene.fog);
+      assert.equal(target.environment, scene.environment);
+      batches.push(batch);
       if (batches.length === 1) programs.push(program(3, () => landingReady), program(4, () => landingReady));
     },
   } as unknown as THREE.WebGLRenderer;
@@ -335,11 +350,25 @@ test('Lafayette prepares the ground and third-floor light layouts without changi
     assert.deepEqual(hotel.lights.map(light => light.position.toArray()), before);
   }
   assert.equal(batches.length, 2, 'landing binding preparation also runs without a compile');
+  for (let i = 0; i < 80 && !depthBatches.length; i++) {
+    renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, neo.position.y, actors);
+    assert.ok(approach.root.visible);
+    assert.deepEqual(hotel.lights.map(light => light.position.toArray()), before);
+  }
+  assert.ok(depthBatches.length > 0, 'third-floor depth variants must be prepared before the street goes away');
+  assert.ok(depthBatches.flat().some(mesh => mesh instanceof THREE.SkinnedMesh && mesh.geometry === cuff.geometry));
+  assert.deepEqual(bindings, [2, 1, 3, 4]);
+  depthReady = true;
+  renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, neo.position.y, actors);
+  assert.deepEqual(bindings, [2, 1, 3, 4, 5]);
+  assert.equal(cuff.parent, actors[0]);
+  assert.equal(cuff.material, material);
+  const compiled = batches.length + depthBatches.length;
   neo.position.y = 15; renderer.update(neo, sandbox, 0, neo.position);
   assert.equal(renderer.lafayetteStreetHidden, true);
   assert.equal(renderer.minimumPointSlots, 0);
   renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, neo.position.y, actors);
-  assert.equal(batches.length, 2);
+  assert.equal(batches.length + depthBatches.length, compiled);
 });
 
 test('retiring the Lafayette street hides parked crew and keeps the tracking-room cast', t => {
