@@ -297,9 +297,10 @@ export class SandboxRenderer {
   }
   prepareBridgeTail(): THREE.Group | undefined {
     const journey = this.state?.neoLife?.journey;
-    if (journey?.scene !== 'm1_wake_again' || journey.visiting || !journey.wakeCall
-      || ['waking', 'ringing'].includes(journey.wakeCall.phase) || !(journey.office?.bugged ?? journey.office?.outcome === 'captured')) return;
-    let tail = this.pool.find(enemy => enemy.scene === 'm1_bridge' && enemy.kind === 'agent' && !enemy.character);
+    const call = journey?.scene === 'm1_wake_again' && journey.wakeCall && !['waking', 'ringing'].includes(journey.wakeCall.phase);
+    const departure = journey?.scene === 'm1_bridge' && journey.meeting?.phase === 'leaving';
+    if ((!call && !departure) || journey?.visiting || !(journey?.office?.bugged ?? journey?.office?.outcome === 'captured')) return;
+    let tail = this.enemies.get('bridge:tail') ?? this.pool.find(enemy => enemy.scene === 'm1_bridge' && enemy.kind === 'agent' && !enemy.character);
     if (!tail) {
       tail = this.createEnemy('agent', this.actors, undefined, 'm1_bridge');
       if (!tail) return;
@@ -307,7 +308,7 @@ export class SandboxRenderer {
     }
     const rig = tail.rig, hero = rig?.hero;
     if (!rig || !hero) return;
-    if (!this.posedBridgeTail.has(tail)) {
+    if (!tail.group.parent && !this.posedBridgeTail.has(tail)) {
       this.models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 }, 4);
       this.posedBridgeTail.add(tail);
     }

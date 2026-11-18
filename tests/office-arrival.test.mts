@@ -161,6 +161,38 @@ test('the captured route prepares the actual bridge pursuer while Neo is still i
   assert.equal(create.mock.callCount(), 1);
 });
 
+test('cold car departure prepares the returning bridge tail before it respawns', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  const context = { fillRect() {}, fillText() {}, putImageData() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }) };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const h = setup(), scene = new THREE.Scene(), enemies = new SandboxRenderer(scene);
+  t.after(() => { enemies.dispose(); globalThis.document = document; });
+  const rig = { root: new THREE.Group(), motion: newMotion(), hero: { root: new THREE.Group() } } as CharacterRig;
+  rig.root.add(rig.hero!.root);
+  const models = (enemies as unknown as { models: { create(): CharacterRig; animate(): void; dispose(): void } }).models;
+  const create = t.mock.method(models, 'create', () => rig), animate = t.mock.method(models, 'animate', () => {});
+  const agents = Object.fromEntries(h.world.agents), departure = structuredClone(h.sandbox.state);
+  departure.threats = [];
+  departure.neoLife!.journey!.scene = 'm1_bridge';
+  departure.neoLife!.journey!.meeting = { phase: 'leaving', elapsed: 2.1, roadTime: 3, bugged: true, approach: { x: 4, z: -12.35, yaw: Math.PI } };
+  departure.neoLife!.journey!.office = { alert: 0, suspicion: [], waypoints: [], lastTick: 0, guide: '', outcome: 'captured', bugged: true };
+  enemies.sync(departure, agents);
+  const snapshot = JSON.stringify({ departure, agents });
+  assert.equal(enemies.prepareBridgeTail(), rig.hero!.root, 'the cold departure must prepare the pursuer while no threat is attached');
+  assert.equal(enemies.prepareBridgeTail(), rig.hero!.root);
+  assert.equal(JSON.stringify({ departure, agents }), snapshot, 'loading the client actor must not spawn or advance a world threat');
+  assert.equal(animate.mock.callCount(), 1);
+  const group = rig.root.parent!; assert.equal(group.parent, null);
+  const outside = structuredClone(departure); delete outside.neoLife!.journey!.meeting;
+  outside.threats.push({ id: 'bridge:tail', scene: 'm1_bridge', kind: 'agent', patrol: true, yaw: Math.PI,
+    position: FILM_SETS.film_adams_bridge.center, matrix: true, health: 80, maxHealth: 80, target: 'neo', stunUntil: 0, lastStrike: -10 });
+  enemies.sync(outside, agents);
+  assert.equal(group.parent, scene);
+  assert.equal(create.mock.callCount(), 1, 'the returning threat reuses the fully prepared model');
+});
+
 test('arrival keeps its positions across pause, disconnect, save and the start of patrol', () => {
   const h = setup(); h.command('act'); h.frame(4.4);
   assert.equal(h.guards().length, 3);

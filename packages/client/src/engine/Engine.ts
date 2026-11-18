@@ -360,6 +360,7 @@ export class Engine {
         id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
     this.filmSets.prepareInterrogation(this.renderer, this.camera, liveMatrixJourney,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
+    if (resumeOnLanding && meeting?.scene === 'm1_bridge') this.sandboxRenderer.prepareBridgeTail();
     this.filmSets.prepareBridge(this.renderer, this.camera, liveMatrixJourney ?? (resumeBridge ? meeting : undefined),
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id),
       this.lightingSystem.directionalLight, this.agentRenderer.getAgentShadow('neo'), this.lightCulling,
