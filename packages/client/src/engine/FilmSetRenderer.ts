@@ -1001,9 +1001,11 @@ export class FilmSetRenderer {
   prepareBridge(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight, shadow?: THREE.Mesh, apartmentLights?: LightCulling,
     tail?: THREE.Group, resume = false): void {
-    if (journey?.scene === 'm1_bridge' && !journey.visiting && !journey.meeting && journey.bridgeTail?.phase === 'tracking') {
+    const vehicle = !resume && this.current?.id === 'film_adams_bridge' && journey?.bridgeArrival?.phase === 'approaching'
+      && journey.bridgeTail?.phase !== 'failed' ? this.meeting?.vehicle : undefined;
+    if (journey?.scene === 'm1_bridge' && !journey.visiting && !journey.meeting && (vehicle || journey.bridgeTail?.phase === 'tracking')) {
       this.cancelBridgePreparation();
-      this.prepareBridgeApproach(renderer, camera, [...FILM_SCENE_BY_ID.m1_bridge.cast.map(actor), tail], actor(journey.actor), apartmentLights);
+      this.prepareBridgeApproach(renderer, camera, [...FILM_SCENE_BY_ID.m1_bridge.cast.map(actor), tail], actor(journey.actor), apartmentLights, vehicle);
       return;
     }
     this.cancelBridgeApproach();
@@ -1114,20 +1116,23 @@ export class FilmSetRenderer {
       if (!this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) break;
   }
   private prepareBridgeApproach(renderer: THREE.WebGLRenderer, camera: THREE.Camera, cast: (THREE.Group | undefined)[],
-    player: THREE.Group | undefined, lights?: LightCulling): void {
+    player: THREE.Group | undefined, lights?: LightCulling, vehicle?: THREE.Group): void {
     if (this.preparedBridgeApproach?.gpu !== renderer.properties) this.cancelBridgeApproach();
     const prepared = this.preparedBridgeApproach ??= {
       gpu: renderer.properties, scene: this.scene, actors: new Set(), meshes: [], programs: [], textures: new Set(),
     };
-    for (const group of [...cast, player]) {
+    for (const group of [...cast, player, vehicle]) {
       if (!group || prepared.actors.has(group)) continue;
-      const meshes = group === player ? [] : this.colorMeshes(group.children).filter(mesh => BRIDGE_APPROACH_MESHES.has(mesh.name));
+      const roots = group === vehicle ? [group] : group.children;
+      const meshes = group === player ? [] : this.colorMeshes(roots, group === vehicle)
+        .filter(mesh => group === vehicle || BRIDGE_APPROACH_MESHES.has(mesh.name));
       const torso = group === player ? group.getObjectByName('Office_torso') : undefined;
       if (torso instanceof THREE.Mesh && torso.material instanceof THREE.MeshStandardMaterial) meshes.push(torso);
       if (!meshes.length) continue;
       prepared.actors.add(group); prepared.meshes.push(...meshes); this.queueColorTextures(prepared.textures, meshes);
     }
-    this.prepareStagedColorTexture(renderer, prepared, prepared.textures, 2);
+    const staging = this.prepareStagedColorTexture(renderer, prepared, prepared.textures, vehicle ? 1 : 2);
+    if (vehicle && staging) return;
     if (this.current?.id === 'film_adams_bridge' && lights && renderer.extensions.has('KHR_parallel_shader_compile')
       && (prepared.meshes.length || prepared.programs.length || prepared.readyProgram)) {
       // Link against the actual street lights while the car and pursuer approach.

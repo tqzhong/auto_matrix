@@ -9,8 +9,8 @@ import { LafayetteApproachRenderer } from './LafayetteApproachRenderer.js';
 // car body are separate material batches, so no scenery moves with the car.
 export class MeetingSetRenderer {
   readonly root = new THREE.Group();
+  readonly vehicle = new THREE.Group();
   private static = new THREE.Group();
-  private vehicle = new THREE.Group();
   private door = new THREE.Group();
   private leftDoor = new THREE.Group();
   private wheels: { steering: THREE.Group; spin: THREE.Group; front: boolean }[] = [];

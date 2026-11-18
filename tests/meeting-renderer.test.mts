@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { bridgeArrivalPose, filmEntry, filmPosition, FILM_SCENE_BY_ID, meetingCarPose, meetingRollRoadTime, LAFAYETTE, MEETING_ROAD_WIDTH, MEETING_CAR, type FilmJourney } from '@auto_matrix/shared';
+import { bridgeArrivalPose, filmEntry, filmPosition, FILM_SCENE_BY_ID, FILM_SETS, meetingCarPose, meetingRollRoadTime, LAFAYETTE, MEETING_ROAD_WIDTH, MEETING_CAR, type FilmJourney } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
@@ -334,6 +334,58 @@ test('bridge preparation links each shared scenery material once without skippin
   });
   assert.deepEqual(uploaded, geometries, 'all original scenery geometry still uploads even when a material is shared');
   assert.equal(target, null);
+});
+
+test('the approaching bridge sedan links its original glass and late seated cast using the street lights', t => {
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.after(() => { globalThis.document = document; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(), sun = new THREE.DirectionalLight();
+  scene.add(sun);
+  const film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  t.after(() => { film.dispose(); lighting.dispose(); });
+  const street = film['meeting'] = new MeetingSetRenderer(film.root, false);
+  film['current'] = FILM_SETS.film_adams_bridge;
+  const vehicle = street.vehicle;
+  const occupant = new THREE.Group(), geometry = new THREE.BoxGeometry(), skin = new THREE.MeshStandardMaterial();
+  const head = new THREE.Mesh(geometry, skin); head.name = 'Anatomical_head_and_hands'; occupant.add(head);
+  t.after(() => { geometry.dispose(); skin.dispose(); });
+  skin.customProgramCacheKey = () => 'seated-passenger';
+  const linked = new Map<THREE.Object3D, string>();
+  const properties = new WeakMap<THREE.Material, object>();
+  const renderer = {
+    properties: { get(material: THREE.Material) {
+      if (!properties.has(material)) properties.set(material, {});
+      return properties.get(material);
+    } }, info: { programs: [] }, debug: { checkShaderErrors: false }, extensions: { has: () => true },
+    getRenderTarget: () => null, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0, setRenderTarget() {},
+    compile(subject: THREE.Group, _eye: THREE.Camera, target: THREE.Scene) {
+      assert.notEqual(target, scene, 'the live street keeps its draw bindings');
+      const lights: THREE.SpotLight[] = [];
+      target.traverseVisible(object => { if (object instanceof THREE.SpotLight) lights.push(object); });
+      assert.ok(lights.some(light => light.name.startsWith('meeting-tail-light')), 'warm the variant with the actual car lights');
+      let count = 0;
+      subject.traverse(mesh => {
+        if (mesh instanceof THREE.Mesh) {
+          linked.set(mesh, (mesh.material as THREE.Material).customProgramCacheKey());
+          count++;
+        }
+      });
+      assert.ok(count <= 4, 'limit the number of linked meshes in a frame');
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const journey = { scene: 'm1_bridge', actor: 'neo', office: { outcome: 'escaped' },
+    bridgeArrival: { phase: 'approaching', elapsed: 1 } } as FilmJourney;
+  const saved = JSON.stringify(journey);
+  for (let frame = 0; frame < 36; frame++) film.prepareBridge(renderer, camera, journey,
+    id => id === 'switch' && frame >= 4 ? occupant : undefined, sun, undefined, lighting);
+  assert.equal(linked.get(head), 'seated-passenger', 'link the late passenger with the material used once seated');
+  assert.ok([...linked].some(([mesh]) => mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshPhysicalMaterial
+    && mesh.material.transparent && vehicle.getObjectById(mesh.id)), 'link the original sedan glass');
+  assert.equal(vehicle.parent, street.root);
+  assert.equal(head.parent, occupant);
+  assert.equal(JSON.stringify(journey), saved);
 });
 
 test('Adams Street renders the local cast while the separate city is hidden', t => {
