@@ -660,6 +660,48 @@ test('the tea house renders its occupants and leaves actors elsewhere in the wor
   assert.equal(renderer.getAgent('agent_jones')!.visible, true);
 });
 
+test('the courtyard flight prepares one hidden Le Vrai companion per frame', t => {
+  const previous = globalThis.document;
+  const context = { fillRect() {}, strokeRect() {}, fillText() {}, putImageData() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }) };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  t.after(() => { globalThis.document = previous; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(HeroModels.prototype, 'create', async () => undefined);
+  t.mock.method(CharacterModels.prototype, 'animate', () => {});
+  const prepared: string[] = [];
+  t.mock.method(CharacterModels.prototype, 'prepareHiddenHero', (hero: NonNullable<CharacterRig['hero']>) => prepared.push(hero.root.name));
+  const renderer = new AgentRenderer(new THREE.Scene()), world = new WorldState();
+  t.after(() => renderer.dispose());
+  new AgentManager(world).initializeAllAgents();
+  const checkpoint = filmEntry(FILM_SCENE_BY_ID.m2_burly);
+  const journey: FilmJourney = { version: 1, scene: 'm2_burly', actor: 'neo', step: 1, completed: [],
+    enteredAt: 0, checkpoint, reflections: {}, lastText: '',
+    burly: { phase: 'flight_ready', elapsed: 0, attempt: 1, repelled: 2, staffSwings: 3, assimilation: 0, nextCopyAt: 0 } };
+  const companions = ['morpheus', 'trinity'];
+  for (const id of companions) {
+    const state = world.agents.get(id)!;
+    Object.assign(state, { position: filmEntry(FILM_SCENE_BY_ID.m2_departure), currentLocation: 'film_zion_hangar', isInMatrix: false });
+    renderer.updateAgent(id, state);
+    const rig = renderer['agents'].get(id)!.rig, root = new THREE.Group(); root.name = id;
+    rig.hero = { root, bones: new Map() } as NonNullable<CharacterRig['hero']>;
+    rig.detail.visible = false;
+  }
+  renderer.setPlayer('neo');
+  renderer.update(.02, undefined, 0, 1, journey);
+  assert.deepEqual(prepared, []);
+  journey.burly!.phase = 'flight';
+  const morpheus = world.agents.get('morpheus')!;
+  morpheus.controller = 'another-player';
+  renderer.update(.02, undefined, 0, 1, journey);
+  assert.deepEqual(prepared, ['trinity']);
+  morpheus.controller = null;
+  renderer.update(.02, undefined, 0, 1, journey);
+  renderer.update(.02, undefined, 0, 1, journey);
+  assert.deepEqual(prepared, ['trinity', 'morpheus']);
+  assert(companions.every(id => !renderer.getAgent(id)!.visible));
+});
+
 test('a paused courtyard save restores the Oracle against the actual bench and floor', t => {
   const previous = globalThis.document;
   const context = { fillRect() {}, strokeRect() {}, fillText() {}, putImageData() {}, createRadialGradient: () => ({ addColorStop() {} }),

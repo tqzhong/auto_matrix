@@ -101,6 +101,7 @@ export class AgentRenderer {
   private models = new CharacterModels();
   private preparedOpeningApartment = new WeakSet<THREE.Group>();
   private preparedLafayetteGuide = new WeakSet<THREE.Group>();
+  private preparedLeVraiCast = new WeakSet<THREE.Group>();
   private lafayetteGuideTextures?: { gpu: THREE.WebGLRenderer['properties']; trinity: THREE.Group; steps?: Generator<void> };
   private hotelCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; pursuit: boolean; heroes: THREE.Group[]; steps?: Generator<void> };
   private smithTexturePreparation?: { gpu: THREE.WebGLRenderer['properties']; smith: THREE.Group; steps?: Generator<void> };
@@ -1661,6 +1662,18 @@ export class AgentRenderer {
         poseBathroom(morpheus.rig, { ...(bathroom ?? { phase: 'ready', elapsed: 0, held: 0, grip: 1, counters: 0, evaded: false, headbutt: false, cooldown: 0 }),
           elapsed: this.playerId === 'morpheus' ? bathroom?.elapsed ?? 0 : morpheus.bathroomElapsed ?? bathroom?.elapsed ?? 0,
           role: 'morpheus', contact: { x: neck.x, y: neck.y, z: neck.z } }, sixth);
+      }
+    }
+    if (this.matrix && journey?.scene === 'm2_burly' && !journey.visiting && journey.actor === this.playerId
+      && journey.burly?.phase === 'flight') {
+      // Split the first standing Matrix pose across the flight frames while the companions are offstage.
+      for (const id of ['morpheus', 'trinity']) {
+        const entry = this.agents.get(id), hero = entry?.rig.hero;
+        if (!entry || !hero || entry.group.visible || entry.rig.detail.visible || entry.state.isInMatrix
+          || entry.state.controller || entry.state.status !== 'alive' || this.preparedLeVraiCast.has(hero.root)) continue;
+        this.models.prepareHiddenHero(hero, {});
+        this.preparedLeVraiCast.add(hero.root);
+        break;
       }
     }
     // The two feet plant half a gait cycle apart.

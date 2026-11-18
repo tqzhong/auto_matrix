@@ -1355,7 +1355,8 @@ export class CharacterModels {
           crosscutPalm(rig, 'L', rig.staff.localToWorld(new THREE.Vector3(0, -.96, 0)), wrist);
         } else {
           rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
-          rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
+          const wrist = rig.hero.bones.get('wrist_R')!.getWorldQuaternion(new THREE.Quaternion());
+          crosscutPalm(rig, 'L', rig.staff.localToWorld(new THREE.Vector3(0, -.96, 0)), wrist);
         }
       }
       if (input.chateauWeapon) {

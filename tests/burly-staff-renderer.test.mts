@@ -51,6 +51,17 @@ test('Neo sees the held courtyard staff in first person without his face coverin
   const staff = hero.getObjectByName('burly-fence-staff');
   assert.ok(staff?.visible && body.visible);
   const thirdPersonSkin = skin.geometry;
+  const motion = renderer['agents'].get('neo')!.rig.motion;
+  for (const phase of ['staff', 'flight_ready'] as const) for (const age of [10, .08, .27, .44, .61]) {
+    motion.attackAge = age;
+    update(phase, false);
+    const palms = ['R', 'L'].map(side => staff.worldToLocal(hero.getObjectByName(`wrist_${side}`)!
+      .localToWorld(new THREE.Vector3(0, -.19, .035))));
+    assert.ok(palms.every(palm => Math.hypot(palm.x, palm.z) < .09 && Math.abs(palm.y) < 2.85),
+      `${phase} at ${age}s: both palms must stay on the shaft in third person ${JSON.stringify(palms)}`);
+    assert.ok(palms[0].y - palms[1].y > .55, `${phase}: the supporting hand keeps a distinct grip`);
+  }
+  motion.attackAge = 10;
   const camera = new THREE.PerspectiveCamera(68, 16 / 9, .5, 100);
   camera.position.set(neo.position.x, neo.position.y + 2.99, neo.position.z);
   camera.lookAt(neo.position.x, camera.position.y - Math.sin(.1), neo.position.z + Math.cos(.1));
