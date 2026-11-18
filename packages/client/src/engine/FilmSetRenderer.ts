@@ -410,7 +410,7 @@ export class FilmSetRenderer {
   private courtyardCastColors?: CastColorPreparation;
   private preparedLafayetteGround?: { meshes: ColorMesh[]; programs: ColorProgram[] };
   private preparedLafayetteLanding?: {
-    gpu: THREE.WebGLRenderer['properties']; meshes: ColorMesh[]; casters: THREE.Mesh[]; programs: ColorProgram[];
+    gpu: THREE.WebGLRenderer['properties']; meshes: ColorMesh[]; casters: THREE.Mesh[]; programs: ColorProgram[]; readyProgram?: ColorProgram;
   };
   private preparedLafayetteUpper?: ColorPreparation & {
     gpu: THREE.WebGLRenderer['properties']; neo: THREE.Group; trinity: THREE.Group; sceneId: FilmJourney['scene'];
@@ -2822,8 +2822,8 @@ export class FilmSetRenderer {
     }
   }
   private prepareColorFrame(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting?: LightCulling,
-    colorState: 'live' | 'isolated' = 'live'): void {
-    if (!this.prepareColorProgram(renderer, camera, prepared, lighting, colorState)) this.prepareColorTexture(renderer, prepared.textures);
+    colorState: 'live' | 'isolated' = 'live', deferBindings = false): void {
+    if (!this.prepareColorProgram(renderer, camera, prepared, lighting, colorState, deferBindings)) this.prepareColorTexture(renderer, prepared.textures);
   }
   private prepareColorProgram(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting: LightCulling | undefined,
     colorState: 'live' | 'isolated', deferBindings = false, liveOverlays?: readonly (THREE.Mesh | THREE.Points | undefined)[]): boolean {
@@ -3477,10 +3477,15 @@ export class FilmSetRenderer {
       for (const material of materials) this.materials.add(material);
       this.preparedLafayetteLanding = prepared = { gpu: renderer.properties, meshes, casters, programs: [] };
     }
-    const programs = renderer.info.programs;
+    const programs = renderer.info.programs, readyProgram = prepared.readyProgram;
+    prepared.readyProgram = undefined;
+    if (readyProgram && programs?.includes(readyProgram)) {
+      cacheReadyProgramLocations(renderer, readyProgram);
+      return;
+    }
     const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
     if (ready >= 0) {
-      cacheReadyProgramLocations(renderer, prepared.programs.splice(ready, 1)[0]);
+      prepared.readyProgram = prepared.programs.splice(ready, 1)[0];
       return;
     }
     const depth = !prepared.meshes.length;
@@ -3523,11 +3528,11 @@ export class FilmSetRenderer {
         sceneId: journey.scene, crew: crew.slice(), meshes, eightMeshes: journey.scene === 'm1_pills' ? meshes.slice() : undefined,
         fourMeshes: meshes.slice(), programs: [], textures };
     }
-    if (!prepared.meshes.length && !prepared.programs.length) {
+    if (!prepared.meshes.length && !prepared.programs.length && !prepared.readyProgram) {
       if (prepared.eightMeshes) { prepared.meshes = prepared.eightMeshes; prepared.eightMeshes = undefined; }
       else if (prepared.fourMeshes) { prepared.meshes = prepared.fourMeshes; prepared.fourMeshes = undefined; }
     }
-    if (!prepared.meshes.length && !prepared.programs.length && !prepared.textures.size) return;
+    if (!prepared.meshes.length && !prepared.programs.length && !prepared.readyProgram && !prepared.textures.size) return;
     // The chair marker adds a ninth slot after the greeting. Prepare it without displaying it early.
     const slots = prepared.eightMeshes ? 9 : prepared.fourMeshes ? 8 : 4;
     const visible = this.markerLight.visible, enabled = lighting.enabled, hidden: THREE.PointLight[] = [];
@@ -3539,7 +3544,7 @@ export class FilmSetRenderer {
       hidden.push(...pointLights.slice(slots));
       for (const light of hidden) light.visible = false;
       lighting.enabled = false;
-      this.prepareColorFrame(renderer, camera, prepared, lighting, 'isolated');
+      this.prepareColorFrame(renderer, camera, prepared, lighting, 'isolated', true);
     } finally {
       lighting.enabled = enabled;
       for (const light of hidden) light.visible = true;

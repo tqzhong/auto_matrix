@@ -344,6 +344,8 @@ test('Lafayette prepares the ground and third-floor light layouts without changi
   landingReady = true;
   for (const expected of [[2, 1, 3], [2, 1, 3, 4]]) {
     renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, neo.position.y, actors);
+    assert.deepEqual(bindings, expected.slice(0, -1), 'landing must wait a frame before reading uniforms');
+    renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, neo.position.y, actors);
     assert.deepEqual(bindings, expected);
     assert.equal(debug.checkShaderErrors, true);
     assert.equal(approach.root.visible, true);
@@ -359,6 +361,8 @@ test('Lafayette prepares the ground and third-floor light layouts without changi
   assert.ok(depthBatches.flat().some(mesh => mesh instanceof THREE.SkinnedMesh && mesh.geometry === cuff.geometry));
   assert.deepEqual(bindings, [2, 1, 3, 4]);
   depthReady = true;
+  renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, neo.position.y, actors);
+  assert.deepEqual(bindings, [2, 1, 3, 4]);
   renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, neo.position.y, actors);
   assert.deepEqual(bindings, [2, 1, 3, 4, 5]);
   assert.equal(cuff.parent, actors[0]);

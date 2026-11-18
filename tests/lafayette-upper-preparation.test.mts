@@ -70,7 +70,11 @@ test('upper Lafayette prepares the future chair light and both stair layouts, on
   for (let i = 0; i < 4; i++) h.prepare();
   assert.deepEqual(h.batches.map(batch => batch.slots), [9, 9, 9, 9]);
   assert.equal(h.work.includes('bindings'), false, 'unfinished links never query binding locations');
-  h.ready(); for (let i = 0; i < 32; i++) h.prepare();
+  h.ready(); h.prepare();
+  assert.equal(h.work.includes('bindings'), false, 'upper must wait a frame before reading uniforms');
+  h.prepare();
+  assert.equal(h.work.at(-1), 'bindings');
+  for (let i = 0; i < 32; i++) h.prepare();
   assert.deepEqual(h.batches.map(batch => batch.slots), [9, 9, 9, 9, 8, 8, 8, 8, 4, 4, 4, 4]);
   const expected = [...h.actors, h.root].flatMap(group => group.children.filter(object => object.visible)).concat(h.marker);
   for (const start of [0, 4, 8]) assert.deepEqual(h.batches.slice(start, start + 4).flatMap(batch => batch.meshes), expected);
