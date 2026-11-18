@@ -1795,13 +1795,14 @@ export class FilmSetRenderer {
     }
   }
   private prepareStagedEntry(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: EntryPreparation,
-    colors: ColorPreparation, sourceLights?: LightCulling, stripsPerFrame = 1, prioritizeColor = false): void {
+    colors: ColorPreparation, sourceLights?: LightCulling, stripsPerFrame = 1, prioritizeColor: boolean | 'bindings' = false): void {
     const { lighting, shadows, buffers } = prepared;
-    const linkingColor = prioritizeColor && this.linkColorBatch(renderer, camera, colors, lighting, 'isolated', prepared.liveMeshes);
+    const preparingColor = prioritizeColor === 'bindings' ? this.prepareColorProgram(renderer, camera, colors, lighting, 'isolated', true, prepared.liveMeshes)
+      : prioritizeColor && this.linkColorBatch(renderer, camera, colors, lighting, 'isolated', prepared.liveMeshes);
     // The first shadow pass still sees the preceding scene's light layout.
-    const linkingDepth = !linkingColor && shadows && (sourceLights && this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.source }, sourceLights, 'depth')
+    const linkingDepth = !preparingColor && shadows && (sourceLights && this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.source }, sourceLights, 'depth')
       || this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.destination }, lighting, 'depth'));
-    if (!linkingColor && !linkingDepth) this.prepareColorProgram(renderer, camera, colors, lighting, 'isolated', true, prepared.liveMeshes);
+    if (!preparingColor && !linkingDepth) this.prepareColorProgram(renderer, camera, colors, lighting, 'isolated', true, prepared.liveMeshes);
     if (!this.prepareStagedColorTexture(renderer, prepared, colors.textures, stripsPerFrame) && buffers) {
       if (buffers.meshes.length) buffers.upload ??= prepareMeshBuffers(renderer, camera, buffers.meshes);
       if (buffers.upload?.next().done) buffers.upload = undefined;
@@ -2001,7 +2002,8 @@ export class FilmSetRenderer {
     }
     // A completed bargain can cut before the deck's full shadow queue is ready.
     const first = colors.meshes[0];
-    this.prepareStagedEntry(renderer, camera, prepared, colors, sourceLights, meal ? 2 : 1, (meal || wake) && first !== undefined && entryMeshes.has(first.name));
+    const prioritizeColor = (meal || wake) && first !== undefined && entryMeshes.has(first.name);
+    this.prepareStagedEntry(renderer, camera, prepared, colors, sourceLights, meal ? 2 : 1, prioritizeColor && meal ? 'bindings' : prioritizeColor);
   }
   prepareRestaurant(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => EntryCast, shadowSun: THREE.DirectionalLight, resume = false, sourceLights?: LightCulling): void {

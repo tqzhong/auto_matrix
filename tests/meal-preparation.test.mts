@@ -82,6 +82,17 @@ test('meal preparation rebuilds GPU bindings and releases cancellation resources
   h.journey.scene = 'm1_construct'; h.prepare(); assert.equal(disposed, 1); assert.equal(deck.parent, null);
 });
 
+test('a completed bargain reads ready deck shader bindings before linking another entry batch', t => {
+  const h = fixture(t);
+  h.journey.interlude!.phase = 'done';
+  h.journey.interlude!.elapsed = 26;
+  for (let i = 0; i < 12 && !h.batches.length; i++) h.prepare();
+  assert.equal(h.batches.length, 1);
+  h.ready();
+  h.prepare(); h.prepare();
+  assert.deepEqual(h.work.filter(item => item === 'compile' || item === 'bindings'), ['compile', 'bindings']);
+});
+
 test('entering the meal adopts the same ready deck and leaving releases it once', t => {
   const h = fixture(t); h.ready(); h.drain(); const deck = [...h.decks][0], chair = deck.getObjectByName('neb-crew-meal-scene')!;
   assert.equal(deck.getObjectByName('neb-crew-meal-scene')!.visible, true);
