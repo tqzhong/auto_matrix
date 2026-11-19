@@ -344,16 +344,34 @@ export class HeroModels {
     if (office) {
       const meshes: THREE.SkinnedMesh[] = [];
       office.scene.traverse(object => { if (object instanceof THREE.SkinnedMesh) meshes.push(object); });
+      const waistTuck = (height: number) => 1 - THREE.MathUtils.smoothstep(height, 2.57, 2.76);
       for (const source of meshes) {
-        // The torso otherwise pierces Neo's black shirt when he reclines for the scanner.
-        const geometry = (source.material as THREE.Material).name === 'Office skin' ? source.geometry.clone() : source.geometry;
-        if (geometry !== source.geometry) {
+        const skin = (source.material as THREE.Material).name === 'Office skin';
+        const geometry = skin || !support ? source.geometry.clone() : source.geometry;
+        if (skin) {
+          // The torso otherwise pierces Neo's black shirt when he reclines for the scanner.
           const position = geometry.getAttribute('position');
           for (let i = 0; i < position.count; i++) {
             position.setX(i, position.getX(i) * .98);
-            const coveredChest = position.getZ(i) > 0 ? THREE.MathUtils.smoothstep(position.getY(i), 3.02, 3.14) : 0;
-            position.setZ(i, position.getZ(i) * (.97 - .08 * coveredChest));
+            const front = position.getZ(i) > 0;
+            const coveredChest = front ? THREE.MathUtils.smoothstep(position.getY(i), 3.02, 3.14) : 0;
+            const tuckedSkin = support ? 0 : (front ? .18 : .28) * waistTuck(position.getY(i));
+            position.setZ(i, position.getZ(i) * (.97 - .08 * coveredChest) * (1 - tuckedSkin));
           }
+        } else if (!support) {
+          // Tuck the pelvis, spine and chest portion of the hem inside Neo's trousers while leaving the cuffs free.
+          const { position, skinIndex, skinWeight } = geometry.attributes;
+          for (let i = 0; i < position.count; i++) {
+            let trunk = 0;
+            for (let j = 0; j < 4; j++) if (skinIndex.getComponent(i, j) < 3) trunk += skinWeight.getComponent(i, j);
+            const tuck = waistTuck(position.getY(i)) * THREE.MathUtils.smoothstep(trunk, .42, .85);
+            const depth = position.getZ(i);
+            position.setX(i, position.getX(i) * (1 - .154 * tuck));
+            position.setZ(i, depth * (1 - (depth > 0 ? .06 : .44) * tuck));
+          }
+        }
+        if (geometry !== source.geometry) {
+          const position = geometry.getAttribute('position');
           position.needsUpdate = true; geometry.computeVertexNormals(); this.geometries.add(geometry);
         }
         const mesh = new THREE.SkinnedMesh(geometry, source.material); mesh.name = source.name; mesh.userData.office = true;

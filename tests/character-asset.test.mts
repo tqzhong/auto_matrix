@@ -2115,6 +2115,31 @@ test('Neo office clothing replaces his coat and binds its complete sleeves to th
       if (trunk > .9) hem = Math.min(hem, positions.getY(i));
     }
     assert.ok(hem < trousers.geometry.boundingBox!.max.y, `the shirt must overlap the actual trouser waist, without a bare midriff: hem ${hem}`);
+    const torso = rig.root.getObjectByName('Office_torso')!;
+    const back = new THREE.Vector3(0, 0, 1);
+    for (const speed of [0, 3.4]) {
+      const moving = { ...input, speed }, gait = newMotion();
+      for (let i = 0; i < 10; i++) models.animate(rig, advanceMotion(gait, moving, .05), gait, moving, .05);
+      rig.root.updateMatrixWorld(true);
+      let covered = 0;
+      for (const x of [-.22, -.11, 0, .11, .22]) {
+        for (const y of [2.36, 2.43, 2.50]) {
+          const ray = new THREE.Raycaster(new THREE.Vector3(x, y, -1.8), back, 0, 2.4);
+          const waist = ray.intersectObject(trousers)[0], cloth = ray.intersectObject(shirt)[0];
+          if (!waist) continue;
+          covered++;
+          assert.ok(!cloth || cloth.distance >= waist.distance - .01, `the white shirt protrudes from the back of the trousers at ${x}, ${y}, speed ${speed}`);
+        }
+        const above = new THREE.Raycaster(new THREE.Vector3(x, 2.73, -1.8), back, 0, 2.4);
+        assert.ok(above.intersectObject(shirt)[0], 'the back of the shirt must still cover the waist above the trousers');
+      }
+      assert.ok(covered >= 12, 'the probes must reach the trousers in both poses');
+      for (const side of [-1, 1]) for (const x of [-.21, 0, .21]) for (const y of [2.60, 2.62, 2.65]) {
+        const ray = new THREE.Raycaster(new THREE.Vector3(x, y, side * 1.8), new THREE.Vector3(0, 0, -side), 0, 2.4);
+        const skin = ray.intersectObject(torso)[0], clothes = ray.intersectObjects([shirt, trousers])[0];
+        assert.ok(!skin || clothes && clothes.distance <= skin.distance + .002, `skin shows through the waist at ${x}, ${y}, side ${side}, speed ${speed}`);
+      }
+    }
     models.animate(rig, advanceMotion(motion, { ...input, officeShirt: false }, .05), motion, { ...input, officeShirt: false }, .05);
     assert.equal(shirt.visible, false); assert.ok(garments.every(part => part.mesh.visible));
   } finally { models.dispose(); }
