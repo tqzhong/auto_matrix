@@ -257,6 +257,36 @@ test('the 101 score makes room for the knocks only during Neo’s live scene', a
   assert.equal(music.value, .48);
 });
 
+test('the dance-floor bass plays in the club and recedes during the conversation', async t => {
+  const h = audioHarness(t), game = scene();
+  game.player!.currentLocation = FILM_SCENE_BY_ID.m1_club.set;
+  h.audio.update(game); await h.audio.resume();
+  const context = h.contexts[0], room = context.sources.find(source => source.loop);
+  assert.ok(room, 'the occupied dance floor has an audible low-frequency room pulse');
+  assert.equal(room.starts, 1);
+  const gain = context.gains.at(-1)!;
+  const floor = gain.gain.value;
+  assert.ok(floor > 0);
+  game.player!.currentAction = { type: 'idle', parameters: { club: { phase: 'whisper' } }, startedAt: 0, duration: 1, progress: 0 };
+  h.audio.update(game);
+  assert.ok(gain.gain.value > 0 && gain.gain.value < floor / 2);
+  assert.equal(room.starts, 1);
+  game.running = false; h.audio.update(game);
+  assert.equal(room.stopAt, 0);
+  assert.equal(room.connections.length, 0);
+  game.running = true; h.audio.update(game);
+  const resumed = context.sources.at(-1)!;
+  assert.notEqual(resumed, room);
+  assert.equal(resumed.buffer, room.buffer);
+  h.audio.toggle('effects');
+  assert.equal(resumed.stopAt, 0);
+  h.audio.update(game);
+  assert.equal(context.sources.at(-1), resumed, 'updating the scene while muted never opens another live source');
+  game.player!.currentLocation = 'neo_apartment';
+  h.audio.update(game); h.audio.toggle('effects');
+  assert.equal(context.sources.at(-1), resumed);
+});
+
 test('the Room 303 kick sends a low impact and a short latch crack to the effects bus', async t => {
   const h = audioHarness(t);
   await h.audio.resume();

@@ -40,6 +40,9 @@ export class GameAudio {
   private mixValues = new Map<GainNode, number>();
   private dialogueTimer = 0;
   private engineSound?: { source: OscillatorNode; noise: AudioBufferSourceNode; filter: BiquadFilterNode; gain: GainNode; speed?: number; level?: number };
+  private clubLevel = 0;
+  private clubPulse?: AudioBuffer;
+  private clubSound?: { source: AudioBufferSourceNode; gain: GainNode; level: number };
   readonly settings: AudioSettings;
   onChange?: () => void;
 
@@ -81,6 +84,7 @@ export class GameAudio {
       }
       if (this.context.state === 'suspended') await this.context.resume();
       if (this.disposed) return;
+      this.syncClubSound();
       this.ensureMusic(); this.onChange?.();
     } catch { this.failed = true; this.onChange?.(); }
   }
@@ -88,6 +92,8 @@ export class GameAudio {
     this.running = scene.running; this.playing = Boolean(scene.player);
     const club = scene.player?.currentAction?.parameters.club;
     if (club) this.reading.add('club-conversation'); else this.reading.delete('club-conversation');
+    this.clubLevel = scene.running && scene.matrix && scene.player?.status === 'alive' && scene.player.currentLocation === 'film_white_rabbit_club'
+      ? (club ? .035 : .11) : 0;
     const crosscut = scene.player?.currentAction?.parameters.crosscut as import('@auto_matrix/shared').CrosscutGesture | undefined;
     if (crosscut?.phase === 'call') this.reading.add('cypher-call'); else this.reading.delete('cypher-call');
     const journey = scene.sandbox?.neoLife?.journey;
@@ -496,6 +502,38 @@ export class GameAudio {
     sound.source.frequency.setTargetAtTime(42 + speed * 1.15, ctx.currentTime, .12);
     sound.gain.gain.setTargetAtTime((.025 + speed * .0012) * level, ctx.currentTime, .12);
   }
+  private syncClubSound(): void {
+    const bus = this.effects();
+    if (!this.clubLevel || !bus) {
+      if (this.clubSound) {
+        this.clubSound.source.stop(); this.clubSound.source.disconnect(); this.clubSound.gain.disconnect(); this.clubSound = undefined;
+      }
+      return;
+    }
+    const { context, output } = bus;
+    if (!this.clubSound) {
+      if (!this.clubPulse) {
+        // A short, falling bass thud carries through the room without adding a second melody.
+        const period = .48;
+        this.clubPulse = context.createBuffer(1, Math.round(context.sampleRate * period), context.sampleRate);
+        const samples = this.clubPulse.getChannelData(0);
+        for (let i = 0; i < samples.length; i++) {
+          const t = i / context.sampleRate;
+          const phase = 2 * Math.PI * (51 * t + 43 * (1 - Math.exp(-22 * t)) / 22);
+          const fade = Math.min(1, t / .008, (period - t) / .025);
+          samples[i] = Math.sin(phase) * Math.exp(-t * 14) * fade;
+        }
+      }
+      const source = context.createBufferSource(), gain = context.createGain();
+      source.buffer = this.clubPulse; source.loop = true; gain.gain.value = 0;
+      source.connect(gain); gain.connect(output); source.start();
+      this.clubSound = { source, gain, level: 0 };
+    }
+    if (this.clubSound.level !== this.clubLevel) {
+      this.clubSound.level = this.clubLevel;
+      this.clubSound.gain.gain.setTargetAtTime(this.clubLevel, context.currentTime, .18);
+    }
+  }
   async recordingAudio(): Promise<MediaStream | undefined> {
     await this.resume(); return this.context?.state === 'running' ? this.recording?.stream : undefined;
   }
@@ -515,6 +553,7 @@ export class GameAudio {
       if (immediate) node.gain.value = value;
       else node.gain.setTargetAtTime(value, this.context.currentTime, node === this.master ? .025 : node === this.musicBus && this.wellsPreImpact ? .015 : .25);
     }
+    this.syncClubSound();
   }
   private ensureMusic(): void {
     const ctx = this.context;
@@ -603,6 +642,7 @@ export class GameAudio {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true; this.request++; this.abort?.abort(); window.clearTimeout(this.dialogueTimer); this.carEngine();
+    this.clubLevel = 0; this.syncClubSound(); this.clubPulse = undefined;
     window.removeEventListener('pointerdown', this.unlock); window.removeEventListener('keydown', this.unlock);
     document.removeEventListener('visibilitychange', this.visibility);
     for (const voice of this.voices) voice.dispose();
