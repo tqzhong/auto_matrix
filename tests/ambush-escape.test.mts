@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, FILM_SCENE_BY_ID, AMBUSH_ESCAPE, filmPosition, groundHeight, playerBlocked, stepPlayer, distance, filmCharacterFates, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, AMBUSH_ESCAPE, AMBUSH_RETREAT_LANDINGS, filmPosition, groundHeight, playerBlocked, stepPlayer, distance, filmCharacterFates, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -238,6 +238,37 @@ test('a real pursuit failure retries the latest supported floor without resurrec
   assert.equal(playerBlocked(h.actor.position, true, 1.1, h.sandbox.state.structures), false);
   assert.equal(h.world.agents.get('mouse')!.status, 'dead'); assert.equal(h.state().ambushEscape!.mouseDead, true);
   assert.equal(h.state().ambushEscape!.attempts, 1); assert.ok(h.state().ambush!.elapsed >= 14.8);
+});
+
+test('retrying the eighth-floor phone checkpoint leaves time for the required call', () => {
+  const h = setup(); cat(h); h.frame(65);
+  for (const [x, y, z] of descent) h.walk(x, y, z);
+  for (const [x, z] of [[-11, 31.8], [-11, 8], [0, 8], [0, -16], [-18, -16]]) h.walk(x, -37, z);
+  for (let i = 0; i < 1200 && (h.state().ambushEscape!.phase === 'descending'
+    || h.state().ambushEscape!.pursuers[0].progress < 307); i++) h.frame();
+  assert.equal(h.state().ambushEscape!.phase, 'window');
+  h.command('act');
+  const checkpoint = structuredClone(h.state().ambushEscape!.checkpoint);
+  assert.equal(checkpoint.phase, 'phone');
+  assert.ok(checkpoint.pursuers[0].progress >= 307, 'capture the late hall pursuit seen on the live route');
+  for (let i = 0; i < 200 && h.actor.status === 'alive'; i++) h.frame();
+  assert.equal(h.actor.status, 'dead');
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  h.command('retry');
+  const escape = h.state().ambushEscape!;
+  const landing = AMBUSH_RETREAT_LANDINGS.find(point => point.floor === 9)!;
+  assert.ok(escape.pursuers[0].progress <= landing.progress, 'the late checkpoint must allow the player to start and finish the call');
+  assert.ok(Math.abs(escape.pursuers[0].progress - escape.pursuers[1].progress
+    - (checkpoint.pursuers[0].progress - checkpoint.pursuers[1].progress)) < 1e-8);
+  assert.deepEqual(escape.progress, checkpoint.progress);
+  assert.deepEqual(escape.pursuers.map(pursuer => pursuer.health), checkpoint.pursuers.map(pursuer => pursuer.health));
+  for (const [x, z] of [[-18, -13.2], [-5.4, -13.2]]) h.walk(x, -37, z);
+  h.command('act'); assert.equal(escape.phase, 'call');
+  h.frame(110);
+  assert.ok(escape.phase === 'forming' || escape.phase === 'wetwall');
+  assert.equal(escape.traced, true);
+  assert.equal(h.actor.health, h.actor.maxHealth);
+  assert.equal(h.world.agents.get('mouse')!.status, 'dead');
 });
 
 test('a pursuer stops at body contact instead of crossing the crew before capture is resolved', () => {

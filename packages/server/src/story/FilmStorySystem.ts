@@ -6684,18 +6684,25 @@ export class FilmStorySystem {
       if (state.scene === 'm1_dejavu' && state.ambushEscape) {
         const escape = state.ambushEscape, checkpoint = escape.checkpoint;
         if (Object.keys(AMBUSH_COMPANY).some(id => this.world.agents.get(id)?.controller)) return '同行者正由另一位玩家控制，请等他释放角色后再重试。';
+        // A late capture can leave less time than the required call and regrouping take.
+        const landing = escape.phase === 'failed' && checkpoint.phase !== 'descending'
+          ? AMBUSH_RETREAT_LANDINGS.find(point => point.floor === checkpoint.floor + 1) : undefined;
+        const setback = landing ? Math.max(0, ...checkpoint.pursuers.map(p => p.health > 0 ? p.progress - landing.progress : 0)) : 0;
         if (escape.phase !== 'alarm') {
           escape.phase = checkpoint.phase; escape.elapsed = 0; delete escape.callStart;
           if (checkpoint.doff) escape.doff = { ...checkpoint.doff }; else delete escape.doff;
         }
         escape.caught = 0; escape.attempts++;
-        escape.progress = { ...checkpoint.progress }; escape.pursuers = checkpoint.pursuers.map(p => ({ progress: p.progress, health: p.health })); escape.traced = checkpoint.traced;
+        escape.progress = { ...checkpoint.progress };
+        escape.pursuers = checkpoint.pursuers.map(p => ({ progress: p.health > 0 ? p.progress - setback : p.progress, health: p.health }));
+        escape.traced = checkpoint.traced;
         this.sandbox().threats = this.sandbox().threats.filter(t => !t.id.startsWith('film:ambush:pursuer:'));
         state.step = ['forming', 'wetwall'].includes(checkpoint.phase) ? 2 : 1; delete state.started; delete state.fighting;
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.place(agent, this.scene, state.checkpoint); agent.velocity = { x: 0, y: 0, z: 0 };
         this.ambushEscapeFrame(agent, 0, tick);
         return escape.phase === 'alarm' ? '已接回十三楼当前事件，硬线中断与 Mouse 的交火从保存时刻继续。'
+          : setback > 0 ? `已回到${checkpoint.floor}楼检查点。追兵从上一层继续逼近，Mouse 的死亡保留。`
           : `已回到${checkpoint.floor}楼检查点。队伍和追兵恢复该处状态，Mouse 的死亡保留。`;
       }
       if (state.scene === 'm1_dejavu' && state.step === 0 && state.ambushApproach) {
