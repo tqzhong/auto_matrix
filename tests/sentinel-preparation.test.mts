@@ -157,13 +157,13 @@ test('a failed Sentinel save prepares the retry cast and reuses the cockpit when
   assert(compiled.includes(skin));
   assert(h.work.slice(before).includes('bindings'), 'the same programs finish preparing after the cockpit attaches');
   assert.equal(skin.parent, tank);
-  const normals = h.film.sentinelRetryNormalMeshes;
+  const normals = h.film.sentinelControlNormalMeshes;
   assert.deepEqual(normals?.map(mesh => mesh.id), [h.skin.id]);
   prepareRetry();
-  assert.equal(h.film.sentinelRetryNormalMeshes, normals);
+  assert.equal(h.film.sentinelControlNormalMeshes, normals);
   h.journey.sentinel!.phase = 'shutdown';
   assert.equal(prepareRetry(), false);
-  assert.equal(h.film.sentinelRetryNormalMeshes, undefined);
+  assert.equal(h.film.sentinelControlNormalMeshes, undefined);
 });
 
 test('large skin textures from an offstage crew member upload while cockpit shaders are still linking', t => {
@@ -203,6 +203,8 @@ test('the Sentinel viewport prepares the actual crew with the live lights before
   }
   const morpheus = crew(['high-poly', 'morpheus-hammer-collar', 'offstage-prop']);
   const trinity = crew(['short04', 'shoes01']);
+  const neo = crew(['Anatomical_head_and_hands', 'neo-teeth-upper']);
+  const tank = crew(['Tank_face', 'Tailored_trousers', 'shoes01']);
   const actors = new Map([['morpheus', morpheus]]);
   const compiled: THREE.Object3D[] = [], reflected: object[] = [];
   const programs: { program: object; isReady: () => boolean; getUniforms: () => void }[] = [];
@@ -240,13 +242,19 @@ test('the Sentinel viewport prepares the actual crew with the live lights before
     return busy;
   };
   prepare(); assert.equal(compiled.length, 0);
-  journey.sentinel!.phase = 'verify'; prepare();
+  journey.sentinel!.phase = 'clear'; prepare();
   assert.deepEqual(compiled.map(mesh => mesh.id), morpheus.children.slice(0, 2).map(mesh => mesh.id));
   assert.equal(reflected.length, 0);
+  actors.set('neo', neo); actors.set('tank', tank);
+  for (let i = 0; i < 32; i++) prepare();
+  assert.deepEqual(new Set(compiled), new Set([...morpheus.children.slice(0, 2), ...neo.children, ...tank.children]));
+  assert.deepEqual(film.sentinelControlNormalMeshes, [neo.children[0]]);
+  assert.equal(reflected.length, 7);
+  journey.sentinel!.phase = 'verify'; assert.equal(prepare(), false);
   journey.sentinel!.phase = 'confirming'; actors.set('trinity', trinity);
-  for (let i = 0; i < 16; i++) prepare();
-  assert.deepEqual(compiled.map(mesh => mesh.id), [...morpheus.children.slice(0, 2), ...trinity.children].map(mesh => mesh.id));
-  assert.equal(reflected.length, 4); assert.equal(prepare(), false);
+  for (let i = 0; i < 12; i++) prepare();
+  assert.deepEqual(new Set(compiled), new Set([...morpheus.children.slice(0, 2), ...neo.children, ...tank.children, ...trinity.children]));
+  assert.equal(reflected.length, 9); assert.equal(prepare(), false);
   journey.sentinel!.phase = 'done'; assert.equal(prepare(), false);
 });
 

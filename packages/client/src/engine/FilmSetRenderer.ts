@@ -228,13 +228,15 @@ const SENTINEL_ENTRY_MESHES = new Set([
   'morpheus-hammer-sweater', 'morpheus-hammer-collar', 'trinity-logos-sweater', 'trinity-logos-collar',
   'Tailored_trousers', 'shoes01', 'short04', 'Tank_face', 'Tank_ribbed_shirt', 'Tank_harness', 'Tank_curled_hair',
 ]);
-const SENTINEL_CONTROL_CAST = {
-  morpheus: ['high-poly', 'morpheus-hammer-collar'],
-  trinity: ['short04', 'shoes01'],
-};
 const SENTINEL_RETRY_CAST = {
   tank: ['Anatomical_head_and_hands', 'high-poly', 'Tank_face', 'Tank_ribbed_shirt', 'Tank_harness', 'Tank_curled_hair'],
   neo: ['Anatomical_head_and_hands', 'Tailored_trousers', 'shoes01', 'high-poly', 'neo-teeth-upper', 'neo-teeth-lower', 'Anatomical_wrist_skin'],
+};
+const SENTINEL_CONTROL_CAST = {
+  morpheus: ['high-poly', 'morpheus-hammer-collar', 'shoes01'],
+  trinity: ['short04', 'shoes01', 'high-poly'],
+  tank: [...SENTINEL_RETRY_CAST.tank, 'Tailored_trousers', 'shoes01'],
+  neo: SENTINEL_RETRY_CAST.neo,
 };
 const CONSOLE_ENTRY_MESHES = new Set([
   'neb-cabin-grating', 'neb-stern-plate', 'neb-medical-curtain', 'neb-cypher-crt-left-glass', 'neb-cypher-crt-right-glass',
@@ -633,7 +635,7 @@ export class FilmSetRenderer {
   }
   get openingRoofRetryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedRoofRetry?.normalMeshes; }
   get podEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedPods?.entryNormalMeshes; }
-  get sentinelRetryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedSentinelControls?.normalMeshes; }
+  get sentinelControlNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedSentinelControls?.normalMeshes; }
   get deckEntryNormalMeshes(): readonly THREE.Mesh[] | undefined {
     return this.preparedConsole?.normalMeshes ?? this.preparedMeal?.normalMeshes ?? this.preparedMeetingDeck?.normalMeshes ?? this.preparedShipLoss?.normalMeshes;
   }
@@ -1929,8 +1931,10 @@ export class FilmSetRenderer {
     actor: (id: string) => THREE.Group | undefined, lighting: LightCulling): boolean {
     const phase = journey?.sentinel?.phase;
     const retry = phase === 'detected' || phase === 'failed';
+    // The crew is out of frame during departure. Prepare their first playable view while the Sentinel recedes.
+    const returningControl = phase === 'clear' || phase === 'verify' || phase === 'confirming';
     if (this.current?.id !== 'film_service_tunnels' || this.currentScene !== 'm1_sentinels' || journey?.scene !== 'm1_sentinels'
-      || journey.visiting || !retry && phase !== 'verify' && phase !== 'confirming' || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+      || journey.visiting || !retry && !returningControl || !renderer.extensions.has('KHR_parallel_shader_compile')) {
       this.cancelSentinelControlsPreparation();
       return false;
     }
@@ -1949,16 +1953,17 @@ export class FilmSetRenderer {
         crew.push(mesh);
         const material = mesh.material, queued = prepared.versions.get(mesh);
         if (mesh instanceof THREE.SkinnedMesh) prepareSkinnedMaterial(material);
-        if (retry && id === 'neo' && name === 'Anatomical_head_and_hands' && prepared.normalMeshes?.[0] !== mesh)
+        if (id === 'neo' && name === 'Anatomical_head_and_hands' && prepared.normalMeshes?.[0] !== mesh)
           prepared.normalMeshes = [mesh];
         if (queued?.material === material && queued.version === material.version) continue;
         prepared.versions.set(mesh, { material, version: material.version });
         if (!prepared.meshes.includes(mesh)) prepared.meshes.push(mesh);
-        if (retry) this.queueColorTextures(prepared.textures, [mesh]);
+        this.queueColorTextures(prepared.textures, [mesh]);
       }
     }
     const linking = this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true, crew);
-    return retry && this.prepareStagedColorTexture(renderer, prepared, prepared.textures, 2) || linking;
+    if (linking && !retry) return true;
+    return this.prepareStagedColorTexture(renderer, prepared, prepared.textures, 2) || linking;
   }
   prepareConsole(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => ShipEntryCast, shadowSun: THREE.DirectionalLight, sourceLights?: LightCulling, resume = false): void {

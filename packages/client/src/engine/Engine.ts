@@ -540,7 +540,7 @@ export class Engine {
     const hotelNormals = hotelPreparation && !preparingHotelTextures ? this.filmSets.openingHotelNormalMeshes : undefined;
     const openingNormals = this.filmSets.openingRoofRetryNormalMeshes ?? hotelNormals ?? wellsCast;
     const podNormals = this.filmSets.podEntryNormalMeshes;
-    const sentinelNormals = this.filmSets.sentinelRetryNormalMeshes;
+    const sentinelNormals = this.filmSets.sentinelControlNormalMeshes;
     const deckNormals = this.filmSets.deckEntryNormalMeshes;
     const ambushNormals = this.filmSets.ambushEntryNormalMeshes;
     const governmentNormals = this.filmSets.governmentEntryNormalMeshes;
