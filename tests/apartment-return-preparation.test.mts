@@ -305,6 +305,44 @@ test('a deferred invitation prepares the two visitors before their actual entran
   assert.equal(h.apartment.returnNormalMeshes, undefined);
 });
 
+test('a saved deferred invitation prepares the room before possession and adds Neo when he loads', t => {
+  const h = fixture(); t.after(h.dispose);
+  const guest = new THREE.Group(), coat = h.arms.clone();
+  coat.visible = true; guest.add(coat);
+  h.journey.scene = 'm1_wake_up'; h.journey.contact = { phase: 'noticed', elapsed: 0, paid: true };
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const prepare = (actor?: THREE.Group, landing = true) =>
+    h.apartment.prepareReturn(h.renderer, camera, h.scene, h.journey, actor, [guest], undefined, true, landing);
+  for (let frame = 0; frame < 8; frame++) prepare();
+  const room = h.root.children[0];
+  assert.ok(h.batches.flat().includes(room), 'submit room shaders while the player is still on the landing screen');
+  assert.ok(h.batches.flat().includes(h.street));
+  assert.ok(h.batches.flat().includes(coat));
+  const warmed = h.batches.flat().filter(mesh => mesh === room).length;
+  h.ready();
+  for (let frame = 0; frame < 90; frame++) prepare(h.actor, false);
+  assert.ok(h.batches.flat().includes(h.arms));
+  assert.ok(h.batches.flat().includes(h.shirt));
+  assert.equal(h.batches.flat().filter(mesh => mesh === room).length, warmed, 'possession keeps the already prepared room');
+  assert.equal(h.work.filter(step => step === 'texture').length, 1);
+});
+
+test('incoming guests are linked before reading the room bindings for a saved deferred invitation', t => {
+  const h = fixture(); t.after(h.dispose);
+  const guest = new THREE.Group(), hair = new THREE.SkinnedMesh(h.arms.geometry, h.arms.material);
+  hair.name = 'short04'; guest.add(hair);
+  h.journey.scene = 'm1_wake_up'; h.journey.contact = { phase: 'noticed', elapsed: 0, paid: true };
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const prepare = (guests: THREE.Group[] = []) =>
+    h.apartment.prepareReturn(h.renderer, camera, h.scene, h.journey, h.actor, guests, undefined, true, true);
+  for (let frame = 0; frame < 8; frame++) prepare();
+  assert.ok(h.batches.flat().includes(h.root.children[0]));
+  h.ready();
+  const batches = h.batches.length;
+  prepare([guest]);
+  assert.ok(h.batches.slice(batches).flat().includes(hair), 'submit the arriving guest while the earlier programs can link');
+});
+
 test('a deferred invitation prepares priority maps and retains visitor shadow programs through the handoff', t => {
   const h = fixture(), { renderer, scene, actor, arms, journey } = h;
   const source = new LightCulling(scene), choi = new THREE.Group(), dujour = new THREE.Group();

@@ -351,7 +351,7 @@ export class Engine {
         : prepareDeferredContact ? [this.agentRenderer.requestApartmentGuest('choi'), this.agentRenderer.requestApartmentGuest('dujour'), this.filmSets.goalMarker, apartmentPhoneLabel]
         : clubReturn || resumeClubReturn ? [this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), apartmentPhoneLabel] : undefined,
       openingHandoff || resumeApartment || prepareDeferredContact || clubReturn ? this.lightCulling : undefined,
-      prepareDeferredContact, resumeApartment || resumeClubReturn);
+      prepareDeferredContact, resumeApartment || resumeClubReturn || resumeOnLanding && prepareDeferredContact);
     this.filmSets.preparePodColors(this.renderer, this.camera, this.lightCulling, this.agentRenderer.getAgentHero('neo'), this.playerControls?.firstPerson ?? false);
     if (meeting?.scene === 'm1_recovery' && player?.id === meeting.actor)
       this.filmSets.prepareCabinArrival(this.renderer, this.camera, meeting, id => this.agentRenderer.getShipEntryCast(id));
