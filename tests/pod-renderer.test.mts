@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { POD_RUNOFF, podRunoffHeight } from '@auto_matrix/shared';
+import { POD_RUNOFF, podRunoffHeight, type FilmJourney } from '@auto_matrix/shared';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 
@@ -148,6 +149,66 @@ test('pod entry prepares the basin shadow, drain textures and instanced normals 
   const [depth] = shadows; let disposed = 0; depth.addEventListener('dispose', () => disposed++);
   pod.attach(new THREE.Group()); assert.equal(disposed, 0);
   pod.dispose(); assert.equal(disposed, 1);
+});
+
+test('the live pod prepares the hidden inspector during oral removal without advancing its pose', t => {
+  const document = globalThis.document; globalThis.document = {} as Document;
+  t.after(() => { globalThis.document = document; });
+  const maps: THREE.Texture[] = [];
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string) => {
+    const texture = new THREE.Texture({ width: 1024, height: 1024, complete: true }); texture.needsUpdate = true;
+    if (url.includes('metal_plate')) maps.push(texture);
+    return texture;
+  });
+  const scene = new THREE.Scene(), root = new THREE.Group(), camera = new THREE.PerspectiveCamera();
+  scene.add(root, new THREE.PointLight());
+  const pod = new PodSetRenderer(root), lighting = new LightCulling(scene);
+  lighting.stablePointSlots = true;
+  const film = Object.assign(Object.create(FilmSetRenderer.prototype), { scene, pods: pod }) as FilmSetRenderer;
+  const machine = pod.root.getObjectByName('pod-maintenance-machine')!, arms = machine.getObjectByName('pod-maintenance-outboard-bars') as THREE.InstancedMesh;
+  const hand = machine.getObjectByName('pod-maintenance-finger--1--1') as THREE.Mesh;
+  const source = [...arms.instanceMatrix.array], ready = new Set<THREE.Texture>(), colors = new Set<THREE.Mesh>(), depth = new Set<THREE.BufferGeometry>();
+  const buffers = new Set<THREE.Mesh>();
+  let target: THREE.WebGLRenderTarget | null = null;
+  const renderer = {
+    extensions: { has: () => true }, info: { programs: [] }, shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
+    properties: { get: (texture: THREE.Texture) => ready.has(texture) ? { __version: texture.version } : {} },
+    getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
+    getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
+    compile(subject: THREE.Object3D, _eye: THREE.Camera, lights: THREE.Scene) {
+      assert.notEqual(lights, scene);
+      subject.traverse(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        if (object.material instanceof THREE.MeshDepthMaterial) depth.add(object.geometry);
+        else colors.add(object);
+      });
+    },
+    initTexture(texture: THREE.Texture) { ready.add(texture); },
+    render(view: THREE.Scene) { for (const mesh of view.children as THREE.Mesh[]) buffers.add(mesh); },
+  } as unknown as THREE.WebGLRenderer;
+  const step = (kind: 'emerge' | 'breather' | 'disconnect', visiting = false) => {
+    const journey = { scene: 'm1_pod', visiting: visiting || undefined, awakening: { kind, elapsed: 3 } } as FilmJourney;
+    film.preparePodColors(renderer, camera, lighting, undefined, false, journey);
+  };
+  t.after(() => { pod.dispose(); lighting.dispose(); });
+  step('emerge'); step('breather', true);
+  assert.equal(colors.size + depth.size + ready.size + buffers.size, 0);
+  for (let frame = 0; frame < 45; frame++) {
+    const uploads = ready.size;
+    step('breather');
+    assert.ok(ready.size - uploads <= 1);
+    assert.equal(machine.visible, false); assert.equal(machine.parent, pod.root); assert.equal(target, null);
+  }
+  const steel = arms.material as THREE.MeshStandardMaterial;
+  assert.equal(ready.size, 3);
+  assert.ok([steel.map, steel.normalMap, steel.roughnessMap].every(texture => texture && ready.has(texture)));
+  assert.ok([...ready].every(texture => maps.includes(texture)));
+  assert.ok(colors.has(arms) && colors.has(hand) && depth.has(arms.geometry));
+  assert.ok(buffers.has(arms) && buffers.has(hand));
+  assert.deepEqual([...arms.instanceMatrix.array], source, 'the preview must not advance the live animation');
+  const count = colors.size + depth.size + ready.size + buffers.size;
+  step('disconnect');
+  assert.equal(colors.size + depth.size + ready.size + buffers.size, count);
 });
 
 test('the rescue bay has an open passage for the body and closes below it after boarding', () => {

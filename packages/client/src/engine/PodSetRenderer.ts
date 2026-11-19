@@ -83,6 +83,13 @@ export class PodSetRenderer {
     parent.add(this.root);
   }
   get entryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.normalMeshes; }
+  get inspectionMeshes(): THREE.Mesh[] {
+    const meshes: THREE.Mesh[] = [];
+    this.robot.traverse(object => { if (object instanceof THREE.Mesh) meshes.push(object); });
+    for (const { pad, links, hinges } of this.clamps) meshes.push(pad, ...links, ...hinges);
+    meshes.push(this.needle);
+    return meshes;
+  }
   prepareColorPrograms(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, actor?: THREE.Group,
     sourceLights?: LightCulling, firstPerson = false): void {
     if (this.construction || !renderer.extensions.has('KHR_parallel_shader_compile')) return;

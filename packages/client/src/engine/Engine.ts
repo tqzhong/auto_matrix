@@ -356,7 +356,7 @@ export class Engine {
         : clubReturn || resumeClubReturn || interrogationReturn ? [this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), apartmentPhoneLabel] : undefined,
       openingHandoff || resumeApartment || prepareDeferredContact || clubReturn || interrogationReturn ? this.lightCulling : undefined,
       prepareDeferredContact, resumeApartment || resumeClubReturn || resumeDeferredContact);
-    this.filmSets.preparePodColors(this.renderer, this.camera, this.lightCulling, this.agentRenderer.getAgentHero('neo'), this.playerControls?.firstPerson ?? false);
+    this.filmSets.preparePodColors(this.renderer, this.camera, this.lightCulling, this.agentRenderer.getAgentHero('neo'), this.playerControls?.firstPerson ?? false, meeting);
     if (meeting?.scene === 'm1_recovery' && player?.id === meeting.actor)
       this.filmSets.prepareCabinArrival(this.renderer, this.camera, meeting, id => this.agentRenderer.getShipEntryCast(id));
     const resumeArmoury = resumeOnLanding && meeting?.scene === 'm1_guns';

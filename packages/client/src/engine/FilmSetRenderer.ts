@@ -433,6 +433,7 @@ export class FilmSetRenderer {
   private preparedFreeway?: { renderer: FreewaySetRenderer; colors?: CastColorPreparation };
   private pods?: PodSetRenderer;
   private preparedPods?: PodSetRenderer;
+  private preparedPodInspection?: Pick<EntryPreparation, 'gpu' | 'lighting' | 'shadows' | 'buffers' | 'textureUpload'> & { colors: ColorPreparation };
   private neb?: NebDeckRenderer;
   private preparedAwakening?: AwakeningSetPreparation;
   private preparedCabinArrival?: CastColorPreparation & {
@@ -763,8 +764,27 @@ export class FilmSetRenderer {
     if (['approach', 'entrance', 'building', 'relaunch', 'sky_grapple'].includes(phase) || phase === 'descent')
       this.smithFinale.prepareCrater(renderer, camera, this.scene);
   }
-  preparePodColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, lighting: LightCulling, actor: THREE.Group | undefined, firstPerson: boolean): void {
+  preparePodColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, lighting: LightCulling, actor: THREE.Group | undefined,
+    firstPerson: boolean, journey?: FilmJourney): void {
     this.preparedPods?.prepareColorPrograms(renderer, camera, this.scene, actor, lighting, firstPerson);
+    if (!this.pods || journey?.scene !== 'm1_pod' || journey.visiting || journey.awakening?.kind !== 'breather'
+      || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    let prepared = this.preparedPodInspection;
+    if (prepared?.gpu !== renderer.properties) {
+      this.cancelPodInspection();
+      // The original inspector stays hidden until Neo checks the neck port.
+      const meshes = this.pods.inspectionMeshes.filter((mesh): mesh is ColorMesh =>
+        mesh.material instanceof THREE.MeshStandardMaterial || mesh.material instanceof THREE.MeshBasicMaterial);
+      const textures = new Set<THREE.Texture>(); this.queueColorTextures(textures, meshes);
+      prepared = this.preparedPodInspection = { gpu: renderer.properties, lighting,
+        colors: { scene: this.scene, meshes, textures, programs: [] }, buffers: { meshes: [], geometries: new WeakSet() } };
+      if (renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+        const materials = new Set<THREE.MeshDepthMaterial>(), variants = new Set<string>();
+        prepared.shadows = { materials, variants, source: [], destination: shadowCasterProxies(meshes, materials, variants) };
+      }
+      this.queueEntryBuffers(prepared, meshes);
+    }
+    this.prepareStagedEntry(renderer, camera, prepared, prepared.colors);
   }
   prepareAmbush(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, sourceLights?: LightCulling, resume = false): void {
@@ -7234,6 +7254,13 @@ export class FilmSetRenderer {
     const prepared = this.preparedSentinel; if (!prepared) return;
     this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedSentinel = undefined;
   }
+  private cancelPodInspection(): void {
+    const prepared = this.preparedPodInspection;
+    prepared?.textureUpload?.return(false);
+    prepared?.buffers?.upload?.return(undefined);
+    prepared?.shadows?.materials.forEach(material => material.dispose());
+    this.preparedPodInspection = undefined;
+  }
   private cancelSentinelControlsPreparation(): void {
     this.preparedSentinelControls?.textureUpload?.return(false);
     this.preparedSentinelControls = undefined;
@@ -7388,6 +7415,7 @@ export class FilmSetRenderer {
     this.oracleBlocks = undefined;
     this.oracleDoor = undefined;
     this.mirror?.dispose(); this.mirror = undefined; this.resetMirrorFrame = undefined; this.mirrorFilament = undefined; this.trackingElectrode = undefined; this.trackingLead = undefined;
+    this.cancelPodInspection();
     this.pods?.dispose(); this.pods = undefined;
     this.neb?.dispose(); this.neb = undefined;
     this.sourceBriefing?.dispose(); this.sourceBriefing = undefined;
