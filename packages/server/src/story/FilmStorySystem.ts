@@ -32,7 +32,7 @@ import { baneInquiryLocked } from '@auto_matrix/shared';
 import { OracleAbsorptionSystem } from './OracleAbsorptionSystem.js';
 import { oracleAbsorptionLocked, oracleAbsorptionActive } from '@auto_matrix/shared';
 import { oracleLastLocked } from '@auto_matrix/shared';
-import { oracleRequestLocked, trainmanChaseLocked } from '@auto_matrix/shared';
+import { oracleRequestLocked, trainmanChaseLocked, type OracleRequestGesture } from '@auto_matrix/shared';
 import { TrainmanChaseSystem } from './TrainmanChaseSystem.js';
 import { HelGarageSystem } from './HelGarageSystem.js';
 import { helGarageLocked, newHelGarage } from '@auto_matrix/shared';
@@ -2396,7 +2396,10 @@ export class FilmStorySystem {
         && (actor.currentAction.parameters.oracleWaiting as OracleWaitingGesture | undefined)?.kind === seat.kind
         && distance(actor.position, filmPosition('film_oracle_home', seat.x, seat.z)) < .001;
       const arriving = restoringArrival && !actor.controller && actor.status === 'alive' && (actor.id === 'morpheus' || actor.id === 'oracle_priestess');
-      if (!arriving && !waiting && migrate(actor.position)) {
+      const request = actor.currentAction?.parameters.oracleRequest as OracleRequestGesture | undefined;
+      const guiding = journey?.scene === 'm3_oracle_request' && !journey.visiting && journey.oracleRequest?.phase === 'guiding'
+        && !actor.controller && actor.status === 'alive' && (actor.id === 'seraph' || actor.id === 'morpheus') && request?.role === actor.id;
+      if (!arriving && !waiting && !guiding && migrate(actor.position)) {
         actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null; actor.currentPath = [];
       }
     }

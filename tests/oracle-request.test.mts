@@ -157,6 +157,22 @@ test('guides fit through the doorway and finish clear of Trinity’s departure m
   }
 });
 
+test('reading a paused request preserves Seraph’s saved guidance pose beside the doorway', () => {
+  const h = setup(), seraph = h.world.agents.get('seraph')!, journey = h.state();
+  h.players.release('request-player', h.tick());
+  journey.step = 3;
+  Object.assign(journey.oracleRequest!, { phase: 'guiding', guide: 4.1 });
+  h.sandbox.life.film.oracleRequest.frame(h.actor, 0, h.tick());
+  const position = { ...seraph.position }, action = structuredClone(seraph.currentAction);
+  assert.equal(playerBlocked(position, true, .55), false, 'the guide fits the authored route');
+  assert.equal(playerBlocked(position, true), true, 'the wider standing-player clearance would move the guide');
+  const saved = structuredClone(h.sandbox.state);
+  h.sandbox.restore(saved);
+  assert.deepEqual(seraph.position, position);
+  assert.deepEqual(seraph.currentAction, action);
+  assert.deepEqual(h.state().oracleRequest, saved.neoLife!.journey!.oracleRequest);
+});
+
 test('leaving the meeting retains the Oracle’s seated state when the next scene is read back', () => {
   const h = setup(), oracle = h.world.agents.get('oracle')!;
   h.state().step = 4; Object.assign(h.state().oracleRequest!, { phase: 'done', guide: ORACLE_REQUEST.guideLength });

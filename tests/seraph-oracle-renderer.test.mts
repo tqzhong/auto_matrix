@@ -555,10 +555,21 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     enter('m2_departure', 0);
     assert.equal(disposals, 1);
   });
-  await t.test('Mobil prepares the Oracle apartment with its open entrance and intact vase', () => {
+  await t.test('Mobil prepares the Oracle apartment with its open entrance and intact vase', t => {
     enter('m3_trainman', 2); preview = undefined; prepare(); assert.ok(!preview);
     enter('m3_trainman', 3);
-    const door = warm('oracle-apartment-door');
+    const map = new THREE.Texture({ width: 2048, height: 2048, complete: true });
+    map.needsUpdate = true; body.material.map = map;
+    t.after(() => { body.material.map = null; map.dispose(); });
+    castCompiled = false;
+    const previousUploads = uploads.size;
+    for (let i = 0; !preview && i < 120; i++) prepare();
+    assert.ok(preview, 'the live platform starts preparing the apartment');
+    assert.ok(uploads.size > previousUploads, 'textures must begin uploading while there are still shaders to compile');
+    for (let i = 0; i < 120; i++) prepare();
+    const door = preview!.getObjectByName('oracle-apartment-door');
+    assert.ok(door && castCompiled && !scene.getObjectByName(door.name));
+    assert.ok(uploads.has(map), 'the preparation includes the arriving cast textures');
     const slots = pointSlots(preview!);
     let vase: THREE.Mesh | undefined;
     preview!.traverseVisible(object => {
@@ -575,6 +586,25 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     assert.equal(disposals, 0);
     enter('m2_departure', 0);
     assert.equal(disposals, 1);
+  });
+  await t.test('a completed Mobil save keeps the prepared apartment through the landing screen', t => {
+    enter('m3_trainman', FILM_SCENE_BY_ID.m3_trainman.steps.length);
+    journey.completed.push('m3_trainman');
+    t.after(() => { journey.actor = neo.id; journey.completed.pop(); enter('m2_departure', 0); });
+    sets.update(undefined, sandbox, 0);
+    const door = warm('oracle-apartment-door', true);
+    enter('m3_trainman', FILM_SCENE_BY_ID.m3_trainman.steps.length);
+    assert.ok(!scene.getObjectByName(door.name));
+    const request = FILM_SCENE_BY_ID.m3_oracle_request, trinity = world.agents.get(request.actor)!;
+    Object.assign(journey, { scene: request.id, step: 0, actor: trinity.id });
+    // The story can change before the player socket receives ownership of Trinity.
+    sets.update(neo, sandbox, 0);
+    sets.prepareSecondOracle(graphics, camera, undefined, () => undefined);
+    assert.equal(sets.active?.id, 'film_mobil_station');
+    assert.ok(!scene.getObjectByName(door.name));
+    Object.assign(trinity, { position: filmEntry(request), isInMatrix: true, currentLocation: request.set });
+    sets.update(trinity, sandbox, 0);
+    assert.ok(scene.getObjectByName(door.name) === door, 'the first frame with Trinity adopts the original prebuilt door');
   });
   await t.test('following Seraph prepares the chase carriage and its live braking doors', () => {
     enter('m3_oracle_request', 2); preview = undefined; prepare(); assert.ok(!preview);
@@ -597,6 +627,37 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     delete journey.helChase;
     enter('m2_departure', 0);
     assert.equal(disposals, 1);
+  });
+  await t.test('a saved Oracle departure keeps the prepared chase carriage through possession', t => {
+    const completed = FILM_SCENE_BY_ID.m3_oracle_request.steps.length;
+    enter('m3_oracle_request', completed);
+    journey.completed.push('m3_oracle_request');
+    t.after(() => { journey.completed.pop(); enter('m2_departure', 0); });
+    sets.update(undefined, sandbox, 0);
+    const carriage = warm('trainman-carriage', true);
+    enter('m3_oracle_request', completed);
+    assert.ok(!scene.getObjectByName(carriage.name));
+    enter('m3_trainman_chase', 0);
+    assert.equal(scene.getObjectByName(carriage.name), carriage);
+  });
+  for (const [source, step, role, names, prop] of [
+    ['m3_trainman', 3, 'oracle', ['oracle-revolutions-detailed-head'], 'oracle-apartment-door'],
+    ['m3_oracle_request', 3, 'trainman', ['trainman-detailed-body', 'trainman-detailed-head'], 'trainman-carriage'],
+  ] as const) await t.test(`the upcoming ${role} is prepared when the detailed model arrives`, t => {
+    const root = new THREE.Group(), fallback = new THREE.Mesh(body.geometry, body.material);
+    root.visible = false; root.add(fallback); libraryCast.set(role, root);
+    t.after(() => { libraryCast.delete(role); enter('m2_departure', 0); });
+    enter(source, step);
+    warm(prop);
+    assert.ok(!compiled.has(fallback), 'the fallback must not fill the arriving cast slot');
+    fallback.visible = false;
+    const details = names.map(name => {
+      const part = new THREE.Group(), mesh = new THREE.Mesh(body.geometry, body.material);
+      part.name = name; part.add(mesh); root.add(part); return mesh;
+    });
+    for (let i = 0; i < 100; i++) prepare();
+    assert.ok(details.every(mesh => compiled.has(mesh)), 'the real meshes must be prepared while the actor is offstage');
+    assert.equal(root.visible, false);
   });
   await t.test('a saved Trainman escape prepares and transfers the physical garage, including its wet floor and door', () => {
     enter('m3_trainman_chase', 1); preview = undefined; prepare(); assert.ok(!preview);

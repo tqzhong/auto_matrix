@@ -676,6 +676,9 @@ export class AgentRenderer {
 
   update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0, journey?: FilmJourney, garageCar?: GarageCarPose): boolean {
     const scene = journey?.visiting ?? journey?.scene;
+    const prepareRequestCast = !journey?.visiting && (!this.playerId || this.playerId === journey?.actor);
+    const prepareOracleRequest = prepareRequestCast && journey?.scene === 'm3_trainman' && journey.step >= 3;
+    const prepareTrainmanChase = prepareRequestCast && journey?.scene === 'm3_oracle_request' && journey.step >= 3;
     const opening = scene && scene !== 'm1_wake_up' && openingScenes.includes(scene) ? FILM_SCENE_BY_ID[scene] : undefined;
     const playerEntry = this.playerId ? this.agents.get(this.playerId) : undefined;
     const player = playerEntry?.state;
@@ -1219,8 +1222,8 @@ export class AgentRenderer {
       const luggage = !journey?.visiting && journey?.scene === 'm3_trainman' ? journey.mobil?.luggage : undefined;
       input.mobilLuggage = luggage && (id === 'neo' && ['lifting', 'carried'].includes(luggage.phase)
         || id === 'rama_kandra' && ['retrieving', 'returned'].includes(luggage.phase)) ? { role: id as 'neo' | 'rama_kandra', luggage } : undefined;
-      input.oracleRevolutions = id === 'oracle' && state.currentLocation === 'film_oracle_home'
-        && ['m3_oracle_request', 'm3_oracle_last', 'm3_oracle_absorbed'].includes(journey?.visiting ?? journey?.scene ?? '');
+      input.oracleRevolutions = id === 'oracle' && (prepareOracleRequest || state.currentLocation === 'film_oracle_home'
+        && ['m3_oracle_request', 'm3_oracle_last', 'm3_oracle_absorbed'].includes(scene ?? ''));
       input.oracleKitchen = id === 'oracle' && state.currentLocation === 'film_oracle_home' && !input.oracleRevolutions;
       input.oracleBench = id === 'oracle' && scene === 'm2_bench' && state.currentLocation === 'film_oracle_courtyard' && input.seated;
       input.oracleRequest = state.currentAction?.parameters.oracleRequest as MotionInput['oracleRequest'];
@@ -1261,7 +1264,8 @@ export class AgentRenderer {
       input.seraphDoor = state.currentAction?.parameters.seraphDoor as MotionInput['seraphDoor'];
       input.bookDoor = state.currentAction?.parameters.bookDoor as MotionInput['bookDoor'];
       input.smithProjection = id === 'bane' && state.isInMatrix && state.faction === 'machines';
-      input.prepareDetailedCast = !journey?.visiting && (this.playerId === journey?.actor
+      input.prepareDetailedCast = prepareOracleRequest && (id === 'oracle' || id === 'seraph') || prepareTrainmanChase && id === 'trainman'
+        || !journey?.visiting && (this.playerId === journey?.actor
         && (id === 'hamann' && journey?.scene === 'm2_bane_copy' && (journey.step > 2 || journey.step === 2 && (journey.baneCopy?.progress ?? 0) >= .2)
           || id === 'seraph' && journey?.scene === 'm2_departure' && journey.step >= 4
           || id === 'oracle' && journey?.scene === 'm2_backdoors' && journey.step >= 1)

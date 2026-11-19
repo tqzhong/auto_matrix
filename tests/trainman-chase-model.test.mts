@@ -109,17 +109,24 @@ test('the shipped companions and Trainman clear the gate while their route veloc
       const input = { speed: 6.4, grounded: false, verticalVelocity: 0, turn: 0,
         trainmanChase: { role, phase: 'running' as const, age: 12 + phase, elapsed: 0, vault: phase, stride: start + phase * 6.4 } };
       models.animate(rig, 0, input, 0); rig.root.updateWorldMatrix(true, true);
+      const gateTop = center.y - 1 + TRAINMAN_CHASE.upper + gate.height;
+      let handHeight = Infinity;
       const collisions: string[] = [];
       rig.root.traverseVisible(object => {
         if (!(object instanceof THREE.Mesh)) return;
         if (object instanceof THREE.SkinnedMesh) object.skeleton.update();
         for (let vertex = 0; vertex < object.geometry.attributes.position.count; vertex++) {
           const point = object.localToWorld(object.getVertexPosition(vertex, new THREE.Vector3()));
-          if (Math.abs(point.x - center.x) < .575 && Math.abs(point.z - center.z - gate.z) < 1.375 && point.y > center.y - 1 + TRAINMAN_CHASE.upper + .04 && point.y < center.y - 1 + TRAINMAN_CHASE.upper + gate.height - .04)
+          if (role === 'morpheus' && phase === .22 && object.name === 'Anatomical_head_and_hands'
+            && Math.abs(point.x - center.x) < .5 && Math.abs(point.z - center.z - gate.z) < 1.28 && point.y > gateTop - .1)
+            handHeight = Math.min(handHeight, point.y);
+          if (Math.abs(point.x - center.x) < .575 && Math.abs(point.z - center.z - gate.z) < 1.375 && point.y > center.y - 1 + TRAINMAN_CHASE.upper + .04 && point.y < gateTop - .04)
             collisions.push(`${object.name}/${point.toArray()}`);
         }
       });
       assert.deepEqual(collisions.slice(0, 4), [], `${role} body/clothing through the gate at ${phase}, at live route speed`);
+      if (role === 'morpheus' && phase === .22)
+        assert.ok(Math.abs(handHeight - (gateTop + .035)) < .06, `Morpheus supports himself on the gate lid: ${handHeight - gateTop}`);
     }
   }
 });

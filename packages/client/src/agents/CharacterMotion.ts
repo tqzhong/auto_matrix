@@ -425,7 +425,8 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       return solveLeg(seated ? .98 : foot.z - plant * .35 - air * (i ? .55 : .3), hipHeight - .16 - foot.lift * .3 * moving - air * .55);
     }), arms: [0, 1].map(i => ({ shoulder: seated ? -.36 : -Math.sin((cycle + i * .5) * Math.PI * 2) * moving * .5 - vault * (i ? -.65 : 1.5) - brace * 1.7,
       elbow: seated ? -.95 : -.35 - moving * .6 - vault * .4, outward: (i ? 1 : -1) * (.12 + vault * .18), grip: brace ? .85 : .12 })),
-      hipHeight, twist: 0, lean: moving * .14 + brace * .16 + vault * .4, sway: dodge * .6, lunge: 0, roll: dodge * -.2,
+      // The supporting hand leads while Morpheus keeps his hips behind the gate.
+      hipHeight, twist: 0, lean: moving * .14 + brace * .16 + vault * .4, sway: dodge * .6, lunge: chase.role === 'morpheus' ? -.23 * plant : 0, roll: dodge * -.2,
       headTurn: 0, moving, run: clamp(input.speed / PLAYER_RUN_SPEED), airborne: vault, coat: moving * .6 + vault * .4, impact: 0, landing: 0 };
   }
   if (input.mobilLuggage && (input.mobilLuggage.luggage.phase === 'lifting'

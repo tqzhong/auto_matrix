@@ -331,6 +331,7 @@ const ZION_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m2_oracle_message: { scene: 'm2_departure', step: 1 },
   m3_shaft_seal: { scene: 'm3_temple_defense', step: 1 },
 };
+const ORACLE_REQUEST_DESTINATIONS = new Set(['m3_oracle_request', 'm3_trainman_chase']);
 const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m1_meal: { scene: 'm1_spoon', step: 0 },
   m2_departure: { scene: 'm2_seraph', step: 4 },
@@ -2342,6 +2343,10 @@ export class FilmSetRenderer {
   prepareSecondOracle(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, resume = false, helGarageTemplate?: AgentState,
     shipCast?: (id: string) => ShipEntryCast, sourceLights?: LightCulling): void {
+    const waiting = this.preparedSecondOracle;
+    if (waiting && this.currentScene && ORACLE_REQUEST_DESTINATIONS.has(waiting.scene)
+      && SECOND_ORACLE_CUTS[this.currentScene]?.scene === waiting.scene
+      && (!journey || !journey.visiting && journey.scene === waiting.scene)) return;
     if (this.current?.id === 'film_chateau_garage' && journey?.scene === 'm2_garage' && !journey.visiting && journey.step >= 1) {
       if (journey.garage?.phase === 'wrecked') return;
       const prepared = this.preparedFreeway ??= { renderer: new FreewaySetRenderer(undefined, FILM_SETS.film_freeway_101) };
@@ -2375,6 +2380,7 @@ export class FilmSetRenderer {
       return;
     }
     const cut = journey && SECOND_ORACLE_CUTS[journey.scene];
+    const requestCut = cut && ORACLE_REQUEST_DESTINATIONS.has(cut.scene);
     const firstOracle = journey?.scene === 'm1_meal', meal = journey?.interlude;
     const flight = journey?.mountain;
     const approachingGarage = journey?.scene !== 'm2_mountain' || flight?.phase === 'arrived'
@@ -2383,7 +2389,7 @@ export class FilmSetRenderer {
     const afterCollision = trucks && (journey.trucks?.phase === 'rescue' || journey.trucks?.phase === 'rescued');
     const atSource = journey && cut && this.currentScene === journey.scene
       && (this.current?.id === FILM_SCENE_BY_ID[journey.scene].set || afterCollision && this.current?.id === 'film_freeway_101');
-    const savedCut = resume && !this.current && (firstOracle || journey?.scene === 'm2_departure' && journey.completed.includes(journey.scene)
+    const savedCut = resume && !this.current && (firstOracle || requestCut || journey?.scene === 'm2_departure' && journey.completed.includes(journey.scene)
       || journey?.scene === 'm2_persephone' || journey?.scene === 'm2_mountain'
       || journey?.scene === 'm2_key_door' || journey?.scene === 'm2_ship_lost' || journey?.scene === 'm2_stop_sentinels' || journey?.scene === 'm2_medical'
       || journey?.scene === 'm3_trainman_chase'
@@ -2421,7 +2427,7 @@ export class FilmSetRenderer {
       if (prepared.steps.next().done) prepared.steps = undefined;
       return;
     }
-    if (isolatedEntry && prepared.gpu !== renderer.properties) {
+    if ((isolatedEntry || requestCut) && prepared.gpu !== renderer.properties) {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose(); prepared.colors = undefined; prepared.gpu = renderer.properties;
       prepared.shadows = undefined; prepared.normalMeshes = undefined;
@@ -2524,7 +2530,14 @@ export class FilmSetRenderer {
       }
       // The infirmary shares the Hammer deck with the rest of the crew. Bane is still staged there until the call.
       if (next.id === 'm3_maggie_discovery') cast.push('ak', 'niobe', 'ghost', 'bane');
-      this.prepareCastColors(renderer, camera, prepared.colors, cast, actor);
+      const readyCast = requestCut ? (id: string) => {
+        const group = actor(id);
+        if (id === 'oracle' && !group?.getObjectByName('oracle-revolutions-detailed-head')) return;
+        if ((id === 'seraph' || id === 'trainman') && (!group?.getObjectByName(`${id}-detailed-body`)
+          || !group.getObjectByName(`${id}-detailed-head`))) return;
+        return group;
+      } : actor;
+      this.prepareCastColors(renderer, camera, prepared.colors, cast, readyCast, requestCut ? prepared : undefined);
     }
   }
   prepareChateauUpperColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, cast?: readonly THREE.Group[]): void {
@@ -3788,6 +3801,11 @@ export class FilmSetRenderer {
     if (set?.id === 'film_adams_bridge' && player?.currentLocation === 'film_extraction_car') set = FILM_SETS.film_extraction_car;
     const journey = sandbox?.neoLife?.journey;
     const sceneId = journey?.visiting ?? journey?.scene;
+    const waiting = this.preparedSecondOracle;
+    // The story packet can arrive before the new player and destination have reached the renderer.
+    if (player && this.current && journey && !journey.visiting && waiting && waiting.scene === sceneId
+      && ORACLE_REQUEST_DESTINATIONS.has(waiting.scene)
+      && (player.id !== journey.actor || set?.id !== waiting.room.current?.id)) return this.current;
     // The journey update and Smith's player state can arrive on separate frames.
     if (journey?.scene === 'm1_steak' && !journey.visiting && this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_cypher_console'
       && player && (player.id === 'neo' || player.id === journey.actor)

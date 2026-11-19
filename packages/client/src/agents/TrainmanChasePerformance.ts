@@ -36,7 +36,9 @@ export function poseTrainmanChase(rig: CharacterRig, gesture?: TrainmanChaseGest
   if (gesture.vault !== undefined && gesture.phase !== 'crossing') {
     // Plant the palm before takeoff, release it once the body clears the gate.
     if (gesture.vault < .24) {
-      arm(0, point(0, TRAINMAN_CHASE.upper + TRAINMAN_CHASE.gate.height + .06, TRAINMAN_CHASE.gate.z), true);
+      const morpheus = gesture.role === 'morpheus';
+      const gate = TRAINMAN_CHASE.gate;
+      arm(0, point(morpheus ? -.46 : 0, TRAINMAN_CHASE.upper + gate.height + (morpheus ? .19 : .06), gate.z + (morpheus ? .42 : 0)), true);
       rig.fingers[0].forEach(finger => { finger.rotation.x = 0; });
     }
   }
