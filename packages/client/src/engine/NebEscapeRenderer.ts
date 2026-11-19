@@ -150,7 +150,6 @@ export class NebEscapeRenderer {
     const fireAge = Math.max(0, t - .55);
     this.flame.uniforms.age.value = fireAge; this.flame.uniforms.fade.value = destroyed ? Math.min(1, fireAge * 3) : 0;
     this.lamp.intensity = destroyed && t >= .55 ? 1400 * Math.exp(-fireAge * 1.15) + 90 : 0;
-    this.lamp.visible = this.lamp.intensity > 0;
     for (const [index, fragment] of this.fragments.entries()) {
       const a = Math.max(0, t - .2 - index % 4 * .06);
       fragment.mesh.visible = destroyed && a > 0;

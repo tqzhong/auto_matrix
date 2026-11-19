@@ -167,7 +167,7 @@ test('the white corridor keeps its fixtures and objective slot through the sourc
   assert.equal(crossed.find(row => row.light === goal)?.intensity, 0, 'the completed objective keeps a dark slot');
 });
 
-test('the missing ship interior leaves the same light slot count through a failed evacuation and retry', t => {
+test('evacuation cameras and the blast reuse the briefing light slots through failure and retry', t => {
   const h = view(), renderer = new FilmSetRenderer(h.scene);
   t.after(() => { h.culling.dispose(); renderer.dispose(); });
   const scene = FILM_SCENE_BY_ID.m2_ship_lost, center = FILM_SETS[scene.set].center;
@@ -200,6 +200,22 @@ test('the missing ship interior leaves the same light slot count through a faile
   assert.ok(failed.some(light => light.name === 'neb-blast-light' && light.energy > 0));
   assert.equal(failed.length, evacuation.length, 'the wreck keeps the evacuation program layout');
   assert.equal(retry.length, evacuation.length);
+  const readStern = () => {
+    neo.position = filmPosition(scene.set, -5.7, 62);
+    h.camera.position.set(neo.position.x, neo.position.y + 3, neo.position.z + 1);
+    h.camera.lookAt(center.x, center.y + 6, center.z + 34);
+    return lights();
+  };
+  const stern = readStern();
+  assert.equal(stern.find(light => light.name === 'neb-blast-light')?.energy ?? 0, 0);
+  journey.shipLoss = { ...journey.shipLoss!, phase: 'destroying', elapsed: .62 };
+  const flash = readStern();
+  assert.ok(flash.some(light => light.name === 'neb-blast-light' && light.energy > 1000));
+  journey.shipLoss.elapsed = 1.14;
+  const wreck = readStern();
+  assert.ok(wreck.some(light => light.name === 'neb-blast-light' && light.energy > 0));
+  assert.deepEqual([evacuation, stern, flash, wreck, failed, retry].map(points => points.length),
+    [26, 26, 26, 26, 26, 26], 'the hull, dark lamp and new angle all reuse the precompiled layout');
 });
 
 test('the desert lightning keeps the same point-light slots between pulses', t => {

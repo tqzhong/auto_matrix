@@ -32,6 +32,35 @@ test('the family journal offers actual questions and opens the existing philosop
   assert.doesNotMatch(reflection, /data-target="film:family:ask:/);
 });
 
+test('the family journal keeps a question mounted across world clock updates', async () => {
+  const { SandboxUI } = await client('packages/client/src/player/SandboxUI.ts'), h = state();
+  const elements = new Map(), element = (id: string) => {
+    if (!elements.has(id)) elements.set(id, { textContent: '', innerHTML: '', scrollTop: 0,
+      querySelectorAll: () => [], classList: { toggle() {} } });
+    return elements.get(id);
+  };
+  let replacements = 0, html = '';
+  Object.defineProperty(element('#sandbox-panel-body'), 'innerHTML', { get: () => html, set: value => { html = value; replacements++; } });
+  Object.assign(h.sandbox, { profiles: { neo: { inventory: {}, xp: 0, skills: {}, visited: [] } },
+    missions: {}, structures: [], incidents: [], ending: 'open' });
+  Object.assign(h.sandbox.neoLife!, { journal: [], cycle: 1 });
+  const mobil = h.sandbox.neoLife!.journey!.mobil!;
+  h.family.answered = ['identity', 'purpose'];
+  const ui = Object.assign(Object.create(SandboxUI.prototype), { player: h.player, state: h.sandbox, panel: 'journal',
+    signature: '', time: 7500, root: { querySelector: element, querySelectorAll: () => [] } });
+  ui.renderPanel();
+  assert.match(html, /data-target="film:family:ask:connection" >/);
+  for (let frame = 0; frame < 5; frame++) { mobil.lastTick++; ui.renderPanel(); }
+  assert.equal(replacements, 1, 'an open question must survive from mouse-down to mouse-up');
+  h.family.answered = ['identity', 'purpose', 'connection', 'parting']; h.family.phase = 'reflection';
+  ui.renderPanel();
+  assert.equal(replacements, 2);
+  assert.match(html, /data-target="film:reflect:care" >/);
+  assert.doesNotMatch(html, /data-target="film:family:ask:/);
+  h.player.position = filmPosition('film_mobil_station', -8, 25); ui.renderPanel();
+  assert.match(html, /data-target="film:reflect:care" disabled>/, 'the journal must still update distance gating');
+});
+
 test('the Mobil luggage prompt and journal agree on the reachable grip after the doors open', async t => {
   const { renderFilmJourney } = await client('packages/client/src/player/FilmJourneyPanel.ts'), h = state(), journey = h.sandbox.neoLife!.journey!;
   const { SandboxUI } = await client('packages/client/src/player/SandboxUI.ts');

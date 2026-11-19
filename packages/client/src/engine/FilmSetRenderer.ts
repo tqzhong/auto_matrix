@@ -220,6 +220,7 @@ const DOCK_BRIEFING_MORPHEUS_MESHES = new Set(['Anatomical_head_and_hands', 'mor
 const CITY_CHASE_POINT_SLOTS = 2;
 const TRINITY_ROOF_POINT_SLOTS = 7;
 const MEETING_WAKE_POINT_SLOTS = 16;
+const SHIP_LOSS_POINT_SLOTS = 26;
 const QUESTIONING_SMITH_MESHES = new Set(['Anatomical_head_and_hands', 'high-poly', 'short04', 'shoes01', 'Tailored_coat_upper', 'Tailored_trousers']);
 const SENTINEL_ENTRY_MESHES = new Set([
   'sentinel-frosted-glass', 'sentinel-cockpit-deck', 'sentinel-exterior-matte',
@@ -666,8 +667,8 @@ export class FilmSetRenderer {
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_jump_return') return 16;
     // Keep the console lamp and objective slots when turning toward Cypher.
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_cypher_console') return 17;
-    // The wreck reuses the evacuation programs when the interior lights disappear.
-    if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm2_ship_lost') return 16;
+    // Reserve the full layout used while the blast lamp and intact hull overlap.
+    if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm2_ship_lost') return SHIP_LOSS_POINT_SLOTS;
     if (this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_recovery' || this.currentScene === 'm1_cabin')) return RECOVERY_POINT_SLOTS;
     // The training jack and objective can overlap the fifteen deck fixtures.
     return this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_truth_return' || this.currentScene === 'm1_download') ? 17 : 0;

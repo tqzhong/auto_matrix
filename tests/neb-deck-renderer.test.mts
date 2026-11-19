@@ -64,7 +64,7 @@ test('revival prepares the same evacuation deck before the cold rooftop handoff'
   for (let frame = 0; frame < 200; frame++) prepare();
   const hatch = deck?.getObjectByName('neb-cargo-hatch') as THREE.Mesh | undefined;
   assert.ok(hatch && compiled.has(hatch), 'the actual cargo hatch is prepared before the cut');
-  assert.equal(hatchLightSlots, 25, 'the unlit blast lamp stays out of the briefing shader layout');
+  assert.equal(hatchLightSlots, 26, 'the briefing shader layout reserves a slot for the unlit blast lamp');
   assert.ok(!scene.getObjectByName('neb-cargo-hatch'));
   Object.assign(neo, { currentLocation: roof.set, isInMatrix: true, position: filmEntry(roof) });
   film.update(neo, sandbox, 0);

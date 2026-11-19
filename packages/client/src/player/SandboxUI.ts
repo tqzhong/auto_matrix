@@ -2464,6 +2464,7 @@ export class SandboxUI {
     const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
     const journey = life?.journey;
     const stableFilmPanel = helGarageActive(journey) || journey?.scene === 'm1_bridge' && journey.bridgeTail?.phase === 'failed'
+      || journey?.scene === 'm3_family' && !journey.visiting
       || trainmanChaseActive(journey) && journey?.helChase?.performance?.phase === 'failed'
       || journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.step >= FILM_SCENE_BY_ID.m3_hel_entry.steps.length
       || journey?.scene === 'm3_hel_bargain' && !journey.visiting && (journey.helBargain?.phase === 'failed' || journey.step >= FILM_SCENE_BY_ID.m3_hel_bargain.steps.length)
