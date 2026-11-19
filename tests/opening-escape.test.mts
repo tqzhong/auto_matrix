@@ -387,7 +387,7 @@ test('roof retries draw the pursuit at its checkpoint on the first frame and the
   }
 });
 
-test('isolated opening and training sets render their own cast and hide distant actors during play and visits', t => {
+test('isolated film sets render their own cast and hide distant actors during play and visits', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
   const originalDocument = globalThis.document;
@@ -408,7 +408,7 @@ test('isolated opening and training sets render their own cast and hide distant 
     scene.traverseVisible(object => { if (object === mesh) drawn = true; });
     return drawn;
   };
-  for (const id of ['m1_room303', 'm1_roofs', 'm1_phone_escape', 'm1_jump', 'm1_red_dress', 'm1_sentinels']) {
+  for (const id of ['m1_room303', 'm1_roofs', 'm1_phone_escape', 'm1_interrogation', 'm1_jump', 'm1_red_dress', 'm1_sentinels']) {
     const film = FILM_SCENE_BY_ID[id], position = filmEntry(film), isInMatrix = FILM_SETS[film.set].world === 'matrix';
     const outsideShadow = renderer.getAgentShadow(isInMatrix ? oracle.id : distantCrew.id)!;
     renderer.setWorld(isInMatrix);

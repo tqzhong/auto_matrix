@@ -87,3 +87,57 @@ test('procedural exterior actors prepare their hidden detailed body without chan
   assert.equal(body.detail.visible, false);
   assert.equal(body.hero.parent, body.detail);
 });
+
+test('the arrest prepares both off-camera skin maps in strips while preserving the actors and textures', t => {
+  class Bitmap { width = 2048; height = 2048; }
+  const previous = globalThis.ImageBitmap;
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  const h = fixture(), rows: [string, number][] = [], registered = new Set<THREE.Texture>();
+  const maps = new Map<Bitmap, string>(), uploaded = new WeakMap<THREE.Texture, { __webglTexture: object; __version: number }>();
+  t.after(() => {
+    h.agents.cancelOfficeCastTexture();
+    if (previous) globalThis.ImageBitmap = previous;
+    else Reflect.deleteProperty(globalThis, 'ImageBitmap');
+  });
+  Object.assign(h.renderer, {
+    capabilities: { maxTextureSize: 4096 },
+    properties: { get: (map: THREE.Texture) => uploaded.get(map) ?? {} },
+    state: { bindTexture() {}, unbindTexture() {} },
+    getContext: () => ({
+      TEXTURE_2D: 0x0de1, UNPACK_SKIP_ROWS: 0x0cf3, RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
+      pixelStorei() {}, generateMipmap() {},
+      texSubImage2D(_target: number, _level: number, _x: number, row: number, width: number, height: number,
+        _format: number, _type: number, image: Bitmap) {
+        assert.deepEqual([width, height], [2048, 256]);
+        rows.push([maps.get(image)!, row]);
+      },
+    }),
+    initTexture(map: THREE.Texture) {
+      if (map.source.dataReady) registered.add(map);
+      uploaded.set(map, { __webglTexture: {}, __version: map.version });
+    },
+  });
+  const cast = [['trinity', 'Anatomical_head_and_hands'], ['citizen_2', 'Red_dress_anatomy']].map(([id, name]) => {
+    const map = h.texture(id), image = new Bitmap();
+    map.image = image; map.flipY = false; maps.set(image, id);
+    const { hero, detail } = h.add(id, { map });
+    const mesh = hero.children[0] as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+    mesh.name = name;
+    t.after(() => { map.dispose(); mesh.geometry.dispose(); mesh.material.dispose(); });
+    return { id, hero, detail, mesh, map, image };
+  });
+  const camera = new THREE.PerspectiveCamera();
+  for (let frame = 0; frame < 20; frame++) {
+    const count = rows.length;
+    h.agents.prepareOfficeCast(h.renderer, camera, {} as LightCulling, 'arrest');
+    assert.ok(rows.length - count <= 1);
+  }
+  assert.deepEqual(rows, cast.flatMap(({ id }) => Array.from({ length: 8 }, (_, row) => [id, row * 256])));
+  assert.deepEqual([...registered], cast.map(({ map }) => map));
+  for (const { hero, detail, mesh, map, image } of cast) {
+    assert.equal(detail.visible, false);
+    assert.equal(hero.parent, detail);
+    assert.equal(mesh.material.map, map);
+    assert.equal(map.image, image);
+  }
+});

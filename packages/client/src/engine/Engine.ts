@@ -257,7 +257,8 @@ export class Engine {
       && lift.passenger && player?.currentAction?.parameters.metacortexLift === true
       ? avatarPosition.y - METACORTEX.center.y : undefined;
     const reserveCommuteLights = liveMatrixJourney?.scene === 'm1_morning' || liveMatrixJourney?.scene === 'm1_commute';
-    const reserveStreetLights = reserveCommuteLights || officeCustodyActive(liveMatrixJourney);
+    const custody = officeCustodyActive(liveMatrixJourney) ? liveMatrixJourney?.office?.custody : undefined;
+    const reserveStreetLights = reserveCommuteLights || Boolean(custody);
     // Keep the prepared office lighting layout through the handoff and escape.
     const reserveLandingSlot = reserveCommuteLights || liveMatrixJourney?.scene === 'm1_boss'
       || liveMatrixJourney?.scene === 'm1_office_escape' || liveMatrixJourney?.scene === 'm1_ledge';
@@ -521,6 +522,8 @@ export class Engine {
       if (!lift?.passenger && !preparingCast)
         this.filmSets.prepareOfficeStreetColors(this.renderer, this.camera, this.lightCulling,
           this.agentRenderer.getNearbyOfficeActor('citizen_2', this.camera), this.agentRenderer.getNearbyOfficeActor('citizen_11', this.camera));
+    } else if (!preparingOffice && !filmSet && (custody?.phase === 'outside' || custody?.phase === 'street')) {
+      this.agentRenderer.prepareOfficeCast(this.renderer, this.camera, this.lightCulling, 'arrest');
     } else if (!preparingOffice) this.agentRenderer.cancelOfficeCastTexture();
     this.filmSets.prepareSmithCrater(this.renderer, this.camera, meeting);
     if (filmSet?.id === 'film_smith_avenue' && meeting?.scene === 'm3_rain' && !meeting.visiting && meeting.smithFinale?.phase === 'approach')
