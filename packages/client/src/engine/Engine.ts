@@ -638,8 +638,9 @@ export class Engine {
     if (after?.scene === 'm1_construct' && before?.scene !== 'm1_construct') this.lastTelevisionPreviewImage = undefined;
     if (after?.scene === 'm1_wake_up' && !after.visiting && after.actor === this.playerControls?.id && before?.scene === after.scene && this.running) {
       const previous = before.contact; const current = after.contact;
-      if (current?.phase === 'knocking' && previous?.phase === 'knocking') for (const beat of [1.05, 1.36, 1.68]) {
-        if (previous.elapsed < beat && current.elapsed >= beat) this.audio.lafayetteSound('knock');
+      if (current?.phase === 'knocking' && previous?.phase === 'knocking') {
+        const knocks = [1.05, 1.36, 1.68].filter(beat => previous.elapsed < beat && current.elapsed >= beat);
+        for (const beat of knocks) this.audio.lafayetteSound('knock', beat - knocks[0]);
       }
       if (current?.phase === 'opening' && previous?.phase === 'door') this.audio.lafayetteSound('door');
     }

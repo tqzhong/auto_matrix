@@ -182,8 +182,8 @@ function audioHarness(t: TestContext, saved?: string, Audio = GameAudio) {
   }
   class Gain extends Node { gain = new Param(); }
   class Source extends Node {
-    buffer?: unknown; loop = false; loopEnd = 0; starts = 0; stopAt?: number; onended?: () => void;
-    start() { this.starts++; }
+    buffer?: unknown; loop = false; loopEnd = 0; starts = 0; startAt?: number; stopAt?: number; onended?: () => void;
+    start(time = 0) { this.starts++; this.startAt = time; }
     stop(time = 0) { this.stopAt = time; if (!time) this.onended?.(); }
   }
   class Oscillator extends Source { type = 'sine'; frequency = new Param(); }
@@ -228,6 +228,17 @@ function audioHarness(t: TestContext, saved?: string, Audio = GameAudio) {
   const respond = async (index: number, ok = true) => { await flush(); requests[index].resolve({ ok, status: ok ? 200 : 503, arrayBuffer: async () => new ArrayBuffer(8) } as Response); await flush(); };
   return { audio, contexts, requests, window, document, storage, legacyStorage, flush, respond };
 }
+
+test('a queued door knock starts and opens its gain envelope on the same audio clock', async t => {
+  const h = audioHarness(t);
+  await h.audio.resume();
+  const context = h.contexts[0];
+  const play = h.audio.lafayetteSound.bind(h.audio) as (kind: 'knock', delay: number) => void;
+  play('knock', .32);
+  const knock = context.sources[0];
+  assert.equal(knock.startAt, 10.32);
+  assert.equal(context.gains.at(-1)?.gain.events[0].time, knock.startAt);
+});
 
 test('the Room 303 kick sends a low impact and a short latch crack to the effects bus', async t => {
   const h = audioHarness(t);

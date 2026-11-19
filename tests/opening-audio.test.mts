@@ -15,11 +15,13 @@ function fixture() {
   const neo = world.agents.get('neo')!, trinity = world.agents.get('trinity')!;
   sandbox.enter(neo); sandbox.life.begin(neo, 0);
   const sounds: string[] = [];
+  const apartmentSounds: { kind: string; delay: number }[] = [];
   const audio = {
     landlineSound: (kind: string) => sounds.push(kind), governmentSound: (kind: string) => sounds.push(kind),
     matrixEscapeSound: (kind: string) => sounds.push(kind), meetingSound: (kind: string) => sounds.push(kind),
     interludeSound: (kind: string) => sounds.push(kind), phoneSound: () => sounds.push('line-cut'),
     windowSound: () => sounds.push('wind'), dialogue: () => sounds.push('dialogue'),
+    lafayetteSound: (kind: string, delay = 0) => apartmentSounds.push({ kind, delay }),
   };
   const engine = Object.assign(Object.create(Engine.prototype), { playerControls: { id: 'trinity' }, audio,
     sandboxRenderer: { sync() {} }, updateAtmosphere() {} });
@@ -35,13 +37,32 @@ function fixture() {
     Engine.prototype.setSandbox.call(engine, { ...sandbox.state, neoLife: { ...sandbox.state.neoLife!, journey } }, { trinity: actor, neo });
     return sounds.splice(0);
   }
-  return { frame, truck: () => engine.openingAudio?.truck };
+  return { frame, truck: () => engine.openingAudio?.truck, apartmentSounds: () => apartmentSounds.splice(0) };
 }
 
 function journey(scene: string): FilmJourney {
   return { version: 1, scene, actor: 'trinity', step: 0, completed: [], enteredAt: 0,
     reflections: {}, lastText: '', checkpoint: filmEntry(FILM_SCENE_BY_ID[scene]) };
 }
+
+test('101 keeps separate knocks when one world update crosses two beats, and does not replay them on reload', () => {
+  const h = fixture(), j = { ...journey('m1_wake_up'), actor: 'neo' };
+  const frame = (elapsed: number, running = true) => h.frame({ ...j, contact: { phase: 'knocking', elapsed } }, { owner: 'neo', running });
+  frame(.877);
+  assert.deepEqual(h.apartmentSounds(), []);
+  frame(1.339);
+  assert.deepEqual(h.apartmentSounds(), [{ kind: 'knock', delay: 0 }]);
+  frame(1.858);
+  const closeKnocks = h.apartmentSounds();
+  assert.deepEqual(closeKnocks.map(sound => sound.kind), ['knock', 'knock']);
+  assert.equal(closeKnocks[0].delay, 0);
+  assert.ok(Math.abs(closeKnocks[1].delay - .32) < 1e-8, 'later knocks keep their interval after the first');
+  frame(1.858, false); frame(1.858); frame(2.4);
+  assert.deepEqual(h.apartmentSounds(), []);
+  const cold = fixture();
+  cold.frame({ ...j, contact: { phase: 'knocking', elapsed: 1.858 } }, { owner: 'neo' });
+  assert.deepEqual(cold.apartmentSounds(), []);
+});
 
 test('the 303 trace phone uses the fast saved clock and skips cues already past on a cold load', () => {
   const h = fixture(), j = journey('m1_room303');

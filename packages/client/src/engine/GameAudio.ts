@@ -448,7 +448,7 @@ export class GameAudio {
     noise(at, 2.35, 92, .22, 'lowpass'); noise(at + .08, 1.8, 4200, .105, 'highpass');
     tone(at, 54, 18, 2.25, .08, 'sawtooth'); tone(at + .18, 680, 68, 1.65, .034, 'square'); tone(at + .52, 2400, 120, .85, .021, 'triangle');
   }
-  lafayetteSound(kind: 'thunder' | 'knock' | 'handshake' | 'door'): void {
+  lafayetteSound(kind: 'thunder' | 'knock' | 'handshake' | 'door', delay = 0): void {
     const bus = this.effects(); if (!bus) return;
     const { context: ctx, output } = bus; const duration = kind === 'thunder' ? 2.8 : kind === 'door' ? 1.15 : kind === 'knock' ? .14 : .18;
     const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate); const samples = buffer.getChannelData(0);
@@ -460,7 +460,7 @@ export class GameAudio {
     const source = ctx.createBufferSource(); source.buffer = buffer;
     const filter = ctx.createBiquadFilter(); filter.type = kind === 'thunder' ? 'lowpass' : 'bandpass';
     filter.frequency.value = kind === 'thunder' ? 190 : kind === 'door' ? 420 : kind === 'knock' ? 260 : 680; filter.Q.value = kind === 'handshake' ? 2.8 : kind === 'knock' ? 3.2 : .75;
-    const gain = ctx.createGain(); const at = ctx.currentTime;
+    const gain = ctx.createGain(); const at = ctx.currentTime + delay;
     gain.gain.setValueAtTime(.0001, at); gain.gain.linearRampToValueAtTime(kind === 'thunder' ? .24 : kind === 'door' ? .12 : kind === 'knock' ? .2 : .16, at + .012); gain.gain.exponentialRampToValueAtTime(.0001, at + duration);
     source.connect(filter); filter.connect(gain); gain.connect(output); source.start(at);
     if (kind === 'door') {
