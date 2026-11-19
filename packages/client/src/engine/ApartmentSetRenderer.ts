@@ -503,7 +503,8 @@ export class ApartmentSetRenderer {
         const entry = !depth && returnEntry.length > 0;
         while (entryPrograms.length && !programs?.includes(entryPrograms[0])) entryPrograms.shift();
         const bindings = entryPrograms.length > 0 ? entryPrograms : pending;
-        const ready = first || shadowsFirst || entry ? -1 : bindings.findIndex(program => programs?.includes(program) && program.isReady());
+        // Submit the distinct room and street surfaces before reading their bindings.
+        const ready = entryColors.length || shadowsFirst || entry ? -1 : bindings.findIndex(program => programs?.includes(program) && program.isReady());
         const textureTurn = !returnEntry.length && !entryColors.length && !queue.length && !depth && !buffers.length;
         const haveTextures = textures.size || priorityMaps.size || actorMaps.size;
         if (clubReturn) {

@@ -186,6 +186,27 @@ test('the saved nightclub exit prepares 101 before possession and adds the real 
   assert.equal(h.work.filter(step => step === 'texture').length, 1);
 });
 
+test('the saved nightclub exit submits the remaining room and street leads before reflecting the initial room batch', t => {
+  const h = fixture(); t.after(h.dispose);
+  const room = h.root.children[0] as THREE.Mesh;
+  const surfaces = Array.from({ length: 10 }, (_, index) => {
+    const material = new THREE.MeshStandardMaterial({ roughness: .1 * index });
+    t.after(() => material.dispose());
+    return new THREE.Mesh(room.geometry, material);
+  });
+  h.root.add(...surfaces);
+  h.journey.scene = 'm1_club'; h.journey.club = { phase: 'done', elapsed: 0 };
+  Object.assign(h.renderer, { shadowMap: { enabled: false } });
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  h.ready();
+  for (let frame = 0; frame < 24 && !h.work.includes('bindings'); frame++)
+    h.apartment.prepareReturn(h.renderer, camera, h.scene, h.journey, undefined, [], undefined, false, true);
+  assert.ok(h.work.includes('bindings'), 'a ready program is eventually reflected');
+  for (const lead of [...surfaces, h.street]) {
+    assert.ok(h.batches.flat().includes(lead), 'the first binding read must leave no first-use surface unsubmitted');
+  }
+});
+
 test('the nightclub return prepares both shadow layouts before drawing the morning apartment', t => {
   const h = fixture(), { renderer, scene, root, street, journey } = h;
   const clubLights = new LightCulling(scene), room = root.children[0] as THREE.Mesh;
