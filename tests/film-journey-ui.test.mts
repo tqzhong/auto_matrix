@@ -240,6 +240,25 @@ test('Neo can revisit the completed opening scenes from the apartment journal', 
   assert.match(renderFilmJourney(player, sandbox), /data-target="film:return" >返回正在进行的剧情/);
 });
 
+test('the morning journal lets Neo revisit the apartment and nightclub after coming home', async () => {
+  const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { renderFilmJourney } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const scene = FILM_SCENE_BY_ID.m1_morning;
+  const player = { id: 'neo', status: 'alive', position: filmPosition(scene.set, 0, 6) } as AgentState;
+  const state = { threats: [], neoLife: { day: 2, money: 2140, energy: 55, journey: { scene: scene.id, actor: 'neo', step: 0,
+    completed: ['m1_wake_up', 'm1_club'], morning: { phase: 'home', elapsed: 0 } } } } as SandboxState;
+  const journey = state.neoLife!.journey!;
+  for (const id of journey.completed) assert.match(renderFilmJourney(player, state), new RegExp(`data-target="film:visit:${id}" >`));
+  assert.doesNotMatch(renderFilmJourney(player, state), /data-target="film:visit:m1_commute"/);
+  journey.morning!.phase = 'alarm';
+  assert.doesNotMatch(renderFilmJourney(player, state), /data-target="film:visit:[^"]+" >/);
+  journey.morning!.phase = 'ready';
+  assert.match(renderFilmJourney(player, state), /data-target="film:visit:m1_club" >/);
+  player.id = 'trinity';
+  assert.doesNotMatch(renderFilmJourney(player, state), /data-target="film:visit:[^"]+" >/);
+});
+
 test('the second call offers a visible door action after Neo reaches the apartment exit', async () => {
   const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
     platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });

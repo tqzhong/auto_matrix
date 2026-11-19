@@ -733,11 +733,14 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const phase = journey.morning.phase; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
     const close = current && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4)
       && (phase !== 'ready' || player.position.z >= FILM_SETS[scene.set].center.z + 20);
+    const locked = morningLocked(journey);
+    const atlas = journey.completed.length ? renderFilmAtlas(journey, scene, !current || player.status !== 'alive'
+      || locked || Boolean(journey.fighting) || journey.started !== undefined) : '';
     const commute = '步行去公司 · G';
     const action = !current ? button('resume', '继续 Neo 的生活') : phase === 'home' ? button('act', '休息到早晨 · G', !close)
       : phase === 'alarm' ? button('act', '伸手关掉闹钟，起床 · G') : phase === 'ready' ? button('act', '在街边准备出发 · G', !close)
       : phase === 'done' ? button('next', commute) : '<button disabled>合上手记，观看当前动作</button>';
-    return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>101 · 闹钟之后</h3><p>第 ${life.day} 天 · 现金 $${life.money} · 精力 ${Math.round(life.energy)}</p></header><article class="film-now"><div><h3>${step?.label ?? '出发去公司'}</h3><p>${journey.lastText}</p><div class="film-controls">${action}</div><small>${morningLocked(journey) ? '休息与起身进度会保存，暂停或退出后从当前动作继续。' : '休息推进到早晨；出门后亲自步行去公司，再从大堂乘电梯上楼。'}</small><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+    return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>101 · 闹钟之后</h3><p>第 ${life.day} 天 · 现金 $${life.money} · 精力 ${Math.round(life.energy)}</p></header><article class="film-now"><div><h3>${step?.label ?? '出发去公司'}</h3><p>${journey.lastText}</p><div class="film-controls">${action}</div><small>${locked ? '休息与起身进度会保存，暂停或退出后从当前动作继续。' : '休息推进到早晨；出门后亲自步行去公司，再从大堂乘电梯上楼。'}</small><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article>${atlas}</div>`;
   }
   if (!journey.visiting && journey.scene === 'm1_wake_again' && journey.wakeCall) {
     const phase = journey.wakeCall.phase; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
