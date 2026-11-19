@@ -15,6 +15,7 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 test('the Oracle routes adopt prepared sets and keep their interactive props live', async t => {
   const previous = globalThis.document;
   const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {}, ellipse() {},
+    createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }),
     createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
   t.after(() => { globalThis.document = previous; });
@@ -322,6 +323,31 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     enter('m2_garage', 0);
     assert.equal(scene.getObjectByName(car.name), car);
     delete journey.mountain;
+  });
+  await t.test('the highway rescue prepares the operation apartment and adopts it on the story cut', () => {
+    journey.trucks = { phase: 'collision', elapsed: 0, lastTick: 0, attempt: 1 };
+    enter('m2_trucks', 2);
+    Object.assign(neo, { position: filmPosition('film_freeway_101', 14, 20), currentLocation: 'film_freeway_101' });
+    sets.update(neo, sandbox, 0);
+    preview = undefined; prepare();
+    assert.equal(preview, undefined);
+    journey.trucks.phase = 'rescue';
+    const world = structuredClone(journey);
+    const room = warm('source-briefing-apartment');
+    const floor = room.getObjectByName('briefing-floor') as THREE.Mesh;
+    const paper = room.getObjectByName('briefing-plan-primary');
+    assert.ok(compiled.has(floor) && paper && compiled.has(paper));
+    assert.deepEqual(journey, world);
+
+    journey.trucks.phase = 'rescued'; journey.step = 3; prepare();
+    enter('m2_plan', 0);
+    assert.equal(scene.getObjectByName(room.name), room);
+    assert.equal(scene.getObjectByName(paper.name), paper);
+    let floorDisposals = 0;
+    floor.geometry.addEventListener('dispose', () => floorDisposals++);
+    enter('m2_backup', 0);
+    assert.equal(floorDisposals, 1);
+    delete journey.trucks;
   });
   await t.test('terminal work prepares the white corridor and adopts the live door', t => {
     t.mock.method(HeroModels.prototype, 'create', async () => undefined);

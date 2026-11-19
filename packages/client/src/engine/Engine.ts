@@ -453,7 +453,7 @@ export class Engine {
         || (id === 'niobe' || id === 'roland') && meeting?.scene === 'm3_bane')
         ? this.agentRenderer.getAgentDetail(id)
         : this.agentRenderer.getAgentHero(id) ?? (meeting?.scene === 'm2_burly' || meeting?.scene === 'm2_persephone'
-          || meeting?.scene === 'm2_mountain' || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_stop_sentinels'
+          || meeting?.scene === 'm2_mountain' || meeting?.scene === 'm2_trucks' || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_stop_sentinels'
           || meeting?.scene === 'm3_trainman_chase' || meeting?.scene === 'm3_hel_garage' ? this.agentRenderer.getAgentDetail(id) : this.agentRenderer.getAgentBody(id)),
       resumeSecondOracle, meeting?.scene === 'm3_trainman_chase' ? this.agentRenderer.getAgentState('trinity') ?? undefined : undefined,
       id => this.agentRenderer.getShipEntryCast(id));
