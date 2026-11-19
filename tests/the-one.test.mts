@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import * as THREE from 'three';
 import {
   FILM_SCENE_BY_ID,
   THE_ONE,
@@ -25,6 +26,7 @@ import { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 import { MemoryManager } from '../packages/server/src/memory/MemoryManager.js';
 import { RelationshipGraph } from '../packages/server/src/agents/RelationshipGraph.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
+import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 
 type SceneId = 'm1_death' | 'm1_return' | 'm1_final_call';
 
@@ -105,6 +107,38 @@ test('room 303 ambush cuts to the real body and only Trinity voice focus restore
   h.command('act');
   assert.equal(next.theOne!.phase, 'code_reveal');
   assert.deepEqual(h.actor.position, revived, 'the code reveal starts at the same spot');
+});
+
+test('releasing G on the ship stops the connection signal before another frame is drawn', t => {
+  const h = setup('m1_death'), encounter = h.sandbox.life.film.state!.theOne!;
+  h.actor.position = filmStepPosition(h.scene, h.scene.steps[0]); h.frames(.2); h.command('act');
+  h.frames(THE_ONE.death.ambush + THE_ONE.death.gunfire + THE_ONE.death.flatline + .3);
+  assert.equal(encounter.phase, 'listening');
+
+  class InputTarget extends EventTarget { matches() { return false; } }
+  const window = new InputTarget(), canvas = new InputTarget();
+  const document = Object.assign(new InputTarget(), { pointerLockElement: null, hidden: false });
+  const previous = ['window', 'document'].map(key => Object.getOwnPropertyDescriptor(globalThis, key));
+  Object.assign(globalThis, { window, document });
+  let now = 1000;
+  t.mock.method(performance, 'now', () => now);
+  t.mock.method(Date, 'now', () => now);
+  const controls = new PlayerControls(canvas as unknown as HTMLCanvasElement, new THREE.PerspectiveCamera(), input => {
+    h.players.receiveInput('one-player', { ...input, sequence: h.tick() + input.sequence });
+  }, () => {});
+  t.after(() => { controls.dispose(); ['window', 'document'].forEach((key, i) => {
+    if (previous[i]) Object.defineProperty(globalThis, key, previous[i]!); else Reflect.deleteProperty(globalThis, key);
+  }); });
+  const key = (type: 'keydown' | 'keyup') => window.dispatchEvent(Object.assign(new Event(type, { cancelable: true }), { code: 'KeyG', repeat: false }));
+  controls.possess(h.actor);
+  key('keydown'); controls.update(.1, h.actor, new THREE.Group(), true);
+  h.players.step(.1, true, h.tick() + 1);
+  const signal = encounter.signal;
+  assert.ok(signal > 0, 'the held key must already be driving the actual server encounter');
+
+  key('keyup'); now += 100;
+  h.players.step(.1, true, h.tick() + 2);
+  assert.equal(encounter.signal, signal, 'the connection cannot grow while the renderer is still stalled');
 });
 
 test('Tank keeps his earlier wound while attending Neo on the ship', () => {

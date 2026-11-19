@@ -395,7 +395,13 @@ export class PlayerControls {
       }
     }
   };
-  private keyUp = (event: KeyboardEvent): void => { this.keys.delete(event.code); this.consumedOfficeClimbKeys.delete(event.code); if (event.code === 'KeyT') this.firing = false; };
+  private keyUp = (event: KeyboardEvent): void => {
+    const released = this.keys.delete(event.code);
+    this.consumedOfficeClimbKeys.delete(event.code);
+    if (event.code === 'KeyT') this.firing = false;
+    // A held interaction must stop even when the next render frame takes a long time.
+    if (event.code === 'KeyG' && released && this.id && this.enabled && this.running) this.send(this.input(false));
+  };
   private blur = (): void => { this.keys.clear(); this.firing = false; this.dragging = false; this.dragPoint = undefined; this.localJump = false; this.networkJump = false; this.attackQueuedUntil = 0; if (this.id) this.send(this.input(false)); };
   private visibility = (): void => { if (document.hidden) this.blur(); };
   private mouseDown = (event: MouseEvent): void => {
