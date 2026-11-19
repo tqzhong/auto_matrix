@@ -471,6 +471,33 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     enter('m2_departure', 4);
     assert.equal(disposals, 1);
   });
+  await t.test('a saved evacuation prepares the real Sentinel tunnel after the timed escape', t => {
+    t.after(() => { delete journey.shipLoss; delete journey.tunnel; enter('m2_departure', 0); });
+    journey.shipLoss = { phase: 'evacuating', remaining: 20, lastTick: 0, attempts: 1 };
+    enter('m2_ship_lost', 3);
+    preview = undefined; prepare(); assert.ok(!preview);
+
+    journey.shipLoss.phase = 'mourning';
+    enter('m2_ship_lost', 4);
+    sets.update(undefined, sandbox, 0);
+    const floor = warm('signal-wet-floor', true) as THREE.Mesh;
+    const slots = pointSlots(preview!);
+    const beam = preview!.getObjectByName('hammer-rescue-beam') as THREE.SpotLight;
+    assert.ok(compiled.has(floor));
+    assert.equal(beam.intensity, 0);
+    assert.equal(beam.visible, true);
+    enter('m2_ship_lost', 4);
+    assert.ok(!scene.getObjectByName(floor.name));
+
+    journey.tunnel = { phase: 'running', remaining: 14, focus: 0, lastTick: 0, attempts: 0 };
+    enter('m2_stop_sentinels', 0);
+    assert.ok(scene.getObjectByName(floor.name) === floor, 'the pursuit adopts the prepared tunnel');
+    assert.ok(scene.getObjectByName(beam.name) === beam);
+    assert.equal(pointSlots(scene), slots);
+    let disposals = 0; floor.geometry.addEventListener('dispose', () => disposals++);
+    enter('m2_departure', 0);
+    assert.equal(disposals, 1);
+  });
   await t.test('the saved tunnel prepares the Hammer beds and brings in the finished medical cast', t => {
     t.mock.method(HeroModels.prototype, 'create', async () => undefined);
     const maggie = new THREE.Group(), fallback = new THREE.Mesh(body.geometry, body.material);
@@ -495,6 +522,36 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     assert.equal(scene.getObjectByName(bed.name), bed);
     assert.equal(pointSlots(scene), pointCount);
     assert.equal(sets.stablePointSlots, true);
+    enter('m2_departure', 0);
+    assert.equal(disposals, 1);
+  });
+  await t.test('a saved bedside check prepares the actual Mobil platform and hands off its reflection', t => {
+    const trinity = world.agents.get('trinity')!, medical = FILM_SCENE_BY_ID.m2_medical;
+    const bedside = (step: number) => {
+      Object.assign(journey, { actor: trinity.id, scene: medical.id, step });
+      Object.assign(trinity, { position: filmEntry(medical), isInMatrix: false, currentLocation: medical.set });
+      sets.update(trinity, sandbox, 0);
+    };
+    t.after(() => { journey.actor = neo.id; enter('m2_departure', 0); });
+    bedside(1); preview = undefined; prepare(); assert.ok(!preview);
+    bedside(2); sets.update(undefined, sandbox, 0);
+    const platform = warm('mobil-platform-support', true) as THREE.Mesh;
+    const floorMirror = preview!.getObjectByName('mobil-polished-platform')!;
+    const original = floorMirror.onBeforeRender;
+    const slots = pointSlots(preview!);
+    assert.ok(compiled.has(platform));
+    bedside(2);
+    assert.ok(!scene.getObjectByName(platform.name));
+
+    journey.actor = neo.id;
+    enter('m3_mobil', 0);
+    assert.ok(scene.getObjectByName(platform.name) === platform);
+    assert.ok(scene.getObjectByName(floorMirror.name) === floorMirror);
+    assert.notEqual(floorMirror.onBeforeRender, original, 'the reflection uses the active player view');
+    assert.equal(pointSlots(scene), slots);
+    let disposals = 0; platform.geometry.addEventListener('dispose', () => disposals++);
+    enter('m3_family', 0);
+    assert.ok(scene.getObjectByName(platform.name) === platform);
     enter('m2_departure', 0);
     assert.equal(disposals, 1);
   });
