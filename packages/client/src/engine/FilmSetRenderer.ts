@@ -4800,7 +4800,14 @@ export class FilmSetRenderer {
     for (const item of this.moving) item.update(elapsed);
     return set;
   }
-  atmosphere(): { color: number; ambient: number; sun: number; fill?: number } | undefined {
+  atmosphere(contactAtNight = false): { color: number; ambient: number; sun: number; fill?: number } | undefined {
+    if (contactAtNight) {
+      const fog = this.scene.fog as THREE.FogExp2;
+      fog.color.setHex(0x121b15); fog.density = .024;
+      (this.scene.background as THREE.Color).copy(fog.color);
+      this.scene.environmentIntensity = .24;
+      return { color: 0xbac8af, ambient: .32, sun: .09, fill: .18 };
+    }
     if (!this.current || ['film_anderson_flat', 'film_metacortex_floor', 'film_office_ledge'].includes(this.current.id)) return;
     const palette = palettes[this.current.light];
     (this.scene.background as THREE.Color).setHex(palette.sky);

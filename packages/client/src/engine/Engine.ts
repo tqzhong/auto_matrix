@@ -251,6 +251,8 @@ export class Engine {
     const player = this.playerControls?.id ? this.agentRenderer.getAgentState(this.playerControls.id) : undefined;
     const avatarPosition = player ? this.agentRenderer.getAgent(player.id)?.position : undefined;
     const liveMatrixJourney = this.matrix && meeting && !meeting.visiting && player?.id === meeting.actor ? meeting : undefined;
+    const contactAtNight = liveMatrixJourney?.scene === 'm1_wake_up';
+    const lightingTime = contactAtNight ? 22000 : this.timeOfDay;
     const lift = this.sandbox?.neoLife?.lift;
     // The fast player snapshot can arrive before the lift clock in the world snapshot.
     const carHeight = avatarPosition && liveMatrixJourney?.scene === 'm1_commute' && lift?.phase === 'travel'
@@ -267,7 +269,7 @@ export class Engine {
       ? truck?.speed ?? (meeting?.meeting ? meetingCarPose(meeting.meeting).speed
         : meeting?.office?.custody?.street?.phase === 'departing' && !meeting.office.custody.paused ? arrestCarPose(meeting.office.custody.street).speed : undefined)
       : undefined, truck?.level);
-    this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife, this.camera.position, this.agentRenderer.getAgentBody('neo'), this.agentRenderer.getAgentState('neo')?.currentAction?.parameters.computerCheck as ComputerInvestigation | undefined, reserveLandingSlot, carHeight);
+    this.voxelRenderer.interiors.update(lightingTime, player?.position, this.sandbox?.neoLife, this.camera.position, this.agentRenderer.getAgentBody('neo'), this.agentRenderer.getAgentState('neo')?.currentAction?.parameters.computerCheck as ComputerInvestigation | undefined, reserveLandingSlot, carHeight);
     measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
     const previousSet = this.filmSets.active;
@@ -293,9 +295,9 @@ export class Engine {
     measure?.('film');
     this.rain.visible = cinematicSet ? cinematicSet.light === 'storm' && cinematicSet.id !== 'film_smith_avenue' : this.matrix && this.weather !== 'clear' && !(player && insideLifeRoom(player.position));
     this.sandboxRenderer.update(delta, this.camera, this.matrix, this.tick, this.running, player);
-    this.lightingSystem.setTime(cinematicSet ? ({ day: 12000, night: 22000, warm: 11000, cold: 10000, white: 12000, storm: 19000, sunrise: 7000 })[cinematicSet.light] : this.timeOfDay);
+    this.lightingSystem.setTime(cinematicSet ? ({ day: 12000, night: 22000, warm: 11000, cold: 10000, white: 12000, storm: 19000, sunrise: 7000 })[cinematicSet.light] : lightingTime);
     this.lightingSystem.update(this.elapsed, this.playerControls?.id ? this.camera : undefined,
-      Boolean(filmSet?.id === 'film_smith_avenue' || filmSet?.id === 'film_neb_deck' && meeting && !meeting.visiting && ['m1_recovery', 'm1_cabin'].includes(meeting.scene)), this.filmSets.atmosphere());
+      Boolean(filmSet?.id === 'film_smith_avenue' || filmSet?.id === 'film_neb_deck' && meeting && !meeting.visiting && ['m1_recovery', 'm1_cabin'].includes(meeting.scene)), this.filmSets.atmosphere(contactAtNight));
     const openingHotel = liveMatrixJourney?.scene === 'm1_room303' ? liveMatrixJourney.openingHotel : undefined;
     const pursuit = openingHotel?.phase === 'phone' || openingHotel?.phase === 'answering' || openingHotel?.phase === 'corridor';
     const hotelPreparation = pursuit ? 'pursuit' : openingHotel?.traceHall ? 'hall' : undefined;

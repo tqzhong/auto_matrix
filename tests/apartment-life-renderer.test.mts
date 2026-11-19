@@ -164,6 +164,9 @@ test('one persistent city apartment renders ordinary life, contact, daylight and
     assert.equal(set?.id, 'film_anderson_flat'); assert.equal(door.rotation.y, 0);
     assert.equal(film.atmosphere(), undefined); assert.equal(scene.environmentIntensity, 1.05);
     assert.equal(scene.background.getHex(), 0xb9d7ee); assert.equal(scene.fog.density, .00075);
+    const contactLight = film.atmosphere(true);
+    assert.ok(contactLight && contactLight.sun < .2 && contactLight.fill! < .3, 'live contact uses the film’s night lighting');
+    assert.ok(scene.environmentIntensity < .35 && scene.background.getHex() !== 0xb9d7ee);
     let rooms = 0; scene.traverse(object => { if (object.name === 'anderson-shared-apartment') rooms++; }); assert.equal(rooms, 1);
     scene.updateMatrixWorld(true); rays.set(new THREE.Vector3(neo.position.x, 2.5, neo.position.z + 1), new THREE.Vector3(0, 0, 1));
     assert.ok(rays.intersectObject(home, true).length, 'the story closes the actual shared door');
