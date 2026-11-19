@@ -22,6 +22,28 @@ async function geometry(id: string) {
   return new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
 }
 
+test('Trinity’s swept temple has opaque hair over the exposed scalp samples', async () => {
+  const { scene, parser } = await geometry('trinity');
+  const surface = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+  const mesh = (name: string) => new THREE.Mesh((scene.getObjectByName(name) as THREE.SkinnedMesh).geometry, surface);
+  const skull = mesh('Anatomical_head_and_hands'), hair = mesh('short04');
+  const center = new THREE.Vector3(0, parser.json.extras.eye[1] + .045, .124);
+  // These rest-space points are the distinct exposed patches in the saved 596-tick whisper.
+  try {
+    for (const point of [[.1303, 4.1647, .2449], [.129, 4.1464, .260], [.1379, 4.1345, .2393]]) {
+      const ray = new THREE.Raycaster(center, new THREE.Vector3().fromArray(point).sub(center).normalize(), 0, 1);
+      const scalp = ray.intersectObject(skull).at(-1);
+      assert.ok(scalp);
+      assert.ok(ray.intersectObject(hair).some(hit => {
+        const gap = hit.distance - scalp.distance;
+        const uv = hit.uv!;
+        return gap > .001 && gap < .012 && uv.x * 2048 >= 880 && uv.x * 2048 <= 1110
+          && uv.y * 2048 >= 550 && uv.y * 2048 <= 650;
+      }), `the opaque part of the existing hair atlas must cover the scalp at ${point}`);
+    }
+  } finally { surface.dispose(); }
+});
+
 test('Dujour and the club dancers have continuous exposed skin', async t => {
   for (const id of ['dujour', 'club-female']) await t.test(id, async t => {
     const { scene } = await geometry(id);
