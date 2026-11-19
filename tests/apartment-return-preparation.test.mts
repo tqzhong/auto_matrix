@@ -455,6 +455,37 @@ test('a successful Wells connection prepares the apartment and the guests before
   h.prepare(subjects); assert.equal(h.work.length, count); assert.equal(h.apartment.returnNormalMeshes, undefined);
 });
 
+test('the interrogation prepares the bedside view and Neo’s home sleeves before the return to 101', t => {
+  const h = fixture(); t.after(h.dispose);
+  const camera = new THREE.PerspectiveCamera(58, 16 / 9, .5, 5000);
+  h.street.position.copy(h.root.getWorldPosition(new THREE.Vector3())).add(new THREE.Vector3(6, 2, -11));
+  h.journey.scene = 'm1_interrogation';
+  const prepare = () => h.apartment.prepareReturn(h.renderer, camera, h.scene, h.journey, h.actor);
+  h.journey.visiting = 'm1_interrogation';
+  assert.equal(prepare(), false);
+  assert.deepEqual(h.work, []);
+  delete h.journey.visiting;
+  assert.equal(prepare(), true, 'prepare the apartment before Neo can exit the interrogation');
+  h.ready();
+  for (let frame = 0; frame < 100; frame++) {
+    const before = h.work.length;
+    prepare();
+    assert.ok(h.work.length - before <= 2, 'submit the return in small batches');
+  }
+  const prepared = h.batches.flat();
+  for (const mesh of [h.arms, h.shirt, h.street, h.root.children[0]]) assert.ok(prepared.includes(mesh));
+  assert.equal(h.work.filter(work => work === 'texture').length, 1);
+  assert.ok(h.slots.every(slots => slots === 10));
+  assert.equal(h.arms.visible, false);
+  assert.equal(h.shirt.visible, false);
+  assert.ok(!h.city.visible);
+  assert.ok(h.roomLights.every(light => !light.visible));
+  const count = h.work.length;
+  h.journey.scene = 'm1_wake_again';
+  assert.equal(prepare(), false);
+  assert.equal(h.work.length, count, 'the waking frame uses the prepared materials');
+});
+
 test('Wells leaves a frame between shader completion and reading its bindings', t => {
   const h = fixture(); t.after(h.dispose);
   h.journey.scene = 'm1_phone_escape';

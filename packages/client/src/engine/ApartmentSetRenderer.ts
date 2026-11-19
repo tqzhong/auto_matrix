@@ -33,7 +33,7 @@ export function closedApartmentFar(camera: THREE.PerspectiveCamera, journey?: Fi
 
 type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 type ReturnShadows = { lighting?: LightCulling; materials: Set<THREE.MeshDepthMaterial>; entryFrames: number };
-type ApartmentReturn = 'm1_wake_up' | 'm1_morning' | 'neo_apartment' | 'deferred_contact' | 'deferred_apartment';
+type ApartmentReturn = 'm1_wake_up' | 'm1_wake_again' | 'm1_morning' | 'neo_apartment' | 'deferred_contact' | 'deferred_apartment';
 type ReturnMesh = THREE.Mesh | THREE.Line;
 export type ReturnSubject = THREE.Group | THREE.Mesh | THREE.Sprite;
 type ReturnArrivals = { actor?: THREE.Group; subjects: ReturnSubject[] };
@@ -296,12 +296,14 @@ export class ApartmentSetRenderer {
     const blue = journey?.scene === 'm1_pills' && journey.pills?.phase === 'taking' && journey.pills.choice === 'blue';
     const club = journey?.scene === 'm1_club' && ['whisper', 'question', 'reply', 'departing', 'done'].includes(journey.club?.phase ?? '');
     const resumingClub = club && (resume || Boolean(openingLights && previous?.destination === 'm1_morning' && previous.arrivals));
-    const destination = opening || resuming ? 'm1_wake_up' : club ? 'm1_morning' : blue ? 'neo_apartment'
+    const interrogation = journey?.scene === 'm1_interrogation';
+    const destination = opening || resuming ? 'm1_wake_up' : interrogation ? 'm1_wake_again' : club ? 'm1_morning' : blue ? 'neo_apartment'
       : resumingInvitation ? 'deferred_apartment' : invitation ? 'deferred_contact' : undefined;
     if (!destination || journey?.visiting || (!actor && !resuming && !resumingClub && !invitation) || !renderer.extensions.has('KHR_parallel_shader_compile')) {
       const shadows = previous?.shadows;
       const entering = journey?.scene === 'm1_wake_up' && (previous?.destination === 'deferred_contact'
         || previous?.destination === 'deferred_apartment' || !previous?.arrivals)
+        || journey?.scene === 'm1_wake_again' && previous?.destination === 'm1_wake_again'
         || journey?.scene === 'm1_morning' && previous?.destination === 'm1_morning';
       if (entering && !journey?.visiting
         && previous?.gpu === renderer.properties
@@ -316,7 +318,7 @@ export class ApartmentSetRenderer {
     const subjects = visitorsOnly || !actor ? arriving : destination === 'neo_apartment' ? [actor] : [actor, ...arriving];
     if (!subjects.length && !resuming && !resumingClub) { this.cancelReturnPreparation(); return false; }
     const points = this.roomLights.reduce((count, light) => count + Number(light instanceof THREE.PointLight && light.intensity > 0), 0);
-    const incremental = resuming || resumingClub || invitation;
+    const incremental = resuming || resumingClub || invitation || interrogation;
     if (incremental && previous?.arrivals && previous.destination === destination
       && previous.gpu === renderer.properties && previous.points === points && previous.steps
       && previous.subjects.every(object => subjects.includes(object))) {
@@ -351,12 +353,14 @@ export class ApartmentSetRenderer {
   private *prepareReturnSteps(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene,
     subjects: ReturnSubject[], destination: ApartmentReturn, normalMeshes?: THREE.Mesh[], shadows?: ReturnShadows, arrivals?: ReturnArrivals): Generator<void> {
     const savedInvitation = destination === 'deferred_apartment';
-    const opening = destination === 'm1_wake_up' || savedInvitation;
+    const waking = destination === 'm1_wake_again';
+    const opening = destination === 'm1_wake_up' || waking || savedInvitation;
     const clubReturn = destination === 'm1_morning';
     const sharedOverlays: (THREE.Mesh | THREE.Sprite)[] = [];
     const invitation = destination === 'deferred_contact';
     const resume = opening && arrivals !== undefined;
-    const entryScene = destination === 'neo_apartment' ? undefined : FILM_SCENE_BY_ID[destination === 'm1_morning' ? 'm1_morning' : 'm1_wake_up'];
+    const entryScene = destination === 'neo_apartment' ? undefined
+      : FILM_SCENE_BY_ID[destination === 'deferred_contact' || destination === 'deferred_apartment' ? 'm1_wake_up' : destination];
     const lights = new THREE.Scene(); lights.environment = scene.environment; lights.fog = scene.fog;
     for (const light of scene.children) {
       if (!(light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) continue;
@@ -376,7 +380,11 @@ export class ApartmentSetRenderer {
       objective.position.set(goal.x, goal.y + .68, goal.z); lights.add(objective);
     }
     const eye = camera.clone();
-    if (entryScene) {
+    if (waking) {
+      // The bedside shot sees the opposite side of the room from the CRT shot.
+      eye.position.set(home.x + 15.4, home.y + 4.2, home.z - 5.2);
+      eye.lookAt(home.x + 10.1, home.y + 1.05, home.z - 9.2);
+    } else if (entryScene) {
       const entry = filmEntry(entryScene), shoulder = eye.aspect < .8 ? .3 : .8;
       eye.position.set(entry.x + shoulder, entry.y + 5.6, entry.z + 10.2);
       eye.lookAt(entry.x + shoulder, entry.y + 1.97, entry.z - 2);
@@ -384,7 +392,7 @@ export class ApartmentSetRenderer {
       const center = lifeRoomCenter('neo_apartment')!;
       eye.position.set(center.x - .8, center.y + 6, center.z - 11.2); eye.lookAt(center.x - .8, center.y + 2.8, center.z);
     }
-    eye.fov = 57; eye.updateProjectionMatrix(); eye.updateMatrixWorld();
+    eye.fov = waking ? 58 : 57; eye.updateProjectionMatrix(); eye.updateMatrixWorld();
     const frustum = new THREE.Frustum().setFromProjectionMatrix(eye.projectionMatrix.clone().multiply(eye.matrixWorldInverse));
     const meshes = new Set<ReturnMesh>(), textures = new Set<THREE.Texture>(), priorityMaps = new Set<THREE.Texture>(), actorMaps = new Set<THREE.Texture>();
     const buffers: ReturnMesh[] = [], geometries = new Set<THREE.BufferGeometry>(), queue: ReturnMesh[] = [];
