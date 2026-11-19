@@ -343,6 +343,39 @@ test('incoming guests are linked before reading the room bindings for a saved de
   assert.ok(h.batches.slice(batches).flat().includes(hair), 'submit the arriving guest while the earlier programs can link');
 });
 
+test('a saved deferred invitation reads completed bindings between batches of room shaders', t => {
+  const h = fixture(); t.after(h.dispose);
+  for (let index = 0; index < 12; index++) {
+    const material = new THREE.MeshLambertMaterial();
+    h.root.add(new THREE.Mesh(h.arms.geometry, material));
+    t.after(() => material.dispose());
+  }
+  h.journey.scene = 'm1_wake_up'; h.journey.contact = { phase: 'noticed', elapsed: 0, paid: true };
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const prepare = () => h.apartment.prepareReturn(h.renderer, camera, h.scene, h.journey, h.actor, [], undefined, true, true);
+  prepare();
+  h.ready();
+  let before = h.work.length;
+  prepare();
+  assert.deepEqual(h.work.slice(before), ['compile'], 'the completion frame only links the next batch');
+  before = h.work.length;
+  prepare();
+  assert.deepEqual(h.work.slice(before), ['bindings', 'compile'], 'the previous completion can be read while the room still has work');
+});
+
+test('a saved invitation submits the shared distant cast and ground shadow with the first room colors', t => {
+  const h = fixture(); t.after(h.dispose);
+  const distant = new THREE.MeshStandardMaterial({ vertexColors: true });
+  const transparent = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false });
+  t.after(() => { distant.dispose(); transparent.dispose(); });
+  const body = new THREE.Mesh(h.arms.geometry, distant), shadow = new THREE.Mesh(h.arms.geometry, transparent);
+  h.journey.scene = 'm1_wake_up'; h.journey.contact = { phase: 'noticed', elapsed: 0, paid: true };
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  assert.equal(h.apartment.prepareReturn(h.renderer, camera, h.scene, h.journey, undefined, [shadow, body], undefined, true, true), true);
+  assert.ok(h.batches[0].includes(body));
+  assert.ok(h.batches[0].includes(shadow));
+});
+
 test('a deferred invitation prepares priority maps and retains visitor shadow programs through the handoff', t => {
   const h = fixture(), { renderer, scene, actor, arms, journey } = h;
   const source = new LightCulling(scene), choi = new THREE.Group(), dujour = new THREE.Group();

@@ -390,7 +390,7 @@ export class ApartmentSetRenderer {
     const buffers: ReturnMesh[] = [], geometries = new Set<THREE.BufferGeometry>(), queue: ReturnMesh[] = [];
     const entryColors: (ReturnMesh | THREE.Sprite)[] = [];
     const returnEntry: ReturnMesh[] = [];
-    const collect = (mesh: THREE.Object3D, batch = queue) => {
+    const collect = (mesh: THREE.Object3D, batch: (ReturnMesh | THREE.Sprite)[] = queue) => {
       if (!(mesh instanceof THREE.Mesh || mesh instanceof THREE.Line) || meshes.has(mesh)) return;
       meshes.add(mesh); batch.push(mesh);
       if (mesh instanceof THREE.Mesh) normalMeshes?.push(mesh);
@@ -411,7 +411,7 @@ export class ApartmentSetRenderer {
           continue;
         }
         if (object instanceof THREE.Mesh) {
-          collect(object, batch);
+          collect(object, savedInvitation ? entryColors : batch);
           if (entryScene && object.material instanceof THREE.MeshBasicMaterial && !sharedOverlays.includes(object)) sharedOverlays.push(object);
           continue;
         }
@@ -493,7 +493,8 @@ export class ApartmentSetRenderer {
     const uploadTextures = this.prepareReturnTextures(renderer, textures, priorityMaps, entryScene !== undefined, actorMaps);
     try {
       let textureFirst = clubReturn;
-      while (arrivals?.subjects.length || returnEntry.length || entryPrograms.length || entryColors.length || queue.length || pending.length || sourceDepth.length || destinationDepth.meshes.length || buffers.length
+      let readyBinding: ColorProgram | undefined;
+      while (arrivals?.subjects.length || returnEntry.length || entryPrograms.length || entryColors.length || queue.length || pending.length || readyBinding || sourceDepth.length || destinationDepth.meshes.length || buffers.length
         || textures.size || priorityMaps.size || actorMaps.size) {
         if (arrivals?.subjects.length) {
           const newMeshes: ReturnMesh[] = [];
@@ -512,14 +513,20 @@ export class ApartmentSetRenderer {
         while (entryPrograms.length && !programs?.includes(entryPrograms[0])) entryPrograms.shift();
         const bindings = entryPrograms.length > 0 ? entryPrograms : pending;
         // Submit the distinct room and street surfaces before reading their bindings.
-        const ready = entryColors.length || shadowsFirst || entry ? -1 : bindings.findIndex(program => programs?.includes(program) && program.isReady());
+        const ready = !savedInvitation && (entryColors.length || shadowsFirst || entry)
+          ? -1 : bindings.findIndex(program => programs?.includes(program) && program.isReady());
+        if (savedInvitation) {
+          // Read one program that was ready last frame while the next batch links.
+          if (readyBinding && programs?.includes(readyBinding)) cacheReadyProgramLocations(renderer, readyBinding);
+          readyBinding = ready >= 0 ? bindings.splice(ready, 1)[0] : undefined;
+        }
         const textureTurn = !returnEntry.length && !entryColors.length && !queue.length && !depth && !buffers.length;
         const haveTextures = textures.size || priorityMaps.size || actorMaps.size;
         if (clubReturn) {
           textureFirst = !textureFirst;
           if (textureFirst && haveTextures) { uploadTextures.next(); yield; continue; }
         }
-        if (ready >= 0) {
+        if (ready >= 0 && !savedInvitation) {
           const [program] = bindings.splice(ready, 1);
           // Give the completed handoff program a frame before reflecting its uniforms.
           if (entryScene) yield;

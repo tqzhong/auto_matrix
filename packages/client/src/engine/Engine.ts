@@ -333,6 +333,7 @@ export class Engine {
     const savedNeo = resumeOnLanding ? this.agentRenderer.getAgentState('neo') : undefined;
     const prepareDeferredContact = deferredContact || !meeting && savedNeo?.isInMatrix
       && insideLifeRoom(savedNeo.position) === 'neo_apartment' && this.sandbox?.neoLife?.deferredContact?.contact?.phase === 'noticed';
+    const resumeDeferredContact = resumeOnLanding && prepareDeferredContact;
     const apartmentCast = openingHandoff || resumeApartment || openingApartment;
     const clubReturn = liveMatrixJourney?.scene === 'm1_club';
     const resumeClubReturn = resumeOnLanding && meeting?.scene === 'm1_club';
@@ -348,10 +349,11 @@ export class Engine {
       || this.voxelRenderer.interiors.prepareApartmentReturn(this.renderer, this.camera, this.scene, this.sandbox?.neoLife, neoAtHome,
       apartmentCast ? [this.agentRenderer.getAgentHero('choi'), this.agentRenderer.getAgentHero('dujour'),
         this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentDistant('neo'), apartmentPhoneLabel]
-        : prepareDeferredContact ? [this.agentRenderer.requestApartmentGuest('choi'), this.agentRenderer.requestApartmentGuest('dujour'), this.filmSets.goalMarker, apartmentPhoneLabel]
+        : prepareDeferredContact ? [this.agentRenderer.requestApartmentGuest('choi'), this.agentRenderer.requestApartmentGuest('dujour'),
+          this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentDistant('neo'), apartmentPhoneLabel]
         : clubReturn || resumeClubReturn ? [this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), apartmentPhoneLabel] : undefined,
       openingHandoff || resumeApartment || prepareDeferredContact || clubReturn ? this.lightCulling : undefined,
-      prepareDeferredContact, resumeApartment || resumeClubReturn || resumeOnLanding && prepareDeferredContact);
+      prepareDeferredContact, resumeApartment || resumeClubReturn || resumeDeferredContact);
     this.filmSets.preparePodColors(this.renderer, this.camera, this.lightCulling, this.agentRenderer.getAgentHero('neo'), this.playerControls?.firstPerson ?? false);
     if (meeting?.scene === 'm1_recovery' && player?.id === meeting.actor)
       this.filmSets.prepareCabinArrival(this.renderer, this.camera, meeting, id => this.agentRenderer.getShipEntryCast(id));
@@ -538,12 +540,13 @@ export class Engine {
     const oracleNormals = this.filmSets.secondOracleEntryNormalMeshes;
     const setNormals = openingNormals ?? podNormals ?? sentinelNormals ?? deckNormals ?? ambushNormals ?? governmentNormals ?? oracleNormals;
     const apartmentNormals = openingNormals ? undefined : this.voxelRenderer.interiors.apartmentReturnNormalMeshes;
-    const neoNormals = preparingLafayetteNormals || resumeApartment || openingHandoff && !preparingApartment || apartmentNormals ? neoAtHome : undefined;
+    const neoNormals = preparingLafayetteNormals || resumeApartment || resumeDeferredContact
+      || openingHandoff && !preparingApartment || apartmentNormals ? neoAtHome : undefined;
     const officeNormals = liveMatrixJourney?.scene === 'm1_commute' && lift?.passenger && lift.target === 1 ? officeManager : undefined;
     this.postProcessing.prepareNormals(this.renderer, setNormals ? this.filmSets.root : neoNormals ?? officeNormals,
       setNormals ?? apartmentNormals, podNormals !== undefined || sentinelNormals !== undefined || deckNormals !== undefined || wellsCast !== undefined
       || ambushNormals !== undefined || governmentNormals !== undefined || oracleNormals !== undefined
-      || resumeApartment || apartmentNormals !== undefined || officeNormals !== undefined);
+      || resumeApartment || resumeDeferredContact || apartmentNormals !== undefined || officeNormals !== undefined);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0, openingHotel !== undefined);
     this.filmSets.renderTelevisionPreview(this.renderer, this.camera, () => this.agentRenderer.getDesertEntryCast(), this.lightingSystem.directionalLight);
