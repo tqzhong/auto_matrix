@@ -4,7 +4,7 @@ import { CharacterModels, weaponMuzzle, type CharacterRig } from '../agents/Char
 import { newMotion, type MotionInput } from '../agents/CharacterMotion.js';
 import type { AgentRenderer, DojoOpponent } from '../agents/AgentRenderer.js';
 import { reach } from '../agents/SpoonPerformance.js';
-import { BURLY, FILM_SETS, OFFICE_AGENT_ROLES, OPENING_HOTEL, ambushRetreatRoot, basementDropPlayback, basementLauncherRoot, openingHotelBreachOfficer, openingHotelBreachTime, openingHotelHallOfficer, type BasementDropPlayback } from '@auto_matrix/shared';
+import { BURLY, CHATEAU, FILM_SETS, OFFICE_AGENT_ROLES, OPENING_HOTEL, ambushRetreatRoot, basementDropPlayback, basementLauncherRoot, openingHotelBreachOfficer, openingHotelBreachTime, openingHotelHallOfficer, type BasementDropPlayback } from '@auto_matrix/shared';
 import { mouseRoomGuard, MOUSE_ROOM_RETURN, ambushShotRecoil } from '@auto_matrix/shared';
 
 type WorldObject = WorldNode | WorldStructure | WorldIncident;
@@ -222,6 +222,21 @@ export class SandboxRenderer {
     const enemy = this.createEnemy('smith', this.actors, undefined, 'm2_burly');
     if (enemy) this.pool.push(enemy);
   }
+  get chateauUpperCast(): THREE.Group[] | undefined {
+    const journey = this.state?.neoLife?.journey;
+    if (journey?.scene !== 'm2_chateau' || journey.visiting || journey.chateau?.phase !== 'landing') return;
+    return this.pool.filter(guard => guard.scene === 'm2_chateau' && (guard.style === 'spear' || guard.style === 'axe')).map(guard => guard.group);
+  }
+  private prepareChateauUpperGuard(): void {
+    for (const { weapon } of CHATEAU.waves[1]) {
+      if (this.pool.some(guard => guard.scene === 'm2_chateau' && guard.style === weapon)) continue;
+      const guard = this.createEnemy('agent', this.actors, undefined, 'm2_chateau', weapon);
+      if (!guard?.rig) return;
+      this.models.animate(guard.rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, chateauWeapon: weapon }, 4);
+      this.pool.push(guard);
+      return;
+    }
+  }
   prepareOpeningHotelPolice(): THREE.Group[] | undefined {
     const journey = this.state?.neoLife?.journey;
     if (journey?.scene !== 'm1_room303' || journey.visiting || !['trace', 'breach'].includes(journey.openingHotel?.phase ?? '')) return;
@@ -360,6 +375,8 @@ export class SandboxRenderer {
       if (prop.accent.geometry === this.diamond) prop.accent.rotation.y = this.elapsed * .65;
     }
     const journey = this.state.neoLife?.journey;
+    if (matrix && player?.currentLocation === 'film_chateau_hall' && player.id === journey?.actor
+      && journey.scene === 'm2_chateau' && !journey.visiting && journey.chateau?.phase === 'landing') this.prepareChateauUpperGuard();
     const hotelTime = journey?.scene === 'm1_room303' && !journey.visiting
       ? openingHotelBreachTime(journey.openingHotel, player?.id === journey.actor ? player : undefined) : undefined;
     for (const [id, enemy] of this.enemies) {

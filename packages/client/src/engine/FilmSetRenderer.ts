@@ -444,6 +444,7 @@ export class FilmSetRenderer {
   private preparedDesert?: DesertPreparation;
   private mountain?: MountainSetRenderer;
   private preparedMountain?: { root: THREE.Group; renderer: MountainSetRenderer; colors?: CastColorPreparation };
+  private preparedChateauUpperColors?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties'] };
   private training?: TrainingSetRenderer;
   private preparedDojo?: { root: THREE.Group; renderer: TrainingSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedJump?: TrainingPreparation;
@@ -2462,6 +2463,24 @@ export class FilmSetRenderer {
       if (next.id === 'm3_maggie_discovery') cast.push('ak', 'niobe', 'ghost', 'bane');
       this.prepareCastColors(renderer, camera, prepared.colors, cast, actor);
     }
+  }
+  prepareChateauUpperColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, cast?: readonly THREE.Group[]): void {
+    if (!cast?.length || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+      this.preparedChateauUpperColors = undefined;
+      return;
+    }
+    let prepared = this.preparedChateauUpperColors;
+    if (!prepared || prepared.gpu !== renderer.properties) {
+      this.preparedChateauUpperColors = prepared = { gpu: renderer.properties, scene: this.scene,
+        actors: new Set(), meshes: [], programs: [], textures: new Set() };
+    }
+    for (const group of cast) {
+      if (prepared.actors.has(group)) continue;
+      const meshes = this.colorMeshes([group], true);
+      prepared.actors.add(group); prepared.meshes.push(...meshes);
+      this.queueColorTextures(prepared.textures, meshes);
+    }
+    this.prepareColorFrame(renderer, camera, prepared, lighting, 'isolated', true);
   }
   private prepareCastColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, colors: CastColorPreparation,
     cast: readonly string[], actor: (id: string) => THREE.Group | undefined, staging?: { textureUpload?: Generator<void, boolean> }): void {
@@ -7286,6 +7305,7 @@ export class FilmSetRenderer {
     this.trilogyEpilogue?.dispose(); this.trilogyEpilogue = undefined;
     this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;
     this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauDoor = undefined;
+    this.preparedChateauUpperColors = undefined;
     this.garageCar = undefined; this.garageGhosts = [];
     this.mobil?.dispose(); this.mobil = undefined;
     this.wellsStreet?.dispose(); this.wellsStreet = undefined;

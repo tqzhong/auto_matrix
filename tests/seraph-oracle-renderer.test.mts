@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { BURLY, FILM_SCENE_BY_ID, FILM_SETS, HEL_ELEVATOR, SERAPH_ORACLE, filmEntry, filmPosition, helElevatorFloor, newCatch, newGarageEscape, newHelGarage, newMaggieDiscovery, newTrainmanChase, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
+import { BURLY, CHATEAU, FILM_SCENE_BY_ID, FILM_SETS, HEL_ELEVATOR, SERAPH_ORACLE, filmEntry, filmPosition, helElevatorFloor, newCatch, newGarageEscape, newHelGarage, newMaggieDiscovery, newTrainmanChase, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
@@ -814,6 +814,47 @@ test('the first Smith copies reuse the actor model cache and take their prepared
   sandbox.update(.02, new THREE.PerspectiveCamera(), true, 0, true);
   assert.equal(animated.length, BURLY.initialCopies);
   assert.ok(animated.every(owner => owner === created[0].owner));
+});
+
+test('the château landing prepares each upper guard with its weapon before the world starts the fight', t => {
+  const previous = globalThis.document;
+  const context = { fillRect() {}, strokeRect() {}, fillText() {}, putImageData() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }) };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  t.after(() => { globalThis.document = previous; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const created: CharacterRig[] = [], weapons: string[] = [];
+  t.mock.method(CharacterModels.prototype, 'create', () => {
+    const rig = { root: new THREE.Group(), motion: newMotion() } as CharacterRig;
+    created.push(rig); return rig;
+  });
+  t.mock.method(CharacterModels.prototype, 'animate', (_rig, _delta, input) => { if (input.chateauWeapon) weapons.push(input.chateauWeapon); });
+  const scene = new THREE.Scene(), sandbox = new SandboxRenderer(scene), world = new WorldState();
+  t.after(() => sandbox.dispose());
+  new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, beat = FILM_SCENE_BY_ID.m2_chateau;
+  Object.assign(neo, { position: filmEntry(beat), currentLocation: beat.set, isInMatrix: true });
+  const journey: FilmJourney = { version: 1, scene: beat.id, actor: 'neo', step: 0, enteredAt: 0, completed: [],
+    checkpoint: neo.position, reflections: {}, lastText: '', chateau: { phase: 'ready', wave: 1, parries: 2, disarms: 2, attempts: 1, wounded: true } };
+  const sync = (threats: SandboxThreat[]) => sandbox.sync({ threats, nodes: [], structures: [], incidents: [], missions: {}, neoLife: { journey } } as SandboxState,
+    Object.fromEntries(world.agents));
+  const camera = new THREE.PerspectiveCamera();
+  const frame = () => sandbox.update(.02, camera, true, 20, true, neo);
+  sync([]); frame();
+  assert.deepEqual(created, []);
+  journey.chateau!.phase = 'landing';
+  const saved = structuredClone(journey);
+  frame();
+  assert.equal(created.length, 1, 'prepare only one guard in a frame');
+  frame(); frame();
+  assert.deepEqual(weapons, ['spear', 'axe']);
+  assert(created.every(rig => rig.root.parent && !rig.root.parent.parent), 'the prepared guards stay outside the rendered scene');
+  assert.deepEqual(journey, saved);
+  Object.assign(journey.chateau!, { phase: 'duel', wave: 2 });
+  sync(CHATEAU.waves[1].map(({ weapon, x, z }) => ({ id: weapon, scene: beat.id, kind: 'agent', weapon, matrix: true,
+    position: filmPosition(beat.set, x, z), health: 88, maxHealth: 88, target: neo.id, stunUntil: 22, lastStrike: 20 })));
+  assert.equal(created.length, 2, 'the actual wave takes the two prepared models');
+  assert(created.every(rig => rig.root.parent?.parent === scene));
 });
 
 test('nearby Smith copies keep readable bounded health bars without repeated name boards covering the fight', t => {
