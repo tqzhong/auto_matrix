@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { CABIN, CABIN_ROUTE, cabinBodyPose, FILM_SETS, MEDICAL_OPERATOR, RECOVERY_BED, RECOVERY_FRAME, recoveryCrewPose, filmObstacles, filmPosition, playerBlocked, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { CABIN, CABIN_ROUTE, cabinBodyPose, FILM_SCENE_BY_ID, FILM_SETS, MEDICAL_OPERATOR, RECOVERY_BED, RECOVERY_FRAME, recoveryCrewPose, filmEntry, filmObstacles, filmPosition, newCatch, playerBlocked, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 import { LightingSystem } from '../packages/client/src/engine/LightingSystem.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
@@ -26,6 +26,55 @@ test('the medical handoff keeps the same deck and updates cabin lighting and doo
   assert.equal((film.root.getObjectByName('neb-cabin-key-light') as THREE.SpotLight).castShadow, true);
   assert.equal(film.root.getObjectByName('neb-cabin-door')!.position.z, CABIN.door.z);
   assert.equal(releases, 0);
+  film.update(undefined, undefined, 0);
+  assert.equal(releases, 1);
+});
+
+test('revival prepares the same evacuation deck before the cold rooftop handoff', t => {
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene);
+  t.after(() => film.dispose());
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const roof = FILM_SCENE_BY_ID.m2_catch, escape = FILM_SCENE_BY_ID.m2_ship_lost, neo = world.agents.get('neo')!;
+  const journey: FilmJourney = { version: 1, actor: 'neo', scene: roof.id, step: 1, enteredAt: 0, completed: [],
+    checkpoint: filmEntry(roof), lastText: '', reflections: {}, catch: { ...newCatch(), phase: 'flight' } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const camera = new THREE.PerspectiveCamera(), sun = new THREE.DirectionalLight();
+  let deck: THREE.Object3D | undefined;
+  let hatchLightSlots = 0;
+  const compiled = new Set<THREE.Object3D>();
+  const gpu = { extensions: { has: () => true }, shadowMap: { enabled: true, type: THREE.PCFShadowMap }, info: { programs: [] },
+    getRenderTarget: () => null, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
+    setRenderTarget() {}, render() {}, properties: { get: () => ({}) },
+    compile(subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) {
+      if (!deck) target.traverseVisible(object => { if (object.name === 'neb-interior-deck') deck = object; });
+      subject.traverse(mesh => {
+        compiled.add(mesh);
+        if (mesh.name !== 'neb-cargo-hatch' || !(mesh instanceof THREE.Mesh) || mesh.material instanceof THREE.MeshDepthMaterial) return;
+        hatchLightSlots = 0;
+        target.traverseVisible(object => { if (object instanceof THREE.PointLight) hatchLightSlots++; });
+      });
+    } } as unknown as THREE.WebGLRenderer;
+  const prepare = () => film.prepareShipLoss(gpu, camera, journey, () => ({}), sun);
+  for (let frame = 0; frame < 20; frame++) prepare();
+  assert.ok(!deck, 'the deck is only prepared once Neo reaches the roof');
+  Object.assign(journey, { step: 3, catch: { ...newCatch(), phase: 'pulse' } });
+  for (let frame = 0; frame < 20; frame++) prepare();
+  assert.ok(!deck, 'the ship must stay unloaded until the timed heartbeat inputs are complete');
+  Object.assign(journey, { step: 3, catch: { ...newCatch(), phase: 'reviving', beats: 3, elapsed: 1 } });
+  for (let frame = 0; frame < 200; frame++) prepare();
+  const hatch = deck?.getObjectByName('neb-cargo-hatch') as THREE.Mesh | undefined;
+  assert.ok(hatch && compiled.has(hatch), 'the actual cargo hatch is prepared before the cut');
+  assert.equal(hatchLightSlots, 25, 'the unlit blast lamp stays out of the briefing shader layout');
+  assert.ok(!scene.getObjectByName('neb-cargo-hatch'));
+  Object.assign(neo, { currentLocation: roof.set, isInMatrix: true, position: filmEntry(roof) });
+  film.update(neo, sandbox, 0);
+  assert.ok(!scene.getObjectByName('neb-cargo-hatch'));
+  Object.assign(journey, { scene: escape.id, step: 0, shipLoss: { phase: 'briefing', remaining: 32, lastTick: 0, attempts: 0 } });
+  Object.assign(neo, { currentLocation: escape.set, isInMatrix: false, position: filmEntry(escape) });
+  film.update(neo, sandbox, 0);
+  assert.ok(scene.getObjectByName('neb-cargo-hatch') === hatch, 'the cut adopts the prepared hatch');
+  const shell = deck?.getObjectByName('neb-deck-floor') as THREE.Mesh;
+  let releases = 0; shell.geometry.addEventListener('dispose', () => releases++);
   film.update(undefined, undefined, 0);
   assert.equal(releases, 1);
 });

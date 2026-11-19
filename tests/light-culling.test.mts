@@ -6,6 +6,7 @@ import { APU_RIG, APU_ROUTE, BANE_INQUIRY, BASEMENT, DIGGERS, DOCK_BRIEFING, DOC
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { ApartmentSetRenderer, APARTMENT_POINT_SLOTS } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
+import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
@@ -125,6 +126,45 @@ test('the Logos keeps its two point-light slots as the engines cut out and resta
   assert.deepEqual(sample(), [0, 9]);
   flight.stage = 'stall'; flight.altitude = 42; flight.ignition!.phase = 'running';
   assert.deepEqual(sample(), [9, 32]);
+});
+
+test('the white corridor keeps its fixtures and objective slot through the source door approach', t => {
+  t.mock.method(HeroModels.prototype, 'create', async () => undefined);
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m2_key_door, center = FILM_SETS[scene.set].center;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get(scene.actor)!;
+  neo.currentLocation = scene.set; neo.isInMatrix = true; neo.position = filmPosition(scene.set, -.55, -44.1);
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: neo.id, step: 5, completed: [], enteredAt: 0,
+    checkpoint: neo.position, reflections: {}, lastText: '',
+    keyDoor: { portalOpened: true, keyTaken: true, performance: { phase: 'key_taken', elapsed: 0, attempts: 1 } } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  h.camera.aspect = 16 / 9; h.camera.updateProjectionMatrix();
+  h.camera.position.set(center.x - 1, center.y + 3, neo.position.z + 3);
+  const visibleLights = (yaw: number) => {
+    h.camera.rotation.y = yaw;
+    assert.equal(renderer.update(neo, sandbox, 0)?.id, scene.set);
+    h.culling.minimumPointSlots = renderer.minimumPointSlots; h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    try {
+      const lights: THREE.PointLight[] = [];
+      h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) lights.push(light); });
+      return lights.map(light => ({ light, intensity: light.intensity }));
+    } finally { h.after(); }
+  };
+  const before = visibleLights(Math.PI);
+  const towardDoor = visibleLights(0);
+  assert.equal(towardDoor.length, 7, 'turning toward the source door must retain the six fixtures and objective slot');
+  assert.deepEqual(towardDoor.map(row => row.light), before.map(row => row.light));
+  assert.ok(towardDoor.some(row => row.intensity === 0) && towardDoor.some(row => row.intensity > 0));
+  const goal = towardDoor.find(row => row.intensity === 5)?.light;
+  assert.ok(goal);
+  journey.step = scene.steps.length;
+  journey.keyDoor!.performance!.phase = 'done';
+  const crossed = visibleLights(0);
+  assert.deepEqual(crossed.map(row => row.light), before.map(row => row.light));
+  assert.equal(crossed.find(row => row.light === goal)?.intensity, 0, 'the completed objective keeps a dark slot');
 });
 
 test('the missing ship interior leaves the same light slot count through a failed evacuation and retry', t => {
