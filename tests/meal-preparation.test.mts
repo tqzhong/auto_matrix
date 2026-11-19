@@ -137,6 +137,37 @@ test('a completed bargain keeps the prepared meal deck when Smith takes control'
   assert.equal(h.film.root.getObjectByName('neb-crew-meal-scene'), undefined);
 });
 
+test('the restaurant and prepared deck survive the meal story packet arriving before Neo', t => {
+  const h = fixture(t);
+  Object.assign(h.film, { current: undefined, currentScene: undefined });
+  h.journey.actor = 'smith';
+  h.journey.interlude!.phase = 'done';
+  h.journey.interlude!.elapsed = 26;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const smith = world.agents.get('smith')!, neo = world.agents.get('neo')!;
+  const restaurant = FILM_SETS.film_cypher_restaurant, ship = FILM_SETS.film_neb_deck;
+  Object.assign(smith, { position: { ...restaurant.center }, currentLocation: restaurant.id, isInMatrix: true });
+  const sandbox = { structures: [], neoLife: { journey: h.journey } } as unknown as SandboxState;
+  h.film.update(smith, sandbox, 0);
+  h.ready(); h.drain();
+  const deck = [...h.decks][0], offstage = deck.parent;
+  const table = h.film.root.getObjectByName('cypher-window-table');
+  assert.ok(table && offstage);
+  Object.assign(h.journey, { scene: 'm1_meal', actor: 'neo', interlude: { kind: 'meal', phase: 'ready', elapsed: 0 } });
+
+  assert.equal(h.film.update(smith, sandbox, 0), restaurant);
+  h.prepare();
+  assert.ok(h.film.root.getObjectByName('cypher-window-table') === table, 'keep the actual restaurant during the handoff');
+  assert.ok(deck.parent === offstage, 'keep the prepared deck offstage until Neo arrives');
+  assert.equal(h.film.update(neo, sandbox, 0), restaurant, 'Neo’s position must also reach the deck');
+  h.prepare();
+  assert.ok(deck.parent === offstage);
+
+  Object.assign(neo, { position: { ...ship.center }, currentLocation: ship.id, isInMatrix: false });
+  assert.equal(h.film.update(neo, sandbox, 0), ship);
+  assert.equal(deck.parent, h.film.root);
+});
+
 test('meal preparation queues the cabin maps that decode after the first shader batch', t => {
   const h = fixture(t);
   h.ready(); h.drain();

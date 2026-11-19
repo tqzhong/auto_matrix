@@ -454,7 +454,8 @@ export class Engine {
       id => ({ model: this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), shadow: this.agentRenderer.getAgentShadow(id) }),
       this.lightingSystem.directionalLight, resumeRestaurant, this.lightCulling);
     const resumeMeal = onLanding && meeting?.scene === 'm1_steak';
-    this.filmSets.prepareMeal(this.renderer, this.camera, player?.id === meeting?.actor || resumeMeal ? meeting : undefined,
+    const mealJourney = player?.id === meeting?.actor || resumeMeal || meeting?.scene === 'm1_meal' ? meeting : undefined;
+    this.filmSets.prepareMeal(this.renderer, this.camera, mealJourney,
       id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling, resumeMeal);
     const resumeSecondOracle = onLanding && (meeting?.scene === 'm1_meal' || meeting?.scene === 'm2_departure')
       || resumeOnLanding && (meeting?.scene === 'm2_persephone' || meeting?.scene === 'm2_mountain'

@@ -2130,6 +2130,7 @@ export class FilmSetRenderer {
   prepareMeal(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => ShipEntryCast, shadowSun: THREE.DirectionalLight, sourceLights?: LightCulling, resume = false): void {
     const atRestaurant = this.current?.id === 'film_cypher_restaurant' && this.currentScene === 'm1_steak';
+    if (atRestaurant && journey?.scene === 'm1_meal' && !journey.visiting) return;
     const encounter = journey?.interlude;
     if ((!atRestaurant && !resume) || journey?.scene !== 'm1_steak' || journey.visiting
       || encounter?.kind !== 'steak' || !['performing', 'done'].includes(encounter.phase) || steakAge(encounter) < 13) {
@@ -3853,6 +3854,9 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm1_steak' && !journey.visiting && this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_cypher_console'
       && player && (player.id === 'neo' || player.id === journey.actor)
       && (player.id !== journey.actor || set?.id !== FILM_SCENE_BY_ID.m1_steak.set)) return this.current;
+    if (journey?.scene === 'm1_meal' && !journey.visiting && this.current?.id === 'film_cypher_restaurant' && this.currentScene === 'm1_steak'
+      && player && (player.id === 'smith' || player.id === journey.actor)
+      && (player.id !== journey.actor || set?.id !== FILM_SCENE_BY_ID.m1_meal.set)) return this.current;
     if (this.preparedLafayette && set?.id !== 'film_lafayette'
       && (journey?.scene !== 'm1_bug' || journey.visiting || journey.meeting?.phase !== 'outside'))
       this.cancelLafayettePreparation();
