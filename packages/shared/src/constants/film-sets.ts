@@ -179,7 +179,7 @@ export function filmPosition(id: string, x = 0, z = 0): Vector3 {
     : id === 'film_club_hel' ? center.y + helTerraceFloor(x, z) : center.y, z: center.z + z };
 }
 
-export interface FilmObstacle { x: number; z: number; width: number; depth: number; height: number }
+export interface FilmObstacle { x: number; z: number; width: number; depth: number; height: number; circleRadius?: number }
 export const BANE_LOFT_OBSTACLES: FilmObstacle[] = [
   { x: 4, z: -29, width: 4, depth: 3, height: 2.5 },
   ...[-1, 1].flatMap(side => [-24, 0, 24].map(z => ({ x: side * 20, z, width: 1.6, depth: 1.6, height: 21 }))),
@@ -377,7 +377,10 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number, mov
     if (fromImpact > SMITH_FINALE.crater.floorRadius - radius && fromImpact < SMITH_FINALE.crater.radius + radius) return true;
   }
   if (position.y < filmGroundHeight(position, set, craterDepth) - .8) return true;
-  return filmObstacles(set, movingMeetingCar, movingOracleDoor, oracleLastKitchen).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
+  return filmObstacles(set, movingMeetingCar, movingOracleDoor, oracleLastKitchen).some(o => position.y < set.center.y + o.height
+    && (o.circleRadius === undefined
+      ? Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius
+      : Math.hypot(x - o.x, z - o.z) < o.circleRadius + radius));
 }
 
 export function filmGroundHeight(position: Vector3, set: FilmSet, craterDepth = 0): number {

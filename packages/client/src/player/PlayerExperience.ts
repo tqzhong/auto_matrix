@@ -411,7 +411,13 @@ export class PlayerExperience {
       ctx.fillStyle = '#526c483b'; ctx.strokeStyle = '#a4b79a';
       ctx.fillRect(x - set.width * scale / 2, z - set.depth * scale / 2, set.width * scale, set.depth * scale);
       ctx.strokeRect(x - set.width * scale / 2, z - set.depth * scale / 2, set.width * scale, set.depth * scale);
-      ctx.fillStyle = '#bbcaad'; for (const o of filmObstacles(set)) ctx.fillRect(x + (o.x - o.width / 2) * scale, z + (o.z - o.depth / 2) * scale, o.width * scale, o.depth * scale);
+      ctx.fillStyle = '#bbcaad';
+      for (const o of filmObstacles(set)) {
+        if (o.circleRadius === undefined) ctx.fillRect(x + (o.x - o.width / 2) * scale, z + (o.z - o.depth / 2) * scale, o.width * scale, o.depth * scale);
+        else {
+          ctx.beginPath(); ctx.arc(x + o.x * scale, z + o.z * scale, o.circleRadius * scale, 0, Math.PI * 2); ctx.fill();
+        }
+      }
       ctx.strokeStyle = '#3b5c453b';
     }
     for (let n = -8; n < 8; n++) {

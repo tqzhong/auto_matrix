@@ -1,4 +1,5 @@
 import type { FilmJourney } from './film-story.js';
+import type { FilmObstacle } from './film-sets.js';
 import type { Philosophy } from '../types/neo-life.js';
 
 export type ClubPhase = 'crowd' | 'approaching' | 'ready' | 'introduction' | 'listen' | 'whisper' | 'question' | 'reply' | 'departing' | 'done';
@@ -12,11 +13,12 @@ export const CLUB = {
   exit: { x: 0, z: 22 }, approach: 8, introduction: 6, whisper: 14, reply: 6, departure: 8,
 } as const;
 export const CLUB_ROUTE = [{ x: -9, z: -17 }, { x: -4, z: -17 }, { x: 7, z: -12 }, CLUB.trinity];
-export const CLUB_OBSTACLES = [
+const tableRadius = 1.8;
+export const CLUB_OBSTACLES: FilmObstacle[] = [
   { x: 17.8, z: -8, width: 3.2, depth: 21, height: 2.65 },
   ...[-12, 12].flatMap(x => [-18, 0, 18].map(z => ({ x, z, width: 1.3, depth: 1.3, height: 11 }))),
   ...[-14, -5, 5, 14].map(x => ({ x, z: -25, width: 2.5, depth: 2.7, height: 5.6 })),
-  ...[-16.5, 16.5].map(x => ({ x, z: 12, width: 3.6, depth: 3.6, height: 2.3 })),
+  ...[-16.5, 16.5].map(x => ({ x, z: 12, width: tableRadius * 2, depth: tableRadius * 2, height: 2.3, circleRadius: tableRadius })),
 ];
 // Leave the entrance aisle, conversation and Trinity's approach free of dancers.
 export const CLUB_DANCERS = [

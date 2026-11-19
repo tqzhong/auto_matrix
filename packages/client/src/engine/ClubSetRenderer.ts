@@ -84,8 +84,9 @@ export class ClubSetRenderer {
       this.cylinder(mat, 19.9, y + .38, z, .16, .75); this.cylinder(mat, 19.9, y + .87, z, .065, .25);
       this.box(paper, 19.72, y + .39, z, .012, .3, .23);
     }
-    for (const table of CLUB_OBSTACLES.filter(o => o.height === 2.3)) {
-      this.cylinder(wood, table.x, 2.22, table.z, 1.8, .16); this.cylinder(metal, table.x, 1.13, table.z, .09, 2.1);
+    for (const table of CLUB_OBSTACLES) {
+      if (table.circleRadius === undefined) continue;
+      this.cylinder(wood, table.x, 2.22, table.z, table.circleRadius, .16); this.cylinder(metal, table.x, 1.13, table.z, .09, 2.1);
       this.cylinder(metal, table.x, .1, table.z, .62, .2);
       for (const offset of [-.45, .45]) this.cylinder(bronze, table.x + offset, 2.5, table.z, .14, .42);
     }

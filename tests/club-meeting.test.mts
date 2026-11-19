@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, clubRoute, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
+import { CLUB_OBSTACLES, FILM_SCENE_BY_ID, filmPosition, filmStepPosition, clubRoute, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -33,6 +33,15 @@ test('Trinity’s entire approach and departure clear the solid club columns and
   for (let i = 0; i <= 200; i++) {
     const point = clubRoute(i / 200);
     assert.equal(playerBlocked(filmPosition('film_white_rabbit_club', point.x, point.z), true, .7), false, `blocked at ${point.x}, ${point.z}`);
+  }
+});
+
+test('players can walk around the round tabletops without hitting their empty corners', () => {
+  for (const table of CLUB_OBSTACLES.filter(item => item.height === 2.3)) {
+    const towardAisle = -Math.sign(table.x), radius = 1.1;
+    const at = (offset: number) => filmPosition('film_white_rabbit_club', table.x + towardAisle * offset, table.z + offset);
+    assert.equal(playerBlocked(at(2.1), true, radius), false, 'the table should leave room in the diagonal aisle');
+    assert.equal(playerBlocked(at(1.9), true, radius), true, 'the same approach must stop at the rounded edge');
   }
 });
 
