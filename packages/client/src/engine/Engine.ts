@@ -335,7 +335,9 @@ export class Engine {
       && insideLifeRoom(savedNeo.position) === 'neo_apartment' && this.sandbox?.neoLife?.deferredContact?.contact?.phase === 'noticed';
     const apartmentCast = openingHandoff || resumeApartment || openingApartment;
     const clubReturn = liveMatrixJourney?.scene === 'm1_club';
-    const neoAtHome = player?.id === meeting?.actor || resumeApartment || prepareDeferredContact ? this.agentRenderer.getAgentHero('neo') : undefined;
+    const resumeClubReturn = resumeOnLanding && meeting?.scene === 'm1_club';
+    const neoAtHome = player?.id === meeting?.actor || resumeApartment || resumeClubReturn || prepareDeferredContact
+      ? this.agentRenderer.getAgentHero('neo') : undefined;
     const preparingWellsCast = this.agentRenderer.prepareWellsCast(this.renderer, this.camera, openingPhone);
     const wellsCast = this.agentRenderer.wellsCastMeshes;
     this.filmSets.prepareWellsCastPrograms(this.renderer, this.camera, this.lightCulling, openingPhone, wellsCast);
@@ -347,8 +349,9 @@ export class Engine {
       apartmentCast ? [this.agentRenderer.getAgentHero('choi'), this.agentRenderer.getAgentHero('dujour'),
         this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentDistant('neo'), apartmentPhoneLabel]
         : prepareDeferredContact ? [this.agentRenderer.requestApartmentGuest('choi'), this.agentRenderer.requestApartmentGuest('dujour'), this.filmSets.goalMarker, apartmentPhoneLabel]
-        : clubReturn ? [this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), apartmentPhoneLabel] : undefined,
-      openingHandoff || resumeApartment || prepareDeferredContact || clubReturn ? this.lightCulling : undefined, prepareDeferredContact, resumeApartment);
+        : clubReturn || resumeClubReturn ? [this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo'), apartmentPhoneLabel] : undefined,
+      openingHandoff || resumeApartment || prepareDeferredContact || clubReturn ? this.lightCulling : undefined,
+      prepareDeferredContact, resumeApartment || resumeClubReturn);
     this.filmSets.preparePodColors(this.renderer, this.camera, this.lightCulling, this.agentRenderer.getAgentHero('neo'), this.playerControls?.firstPerson ?? false);
     if (meeting?.scene === 'm1_recovery' && player?.id === meeting.actor)
       this.filmSets.prepareCabinArrival(this.renderer, this.camera, meeting, id => this.agentRenderer.getShipEntryCast(id));

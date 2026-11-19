@@ -32,7 +32,7 @@ export function closedApartmentFar(camera: THREE.PerspectiveCamera, journey?: Fi
 }
 
 type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
-type ReturnShadows = { lighting: LightCulling; materials: Set<THREE.MeshDepthMaterial>; entryFrames: number };
+type ReturnShadows = { lighting?: LightCulling; materials: Set<THREE.MeshDepthMaterial>; entryFrames: number };
 type ApartmentReturn = 'm1_wake_up' | 'm1_morning' | 'neo_apartment' | 'deferred_contact';
 type ReturnMesh = THREE.Mesh | THREE.Line;
 export type ReturnSubject = THREE.Group | THREE.Mesh | THREE.Sprite;
@@ -293,8 +293,9 @@ export class ApartmentSetRenderer {
       && (resume || Boolean(actor && previous?.destination === 'm1_wake_up' && previous.arrivals));
     const blue = journey?.scene === 'm1_pills' && journey.pills?.phase === 'taking' && journey.pills.choice === 'blue';
     const club = journey?.scene === 'm1_club' && ['whisper', 'question', 'reply', 'departing', 'done'].includes(journey.club?.phase ?? '');
+    const resumingClub = club && (resume || Boolean(openingLights && previous?.destination === 'm1_morning' && previous.arrivals));
     const destination = opening || resuming ? 'm1_wake_up' : club ? 'm1_morning' : blue ? 'neo_apartment' : invitation ? 'deferred_contact' : undefined;
-    if (!destination || journey?.visiting || (!actor && !resuming && !invitation) || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+    if (!destination || journey?.visiting || (!actor && !resuming && !resumingClub && !invitation) || !renderer.extensions.has('KHR_parallel_shader_compile')) {
       const shadows = previous?.shadows;
       const entering = journey?.scene === 'm1_wake_up' && (previous?.destination === 'deferred_contact' || !previous?.arrivals)
         || journey?.scene === 'm1_morning' && previous?.destination === 'm1_morning';
@@ -309,9 +310,9 @@ export class ApartmentSetRenderer {
     }
     const arriving = entryObjects.filter((object): object is ReturnSubject => object !== undefined);
     const subjects = invitation || !actor ? arriving : destination === 'neo_apartment' ? [actor] : [actor, ...arriving];
-    if (!subjects.length && !resuming) { this.cancelReturnPreparation(); return false; }
+    if (!subjects.length && !resuming && !resumingClub) { this.cancelReturnPreparation(); return false; }
     const points = this.roomLights.reduce((count, light) => count + Number(light instanceof THREE.PointLight && light.intensity > 0), 0);
-    const incremental = resuming || invitation;
+    const incremental = resuming || resumingClub || invitation;
     if (incremental && previous?.arrivals && previous.destination === destination
       && previous.gpu === renderer.properties && previous.points === points && previous.steps
       && previous.subjects.every(object => subjects.includes(object))) {
@@ -324,13 +325,16 @@ export class ApartmentSetRenderer {
       || subjects.some((object, index) => previous.subjects[index] !== object)) {
       this.cancelReturnPreparation();
       const normalMeshes: THREE.Mesh[] | undefined = destination === 'neo_apartment' ? undefined : [];
-      const arrivals = incremental ? { actor: resuming ? actor : undefined, subjects: [] } : undefined;
-      const shadows: ReturnShadows | undefined = (opening || incremental || club) && openingLights && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
+      const arrivals = incremental ? { actor: invitation ? undefined : actor, subjects: [] } : undefined;
+      const shadows: ReturnShadows | undefined = (resumingClub || (opening || incremental || club) && openingLights)
+        && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
         ? { lighting: openingLights, materials: new Set(), entryFrames: 0 } : undefined;
       this.returnPreparation = { gpu: renderer.properties, subjects, points, destination, normalMeshes, shadows, arrivals,
         steps: this.prepareReturnSteps(renderer, camera, scene, subjects, destination, normalMeshes, shadows, arrivals) };
     }
     const prepared = this.returnPreparation!;
+    // The source layout becomes available when the actual club is drawn.
+    if (resumingClub && prepared.shadows && openingLights) prepared.shadows.lighting = openingLights;
     if (prepared.steps?.next().done) prepared.steps = undefined;
     return prepared.steps !== undefined;
   }
@@ -405,15 +409,16 @@ export class ApartmentSetRenderer {
           if (entryScene && object.material instanceof THREE.MeshBasicMaterial && !sharedOverlays.includes(object)) sharedOverlays.push(object);
           continue;
         }
-        const player = object === arrivals?.actor, playerMeshes: ReturnMesh[] = [];
-        const colors = player ? playerMeshes : batch;
+        const player = object === arrivals?.actor || clubReturn && !arrivals && object === subjects[0];
+        const priorityPlayer = player && !clubReturn, playerMeshes: ReturnMesh[] = [];
+        const colors = priorityPlayer ? playerMeshes : batch;
         // Neo switches to the home sleeves and shirt on his first frame in the room.
         if (!invitation) for (const name of ['Tracking_arms', 'Tracking_shirt']) {
           const part = object.getObjectByName(name); if (part) collect(part, colors);
         }
         object.traverseVisible(mesh => collect(mesh, colors));
-        if (player) entryColors.unshift(...playerMeshes);
-        if (arrivals) for (const name of player ? ['Tracking_arms', 'Anatomical_head_and_hands'] : ['short04', 'Anatomical_head_and_hands']) {
+        if (priorityPlayer) entryColors.unshift(...playerMeshes);
+        if (arrivals || clubReturn && player) for (const name of player ? ['Tracking_arms', 'Anatomical_head_and_hands'] : ['short04', 'Anatomical_head_and_hands']) {
           const mesh = object.getObjectByName(name);
           if (!(mesh instanceof THREE.Mesh) || !(mesh.material instanceof THREE.MeshStandardMaterial)) continue;
           for (const map of [mesh.material.map, mesh.material.normalMap]) if (map) (player ? actorMaps : priorityMaps).add(map);
@@ -460,9 +465,7 @@ export class ApartmentSetRenderer {
     const shadowVariants = new Set<string>();
     const addCasters = (objects: Iterable<THREE.Object3D>) => shadows ? shadowCasterProxies(objects, shadows.materials, shadowVariants) : [];
     const casters = addCasters([...meshes, ...streetCasters]);
-    const depthQueue = shadows ? [
-      { lights: shadows.lighting, eye: camera, meshes: casters.slice() }, { lights: culling, eye, meshes: casters },
-    ] : [];
+    const sourceDepth = casters.slice(), destinationDepth = { lights: culling, eye, meshes: casters };
     const uploadBuffers = prepareMeshBuffers(renderer, eye, buffers, target);
     target.texture.name = 'apartment-return-preparation';
     const compile = (batch: (ReturnMesh | THREE.Sprite)[], lights: LightCulling, view: THREE.PerspectiveCamera, state: 'live' | 'depth',
@@ -482,16 +485,17 @@ export class ApartmentSetRenderer {
     const uploadTextures = this.prepareReturnTextures(renderer, textures, priorityMaps, entryScene !== undefined, actorMaps);
     try {
       let textureFirst = clubReturn;
-      while (arrivals?.subjects.length || returnEntry.length || entryPrograms.length || entryColors.length || queue.length || pending.length || depthQueue.some(depth => depth.meshes.length) || buffers.length
+      while (arrivals?.subjects.length || returnEntry.length || entryPrograms.length || entryColors.length || queue.length || pending.length || sourceDepth.length || destinationDepth.meshes.length || buffers.length
         || textures.size || priorityMaps.size || actorMaps.size) {
         if (arrivals?.subjects.length) {
           const newMeshes: ReturnMesh[] = [];
           addSubjects(arrivals.subjects.splice(0), newMeshes);
-          queue.unshift(...newMeshes);
+          (clubReturn ? returnEntry : queue).unshift(...newMeshes);
           const newCasters = addCasters([...entryColors, ...newMeshes]);
-          for (const depth of depthQueue) depth.meshes.unshift(...newCasters);
+          sourceDepth.unshift(...newCasters); destinationDepth.meshes.unshift(...newCasters);
         }
-        const depth = depthQueue.find(layout => layout.meshes.length);
+        const depth = shadows?.lighting && sourceDepth.length ? { lights: shadows.lighting, eye: camera, meshes: sourceDepth }
+          : destinationDepth.meshes.length ? destinationDepth : undefined;
         const programs = renderer.info.programs;
         const first = entryColors.length > 0 && !clubReturn;
         const shadowsFirst = (resume || clubReturn) && depth;
@@ -522,7 +526,7 @@ export class ApartmentSetRenderer {
           compile(depth.meshes.splice(0, 4), depth.lights, depth.eye, 'depth');
         } else if (buffers.length) uploadBuffers.next();
         // These uploads can run while the independently submitted colour programs are linking.
-        if ((arrivals || (ready < 0 && textureTurn)) && haveTextures) uploadTextures.next();
+        if ((arrivals && !clubReturn || ready < 0 && textureTurn) && haveTextures) uploadTextures.next();
         yield;
       }
     } finally { uploadTextures.return(undefined); uploadBuffers.return(undefined); culling.dispose(); target.dispose(); }

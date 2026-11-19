@@ -145,6 +145,47 @@ test('the nightclub return prepares the morning apartment, actual home clothes a
   assert.equal(h.apartment.returnNormalMeshes, undefined);
 });
 
+test('the saved nightclub exit prepares 101 before possession and adds the real club lights after it', t => {
+  const h = fixture(), { apartment, renderer, scene, actor, root, arms, journey } = h;
+  const clubLights = new LightCulling(scene), camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const fill = scene.children.find(light => light instanceof THREE.DirectionalLight && !light.castShadow)!;
+  fill.visible = false;
+  const room = root.children[0] as THREE.Mesh;
+  room.castShadow = true;
+  const spots = [new THREE.SpotLight(), new THREE.SpotLight(), new THREE.SpotLight()];
+  for (const spot of spots) spot.visible = false;
+  scene.add(...spots);
+  Object.assign(renderer, { shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap } });
+  t.after(() => { h.dispose(); clubLights.dispose(); spots.forEach(spot => spot.dispose()); });
+  const compile = renderer.compile, layouts: number[] = [];
+  t.mock.method(renderer, 'compile', (subject: THREE.Object3D, eye: THREE.Camera, lights: THREE.Scene) => {
+    let depth = false, spotCount = 0, directions = 0;
+    subject.traverse(object => { depth ||= object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial; });
+    lights.traverseVisible(light => {
+      if (light instanceof THREE.SpotLight) spotCount++;
+      if (light instanceof THREE.DirectionalLight) directions++;
+    });
+    if (depth) { layouts.push(spotCount); return; }
+    assert.equal(directions, 2, 'prepare the player light layout while the landing fill is hidden');
+    compile.call(renderer, subject, eye, lights);
+  });
+  journey.scene = 'm1_club'; journey.club = { phase: 'done', elapsed: 0 };
+  const prepare = (neo?: THREE.Group, source?: LightCulling, landing = !source) =>
+    apartment.prepareReturn(renderer, camera, scene, journey, neo, [], source, false, landing);
+  h.ready();
+  assert.equal(prepare(), true, 'the saved exit can prepare the room before Neo loads');
+  for (let frame = 0; frame < 35; frame++) prepare();
+  const normals = apartment.returnNormalMeshes;
+  assert.deepEqual(layouts, [1], 'prepare the apartment depth without using the overview lights');
+  assert.ok(h.batches.flat().includes(room));
+  fill.visible = true; spots.forEach(spot => { spot.visible = true; });
+  for (let frame = 0; frame < 60; frame++) prepare(actor, clubLights);
+  assert.equal(apartment.returnNormalMeshes, normals, 'late possession keeps the existing room preparation');
+  assert.deepEqual(layouts, [1, 3]);
+  assert.ok(h.batches.flat().includes(arms));
+  assert.equal(h.work.filter(step => step === 'texture').length, 1);
+});
+
 test('the nightclub return prepares both shadow layouts before drawing the morning apartment', t => {
   const h = fixture(), { renderer, scene, root, street, journey } = h;
   const clubLights = new LightCulling(scene), room = root.children[0] as THREE.Mesh;
