@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { filmStepPosition, filmPosition, OFFICE_DELIVERY_SECONDS, officeCourierRoot, playerBlocked, type OfficePhone, type WorldEvent } from '@auto_matrix/shared';
+import { Engine } from '../packages/client/src/engine/Engine.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -35,6 +36,32 @@ test('Rhineheart waits for Anderson to answer and the phone cannot appear before
   h.act(); h.frame(5); assert.equal(h.state().workday?.phase, 'delivered');
   assert.equal(h.state().phone, undefined, 'delivery does not automatically answer Morpheus');
   h.act(); h.frame(3); assert.equal(h.state().phone?.phase, 'ready');
+});
+
+function officeAudio(h: ReturnType<typeof setup>) {
+  const cues: string[] = [];
+  const engine = Object.assign(Object.create(Engine.prototype), {
+    playerControls: { id: 'neo' }, running: true, phoneRingAt: -10000,
+    audio: { phoneSound: (answer: boolean) => cues.push(answer ? 'answer' : 'ring'), dialogue: () => cues.push('duck') },
+    sandboxRenderer: { sync() {} }, updateAtmosphere() {},
+  });
+  const update = () => engine.setSandbox(structuredClone(h.sandbox.state), Object.fromEntries(h.world.agents));
+  return { cues, update };
+}
+
+test('Morpheus’s phone only rings once the courier finishes delivering the parcel', () => {
+  const h = setup(), { cues, update } = officeAudio(h);
+  h.goal(); h.act(); h.frame(10); h.act(); h.goal(); h.act();
+  update(); assert.deepEqual(cues, []);
+  h.frame(11); assert.equal(h.state().workday?.phase, 'signature');
+  update(); assert.deepEqual(cues, []);
+  h.act(); h.frame(2); assert.equal(h.state().workday?.phase, 'signing');
+  update(); assert.deepEqual(cues, []);
+  h.frame(3); assert.equal(h.state().workday?.phase, 'delivered');
+  update(); assert.deepEqual(cues, ['ring']);
+  h.act(); h.frame(3); assert.equal(h.state().phone?.phase, 'ready');
+  update(); h.act(); update(); update();
+  assert.deepEqual(cues, ['ring', 'answer', 'duck']);
 });
 
 for (const phase of ['briefing', 'answer', 'signing'] as const) {
@@ -111,6 +138,18 @@ function setupPhone(phase: OfficePhone['phase']) {
   assert.equal(h.state().phone?.phase, phase);
   return h;
 }
+
+test('quickly answering after pickup plays the slider and ducks the music when the ready snapshot is omitted', () => {
+  const h = setupPhone('pickup'), { cues, update } = officeAudio(h);
+  update(); cues.length = 0;
+  h.frame(3); assert.equal(h.state().phone?.phase, 'ready');
+  h.act(); assert.equal(h.state().phone?.phase, 'answering');
+  update(); update();
+  assert.deepEqual(cues, ['answer', 'duck']);
+  const restarted = officeAudio(h);
+  restarted.update();
+  assert.deepEqual(restarted.cues, [], 'a resumed call must not replay the answer cue');
+});
 
 for (const phase of ['pickup', 'ready', 'answering', 'connected'] as const) {
   test(`paused ${phase} phone action and returning courier survive disconnect, restore and re-entry`, () => {

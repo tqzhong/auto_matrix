@@ -658,10 +658,15 @@ export class Engine {
     if (after?.scene === 'm1_boss' && !after.visiting && after.actor === this.playerControls?.id && after.step === 1) {
       const phone = after.phone; const neo = agents[after.actor]; const center = FILM_SETS.film_metacortex_floor.center;
       const close = neo && Math.hypot(neo.position.x - center.x - OFFICE_CONTACT.x, neo.position.z - center.z - OFFICE_CONTACT.z) < 8;
-      if (this.running && close && (!phone || ['pickup', 'ready'].includes(phone.phase)) && performance.now() - this.phoneRingAt > 2400) {
-        this.phoneRingAt = performance.now(); this.audio.phoneSound(false);
+      const delivered = !after.workday || after.workday.phase === 'delivered';
+      const now = performance.now();
+      if (this.running && close && delivered && (!phone || ['pickup', 'ready'].includes(phone.phase)) && now - this.phoneRingAt > 2400) {
+        this.phoneRingAt = now; this.audio.phoneSound(false);
       }
-      if (phone?.phase === 'answering' && before?.phone?.phase === 'ready') { this.audio.phoneSound(true); this.audio.dialogue(); }
+      const previous = before?.scene === after.scene && !before.visiting ? before.phone?.phase : undefined;
+      if (this.running && phone?.phase === 'answering' && (previous === 'ready' || previous === 'pickup')) {
+        this.audio.phoneSound(true); this.audio.dialogue();
+      }
     }
     if (after?.scene === 'm1_morning' && !after.visiting && after.actor === this.playerControls?.id && this.running) {
       if (after.morning?.phase === 'alarm' && performance.now() - this.phoneRingAt > 1000) {
