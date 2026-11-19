@@ -261,6 +261,7 @@ const AMBUSH_ENTRY_MESHES = new Set([
   'Close-cut_scalp_undercoat', 'Swept_individual_hair_strands', 'morpheus-glasses-lens--1', 'morpheus-glasses-lens-1',
 ]);
 const RECOVERY_POINT_SLOTS = 8;
+const CORE_CHAIR_POINT_SLOTS = 16;
 const DOWNLOAD_WALK_CAST = {
   morpheus: ['Anatomical_head_and_hands', 'Tailored_trousers', 'shoes01', 'high-poly', 'morpheus-hammer-sweater', 'morpheus-hammer-collar'],
   apoc: ['Close-cut_scalp_undercoat', 'Swept_individual_hair_strands'],
@@ -475,6 +476,7 @@ export class FilmSetRenderer {
   };
   private preparedMeal?: DeckEntryPreparation;
   private currentScene?: string;
+  private cabinCore = false;
   private dockApuApproach = false;
   private mirror?: Reflector;
   private resetMirrorFrame?: () => void;
@@ -673,7 +675,8 @@ export class FilmSetRenderer {
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_cypher_console') return 17;
     // Reserve the full layout used while the blast lamp and intact hull overlap.
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm2_ship_lost') return SHIP_LOSS_POINT_SLOTS;
-    if (this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_recovery' || this.currentScene === 'm1_cabin')) return RECOVERY_POINT_SLOTS;
+    if (this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_recovery' || this.currentScene === 'm1_cabin'))
+      return this.cabinCore ? CORE_CHAIR_POINT_SLOTS : RECOVERY_POINT_SLOTS;
     // The training jack and objective can overlap the fifteen deck fixtures.
     return this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_truth_return' || this.currentScene === 'm1_download') ? 17 : 0;
   }
@@ -3839,6 +3842,8 @@ export class FilmSetRenderer {
     if (set?.id === 'film_adams_bridge' && player?.currentLocation === 'film_extraction_car') set = FILM_SETS.film_extraction_car;
     const journey = sandbox?.neoLife?.journey;
     const sceneId = journey?.visiting ?? journey?.scene;
+    // The escort objective goes dark at the chair. Keep the deck's existing point-light program.
+    this.cabinCore = Boolean(journey?.scene === 'm1_cabin' && !journey.visiting && player?.id === journey.actor && journey.awakening?.kind === 'core');
     const waiting = this.preparedSecondOracle;
     // The story packet can arrive before the new player and destination have reached the renderer.
     if (player && this.current && journey && !journey.visiting && waiting && waiting.scene === sceneId

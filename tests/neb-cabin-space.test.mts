@@ -1,9 +1,43 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { CABIN, CABIN_WALLS, CABIN_ROUTE_LENGTH, FILM_SETS, cabinGuidePose, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
+import { CABIN, CABIN_WALLS, CABIN_ROUTE_LENGTH, FILM_SETS, cabinGuidePose, filmPosition, playerBlocked, type AgentState, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
+
+test('the core chair keeps the escort lighting layout after the objective goes out', t => {
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  t.after(() => { film.dispose(); lighting.dispose(); });
+  const id = 'film_neb_deck', position = filmPosition(id, 2.4, -5.2);
+  const neo = { id: 'neo', isInMatrix: false, currentLocation: id, position } as AgentState;
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000), gpu = {} as THREE.WebGLRenderer;
+  camera.position.set(position.x - 6, position.y + 4, position.z - 1);
+  camera.lookAt(position.x + 4, position.y + 2, position.z);
+  camera.updateMatrixWorld(true);
+  const journey = { scene: 'm1_cabin', actor: 'neo', step: 1,
+    awakening: { kind: 'cabin', elapsed: 12, started: true } } as FilmJourney;
+  const marker = (film as unknown as { markerLight: THREE.PointLight }).markerLight;
+  const sample = () => {
+    film.update(neo, { neoLife: { journey } } as SandboxState, 0, position, camera.position);
+    lighting.minimumPointSlots = film.minimumPointSlots; lighting.stablePointSlots = film.stablePointSlots;
+    scene.updateMatrixWorld(true); scene.onBeforeRender(gpu, scene, camera, null);
+    const points: THREE.PointLight[] = [];
+    scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points.push(object); });
+    const lights = points.filter(point => point.intensity > 0 && point !== marker).map(point => [point.id, point.intensity]);
+    scene.onAfterRender(gpu, scene, camera);
+    return { count: points.length, lights };
+  };
+  const approach = sample();
+  assert.equal(marker.intensity, 5);
+  assert.equal(approach.count, 16);
+  journey.step = 2;
+  journey.awakening = { kind: 'core', elapsed: 0, started: true };
+  const connecting = sample();
+  assert.equal(marker.intensity, 0);
+  assert.equal(connecting.count, approach.count);
+  assert.deepEqual(connecting.lights, approach.lights);
+});
 
 test('the cabin grate is the visible walking surface rather than being buried underneath the older hull plates', () => {
   const root = new THREE.Group(), renderer = new NebDeckRenderer(root);
