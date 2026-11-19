@@ -6,7 +6,7 @@ import { upperDiggerActive, upperDiggerLocked } from '@auto_matrix/shared';
 import { diggersActive, diggersLocked } from '@auto_matrix/shared';
 import { dockGateActive, dockLastStandLocked, dockReloadLocked } from '@auto_matrix/shared';
 import { type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
-import { crosscutActive, crosscutPhoneRole } from '@auto_matrix/shared';
+import { CONNECTED_ROLES, CROSSCUT_ROLES, crosscutActive, crosscutPhoneRole } from '@auto_matrix/shared';
 import { createLoungeChair } from './LoungeChair.js';
 import { BasementSetRenderer } from './BasementSetRenderer.js';
 import { TvRepairRenderer } from './TvRepairRenderer.js';
@@ -243,6 +243,12 @@ const CONSOLE_ENTRY_MESHES = new Set([
   'console-mug-liquid', 'Anatomical_head_and_hands', 'high-poly', 'Anatomical_wrist_skin',
   'cypher-reality-sweater', 'neo-logos-sweater', 'Tailored_trousers', 'Fitted_leather_jacket', 'shoes01', 'short04',
   'Close-cut_scalp_undercoat', 'Swept_individual_hair_strands', 'neo-teeth-upper', 'neo-teeth-lower',
+]);
+const CROSSCUT_DECK_POINT_SLOTS = 16;
+const CROSSCUT_DECK_CREW = [...CROSSCUT_ROLES, ...CONNECTED_ROLES.map(id => `body:${id}`)];
+const CROSSCUT_DECK_ENTRY_MESHES = new Set([
+  ...CONSOLE_ENTRY_MESHES, 'neb-deck-floor', 'neb-cypher-crt-left-glass', 'trinity-logos-sweater',
+  'Tank_face', 'Tank_ribbed_shirt', 'Tank_harness', 'Tank_curled_hair',
 ]);
 const MEAL_ENTRY_MESHES = new Set([
   'neb-cabin-grating', 'neb-deck-floor', 'neb-cypher-crt-right-glass', 'neb-meal-table-runner', 'neb-neo-protein-bowl', 'meal-spoon-bowl',
@@ -504,6 +510,7 @@ export class FilmSetRenderer {
   private basementColors?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties'] };
   private tvRepair?: TvRepairRenderer;
   private preparedTvExit?: { renderer: TvRepairRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
+  private preparedCrosscutDeck?: DeckEntryPreparation;
   private crosscutTv?: TvRepairRenderer;
   private crosscutDeck?: { root: THREE.Group; renderer: NebDeckRenderer };
   private pillGlass?: THREE.Group;
@@ -637,13 +644,15 @@ export class FilmSetRenderer {
   get podEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedPods?.entryNormalMeshes; }
   get sentinelControlNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedSentinelControls?.normalMeshes; }
   get deckEntryNormalMeshes(): readonly THREE.Mesh[] | undefined {
-    return this.preparedConsole?.normalMeshes ?? this.preparedMeal?.normalMeshes ?? this.preparedMeetingDeck?.normalMeshes ?? this.preparedShipLoss?.normalMeshes;
+    return this.preparedConsole?.normalMeshes ?? this.preparedMeal?.normalMeshes ?? this.preparedMeetingDeck?.normalMeshes
+      ?? this.preparedShipLoss?.normalMeshes ?? this.preparedCrosscutDeck?.normalMeshes;
   }
   get ambushEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedAmbush?.normalMeshes; }
   get governmentEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedGovernment?.normalMeshes; }
   get secondOracleEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedSecondOracle?.normalMeshes; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
+    if (this.neb && this.crosscutDeck?.renderer === this.neb) return CROSSCUT_DECK_POINT_SLOTS;
     // Keep the apartment layout when the second call hands back the camera.
     if (this.current?.id === 'film_anderson_flat' && this.currentScene === 'm1_wake_again') return APARTMENT_POINT_SLOTS;
     // Keep the prepared layout while the shaft and sixth-floor lamps are revealed.
@@ -904,6 +913,18 @@ export class FilmSetRenderer {
       }
     }
     this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+  }
+  prepareCrosscutDeck(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    actor: (id: string) => ShipEntryCast, shadowSun: THREE.DirectionalLight, sourceLights?: LightCulling, resume = false): void {
+    const atShop = this.current?.id === 'film_tv_repair';
+    if (!journey || !crosscutActive(journey) || journey.tvExit?.phase === 'emerging' || this.crosscutDeck || !atShop && !resume) {
+      this.cancelCrosscutDeckPreparation(); return;
+    }
+    if (!this.preparedCrosscutDeck) {
+      const root = new THREE.Group();
+      this.preparedCrosscutDeck = { root, deck: new NebDeckRenderer(root, true), ready: false, liveMeshes: [], pendingCabin: new Map() };
+    }
+    this.prepareDeckEntry(renderer, camera, this.preparedCrosscutDeck, journey, 'crosscut', actor, shadowSun, atShop ? sourceLights : undefined, resume);
   }
   prepareLobby(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
@@ -1979,13 +2000,13 @@ export class FilmSetRenderer {
     this.prepareDeckEntry(renderer, camera, this.preparedConsole, journey, 'console', actor, shadowSun, inTunnels ? sourceLights : undefined, resume);
   }
   private prepareDeckEntry(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: DeckEntryPreparation, journey: FilmJourney,
-    kind: 'console' | 'meal' | 'wake' | 'loss', actor: (id: string) => ShipEntryCast, shadowSun: THREE.DirectionalLight, sourceLights: LightCulling | undefined, resume: boolean): void {
-    const meal = kind === 'meal', wake = kind === 'wake', loss = kind === 'loss';
+    kind: 'console' | 'meal' | 'wake' | 'loss' | 'crosscut', actor: (id: string) => ShipEntryCast, shadowSun: THREE.DirectionalLight, sourceLights: LightCulling | undefined, resume: boolean): void {
+    const meal = kind === 'meal', wake = kind === 'wake', loss = kind === 'loss', crosscut = kind === 'crosscut';
     const deckCrew = wake || loss, prioritizeMeshes = kind !== 'console';
-    const entryMeshes = meal ? MEAL_ENTRY_MESHES : CONSOLE_ENTRY_MESHES;
+    const entryMeshes = crosscut ? CROSSCUT_DECK_ENTRY_MESHES : meal ? MEAL_ENTRY_MESHES : CONSOLE_ENTRY_MESHES;
     if (!prepared.ready) {
       if (!prepared.deck.prepareStep()) return;
-      const entry: FilmJourney = wake ? { ...journey, scene: 'm2_meeting', actor: 'neo', reloaded: newReloaded('meeting') }
+      const entry: FilmJourney = crosscut ? journey : wake ? { ...journey, scene: 'm2_meeting', actor: 'neo', reloaded: newReloaded('meeting') }
         : loss ? { ...journey, scene: 'm2_ship_lost', step: 0, shipLoss: { phase: 'briefing', remaining: RELOADED_FINALE.evacuationSeconds, lastTick: 0, attempts: 0 } }
         : { ...journey, scene: meal ? 'm1_meal' : 'm1_cypher_console', interlude: { kind, phase: 'ready', elapsed: 0 } };
       prepared.deck.update(entry, 0);
@@ -2007,7 +2028,11 @@ export class FilmSetRenderer {
         this.queueColorTextures(colors.textures, deck);
         for (let slot = 1; slot < MEETING_WAKE_POINT_SLOTS; slot++) colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
       }
-      prepared.liveMeshes = [this.marker];
+      if (crosscut) {
+        // The goal ring is hidden during the ship shots. The alarm occupies the sixteenth slot.
+        colors.scene.children.find(light => light instanceof THREE.PointLight)?.removeFromParent();
+      }
+      prepared.liveMeshes = crosscut ? [] : [this.marker];
       prepared.buffers = { meshes: [], geometries: new WeakSet() };
       prepared.normalMeshes = colors.meshes.filter((mesh): mesh is ColorMesh => mesh instanceof THREE.Mesh && mesh.name === 'neb-cabin-grating');
       prepared.pendingCabin.clear();
@@ -2020,12 +2045,12 @@ export class FilmSetRenderer {
         this.queueEntryShadows(prepared, colors.meshes);
       }
       if (prioritizeMeshes) this.queueEntryBuffers(prepared, colors.meshes.filter(mesh => entryMeshes.has(mesh.name)));
-      colors.meshes.push(this.marker);
+      if (!crosscut) colors.meshes.push(this.marker);
       prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
       prepared.gpu = renderer.properties;
       prioritize = true;
     }
-    const crew = deckCrew ? ['neo', 'trinity', 'link', 'morpheus', 'tank', 'cypher', 'dozer']
+    const crew = crosscut ? CROSSCUT_DECK_CREW : deckCrew ? ['neo', 'trinity', 'link', 'morpheus', 'tank', 'cypher', 'dozer']
       : meal ? ['neo', 'tank', 'mouse', 'dozer', 'apoc', 'switch'] : ['neo', 'cypher', 'apoc', 'switch'];
     for (const id of crew) {
       const { model: group, shadow, garments } = actor(id); if (!group || colors.actors.has(group)) continue;
@@ -2038,7 +2063,7 @@ export class FilmSetRenderer {
       });
       if (!meshes.length && !ship.length) continue;
       colors.actors.add(group); colors.meshes.push(...meshes); prepared.liveMeshes.push(...meshes);
-      if (id === (prioritizeMeshes ? 'neo' : journey.actor) && shadow && !prepared.liveMeshes.includes(shadow)) {
+      if ((id === (prioritizeMeshes ? 'neo' : journey.actor) || crosscut && id === 'tank') && shadow && !prepared.liveMeshes.includes(shadow)) {
         colors.meshes.unshift(shadow); prepared.liveMeshes.push(shadow);
       }
       if (prioritizeMeshes) {
@@ -2067,7 +2092,8 @@ export class FilmSetRenderer {
     // A completed bargain can cut before the deck's full shadow queue is ready.
     const first = colors.meshes[0];
     const prioritizeColor = prioritizeMeshes && first !== undefined && entryMeshes.has(first.name);
-    this.prepareStagedEntry(renderer, camera, prepared, colors, sourceLights, loss ? 4 : meal ? 2 : 1, prioritizeColor && (meal || loss) ? 'bindings' : prioritizeColor);
+    this.prepareStagedEntry(renderer, camera, prepared, colors, sourceLights, loss ? 4 : meal || crosscut ? 2 : 1,
+      prioritizeColor && (meal || loss || crosscut) ? 'bindings' : prioritizeColor);
   }
   prepareRestaurant(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => EntryCast, shadowSun: THREE.DirectionalLight, resume = false, sourceLights?: LightCulling): void {
@@ -3987,6 +4013,9 @@ export class FilmSetRenderer {
       const preparedDojo = set?.id === 'film_kungfu_dojo' && sceneId === 'm1_dojo' && !journey?.visiting ? this.preparedDojo : undefined;
       if (preparedDojo) { this.preparedDojo = undefined; preparedDojo.lighting?.dispose(); preparedDojo.root.removeFromParent(); }
       const resumingScene = !this.current && !journey?.visiting;
+      const resumingCrosscutDeck = resumingScene && keepCrosscut && set?.id === 'film_tv_repair' && player?.id === journey?.actor
+        ? this.preparedCrosscutDeck : undefined;
+      if (resumingCrosscutDeck) this.preparedCrosscutDeck = undefined;
       const resumingMeetingDeck = resumingScene && sceneId === 'm2_dream' && set?.id === 'film_trinity_roof' && journey?.actor === player?.id
         ? this.preparedMeetingDeck : undefined;
       if (resumingMeetingDeck) this.preparedMeetingDeck = undefined;
@@ -4056,7 +4085,9 @@ export class FilmSetRenderer {
       if (preparedMeetingDeck) { this.preparedMeetingDeck = undefined; this.releaseEntryPreparation(preparedMeetingDeck, true); }
       const preparedShipLoss = set?.id === 'film_neb_deck' && sceneId === 'm2_ship_lost' && !journey?.visiting ? this.preparedShipLoss : undefined;
       if (preparedShipLoss) { this.preparedShipLoss = undefined; this.releaseEntryPreparation(preparedShipLoss, true); }
-      const preparedDeck = preparedConsole ?? preparedMeal ?? preparedMeetingDeck ?? preparedShipLoss;
+      const preparedCrosscutDeck = keepCrosscut && set?.id === 'film_neb_deck' ? this.preparedCrosscutDeck : undefined;
+      if (preparedCrosscutDeck) { this.preparedCrosscutDeck = undefined; this.releaseEntryPreparation(preparedCrosscutDeck, true); }
+      const preparedDeck = preparedConsole ?? preparedMeal ?? preparedMeetingDeck ?? preparedShipLoss ?? preparedCrosscutDeck;
       const preparedDream = set?.id === 'film_trinity_roof' && sceneId === 'm2_dream' && !journey?.visiting ? this.preparedDream : undefined;
       if (preparedDream) { this.preparedDream = undefined; this.releaseEntryPreparation(preparedDream, true); }
       const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall?.renderer : undefined;
@@ -4114,6 +4145,7 @@ export class FilmSetRenderer {
       this.preparedDream = resumingDream;
       this.preparedMeetingDeck = resumingMeetingDeck;
       this.preparedShipLoss = resumingShipLoss;
+      this.preparedCrosscutDeck = resumingCrosscutDeck;
       if (resumingZionCut) this.preparedZion = resumingZionCut;
       if (resumingLogosDefense) this.preparedLogosDefense = resumingLogosDefense;
       if (resumingSecondOracle) this.preparedSecondOracle = resumingSecondOracle;
@@ -4204,6 +4236,7 @@ export class FilmSetRenderer {
           } else if (preparedDeck) {
             preparedDeck.deck.finishPreparation();
             this.root.add(preparedDeck.root); this.neb = preparedDeck.deck;
+            if (preparedCrosscutDeck) this.crosscutDeck = { root: preparedDeck.root, renderer: preparedDeck.deck };
           } else if (preparedOneDeck) {
             this.root.add(preparedOneDeck.root); this.neb = preparedOneDeck.deck; this.theOne = preparedOneDeck.overlay;
           } else if (keepCrosscut) {
@@ -7312,6 +7345,10 @@ export class FilmSetRenderer {
     const prepared = this.preparedTvExit; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.renderer.dispose(); this.preparedTvExit = undefined;
   }
+  private cancelCrosscutDeckPreparation(): void {
+    const prepared = this.preparedCrosscutDeck; if (!prepared) return;
+    this.releaseEntryPreparation(prepared); prepared.deck.dispose(); this.preparedCrosscutDeck = undefined;
+  }
   private cancelLobbyPreparation(): void {
     const prepared = this.preparedLobby; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedLobby = undefined;
@@ -7405,6 +7442,7 @@ export class FilmSetRenderer {
     this.cancelRestaurantPreparation();
     this.cancelMealPreparation();
     this.cancelTvExitPreparation();
+    this.cancelCrosscutDeckPreparation();
     this.cancelLobbyPreparation();
     this.cancelGovernmentPreparation();
     this.cancelInterrogationPreparation();

@@ -132,3 +132,52 @@ test('the next real shaft entry adopts the prepared shop and an abandoned tunnel
   assert.equal(disposed, 0);
   h.film.update(undefined, undefined, 0); assert.equal(disposed, 1); h.film.dispose(); assert.equal(disposed, 1);
 });
+
+test('the repair shop stages the exact ship deck and crew before Tank takes control', t => {
+  const h = fixture(t);
+  const sun = new THREE.DirectionalLight(), camera = new THREE.PerspectiveCamera();
+  h.scene.add(sun, new THREE.DirectionalLight(), new THREE.HemisphereLight());
+  const crew = new THREE.Group(), skin = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+  skin.name = 'Anatomical_head_and_hands'; crew.add(skin);
+  crew.visible = false; h.scene.add(crew);
+  t.after(() => { skin.geometry.dispose(); skin.material.dispose(); });
+  let target: THREE.WebGLRenderTarget | null = null, deck: THREE.Object3D | undefined, crewCompiled = false;
+  const gpu = {
+    properties: { get: () => ({}) }, info: { programs: [] }, extensions: { has: () => true },
+    getRenderTarget: () => target, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
+    setRenderTarget: (value: typeof target) => { target = value; },
+    render() {},
+    compile(subject: THREE.Object3D, eye: THREE.Camera, layout: THREE.Scene) {
+      assert.equal(eye, camera); assert.equal(target?.width, 1);
+      const visible: THREE.Object3D[] = []; layout.traverseVisible(object => visible.push(object));
+      assert.equal(visible.filter(object => object instanceof THREE.PointLight).length, 16);
+      assert.equal(visible.filter(object => object instanceof THREE.DirectionalLight).length, 2);
+      assert.equal(visible.filter(object => object instanceof THREE.DirectionalLight && object.castShadow).length, 1);
+      const next = visible.find(object => object.name === 'neb-interior-deck');
+      assert.ok(next); if (deck) assert.equal(next, deck); else deck = next;
+      assert.equal(h.scene.getObjectByName(next.name), undefined);
+      subject.traverse(object => { if (object === skin) crewCompiled = true; });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const prepare = () => {
+    assert.equal(typeof h.film.prepareCrosscutDeck, 'function');
+    h.film.prepareCrosscutDeck(gpu, camera, h.journey, id => ({ model: id === 'body:neo' ? crew : undefined }), sun);
+  };
+  h.journey.tvExit!.phase = 'pickup'; h.view(0, 0, 0);
+  for (let i = 0; i < 80; i++) prepare();
+  assert.ok(deck && crewCompiled); assert.equal(target, null);
+  assert.equal(crew.visible, false); assert.equal(skin.parent, crew);
+  const geometry = (deck.getObjectByName('neb-deck-floor') as THREE.Mesh).geometry;
+  let disposed = 0; geometry.addEventListener('dispose', () => disposed++);
+
+  h.journey.actor = 'tank';
+  Object.assign(h.journey.tvExit!.crosscut!, { phase: 'assault', view: 'ship' });
+  const tank = { ...h.neo, id: 'tank', position: { ...FILM_SETS.film_neb_deck.center },
+    isInMatrix: false, currentLocation: 'film_neb_deck' };
+  h.film.update(tank, { neoLife: { journey: h.journey } } as SandboxState, 0, tank.position);
+  assert.equal(h.film.root.getObjectByName('neb-interior-deck'), deck);
+  assert.equal(h.film.minimumPointSlots, 16);
+  assert.equal(disposed, 0);
+  h.film.update(undefined, undefined, 0);
+  assert.equal(disposed, 1);
+});
