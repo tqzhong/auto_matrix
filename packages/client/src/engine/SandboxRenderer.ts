@@ -41,6 +41,7 @@ export class SandboxRenderer {
   private actors: Record<string, AgentState> = {};
 
   constructor(private scene: THREE.Scene, private agentRenderer?: AgentRenderer) {}
+  get apartmentPhoneLabel(): THREE.Sprite | undefined { return this.props.get('phone:neo_apartment')?.label; }
   getPhoneColorMesh(): THREE.Mesh | undefined {
     for (const prop of this.props.values()) if (prop.data.kind === 'phone' && prop.data.position.y >= 0) return prop.accent;
   }

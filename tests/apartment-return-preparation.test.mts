@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { lifeRoomCenter, type FilmJourney } from '@auto_matrix/shared';
-import { ApartmentSetRenderer, closedApartmentFar } from '../packages/client/src/engine/ApartmentSetRenderer.js';
+import { ApartmentSetRenderer, closedApartmentFar, type ReturnSubject } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { prepareOpaqueShadowDepth } from '../packages/client/src/engine/OpaqueShadowDepth.js';
 
@@ -75,7 +75,7 @@ function fixture() {
   } as unknown as THREE.WebGLRenderer;
   const journey = { scene: 'm1_pills', pills: { phase: 'taking', elapsed: 6, choice: 'blue' } } as FilmJourney;
   let resuming = false;
-  const prepare = (objects?: readonly (THREE.Group | THREE.Mesh | undefined)[], openingLights?: LightCulling, deferred = false, resume = false) => {
+  const prepare = (objects?: readonly (ReturnSubject | undefined)[], openingLights?: LightCulling, deferred = false, resume = false) => {
     resuming = journey.scene === 'm1_wake_up' && !journey.visiting && !deferred && (resume || resuming);
     const before = work.length, pending = apartment.prepareReturn(renderer, camera, scene, journey, actor, objects, openingLights, deferred, resume);
     assert.ok(work.length - before <= (resuming || deferred ? 2 : 1), 'at most one shader batch and one texture upload during an entry');
@@ -365,6 +365,23 @@ test('a resumed apartment waits a frame after shader completion before reading b
   for (let i = 0; i < 80 && prepare(); i++) { /* Drain the resumed room queue. */ }
   assert.ok(queued.size > 0);
   assert.equal(reads, queued.size, 'every queued program must still finish preparing');
+});
+
+test('the cold apartment prepares the phone label while it is still out of the camera view', t => {
+  const h = fixture();
+  const label = new THREE.Sprite(new THREE.SpriteMaterial());
+  label.visible = false; h.scene.add(label);
+  t.after(() => { h.dispose(); label.material.dispose(); });
+  h.journey.scene = 'm1_wake_up';
+  h.journey.contact = { phase: 'retrieving', elapsed: 1, propMotion: 'minidisc' };
+  h.prepare([label], undefined, false, true);
+  h.ready();
+  for (let frame = 0; frame < 12; frame++) h.prepare([label]);
+  assert.ok(h.batches.flat().includes(label), 'prepare the actual hidden label before the player walks by it');
+  assert.ok(h.slots.every(slots => slots === 10));
+  assert.ok(!h.apartment.returnNormalMeshes?.some(mesh => mesh.id === label.id));
+  assert.equal(label.parent, h.scene);
+  assert.equal(label.visible, false);
 });
 
 test('resuming 101 prepares the room and visitors with the player light layout before the first turn', t => {

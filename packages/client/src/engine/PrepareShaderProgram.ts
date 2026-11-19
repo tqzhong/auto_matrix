@@ -5,7 +5,7 @@ import { usesOpaqueShadowDepth } from './OpaqueShadowDepth.js';
 type Program = NonNullable<THREE.WebGLRenderer['info']['programs']>[number];
 
 /** Keep live material bindings while linking another program on the same material. */
-export function preserveProgramBindings(renderer: THREE.WebGLRenderer, meshes: readonly (THREE.Mesh | THREE.Points | undefined)[]): () => void {
+export function preserveProgramBindings(renderer: THREE.WebGLRenderer, meshes: readonly (THREE.Mesh | THREE.Points | THREE.Sprite | undefined)[]): () => void {
   const saved = new Map<THREE.Material, { bindings: Record<string, unknown>; live: Record<string, unknown> }>();
   for (const mesh of meshes) {
     if (!mesh || Array.isArray(mesh.material) || saved.has(mesh.material)) continue;

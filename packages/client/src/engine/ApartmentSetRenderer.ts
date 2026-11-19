@@ -35,7 +35,7 @@ type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number]
 type ReturnShadows = { lighting: LightCulling; materials: Set<THREE.MeshDepthMaterial>; entryFrames: number };
 type ApartmentReturn = 'm1_wake_up' | 'm1_morning' | 'neo_apartment' | 'deferred_contact';
 type ReturnMesh = THREE.Mesh | THREE.Line;
-type ReturnSubject = THREE.Group | THREE.Mesh;
+export type ReturnSubject = THREE.Group | THREE.Mesh | THREE.Sprite;
 type ReturnArrivals = { actor?: THREE.Group; subjects: ReturnSubject[] };
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
@@ -344,7 +344,7 @@ export class ApartmentSetRenderer {
     subjects: ReturnSubject[], destination: ApartmentReturn, normalMeshes?: THREE.Mesh[], shadows?: ReturnShadows, arrivals?: ReturnArrivals): Generator<void> {
     const opening = destination === 'm1_wake_up';
     const clubReturn = destination === 'm1_morning';
-    const sharedOverlays: THREE.Mesh[] = [];
+    const sharedOverlays: (THREE.Mesh | THREE.Sprite)[] = [];
     const invitation = destination === 'deferred_contact';
     const resume = opening && arrivals !== undefined;
     const entryScene = destination === 'neo_apartment' ? undefined : FILM_SCENE_BY_ID[invitation ? 'm1_wake_up' : destination];
@@ -378,7 +378,8 @@ export class ApartmentSetRenderer {
     eye.fov = 57; eye.updateProjectionMatrix(); eye.updateMatrixWorld();
     const frustum = new THREE.Frustum().setFromProjectionMatrix(eye.projectionMatrix.clone().multiply(eye.matrixWorldInverse));
     const meshes = new Set<ReturnMesh>(), textures = new Set<THREE.Texture>(), priorityMaps = new Set<THREE.Texture>(), actorMaps = new Set<THREE.Texture>();
-    const buffers: ReturnMesh[] = [], geometries = new Set<THREE.BufferGeometry>(), queue: ReturnMesh[] = [], entryColors: ReturnMesh[] = [];
+    const buffers: ReturnMesh[] = [], geometries = new Set<THREE.BufferGeometry>(), queue: ReturnMesh[] = [];
+    const entryColors: (ReturnMesh | THREE.Sprite)[] = [];
     const returnEntry: ReturnMesh[] = [];
     const collect = (mesh: THREE.Object3D, batch = queue) => {
       if (!(mesh instanceof THREE.Mesh || mesh instanceof THREE.Line) || meshes.has(mesh)) return;
@@ -395,6 +396,10 @@ export class ApartmentSetRenderer {
     };
     const addSubjects = (objects: ReturnSubject[], batch: ReturnMesh[]) => {
       for (const object of objects) {
+        if (object instanceof THREE.Sprite) {
+          if (!sharedOverlays.includes(object)) { sharedOverlays.push(object); entryColors.unshift(object); }
+          continue;
+        }
         if (object instanceof THREE.Mesh) {
           collect(object, batch);
           if (entryScene && object.material instanceof THREE.MeshBasicMaterial && !sharedOverlays.includes(object)) sharedOverlays.push(object);
@@ -460,7 +465,7 @@ export class ApartmentSetRenderer {
     ] : [];
     const uploadBuffers = prepareMeshBuffers(renderer, eye, buffers, target);
     target.texture.name = 'apartment-return-preparation';
-    const compile = (batch: ReturnMesh[], lights: LightCulling, view: THREE.PerspectiveCamera, state: 'live' | 'depth',
+    const compile = (batch: (ReturnMesh | THREE.Sprite)[], lights: LightCulling, view: THREE.PerspectiveCamera, state: 'live' | 'depth',
       order: 'queued' | 'first' | 'entry' = 'queued') => {
       const subject = new THREE.Group(), previous = renderer.getRenderTarget(), programs = renderer.info.programs, start = programs?.length ?? 0;
       subject.traverse = visit => batch.forEach(visit);

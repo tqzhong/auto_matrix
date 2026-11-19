@@ -275,6 +275,7 @@ type ClubPreparation = {
   colors?: CastColorPreparation;
   lighting?: LightCulling;
   readyPrograms?: Set<ColorProgram>;
+  liveOverlays?: THREE.Mesh[];
   roomTextures?: Set<THREE.Texture>;
   entryTextures?: Set<THREE.Texture>;
   textureTurn?: boolean;
@@ -1561,7 +1562,8 @@ export class FilmSetRenderer {
       this.queueColorTextures(prepared.roomTextures, this.colorMeshes(room.children.filter(child => child instanceof THREE.Mesh), true));
       prepared.textureTurn = true;
       prepared.entryTextures = new Set();
-      prepared.colors.meshes.push(this.marker, ...shadows.filter((mesh): mesh is THREE.Mesh => mesh !== undefined));
+      prepared.liveOverlays = [this.marker, ...shadows.filter((mesh): mesh is THREE.Mesh => mesh !== undefined)];
+      prepared.colors.meshes.push(...prepared.liveOverlays);
       prepared.lighting = new LightCulling(prepared.colors.scene);
       prepared.lighting.minimumPointSlots = CLUB_POINT_SLOTS; prepared.lighting.stablePointSlots = true;
       prepared.crowdQueued = prepared.renderer.crowdSources.length > 0;
@@ -1648,7 +1650,7 @@ export class FilmSetRenderer {
         return true;
       }
     }
-    return this.linkColorBatch(renderer, camera, colors, prepared.lighting, 'isolated');
+    return this.linkColorBatch(renderer, camera, colors, prepared.lighting, 'isolated', prepared.liveOverlays);
   }
   prepareDojo(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
     if (this.current?.id !== 'film_neb_deck' || this.currentScene !== 'm1_download' || journey?.scene !== 'm1_download' || journey.visiting

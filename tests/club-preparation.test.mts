@@ -39,6 +39,10 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   const landing = new THREE.SpotLight(); landing.castShadow = true;
   scene.add(sun, fill, new THREE.HemisphereLight(), landing);
   const lights = new LightCulling(scene); lights.minimumPointSlots = 10;
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), new THREE.MeshBasicMaterial());
+  scene.add(shadow);
+  const apartmentProgram = {}, clubProgram = {};
+  const shadowBindings = { currentProgram: apartmentProgram, uniforms: { opacity: { value: .55 } }, lightsStateVersion: 10 };
   const actor = new THREE.Group(), bitmap = new Bitmap(), faceBitmap = new Bitmap();
   const skinMap = new THREE.Texture(bitmap), faceMap = new THREE.Texture(faceBitmap);
   for (const map of [skinMap, faceMap]) { map.flipY = false; map.needsUpdate = true; }
@@ -52,7 +56,8 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   face.name = 'Anatomical_head_and_hands'; actor.add(skin, face);
   t.after(() => {
     film.dispose(); lights.dispose(); skin.geometry.dispose(); skin.material.dispose(); face.material.dispose();
-    skinMap.dispose(); faceMap.dispose(); patientNeck.material.dispose(); scene.environment!.dispose(); globalThis.document = document;
+    skinMap.dispose(); faceMap.dispose(); patientNeck.material.dispose(); shadow.geometry.dispose(); shadow.material.dispose();
+    scene.environment!.dispose(); globalThis.document = document;
     if (previousBitmap) globalThis.ImageBitmap = previousBitmap;
     else Reflect.deleteProperty(globalThis, 'ImageBitmap');
   });
@@ -92,7 +97,8 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     },
     generateMipmap() { assert.equal(bound?.rows, 2048); bound!.mipmaps = true; },
   };
-  const gpu = { properties: { get: (texture: THREE.Texture) => uploaded.get(texture) ?? {} }, info: { programs },
+  const gpu = { properties: { get: (object: THREE.Texture | THREE.Material) => object === shadow.material ? shadowBindings
+    : uploaded.get(object as THREE.Texture) ?? {} }, info: { programs },
     shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
     capabilities: { maxTextureSize: 4096 }, getContext: () => gl, getRenderTarget: () => target,
     state: { bindTexture(_target: number, texture: Allocation) { bound = texture; }, unbindTexture() { bound = undefined; } },
@@ -114,6 +120,9 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
       } else assert.equal(scene.getObjectByName('white-rabbit-club'), undefined);
       subject.traverse(object => {
         compiled.add(object);
+        if (object === shadow) {
+          shadowBindings.currentProgram = clubProgram; shadowBindings.uniforms.opacity.value = .2; shadowBindings.lightsStateVersion = 5;
+        }
         if (object instanceof THREE.Mesh && !Array.isArray(object.material)) materialsAtCompile.set(object, object.material.customProgramCacheKey());
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial) depths.push({ mesh: object, points, spots });
       });
@@ -140,7 +149,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   const prepare = (resume = false) => {
     preparationFrame++;
     const before = work, beforeBounds = bounded.size;
-    film.prepareClub(gpu, camera, journey, id => id === 'trinity' ? actor : neoActor, [], resume, lights);
+    film.prepareClub(gpu, camera, journey, id => id === 'trinity' ? actor : neoActor, [shadow], resume, lights);
     for (const { image, rows } of allocations.values()) if (!firstRows.has(image)) firstRows.set(image, rows);
     assert.ok(work - before <= 1, 'spread program reflection and uploads across different frames');
     assert.ok(bounded.size - beforeBounds <= 1, 'prepare at most one mock dancer per frame');
@@ -167,6 +176,12 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   assert.ok(compiled.has(skin), 'prepare Trinity’s actual hidden club costume');
   const first = [...rooms][0];
   const crowd = first.getObjectByName('club-dancer-0')!.getObjectByName('crowd-surface') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  await t.test('preparing the nightclub leaves the shared ground shadow bound to the apartment', () => {
+    assert.ok(compiled.has(shadow), 'the actual shadow must be ready for the club');
+    assert.ok(shadowBindings.currentProgram === apartmentProgram, 'the apartment still draws with its own program');
+    assert.equal(shadowBindings.lightsStateVersion, 10);
+    assert.equal(shadowBindings.uniforms.opacity.value, .55);
+  });
   assert.equal(first.children.filter(child => child.name.startsWith('club-dancer-')).length, 16);
   assert.ok(compiled.has(crowd));
   assert.equal([...compiled].filter(mesh => mesh.name === 'crowd-surface').length, 2);
