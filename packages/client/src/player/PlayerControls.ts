@@ -12,6 +12,7 @@ import { HAMMER_BEAMS, hammerRouteFrame, hammerShipPose, hammerShipPoint, hammer
 import { ZION_DEPLOYMENT, zionDeploymentLocked } from '@auto_matrix/shared';
 import { SENTINEL_SIGNAL } from '@auto_matrix/shared';
 import { mobilRefusalPose } from '@auto_matrix/shared';
+import { clubCloseness, clubRoot } from '@auto_matrix/shared';
 import { trainmanChaseLocked, helGarageLocked } from '@auto_matrix/shared';
 import { HEL_ELEVATOR, helElevatorFloor, helElevatorHandle } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorContact } from '@auto_matrix/shared';
@@ -3286,7 +3287,15 @@ export class PlayerControls {
       if (this.motion.grounded && this.motion.speed > .1) this.camera.position.y += Math.sin(this.cameraStep * 2) * .018;
       const pitch = interview?.pinned ? THREE.MathUtils.lerp(this.pitch, -Math.PI / 2 + this.pitch * .6, interview.pinned)
         : THREE.MathUtils.lerp(this.pitch, .67, reload);
-      this.camera.lookAt(target.x + Math.sin(this.yaw) * Math.cos(pitch), target.y - Math.sin(pitch), target.z + Math.cos(this.yaw) * Math.cos(pitch));
+      let yaw = this.yaw;
+      const club = this.motion.club, close = club?.role === 'neo' ? clubCloseness(club) : 0;
+      if (club && close > 0) {
+        const { center } = FILM_SETS.film_white_rabbit_club, trinity = clubRoot(club, 'trinity');
+        // Her head leans forward from the saved stance as she moves beside Neo.
+        const turn = Math.atan2(center.x + trinity.x - target.x, center.z + trinity.z + .34 * close - target.z) - state.rotation;
+        yaw += Math.atan2(Math.sin(turn), Math.cos(turn)) * close;
+      }
+      this.camera.lookAt(target.x + Math.sin(yaw) * Math.cos(pitch), target.y - Math.sin(pitch), target.z + Math.cos(yaw) * Math.cos(pitch));
     } else if (this.motion.persephone?.role === 'neo' && this.motion.persephone.phase === 'enacting'
       && state.currentLocation === 'film_le_vrai' && !this.dragging && now - this.lastLook > 700) {
       // Keep the eye and both actors on the inside of the washroom screen.

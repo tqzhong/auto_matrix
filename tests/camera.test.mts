@@ -2122,11 +2122,19 @@ test('the club whisper keeps Trinity visible beside Neo and first person can sti
   }
   game.camera.aspect = 16 / 9;
   game.key('KeyV'); game.key('KeyV', false); game.step(.2);
+  for (const aspect of [16 / 9, 426 / 680]) {
+    game.camera.aspect = aspect; game.step(.1);
+    const face = new THREE.Vector3(center.x + 6.27, center.y + 2.85, center.z - 4.39).project(game.camera);
+    assert.ok(Math.abs(face.x) < .8 && Math.abs(face.y) < .8 && Math.abs(face.z) < 1,
+      `the face from the cold whisper save must fit first person at aspect ${aspect}: ${face.toArray()}`);
+  }
   const nearbyTemple = new THREE.Vector3(center.x + 6.7, center.y + 2.95, center.z - 4.48).project(game.camera);
   assert.ok(nearbyTemple.z > -1 && nearbyTemple.z < 1, 'the first-person near plane must not slice through the nearby speaker');
-  const initial = game.yaw(); game.event(game.canvas, 'mousedown', { button: 2 });
+  const initial = game.yaw(), initialView = game.camera.getWorldDirection(new THREE.Vector3());
+  game.event(game.canvas, 'mousedown', { button: 2 });
   game.event(game.document, 'mousemove', { movementX: 80, movementY: 0 }); game.step(.1);
   assert.ok(Math.abs(angle(game.yaw(), initial)) > .08);
+  assert.ok(initialView.angleTo(game.camera.getWorldDirection(new THREE.Vector3())) > .08);
   game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
 });
 
