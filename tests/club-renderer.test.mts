@@ -62,6 +62,24 @@ test('Dujour and the club dancers have continuous exposed skin', async t => {
   });
 });
 
+test('the undershirt stays under Choi’s jacket and the same club wardrobe', async t => {
+  for (const id of ['choi', 'club-male']) await t.test(id, async () => {
+    const { scene } = await geometry(id);
+    scene.updateMatrixWorld(true);
+    const shirt = scene.getObjectByName('Black_crew_neck')!;
+    const jacket = scene.getObjectByName('Tailored_coat_upper')!;
+    for (const x of [-.195, -.18, -.165, .165, .18, .195]) for (const y of [3.178, 3.192, 3.206, 3.22]) {
+      const ray = new THREE.Raycaster(new THREE.Vector3(x, y, 1), new THREE.Vector3(0, 0, -1), 0, 1);
+      const [inner] = ray.intersectObject(shirt, false), [outer] = ray.intersectObject(jacket, false);
+      assert.ok(inner && outer);
+      assert.ok(inner.distance >= outer.distance - .002, `shirt crosses the jacket at ${x}, ${y}`);
+    }
+    const opening = new THREE.Raycaster(new THREE.Vector3(0, 3.21, 1), new THREE.Vector3(0, 0, -1), 0, .75);
+    assert.ok(opening.intersectObject(shirt, false).length, 'the shirt remains visible through the jacket opening');
+    assert.equal(opening.intersectObject(jacket, false).length, 0);
+  });
+});
+
 test('offscreen dancers can be culled without clipping their animated meshes', async t => {
   const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());

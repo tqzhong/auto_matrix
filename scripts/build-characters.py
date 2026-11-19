@@ -508,6 +508,12 @@ def main(source, character, office=False, tracking=False, club=False, dock=False
             # Taper only the skin that passes under the trousers so it cannot break through the waistband.
             covered_waist = np.clip((2.405 - points[:, 1]) / .055, 0, 1) * influence[:, :3].sum(axis=1)
             points[:, [0, 2]] *= (1 - .16 * covered_waist)[:, None]
+        if character == 'choi' and name == 'Black crew neck':
+            # Ease the chest under the lapels while preserving the visible shirt at the V opening.
+            sides = np.clip((np.abs(points[:, 0]) - .045) / .08, 0, 1)
+            chest = np.clip((points[:, 1] - 2.95) / .12, 0, 1) * np.clip((3.39 - points[:, 1]) / .09, 0, 1)
+            front = np.clip((points[:, 2] - .21) / .09, 0, 1)
+            points[:, 2] -= .036 * sides * chest * front
         if character == 'red-dress':
             heel = np.zeros(len(points))
             if name in ('Red dress anatomy', 'Red dress pumps', 'Red dress outsoles'):
