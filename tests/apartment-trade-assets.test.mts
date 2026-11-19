@@ -23,6 +23,31 @@ async function geometry(id: string) {
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
 
+test('the apartment visitors keep the fitted jacket and dark hair of their own rigs', async t => {
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({
+    beginPath() {}, ellipse() {}, fill() {}, stroke() {}, arc() {},
+  }) }) } as unknown as Document;
+  const assets = new Map(await Promise.all(['choi', 'dujour'].map(async id => [id, await geometry(id)] as const)));
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<NonNullable<ReturnType<typeof assets.get>>> }).load = async id => assets.get(id)!;
+  t.after(() => { models.dispose(); globalThis.document = previous; });
+  await t.test('Choi wears his own short jacket', async () => {
+    const rig = (await models.create('neo', undefined, 'choi'))!;
+    assert.ok(rig.root.getObjectByName('Tailored_coat_upper'));
+    assert.equal(rig.panels.length, 0, 'Neo’s long coat tails cross Choi’s trousers');
+  });
+  await t.test('Dujour keeps her dark hair', async () => {
+    const rig = (await models.create('trinity', undefined, 'dujour'))!;
+    const hair = rig.root.getObjectByName('short04') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+    const authored = assets.get('dujour')!.scene.getObjectByName('short04') as typeof hair;
+    assert.ok(hair.material.color.equals(authored.material.color));
+    const shader = { fragmentShader: '#include <map_fragment>' } as THREE.WebGLProgramParametersWithUniforms;
+    hair.material.onBeforeCompile(shader, {} as THREE.WebGLRenderer);
+    assert.equal(shader.fragmentShader, '#include <map_fragment>', 'the hair samples its authored dark material without lightening the color');
+  });
+});
+
 test('the actual Neo carries the collected cartridge into the handover and the disc remains continuous across ownership transfer', async () => {
   const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking', 'choi'].map(async id => [id, await geometry(id)] as const)));
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());

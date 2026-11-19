@@ -488,7 +488,7 @@ export class HeroModels {
     }
     const pelvis = bones.get('pelvis')!;
     const waist = new THREE.Vector3().fromArray(metadata.waist).sub(pelvis.position);
-    const panels = (id === 'neo' || id === 'morpheus') && !pedestrian && !police && support !== 'link' && support !== 'dozer' && support !== 'tank' && support !== 'cypher' && support !== 'mouse' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
+    const panels = (id === 'neo' || id === 'morpheus') && !apartmentRole && !pedestrian && !police && support !== 'link' && support !== 'dozer' && support !== 'tank' && support !== 'cypher' && support !== 'mouse' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
     const footHeight = this.point.setFromMatrixPosition(bones.get('ankle_L')!.matrixWorld).y;
     const silver = { value: 0 }; const wardrobe: HeroRig['wardrobe'] = [];
     let trackingSkin: HeroRig['trackingSkin'];
@@ -553,7 +553,7 @@ export class HeroModels {
         material.onBeforeCompile = shader => { shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.23, 0.24, 0.21), 0.55);'); };
         material.customProgramCacheKey = () => 'manager-hair-standin';
       }
-      if ((support === 'switch' || support === 'dujour') && /Hair|hair|Groom|groom/.test(material.name)) {
+      if (support === 'switch' && /Hair|hair|Groom|groom/.test(material.name)) {
         material.onBeforeCompile = shader => {
           shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.61, 0.56, 0.41), 0.78);');
         };

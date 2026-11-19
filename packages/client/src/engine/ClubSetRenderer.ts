@@ -210,7 +210,7 @@ export class ClubSetRenderer {
       bones.get('head')!.rotation.set(Math.sin(beat) * .04, Math.sin(beat * .24) * .17, weight * .3);
       for (const side of ['R', 'L']) {
         const sign = side === 'R' ? 1 : -1; const sway = Math.sin(beat + sign) * .12;
-        bones.get('shoulder_' + side)!.rotation.set(-.3 + sway, 0, sign * (.1 + (i % 3 === 0 ? .7 : .08)));
+        bones.get('shoulder_' + side)!.rotation.set(-.3 + sway, 0, -sign * (.1 + (i % 3 === 0 ? .7 : .08)));
         bones.get('elbow_' + side)!.rotation.set(-.6 + sway, 0, 0);
         bones.get('hip_' + side)!.rotation.set(-.06 + sway * .3, 0, sign * .07);
         bones.get('knee_' + side)!.rotation.x = .12 + Math.abs(sway) * .3;

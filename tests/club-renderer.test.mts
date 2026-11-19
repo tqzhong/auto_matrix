@@ -80,6 +80,29 @@ test('the undershirt stays under Choi’s jacket and the same club wardrobe', as
   });
 });
 
+test('wide dance gestures leave the elbows and wrists clear of the torso', async t => {
+  const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(assets.get(url.split('/').at(-1)!.replace('.glb', ''))!));
+  const root = new THREE.Group(), club = new ClubSetRenderer(root);
+  t.after(() => club.dispose());
+  await club.ready;
+  const point = new THREE.Vector3();
+  for (let frame = 0; frame < 15; frame++) {
+    club.update(frame * .31);
+    root.updateMatrixWorld(true);
+    for (const index of [0, 1, 3, 4]) {
+      const dancer = root.getObjectByName(`club-dancer-${index}`)!;
+      const chest = dancer.getObjectByName('chest')!;
+      for (const [side, sign] of [['R', -1], ['L', 1]] as const) for (const joint of ['elbow', 'wrist']) {
+        const bone = dancer.getObjectByName(joint + '_' + side)!;
+        chest.worldToLocal(bone.getWorldPosition(point));
+        assert.ok(point.x * sign > .25, `dancer ${index} ${joint}_${side} crosses the torso at frame ${frame}`);
+      }
+    }
+  }
+});
+
 test('offscreen dancers can be culled without clipping their animated meshes', async t => {
   const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
