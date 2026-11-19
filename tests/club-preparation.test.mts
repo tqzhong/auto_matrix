@@ -9,12 +9,23 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
 test('the invitation prepares the actual club and crowd offstage and transfers ownership on entry', async t => {
-  const document = globalThis.document, previousBitmap = globalThis.ImageBitmap;
-  class Bitmap { width = 2048; height = 2048; }
+  const document = globalThis.document, previousBitmap = globalThis.ImageBitmap, previousCreateBitmap = globalThis.createImageBitmap;
+  let closedRoomBitmaps = 0;
+  class Bitmap {
+    constructor(readonly width = 2048, readonly height = width) {}
+    close() { closedRoomBitmaps++; }
+  }
   globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  globalThis.createImageBitmap = (async (image: HTMLImageElement, options: ImageBitmapOptions) => {
+    assert.equal(options.imageOrientation, 'flipY');
+    return new Bitmap(image.width, image.height);
+  }) as typeof createImageBitmap;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
   t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string) => {
-    const map = new THREE.Texture({ width: 1024, height: 1024 }); map.name = url; map.needsUpdate = true; return map;
+    const map = new THREE.Texture(new Bitmap(1024)); map.flipY = false; map.name = url; map.needsUpdate = true; return map;
+  });
+  t.mock.method(THREE.ImageLoader.prototype, 'load', (_url: string, onLoad: (image: { width: number; height: number }) => void) => {
+    onLoad({ width: 1024, height: 1024 });
   });
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => {
     const scene = new THREE.Group();
@@ -63,6 +74,8 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     scene.environment!.dispose(); globalThis.document = document;
     if (previousBitmap) globalThis.ImageBitmap = previousBitmap;
     else Reflect.deleteProperty(globalThis, 'ImageBitmap');
+    if (previousCreateBitmap) globalThis.createImageBitmap = previousCreateBitmap;
+    else Reflect.deleteProperty(globalThis, 'createImageBitmap');
   });
 
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -75,6 +88,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   const reads: { ready: number | undefined; frame: number }[] = [];
   const rooms = new Set<THREE.Object3D>(), compiled = new Set<THREE.Object3D>();
   const geometryUploads = new Map<THREE.BufferGeometry, number>();
+  let roomMapsBeforeFirstGeometry: number | undefined;
   const bounded = new Set<THREE.SkinnedMesh>();
   const computeBounds = THREE.SkinnedMesh.prototype.computeBoundingSphere;
   t.mock.method(THREE.SkinnedMesh.prototype, 'computeBoundingSphere', function (this: THREE.SkinnedMesh) {
@@ -96,10 +110,10 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     texSubImage2D(_target: number, _level: number, _x: number, y: number, width: number, height: number,
       _format: number, _type: number, image: Bitmap) {
       assert.ok(bound); assert.equal(bound.image, image);
-      assert.deepEqual([y, width, height, skippedRows], [bound.rows, 2048, 256, y]);
+      assert.deepEqual([y, width, height, skippedRows], [bound.rows, image.width, 256, y]);
       bound.rows += height;
     },
-    generateMipmap() { assert.equal(bound?.rows, 2048); bound!.mipmaps = true; },
+    generateMipmap() { assert.ok(bound); assert.equal(bound.rows, bound.image.height); bound.mipmaps = true; },
   };
   const gpu = { properties: { get: (object: THREE.Texture | THREE.Material) => object === shadow.material ? shadowBindings
     : uploaded.get(object as THREE.Texture) ?? {} }, info: { programs },
@@ -111,6 +125,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     render(view: THREE.Scene) {
       assert.equal(target?.width, 1);
       assert.ok(view.children.length <= 4);
+      roomMapsBeforeFirstGeometry ??= [...allocations.values()].filter(allocation => allocation.image.width === 1024 && allocation.mipmaps).length;
       for (const object of view.children) {
         assert.ok(object instanceof THREE.Mesh && !Array.isArray(object.material) && !object.material.visible);
         geometryUploads.set(object.geometry, (geometryUploads.get(object.geometry) ?? 0) + 1);
@@ -151,8 +166,8 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     initTexture(texture: THREE.Texture) {
       let allocation = allocations.get(texture.source);
       if (!allocation && texture.image instanceof Bitmap) {
-        assert.equal(texture.source.dataReady, false);
-        allocation = { image: texture.image, rows: 0, mipmaps: false };
+        if (texture.image.width > 1024) assert.equal(texture.source.dataReady, false);
+        allocation = { image: texture.image, rows: texture.source.dataReady ? texture.image.height : 0, mipmaps: texture.source.dataReady };
         allocations.set(texture.source, allocation);
       }
       if (texture !== skinMap && texture !== faceMap) work++;
@@ -184,7 +199,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   film.update(neo, sandbox, 0);
   await drain();
   assert.ok([skinMap, faceMap].every(map => uploaded.get(map)?.__webglTexture?.mipmaps));
-  assert.ok(uploads.indexOf(skinMap) < uploads.findIndex(map => !(map.image instanceof Bitmap)),
+  assert.ok(uploads.indexOf(skinMap) < uploads.findIndex(map => map.name.startsWith('/assets/film-materials/')),
     'finish the entrance costume before uploading the waiting room and crowd maps');
   assert.equal(rooms.size, 1, 'keep preparing the same room after the player takes Neo');
   assert.ok(compiled.has(skin), 'prepare Trinity’s actual hidden club costume');
@@ -203,6 +218,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     const roomMeshes = first.children.filter(object => object instanceof THREE.Mesh);
     for (const geometry of [...roomMeshes.map(mesh => mesh.geometry), crowd.geometry, skin.geometry])
       assert.equal(geometryUploads.get(geometry), 1, 'upload each original geometry once offstage');
+    assert.ok(roomMapsBeforeFirstGeometry! < 12, 'the room texture queue must not postpone all geometry until its last strip');
     assert.ok(!geometryUploads.has(apartmentBody.geometry), 'leave the apartment actor out of the club buffer queue');
     assert.equal(crowd.parent, first.getObjectByName('club-dancer-0'));
     assert.equal(skin.parent, actor);
@@ -232,9 +248,12 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
       assert.ok(meshes.every(mesh => mesh.material.depthPacking === THREE.RGBADepthPacking));
     }
   });
-  await t.test('the room maps are ready before the crowd maps', () => {
-    const roomMaps = uploads.filter(map => map.name.startsWith('/assets/film-materials/'));
-    assert.equal(roomMaps.length, 12);
+  await t.test('stage the 1024-pixel room maps one strip per frame before the crowd maps', () => {
+    const roomMaps = [...new Set(uploads.filter(map => map.name.startsWith('/assets/film-materials/') && uploaded.get(map)?.__webglTexture
+      && (map.image as Bitmap).height === 1024))];
+    const images = new Set(roomMaps.map(map => map.image as Bitmap));
+    assert.equal(images.size, 12);
+    assert.ok([...images].every(image => firstRows.get(image) === 256), 'room maps must not send all 1024 rows in one upload');
     const crowdStart = uploads.findIndex(map => map.image === crowd.material.map!.image);
     assert.ok(roomMaps.every(map => uploads.indexOf(map) < crowdStart));
   });
@@ -279,8 +298,15 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   delete sandbox.neoLife!.deferredContact;
   journey.visiting = apartment.id; prepare(); assert.equal(cancelled, 1);
   assert.equal(cancelledDepths, abandoned.size);
+  assert.equal(closedRoomBitmaps, 12);
   delete journey.visiting;
+  journey.contact!.phase = 'accepted';
+  const firstAcceptedUpload = uploads.length;
   await drain();
+  const acceptedRoomBitmaps = new Set(uploads.slice(firstAcceptedUpload)
+    .filter(texture => texture.name.startsWith('/assets/film-materials/')).map(texture => texture.image as Bitmap));
+  assert.equal(acceptedRoomBitmaps.size, 12);
+  assert.ok([...acceptedRoomBitmaps].every(image => firstRows.get(image) === 512), 'an accepted invite can use two strips to finish preparing for entry');
   const room = [...rooms].at(-1)!;
   assert.notEqual(room, first);
   const floor = room.children.find(object => object instanceof THREE.Mesh) as THREE.Mesh;

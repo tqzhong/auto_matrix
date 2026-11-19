@@ -10,6 +10,7 @@ export class ClubSetRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
+  private roomBitmaps = new Set<ImageBitmap>();
   private skeletons = new Set<THREE.Skeleton>();
   private dancers: { root: THREE.Group; bones: Map<string, THREE.Bone>; pelvis: THREE.Vector3 }[] = [];
   private preparedDancers = 0;
@@ -119,10 +120,29 @@ export class ClubSetRenderer {
   private mat(color: number, roughness: number, metalness = 0, source?: string, repeat = 1): THREE.MeshStandardMaterial {
     const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(mat);
     if (source) for (const [key, suffix] of [['map', 'color'], ['normalMap', 'normal'], ['roughnessMap', 'roughness']] as const) {
-      const texture = new THREE.TextureLoader().load(`/assets/film-materials/${source}-${suffix}.jpg`); texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(repeat, repeat); texture.anisotropy = 4;
+      const url = `/assets/film-materials/${source}-${suffix}.jpg`;
+      const texture = this.roomMap(url); texture.name = url; texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(repeat, repeat); texture.anisotropy = 4;
       if (key === 'map') texture.colorSpace = THREE.SRGBColorSpace; mat[key] = texture; this.textures.add(texture);
     }
     return mat;
+  }
+  private roomMap(url: string): THREE.Texture {
+    if (typeof createImageBitmap !== 'function') return new THREE.TextureLoader().load(url);
+    const texture = new THREE.Texture();
+    new THREE.ImageLoader().load(url, image => {
+      if (this.disposed) return;
+      const install = (loaded: HTMLImageElement | ImageBitmap) => {
+        if ('close' in loaded) {
+          if (this.disposed) { loaded.close(); return; }
+          this.roomBitmaps.add(loaded); texture.flipY = false;
+        }
+        if (this.disposed) return;
+        texture.image = loaded; texture.needsUpdate = true;
+      };
+      // Bitmap uploads use the decode orientation in place of WebGL's flipY setting.
+      void createImageBitmap(image, { imageOrientation: 'flipY', premultiplyAlpha: 'none' }).then(install, () => install(image));
+    });
+    return texture;
   }
   private mesh(geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number): THREE.Mesh {
     this.geometries.add(geo); const mesh = new THREE.Mesh(geo, mat); mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = true; this.root.add(mesh); return mesh;
@@ -199,6 +219,7 @@ export class ClubSetRenderer {
   }
   private release(): void {
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.skeletons.forEach(s => s.dispose());
+    this.roomBitmaps.forEach(bitmap => bitmap.close()); this.roomBitmaps.clear();
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.skeletons.clear();
   }
   dispose(): void {

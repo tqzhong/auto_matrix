@@ -276,7 +276,7 @@ type ClubPreparation = {
   lighting?: LightCulling;
   readyPrograms?: Set<ColorProgram>;
   liveOverlays?: THREE.Mesh[];
-  roomTextures?: Set<THREE.Texture>;
+  roomMaps?: { textures: Set<THREE.Texture>; textureUpload?: Generator<void, boolean> };
   entryTextures?: Set<THREE.Texture>;
   textureTurn?: boolean;
   textureUpload?: Generator<void, boolean>;
@@ -1548,6 +1548,7 @@ export class FilmSetRenderer {
     const parallel = renderer.extensions.has('KHR_parallel_shader_compile');
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
+      prepared.roomMaps?.textureUpload?.return(false);
       prepared.buffers?.upload?.return(undefined);
       prepared.lighting?.dispose(); prepared.gpu = renderer.properties;
       prepared.shadows?.materials.forEach(material => material.dispose());
@@ -1562,8 +1563,9 @@ export class FilmSetRenderer {
         prepared.shadows = { materials, seen, apartment: casters.slice(), room: casters };
       }
       const room = prepared.root.getObjectByName('white-rabbit-club')!;
-      prepared.roomTextures = new Set();
-      this.queueColorTextures(prepared.roomTextures, this.colorMeshes(room.children.filter(child => child instanceof THREE.Mesh), true));
+      prepared.roomMaps = { textures: new Set() };
+      this.queueColorTextures(prepared.roomMaps.textures, this.colorMeshes(room.children.filter(child => child instanceof THREE.Mesh), true));
+      for (const map of prepared.roomMaps.textures) prepared.colors.textures.delete(map);
       prepared.textureTurn = true;
       prepared.entryTextures = new Set();
       prepared.liveOverlays = [this.marker, ...shadows.filter((mesh): mesh is THREE.Mesh => mesh !== undefined)];
@@ -1622,14 +1624,18 @@ export class FilmSetRenderer {
     // Start the entrance costume before the crowd and scenery can exhaust a short resume window.
     if (entryTextures.size && this.prepareStagedColorTexture(renderer, prepared, entryTextures, 2)) return;
     // Advance the room and crowd textures while the shader queue is still active.
-    const roomTextures = prepared.roomTextures!;
+    const roomMaps = prepared.roomMaps!;
+    const buffers = prepared.buffers!;
     const textureTurn = prepared.textureTurn;
     prepared.textureTurn = !textureTurn;
     const apartmentLights = onLanding ? undefined : sourceLights;
     if (!textureTurn && parallel && this.prepareClubProgram(renderer, camera, prepared, apartmentLights, ready)) return;
-    if (this.prepareColorTexture(renderer, roomTextures) || this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) return;
+    // Give the geometry queue any unused shader turn before the remaining texture strips.
+    const bufferTurn = !textureTurn && buffers.meshes.length > 0;
+    const roomStrips = journey.contact?.phase === 'accepted' ? 2 : 1;
+    if (!bufferTurn && (this.prepareStagedColorTexture(renderer, roomMaps, roomMaps.textures, roomStrips, 1024)
+      || this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2))) return;
     if (textureTurn && parallel && this.prepareClubProgram(renderer, camera, prepared, apartmentLights, ready)) return;
-    const buffers = prepared.buffers!;
     if (buffers.meshes.length) buffers.upload ??= prepareMeshBuffers(renderer, camera, buffers.meshes);
     if (buffers.upload?.next().done) buffers.upload = undefined;
   }
@@ -2967,7 +2973,7 @@ export class FilmSetRenderer {
     this.prepareStagedColorTexture(renderer, prepared, prepared.textures);
   }
   private prepareStagedColorTexture(renderer: THREE.WebGLRenderer, prepared: { textureUpload?: Generator<void, boolean> },
-    textures: Set<THREE.Texture>, stripsPerFrame = 1): boolean {
+    textures: Set<THREE.Texture>, stripsPerFrame = 1, minimumBitmapSize = 2048): boolean {
     if (!prepared.textureUpload) {
       for (const texture of textures) {
         const image = texture.image as { width?: number; complete?: boolean } | null;
@@ -2975,7 +2981,7 @@ export class FilmSetRenderer {
         textures.delete(texture);
         const uploaded = renderer.properties.get(texture) as { __version?: number; __webglTexture?: WebGLTexture };
         if ((image.width ?? 0) < 1024 || uploaded.__version === texture.version) continue;
-        const bitmap = !uploaded.__webglTexture && bitmapUploadImage(renderer, texture);
+        const bitmap = !uploaded.__webglTexture && bitmapUploadImage(renderer, texture, minimumBitmapSize);
         if (!bitmap) { renderer.initTexture(texture); return true; }
         prepared.textureUpload = stageBitmapTexture(renderer, texture, bitmap);
         break;
@@ -3938,6 +3944,7 @@ export class FilmSetRenderer {
         ? this.preparedClub : undefined;
       if (preparedClub) {
         this.preparedClub = undefined; preparedClub.textureUpload?.return(false);
+        preparedClub.roomMaps?.textureUpload?.return(false);
         preparedClub.buffers?.upload?.return(undefined);
         preparedClub.lighting?.dispose(); preparedClub.root.removeFromParent();
       }
@@ -7193,6 +7200,7 @@ export class FilmSetRenderer {
   private cancelClubPreparation(): void {
     const prepared = this.preparedClub; if (!prepared) return;
     this.preparedClub = undefined; prepared.textureUpload?.return(false); prepared.lighting?.dispose();
+    prepared.roomMaps?.textureUpload?.return(false);
     prepared.buffers?.upload?.return(undefined);
     prepared.shadows?.materials.forEach(material => material.dispose());
     prepared.root.removeFromParent(); prepared.renderer.dispose();
