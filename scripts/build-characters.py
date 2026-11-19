@@ -504,6 +504,10 @@ def main(source, character, office=False, tracking=False, club=False, dock=False
         if not faces:
             return
         points = game_space(bake(vertices, influence))
+        if character == 'dujour' and name == 'Anatomical head and hands':
+            # Taper only the skin that passes under the trousers so it cannot break through the waistband.
+            covered_waist = np.clip((2.405 - points[:, 1]) / .055, 0, 1) * influence[:, :3].sum(axis=1)
+            points[:, [0, 2]] *= (1 - .16 * covered_waist)[:, None]
         if character == 'red-dress':
             heel = np.zeros(len(points))
             if name in ('Red dress anatomy', 'Red dress pumps', 'Red dress outsoles'):
@@ -574,8 +578,14 @@ def main(source, character, office=False, tracking=False, club=False, dock=False
     hand_bones = [i for i, name in enumerate(names) if name.startswith(('wrist', 'finger'))]
     neckline = pivot('neck01')[1] - .08
     waistline = pivot('spine03')[1] + .9
-    exposed = [f for f in body_faces if character == 'dujour' and np.mean(base[[i for i, _ in f], 1]) > waistline or np.mean(base[[i for i, _ in f], 1]) > neckline - .85 or
-               np.mean(weights[[i for i, _ in f]][:, hand_bones].sum(axis=1)) > .85]
+    # Dujour's cropped, sleeveless top exposes the abdomen and the entire forearms.
+    skin_hem = floor + spec['height'] * .53 / scale if character == 'dujour' else neckline - .85
+    exposed_bones, exposed_weight = hand_bones, .85
+    if character == 'dujour':
+        exposed_bones = hand_bones + [i for i, name in enumerate(names) if name.startswith(('shoulder', 'elbow'))]
+        exposed_weight = .2
+    exposed = [f for f in body_faces if np.mean(base[[i for i, _ in f], 1]) > skin_hem or
+               np.mean(weights[[i for i, _ in f]][:, exposed_bones].sum(axis=1)) > exposed_weight]
     if character == 'red-dress': exposed = body_faces
     if dock:
         exposed = [f for f in body_faces if np.mean(base[[i for i, _ in f], 1]) > neckline - .12 or

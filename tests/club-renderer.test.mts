@@ -22,6 +22,46 @@ async function geometry(id: string) {
   return new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
 }
 
+test('Dujour and the club dancers have continuous exposed skin', async t => {
+  for (const id of ['dujour', 'club-female']) await t.test(id, async t => {
+    const { scene } = await geometry(id);
+    scene.updateMatrixWorld(true);
+    const torso: THREE.SkinnedMesh[] = [];
+    scene.traverse(mesh => {
+      if (mesh instanceof THREE.SkinnedMesh && ['Anatomical_head_and_hands', 'Black_crew_neck', 'Tailored_trousers'].includes(mesh.name)) torso.push(mesh);
+    });
+    assert.equal(torso.length, 3);
+    await t.test('waist', () => {
+      for (const side of [-1, 1]) for (const x of [-.15, -.05, .05, .15]) for (const y of [2.38, 2.45, 2.52, 2.59, 2.66, 2.73]) {
+        const ray = new THREE.Raycaster(new THREE.Vector3(x, y, side), new THREE.Vector3(0, 0, -side), 0, 1);
+        assert.ok(ray.intersectObjects(torso, false).length, `the waist is open at ${x}, ${y} from side ${side}`);
+      }
+    });
+    await t.test('forearms', () => {
+      const skin = torso.find(mesh => mesh.name === 'Anatomical_head_and_hands')!;
+      for (const side of ['L', 'R']) {
+        const elbow = scene.getObjectByName('elbow_' + side)!.getWorldPosition(new THREE.Vector3());
+        const wrist = scene.getObjectByName('wrist_' + side)!.getWorldPosition(new THREE.Vector3());
+        for (const progress of [.35, .5, .65, .8]) for (const view of [-1, 1]) {
+          const origin = elbow.clone().lerp(wrist, progress).add(new THREE.Vector3(0, 0, view * .35));
+          const ray = new THREE.Raycaster(origin, new THREE.Vector3(0, 0, -view), 0, .45);
+          assert.ok(ray.intersectObject(skin, false).length, `forearm ${side} is open at ${progress} from side ${view}`);
+        }
+      }
+    });
+    await t.test('the skin continues inside the back of the trousers', () => {
+      const skin = torso.find(mesh => mesh.name === 'Anatomical_head_and_hands')!;
+      const pants = torso.find(mesh => mesh.name === 'Tailored_trousers')!;
+      for (const x of [-.306, -.294, .294, .306]) {
+        const ray = new THREE.Raycaster(new THREE.Vector3(x, 2.352, -1), new THREE.Vector3(0, 0, 1), 0, 1);
+        const [skinHit] = ray.intersectObject(skin, false), [pantsHit] = ray.intersectObject(pants, false);
+        assert.ok(skinHit && pantsHit);
+        assert.ok(skinHit.distance >= pantsHit.distance - .008, `skin breaks through the waistband at ${x}`);
+      }
+    });
+  });
+});
+
 test('offscreen dancers can be culled without clipping their animated meshes', async t => {
   const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
