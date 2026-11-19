@@ -145,24 +145,33 @@ export class ClubSetRenderer {
   private async loadCrowd(): Promise<void> {
     const assets = await Promise.all(['male', 'female'].map(async sex => {
       const asset = await new GLTFLoader().loadAsync(`/assets/characters/club-${sex}.glb`);
+      const skins: THREE.Skeleton[] = [];
       asset.scene.traverse(object => {
         if (!(object instanceof THREE.Mesh)) return;
         this.geometries.add(object.geometry); const material = object.material as THREE.MeshStandardMaterial; this.materials.add(material);
         for (const texture of [material.map, material.normalMap]) if (texture) this.textures.add(texture);
-        if (object instanceof THREE.SkinnedMesh) this.skeletons.add(object.skeleton);
+        if (object instanceof THREE.SkinnedMesh) { skins.push(object.skeleton); this.skeletons.add(object.skeleton); }
       });
       if (this.disposed) this.release();
-      return asset;
+      return { scene: asset.scene, skins };
     }));
     if (this.disposed) { this.release(); return; }
     for (const [i, position] of CLUB_DANCERS.entries()) {
-      const root = clone(assets[i % 2].scene) as THREE.Group; root.name = `club-dancer-${i}`;
+      const asset = assets[i % 2], root = clone(asset.scene) as THREE.Group; root.name = `club-dancer-${i}`;
       const bones = new Map<string, THREE.Bone>(); const colors = [0x302c30, 0x242c2b, 0x49483a, 0x3b2226];
+      const clonedSkins = new Map<THREE.Skeleton, THREE.Skeleton>();
+      let skinIndex = 0;
       root.traverse(object => {
         if (object instanceof THREE.Bone) bones.set(object.name, object);
         if (!(object instanceof THREE.Mesh)) return;
         object.castShadow = false; object.receiveShadow = true;
-        if (object instanceof THREE.SkinnedMesh) { object.frustumCulled = false; this.skeletons.add(object.skeleton); }
+        if (object instanceof THREE.SkinnedMesh) {
+          // SkeletonUtils preserves mesh order but clones a skeleton per mesh.
+          const sourceSkin = asset.skins[skinIndex++], sharedSkin = clonedSkins.get(sourceSkin);
+          if (sharedSkin) object.skeleton = sharedSkin;
+          else { clonedSkins.set(sourceSkin, object.skeleton); this.skeletons.add(object.skeleton); }
+          object.frustumCulled = false;
+        }
         const source = object.material as THREE.MeshStandardMaterial;
         if (/Coat|Trousers/.test(source.name)) { const mat = source.clone(); mat.color.setHex(colors[i % colors.length]); object.material = mat; this.materials.add(mat); }
       });

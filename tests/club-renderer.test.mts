@@ -33,6 +33,14 @@ test('offscreen dancers can be culled without clipping their animated meshes', a
   const meshes: THREE.SkinnedMesh[] = [];
   root.traverse(object => { if (object instanceof THREE.SkinnedMesh) meshes.push(object); });
   assert.equal(meshes.length, 104);
+  const crowd = root.getObjectByName('white-rabbit-club')!.children.filter(object => object.name.startsWith('club-dancer-'));
+  assert.equal(crowd.length, 16);
+  for (const dancer of crowd) {
+    const skins = new Set<THREE.Skeleton>();
+    dancer.traverse(object => { if (object instanceof THREE.SkinnedMesh) skins.add(object.skeleton); });
+    assert.equal(skins.size, 1, `${dancer.name} should upload the same pose once per pass`);
+    assert.ok([...skins][0].bones.every(bone => dancer.getObjectById(bone.id) === bone), 'each dancer keeps their own animated bones');
+  }
   assert.ok(meshes.every(mesh => mesh.frustumCulled), 'use the prepared bounds for the crowd draw');
   const point = new THREE.Vector3();
   let minimumClearance = Infinity;
