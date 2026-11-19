@@ -1,12 +1,36 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { APARTMENT, APARTMENT_CHAIR, MORNING, filmPosition, lifeRoomCenter, groundHeight, playerBlocked, type FilmJourney, type NeoLifeState, type SandboxState } from '@auto_matrix/shared';
+import { APARTMENT, APARTMENT_CHAIR, APARTMENT_ROOM, MORNING, filmPosition, lifeRoomCenter, groundHeight, playerBlocked, type FilmJourney, type NeoLifeState, type SandboxState } from '@auto_matrix/shared';
 import { LifeInteriors } from '../packages/client/src/engine/LifeInteriors.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
+import { VoxelRenderer } from '../packages/client/src/engine/VoxelRenderer.js';
+
+test('the city road and lane markings stop at the apartment floor', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const city = new VoxelRenderer(new THREE.Scene());
+  (city as unknown as { buildStreets(): void }).buildStreets();
+  city.matrix.updateMatrixWorld(true);
+  try {
+    const roads = city.matrix.children.filter(object => object instanceof THREE.Mesh && object.material === city.streetAsphalt);
+    const markings = city.matrix.children.filter(object => object instanceof THREE.LineSegments);
+    assert.ok(roads.length && markings.length);
+    const ray = new THREE.Raycaster();
+    ray.params.Line = { threshold: .015 };
+    const cast = (x: number, z: number, objects: THREE.Object3D[]) => {
+      ray.set(new THREE.Vector3(x, 1, z), new THREE.Vector3(0, -1, 0));
+      return ray.intersectObjects(objects, false);
+    };
+    const { x, z } = APARTMENT_ROOM.center;
+    assert.ok(cast(x - 10, z + 31, roads).length, 'the street continues past the apartment');
+    assert.ok(cast(x - 10, z + 25, markings).length, 'outside lane markings remain');
+    assert.equal(cast(x - 5, z + 14, roads).length, 0, 'asphalt cannot render above the landing');
+    assert.equal(cast(x - 10, z + 18, markings).length, 0, 'a partial lane marking stops at the outer wall');
+  } finally { city.matrix.clear(); }
+});
 
 test('the hollow book is a small floor prop beside the bed, rather than a large book on a raised table', t => {
   const original = globalThis.document;

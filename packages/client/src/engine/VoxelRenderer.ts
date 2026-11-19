@@ -14,19 +14,30 @@ function insideMetacortex(x: number, z: number): boolean {
   return Math.abs(x - METACORTEX.center.x) < METACORTEX.width / 2 && Math.abs(z - METACORTEX.center.z) < METACORTEX.depth / 2;
 }
 
-function roadOutsideLobby(geometry: THREE.PlaneGeometry, matrix: THREE.Matrix4): THREE.BufferGeometry {
+type RoadRectangle = [left: number, right: number, bottom: number, top: number];
+
+function roadOutsideInteriors(geometry: THREE.PlaneGeometry, matrix: THREE.Matrix4): THREE.BufferGeometry {
   const inverse = matrix.clone().invert(), { width, height } = geometry.parameters;
-  const a = new THREE.Vector3(METACORTEX.center.x - METACORTEX.width / 2, 0, METACORTEX.center.z - METACORTEX.depth / 2).applyMatrix4(inverse);
-  const b = new THREE.Vector3(METACORTEX.center.x + METACORTEX.width / 2, 0, METACORTEX.center.z + METACORTEX.depth / 2).applyMatrix4(inverse);
-  const left = Math.max(-width / 2, Math.min(a.x, b.x)), right = Math.min(width / 2, Math.max(a.x, b.x));
-  const bottom = Math.max(-height / 2, Math.min(a.y, b.y)), top = Math.min(height / 2, Math.max(a.y, b.y));
-  if (left >= right || bottom >= top) return geometry;
+  const original: RoadRectangle = [-width / 2, width / 2, -height / 2, height / 2];
+  let remaining = [original];
+  for (const room of [METACORTEX, APARTMENT_ROOM]) {
+    const { x, z } = room.center;
+    const a = new THREE.Vector3(x - room.width / 2, 0, z - room.depth / 2).applyMatrix4(inverse);
+    const b = new THREE.Vector3(x + room.width / 2, 0, z + room.depth / 2).applyMatrix4(inverse);
+    remaining = remaining.flatMap(rectangle => {
+      const [x0, x1, y0, y1] = rectangle;
+      const left = Math.max(x0, Math.min(a.x, b.x)), right = Math.min(x1, Math.max(a.x, b.x));
+      const bottom = Math.max(y0, Math.min(a.y, b.y)), top = Math.min(y1, Math.max(a.y, b.y));
+      if (left >= right || bottom >= top) return [rectangle];
+      const pieces: RoadRectangle[] = [
+        [x0, left, y0, y1], [right, x1, y0, y1], [left, right, y0, bottom], [left, right, top, y1],
+      ];
+      return pieces.filter(([startX, endX, startY, endY]) => startX < endX && startY < endY);
+    });
+  }
+  if (remaining[0] === original) return geometry;
   const parts: THREE.PlaneGeometry[] = [];
-  for (const [x0, x1, y0, y1] of [
-    [-width / 2, left, -height / 2, height / 2], [right, width / 2, -height / 2, height / 2],
-    [left, right, -height / 2, bottom], [left, right, top, height / 2],
-  ]) {
-    if (x0 >= x1 || y0 >= y1) continue;
+  for (const [x0, x1, y0, y1] of remaining) {
     const part = new THREE.PlaneGeometry(x1 - x0, y1 - y0); part.translate((x0 + x1) / 2, (y0 + y1) / 2, 0);
     const positions = part.attributes.position, uv = part.attributes.uv;
     // Keep the original road's texture origin and scale across the cut edges.
@@ -235,15 +246,30 @@ export class VoxelRenderer {
         road.rotation.x = -Math.PI / 2;
         road.rotation.z = direction * Math.PI / 2;
         road.position.set(direction ? 1160 : n, 0, direction ? n : 1120);
-        road.updateMatrix(); road.geometry = roadOutsideLobby(plane, road.matrix);
+        road.updateMatrix(); road.geometry = roadOutsideInteriors(plane, road.matrix);
         road.receiveShadow = true;
         this.matrix.add(road);
       }
     }
     const lines: number[] = [];
+    const apartment = APARTMENT_ROOM;
+    const addLine = (fixed: number, start: number, alongX: boolean) => {
+      const emit = (a: number, b: number) => {
+        if (a >= b) return;
+        if (alongX) lines.push(a, .08, fixed, b, .08, fixed);
+        else lines.push(fixed, .08, a, fixed, .08, b);
+      };
+      const across = alongX ? apartment.center.z : apartment.center.x;
+      const halfAcross = (alongX ? apartment.depth : apartment.width) / 2;
+      if (Math.abs(fixed - across) >= halfAcross) { emit(start, start + 9); return; }
+      const center = alongX ? apartment.center.x : apartment.center.z;
+      const halfLength = (alongX ? apartment.width : apartment.depth) / 2;
+      emit(start, Math.min(start + 9, center - halfLength));
+      emit(Math.max(start, center + halfLength), start + 9);
+    };
     for (let n = 240; n <= 2000; n += STREET_SPACING) for (let p = 200; p < 2060; p += 22) {
-      if (!insideMetacortex(n, p + 4.5)) lines.push(n, 0.08, p, n, 0.08, p + 9);
-      if (!insideMetacortex(p + 4.5, n)) lines.push(p, 0.08, n, p + 9, 0.08, n);
+      if (!insideMetacortex(n, p + 4.5)) addLine(n, p, false);
+      if (!insideMetacortex(p + 4.5, n)) addLine(n, p, true);
     }
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(lines, 3));
