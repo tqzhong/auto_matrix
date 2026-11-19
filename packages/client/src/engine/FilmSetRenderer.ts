@@ -4914,7 +4914,7 @@ export class FilmSetRenderer {
       return { color: 0xdce7d2, ambient: .6, sun: .2 };
     }
     if (this.office) return { color: 0xe8e8d7, ambient: .65, sun: .3 };
-    if (this.club) { fog.density = .005; fog.color.setHex(0x111913); this.scene.environmentIntensity = .28; return { color: 0xc1c8ac, ambient: .38, sun: .025 }; }
+    if (this.club) { fog.density = .005; fog.color.setHex(0x111913); this.scene.environmentIntensity = .28; return { color: 0xc1c8ac, ambient: .38, sun: .025, fill: .22 }; }
     if (this.interrogation) { fog.density = .001; this.scene.environmentIntensity = .38; return { color: 0xdce4ce, ambient: .48, sun: .08 }; }
     if (this.meeting) { fog.density = .007; fog.color.setHex(0x111b1d); (this.scene.background as THREE.Color).copy(fog.color); this.scene.environmentIntensity = .7; return { color: 0xb8cdc6, ambient: .62, sun: .15 }; }
     if (this.matrixEscape && this.current.id === 'film_subway_platform') { fog.density = .006; fog.color.setHex(0x15231f); this.scene.environmentIntensity = .58; return { color: 0xd5e1d3, ambient: .72, sun: .08 }; }
