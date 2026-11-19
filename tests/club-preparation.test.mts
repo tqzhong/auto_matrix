@@ -60,6 +60,10 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   const skin = new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ map: skinMap }));
   const face = new THREE.SkinnedMesh(skin.geometry, new THREE.MeshStandardMaterial({ map: faceMap }));
   const neoActor = new THREE.Group();
+  const wristMap = new THREE.Texture(new Bitmap(723, 210));
+  wristMap.flipY = false; wristMap.needsUpdate = true;
+  const wrist = new THREE.SkinnedMesh(skin.geometry, new THREE.MeshPhysicalMaterial({ map: wristMap }));
+  wrist.name = 'Anatomical_wrist_skin'; wrist.userData.wristSkin = true; wrist.visible = false; neoActor.add(wrist);
   const patientNeck = new THREE.SkinnedMesh(skin.geometry, new THREE.MeshPhysicalMaterial());
   patientNeck.name = 'patient-first-person-neck'; patientNeck.visible = false; neoActor.add(patientNeck);
   face.castShadow = true; face.material.alphaTest = .5;
@@ -70,7 +74,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   t.after(() => {
     film.dispose(); lights.dispose(); skin.geometry.dispose(); skin.material.dispose(); face.material.dispose();
     apartmentBody.geometry.dispose(); apartmentBody.material.dispose();
-    skinMap.dispose(); faceMap.dispose(); patientNeck.material.dispose(); shadow.geometry.dispose(); shadow.material.dispose();
+    skinMap.dispose(); faceMap.dispose(); wristMap.dispose(); wrist.material.dispose(); patientNeck.material.dispose(); shadow.geometry.dispose(); shadow.material.dispose();
     scene.environment!.dispose(); globalThis.document = document;
     if (previousBitmap) globalThis.ImageBitmap = previousBitmap;
     else Reflect.deleteProperty(globalThis, 'ImageBitmap');
@@ -189,8 +193,10 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     for (let frame = 0; frame < 160; frame++) prepare();
   };
   prepare(true);
-  assert.equal([...allocations.values()][0]?.image, bitmap, 'start the hidden club skin on the deferred invitation landing screen');
-  assert.equal([...allocations.values()][0]?.rows, 512, 'limit the transfer to two strips');
+  if (uploads[0] === wristMap) prepare(true);
+  const clubSkin = [...allocations.values()].find(allocation => allocation.image === bitmap);
+  assert.ok(clubSkin, 'start the hidden club skin on the deferred invitation landing screen');
+  assert.equal(clubSkin.rows, 512, 'limit the transfer to two strips');
   await new Promise(resolve => setImmediate(resolve));
   for (let frame = 0; frame < 12; frame++) prepare(true);
   assert.equal(rooms.size, 1, 'link the offstage room while still on the landing screen');
@@ -201,6 +207,12 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   assert.ok([skinMap, faceMap].every(map => uploaded.get(map)?.__webglTexture?.mipmaps));
   assert.ok(uploads.indexOf(skinMap) < uploads.findIndex(map => map.name.startsWith('/assets/film-materials/')),
     'finish the entrance costume before uploading the waiting room and crowd maps');
+  await t.test('prepare Neo’s small wrist texture on the original hidden mesh before the first club frame', () => {
+    assert.equal(uploads.filter(texture => texture === wristMap).length, 1);
+    assert.ok(uploads.indexOf(wristMap) < uploads.findIndex(map => map.name.startsWith('/assets/film-materials/')));
+    assert.equal(wrist.visible, false);
+    assert.equal(wrist.parent, neoActor);
+  });
   assert.equal(rooms.size, 1, 'keep preparing the same room after the player takes Neo');
   assert.ok(compiled.has(skin), 'prepare Trinity’s actual hidden club costume');
   const first = [...rooms][0];

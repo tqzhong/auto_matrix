@@ -1604,6 +1604,7 @@ export class FilmSetRenderer {
         if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial || object.material instanceof THREE.MeshBasicMaterial)) return;
         const { office, tracking, patientBody, reloadedHidden, clubJacket, wristSkin } = object.userData;
         if (office || tracking || patientBody || object.name === 'patient-first-person-neck' || reloadedHidden || id === 'trinity' && (clubJacket || wristSkin)) return;
+        if (id === 'neo' && wristSkin && object.material.map) entryTextures.add(object.material.map);
         meshes.push(object);
       });
       if (!meshes.length) continue;
@@ -1641,8 +1642,8 @@ export class FilmSetRenderer {
       readyPrograms.add(program);
       return false;
     });
-    // Start the entrance costume before the crowd and scenery can exhaust a short resume window.
-    if (entryTextures.size && this.prepareStagedColorTexture(renderer, prepared, entryTextures, 2)) return;
+    // The entrance costume includes Neo's small wrist atlas as well as the large maps.
+    if (entryTextures.size && this.prepareStagedColorTexture(renderer, prepared, entryTextures, 2, 2048, 1)) return;
     // Advance the room and crowd textures while the shader queue is still active.
     const roomMaps = prepared.roomMaps!;
     const buffers = prepared.buffers!;
@@ -2993,14 +2994,14 @@ export class FilmSetRenderer {
     this.prepareStagedColorTexture(renderer, prepared, prepared.textures);
   }
   private prepareStagedColorTexture(renderer: THREE.WebGLRenderer, prepared: { textureUpload?: Generator<void, boolean> },
-    textures: Set<THREE.Texture>, stripsPerFrame = 1, minimumBitmapSize = 2048): boolean {
+    textures: Set<THREE.Texture>, stripsPerFrame = 1, minimumBitmapSize = 2048, minimumTextureWidth = 1024): boolean {
     if (!prepared.textureUpload) {
       for (const texture of textures) {
         const image = texture.image as { width?: number; complete?: boolean } | null;
         if (!texture.version || !image || image.complete === false) continue;
         textures.delete(texture);
         const uploaded = renderer.properties.get(texture) as { __version?: number; __webglTexture?: WebGLTexture };
-        if ((image.width ?? 0) < 1024 || uploaded.__version === texture.version) continue;
+        if ((image.width ?? 0) < minimumTextureWidth || uploaded.__version === texture.version) continue;
         const bitmap = !uploaded.__webglTexture && bitmapUploadImage(renderer, texture, minimumBitmapSize);
         if (!bitmap) { renderer.initTexture(texture); return true; }
         prepared.textureUpload = stageBitmapTexture(renderer, texture, bitmap);
