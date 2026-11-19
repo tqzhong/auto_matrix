@@ -8,6 +8,7 @@ import { CharacterModels, type CharacterRig } from '../packages/client/src/agent
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -28,20 +29,28 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   const sandbox = { neoLife: { journey } } as SandboxState;
   const cast = new THREE.Group(), body = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
   cast.add(body);
-  t.after(() => { sets.dispose(); body.geometry.dispose(); body.material.dispose(); });
+  const liveLighting = new LightCulling(scene);
+  t.after(() => { sets.dispose(); liveLighting.dispose(); body.geometry.dispose(); body.material.dispose(); });
 
   let preview: THREE.Scene | undefined, castCompiled = false, offstageSeraph: THREE.Group | undefined, offstageHost: THREE.Group | undefined;
   const libraryCast = new Map<string, THREE.Group>();
   const compiled = new Set<THREE.Object3D>();
   const uploads = new Set<THREE.Texture>();
   const compileCounts = new Map<THREE.Object3D, number>();
+  const shadowLayouts = new Set<number>();
   const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
+    shadowMap: { enabled: true, type: THREE.PCFShadowMap },
     setRenderTarget() {}, initTexture(texture: THREE.Texture) { uploads.add(texture); }, properties: { get: () => ({}) },
     compile(subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) {
       target.traverseVisible(object => { if (object instanceof THREE.Scene) preview = object; });
       subject.traverse(mesh => {
         compiled.add(mesh); compileCounts.set(mesh, (compileCounts.get(mesh) ?? 0) + 1);
         if (mesh === body) castCompiled = true;
+        if (mesh instanceof THREE.SkinnedMesh && mesh.material instanceof THREE.MeshDepthMaterial) {
+          let spots = 0;
+          target.traverseVisible(light => { if (light instanceof THREE.SpotLight) spots++; });
+          shadowLayouts.add(spots);
+        }
       });
     } } as unknown as THREE.WebGLRenderer;
   const enter = (id: string, step: number) => {
@@ -52,7 +61,7 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   };
   const prepare = (resumeLibrary = false) => sets.prepareSecondOracle(graphics, camera, journey, id => libraryCast.get(id)
     ?? (id === 'seraph' ? offstageSeraph : id === 'merovingian' ? offstageHost
-      : ['neo', 'smith', 'trinity', 'roland'].includes(id) ? cast : undefined), resumeLibrary, world.agents.get('trinity'));
+      : ['neo', 'smith', 'trinity', 'roland'].includes(id) ? cast : undefined), resumeLibrary, world.agents.get('trinity'), undefined, liveLighting);
   const warm = (name: string, resumeLibrary = false) => {
     preview = undefined; castCompiled = false; compiled.clear();
     for (let i = 0; i < 120; i++) prepare(resumeLibrary);
@@ -396,11 +405,15 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     assert.ok(maps.every(map => map.version > 0 && map.image.width === 1672));
     assert.ok(displays.every(display => compiled.has(display)), 'CRT program preparation includes the instanced screens');
     assert(!compiled.has(standIn));
-    const head = new THREE.Mesh(body.geometry, body.material), suit = new THREE.Mesh(body.geometry, body.material);
+    const head = new THREE.Mesh(body.geometry, body.material), suit = new THREE.SkinnedMesh(body.geometry, body.material);
+    suit.castShadow = true;
     head.name = 'architect-detailed-head'; suit.name = 'architect-detailed-body';
     standIn.visible = false; actor.add(head, suit);
-    for (let i = 0; i < 20; i++) prepare();
+    shadowLayouts.clear();
+    for (let i = 0; i < 32; i++) prepare();
     assert(compiled.has(head) && compiled.has(suit));
+    assert.deepEqual(shadowLayouts, new Set([0, 1]), 'the suit prepares shadows for both the corridor and the room lights');
+    assert.ok(sets.secondOracleEntryNormalMeshes?.includes(monitors) && sets.secondOracleEntryNormalMeshes.includes(suit));
     assert.equal(actor.visible, false);
     const preparedSlots = pointSlots(preview!);
     enter('m2_architect', 0);
@@ -430,11 +443,19 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     enter('m2_architect', 0);
     assert.equal(scene.getObjectByName(monitors.name), monitors);
   });
-  await t.test('the Architect choice prepares the rescue set with its actual breakable window', () => {
+  await t.test('the Architect choice prepares the rescue set with its actual breakable window', t => {
+    const trinity = new THREE.Group(), costume = new THREE.SkinnedMesh(body.geometry, body.material);
+    costume.castShadow = true;
+    trinity.add(costume); libraryCast.set('trinity', trinity);
+    t.after(() => { libraryCast.delete('trinity'); });
     enter('m2_architect', 2); preview = undefined; prepare(); assert.ok(!preview);
     enter('m2_architect', 3);
+    shadowLayouts.clear();
     const pane = warm('catch-burning-exit') as THREE.Mesh;
-    assert.ok(compiled.has(preview!.getObjectByName('catch-lit-window-grid')!), 'prepare the instanced window program before the cut');
+    const windows = preview!.getObjectByName('catch-lit-window-grid') as THREE.InstancedMesh;
+    assert.ok(compiled.has(windows), 'prepare the instanced window program before the cut');
+    assert.deepEqual(shadowLayouts, new Set([1, 0]), 'Trinity prepares shadows for both the room and the roof lights');
+    assert.ok(sets.secondOracleEntryNormalMeshes?.includes(windows) && sets.secondOracleEntryNormalMeshes.includes(costume));
     const preparedSlots = pointSlots(preview!);
     enter('m2_catch', 0);
     assert.equal(scene.getObjectByName(pane.name), pane);

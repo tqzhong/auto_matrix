@@ -456,7 +456,7 @@ export class Engine {
           || meeting?.scene === 'm2_mountain' || meeting?.scene === 'm2_trucks' || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_stop_sentinels'
           || meeting?.scene === 'm3_trainman_chase' || meeting?.scene === 'm3_hel_garage' ? this.agentRenderer.getAgentDetail(id) : this.agentRenderer.getAgentBody(id)),
       resumeSecondOracle, meeting?.scene === 'm3_trainman_chase' ? this.agentRenderer.getAgentState('trinity') ?? undefined : undefined,
-      id => this.agentRenderer.getShipEntryCast(id));
+      id => this.agentRenderer.getShipEntryCast(id), this.lightCulling);
     this.filmSets.prepareChateauUpperColors(this.renderer, this.camera, this.lightCulling,
       filmSet?.id === 'film_chateau_hall' && player?.id === meeting?.actor ? this.sandboxRenderer.chateauUpperCast : undefined);
     if (filmSet?.id === 'film_oracle_courtyard' && player?.id === meeting?.actor) this.sandboxRenderer.prepareBurlyCopies();
@@ -524,13 +524,15 @@ export class Engine {
     const deckNormals = this.filmSets.deckEntryNormalMeshes;
     const ambushNormals = this.filmSets.ambushEntryNormalMeshes;
     const governmentNormals = this.filmSets.governmentEntryNormalMeshes;
-    const setNormals = openingNormals ?? podNormals ?? sentinelNormals ?? deckNormals ?? ambushNormals ?? governmentNormals;
+    const oracleNormals = this.filmSets.secondOracleEntryNormalMeshes;
+    const setNormals = openingNormals ?? podNormals ?? sentinelNormals ?? deckNormals ?? ambushNormals ?? governmentNormals ?? oracleNormals;
     const apartmentNormals = openingNormals ? undefined : this.voxelRenderer.interiors.apartmentReturnNormalMeshes;
     const neoNormals = preparingLafayetteNormals || resumeApartment || openingHandoff && !preparingApartment || apartmentNormals ? neoAtHome : undefined;
     const officeNormals = liveMatrixJourney?.scene === 'm1_commute' && lift?.passenger && lift.target === 1 ? officeManager : undefined;
     this.postProcessing.prepareNormals(this.renderer, setNormals ? this.filmSets.root : neoNormals ?? officeNormals,
       setNormals ?? apartmentNormals, podNormals !== undefined || sentinelNormals !== undefined || deckNormals !== undefined || wellsCast !== undefined
-      || ambushNormals !== undefined || governmentNormals !== undefined || resumeApartment || apartmentNormals !== undefined || officeNormals !== undefined);
+      || ambushNormals !== undefined || governmentNormals !== undefined || oracleNormals !== undefined
+      || resumeApartment || apartmentNormals !== undefined || officeNormals !== undefined);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0, openingHotel !== undefined);
     this.filmSets.renderTelevisionPreview(this.renderer, this.camera, () => this.agentRenderer.getDesertEntryCast(), this.lightingSystem.directionalLight);

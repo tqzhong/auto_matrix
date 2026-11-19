@@ -409,7 +409,7 @@ export class FilmSetRenderer {
   private preparedSecondOracle?: {
     scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation;
     gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling; textureUpload?: Generator<void, boolean>;
-    liveMeshes?: THREE.Mesh[];
+    liveMeshes?: THREE.Mesh[]; shadows?: EntryPreparation['shadows']; normalMeshes?: THREE.Mesh[];
   };
   private courtyardCastColors?: CastColorPreparation;
   private preparedLafayetteGround?: { meshes: ColorMesh[]; programs: ColorProgram[] };
@@ -627,6 +627,7 @@ export class FilmSetRenderer {
   get deckEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedConsole?.normalMeshes ?? this.preparedMeal?.normalMeshes ?? this.preparedMeetingDeck?.normalMeshes; }
   get ambushEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedAmbush?.normalMeshes; }
   get governmentEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedGovernment?.normalMeshes; }
+  get secondOracleEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedSecondOracle?.normalMeshes; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
     // Keep the apartment layout when the second call hands back the camera.
@@ -1787,7 +1788,7 @@ export class FilmSetRenderer {
     colors.meshes.unshift(this.marker);
     return colors;
   }
-  private queueEntryShadows(prepared: EntryPreparation, meshes: Iterable<THREE.Object3D>): void {
+  private queueEntryShadows(prepared: Pick<EntryPreparation, 'shadows'>, meshes: Iterable<THREE.Object3D>): void {
     const shadows = prepared.shadows;
     if (!shadows) return;
     const casters = shadowCasterProxies(meshes, shadows.materials, shadows.variants);
@@ -1801,7 +1802,8 @@ export class FilmSetRenderer {
       buffers.meshes.push(mesh); buffers.geometries.add(mesh.geometry);
     }
   }
-  private prepareStagedEntry(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: EntryPreparation,
+  private prepareStagedEntry(renderer: THREE.WebGLRenderer, camera: THREE.Camera,
+    prepared: Pick<EntryPreparation, 'lighting' | 'shadows' | 'buffers' | 'textureUpload'> & { liveMeshes?: THREE.Mesh[] },
     colors: ColorPreparation, sourceLights?: LightCulling, stripsPerFrame = 1, prioritizeColor: boolean | 'bindings' = false): void {
     const { lighting, shadows, buffers } = prepared;
     const preparingColor = prioritizeColor === 'bindings' ? this.prepareColorProgram(renderer, camera, colors, lighting, 'isolated', true, prepared.liveMeshes)
@@ -2317,7 +2319,7 @@ export class FilmSetRenderer {
   }
   prepareSecondOracle(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, resume = false, helGarageTemplate?: AgentState,
-    shipCast?: (id: string) => ShipEntryCast): void {
+    shipCast?: (id: string) => ShipEntryCast, sourceLights?: LightCulling): void {
     if (this.current?.id === 'film_chateau_garage' && journey?.scene === 'm2_garage' && !journey.visiting && journey.step >= 1) {
       if (journey.garage?.phase === 'wrecked') return;
       const prepared = this.preparedFreeway ??= { renderer: new FreewaySetRenderer(undefined, FILM_SETS.film_freeway_101) };
@@ -2372,7 +2374,8 @@ export class FilmSetRenderer {
     const teaEntry = next.id === 'm2_seraph', courtyardEntry = next.id === 'm2_bench', leVraiEntry = next.id === 'm2_merovingian';
     const libraryEntry = next.id === 'm2_library', chateauEntry = next.id === 'm2_chateau';
     const garageEntry = next.id === 'm2_garage', briefingEntry = next.id === 'm2_plan';
-    const architectEntry = next.id === 'm2_architect', medicalEntry = next.id === 'm2_medical';
+    const architectEntry = next.id === 'm2_architect', catchEntry = next.id === 'm2_catch', medicalEntry = next.id === 'm2_medical';
+    const preparePasses = architectEntry || catchEntry;
     const helGarageEntry = next.id === 'm3_hel_garage';
     if (helGarageEntry && !helGarageTemplate) return;
     const helElevatorEntry = next.id === 'm3_hel_entry';
@@ -2380,7 +2383,7 @@ export class FilmSetRenderer {
     const logosEntry = next.id === 'm3_bane', hammerEntry = next.id === 'm3_hammer_tunnels';
     const shipEntry = logosEntry || hammerEntry;
     const isolatedEntry = firstOracle || teaEntry || courtyardEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || briefingEntry
-      || architectEntry || medicalEntry || helEntry || shipEntry;
+      || preparePasses || medicalEntry || helEntry || shipEntry;
     if (!this.preparedSecondOracle) {
       const set = FILM_SETS[next.set], { x, y, z } = set.center;
       const room = new FilmSetRenderer(new THREE.Scene());
@@ -2397,6 +2400,7 @@ export class FilmSetRenderer {
     if (isolatedEntry && prepared.gpu !== renderer.properties) {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose(); prepared.colors = undefined; prepared.gpu = renderer.properties;
+      prepared.shadows = undefined; prepared.normalMeshes = undefined;
     }
     if (!prepared.colors && renderer.extensions.has('KHR_parallel_shader_compile')) {
       // PBR maps are attached after decoding. Compile the mapped variants.
@@ -2414,9 +2418,17 @@ export class FilmSetRenderer {
         else colors.meshes.push(this.marker);
         if (room.chateauVolley) colors.meshes.push(...this.colorMeshes(room.chateauVolley.children));
         prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
-        if (medicalEntry || shipEntry) prepared.liveMeshes = [this.marker];
+        if (preparePasses || medicalEntry || shipEntry) prepared.liveMeshes = [this.marker];
         const shadow = shipEntry ? shipCast?.(next.actor).shadow : undefined;
         if (shadow) { colors.meshes.unshift(shadow); prepared.liveMeshes?.push(shadow); }
+      }
+      if (preparePasses) {
+        const display = colors.meshes.find(mesh => mesh.name === (architectEntry ? 'CRT-wall-cases' : 'catch-lit-window-grid'));
+        prepared.normalMeshes = display instanceof THREE.InstancedMesh ? [display] : [];
+        if (renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+          prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
+          this.queueEntryShadows(prepared, colors.meshes);
+        }
       }
       if (garageEntry) {
         // Give the mapped room surfaces a batch before the arriving cast adds its meshes.
@@ -2446,7 +2458,7 @@ export class FilmSetRenderer {
           if ((detailed || medicalEntry && id === 'maggie') && !group.getObjectByName(`${id}-detailed-head`)) continue;
           if (detailed && !group.getObjectByName(`${id}-detailed-body`)) continue;
           if (courtyardEntry && id === 'oracle' && !group.getObjectByName('oracle-first-detailed-head')) continue;
-          if (detailed || courtyardEntry || libraryEntry || garageEntry || briefingEntry || architectEntry || medicalEntry || helEntry || shipEntry) {
+          if (detailed || courtyardEntry || libraryEntry || garageEntry || briefingEntry || preparePasses || medicalEntry || helEntry || shipEntry) {
             meshes = this.colorMeshes(group.children, true);
           } else {
             meshes = [];
@@ -2469,8 +2481,18 @@ export class FilmSetRenderer {
           colors.meshes.splice(start, 0, ...meshes, ...garments);
           this.queueColorTextures(colors.textures, [...meshes, ...garments]);
           prepared.liveMeshes?.push(...meshes);
+          if (preparePasses) {
+            this.queueEntryShadows(prepared, meshes);
+            const normals = meshes.filter(mesh => mesh instanceof THREE.SkinnedMesh);
+            if (normals.length) prepared.normalMeshes = [...(prepared.normalMeshes ?? []), ...normals];
+          }
         }
-        const deferBindings = garageEntry || briefingEntry || architectEntry || medicalEntry || helEntry || shipEntry;
+        if (preparePasses) {
+          for (const material of prepared.shadows?.materials ?? []) prepared.room.materials.add(material);
+          this.prepareStagedEntry(renderer, camera, prepared, colors, savedCut ? undefined : sourceLights, 4, 'bindings');
+          return;
+        }
+        const deferBindings = garageEntry || briefingEntry || medicalEntry || helEntry || shipEntry;
         this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated', deferBindings,
           prepared.liveMeshes ?? (deferBindings || libraryEntry ? [this.marker] : undefined));
         this.prepareStagedColorTexture(renderer, prepared, colors.textures, 4);
