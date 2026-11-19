@@ -280,6 +280,7 @@ type ClubPreparation = {
   entryTextures?: Set<THREE.Texture>;
   textureTurn?: boolean;
   textureUpload?: Generator<void, boolean>;
+  buffers?: EntryPreparation['buffers'];
   crowdQueued?: boolean;
   shadows?: { materials: Set<THREE.MeshDepthMaterial>; seen: Set<string>; apartment: THREE.Mesh[]; room: THREE.Mesh[] };
 };
@@ -1547,10 +1548,13 @@ export class FilmSetRenderer {
     const parallel = renderer.extensions.has('KHR_parallel_shader_compile');
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
+      prepared.buffers?.upload?.return(undefined);
       prepared.lighting?.dispose(); prepared.gpu = renderer.properties;
       prepared.shadows?.materials.forEach(material => material.dispose());
       prepared.shadows = undefined;
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, playerView: onLanding }), actors: new Set(), preserveStockSkinning: true };
+      prepared.buffers = { meshes: [], geometries: new WeakSet() };
+      this.queueEntryBuffers(prepared, prepared.colors.meshes);
       prepared.readyPrograms = new Set();
       if (parallel && sourceLights && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
         const materials = new Set<THREE.MeshDepthMaterial>(), seen = new Set<string>();
@@ -1588,8 +1592,9 @@ export class FilmSetRenderer {
         depth.apartment.push(...casters); depth.room.push(...casters);
       }
       if (id === 'trinity') for (const mesh of meshes) {
-        if ((mesh.userData.club || mesh.name === 'Anatomical_head_and_hands') && mesh.material.map)
-          entryTextures.add(mesh.material.map);
+        if (!mesh.userData.club && mesh.name !== 'Anatomical_head_and_hands') continue;
+        if (mesh.material.map) entryTextures.add(mesh.material.map);
+        this.queueEntryBuffers(prepared, [mesh]);
       }
     }
     if (!prepared.crowdQueued) {
@@ -1598,6 +1603,7 @@ export class FilmSetRenderer {
         prepared.crowdQueued = true;
         const meshes = this.colorMeshes(crowd, true), crowdTextures = new Set<THREE.Texture>();
         this.queueColorTextures(crowdTextures, meshes);
+        this.queueEntryBuffers(prepared, meshes);
         colors.meshes.push(...meshes);
         colors.textures = new Set([...crowdTextures, ...colors.textures]);
       }
@@ -1622,7 +1628,10 @@ export class FilmSetRenderer {
     const apartmentLights = onLanding ? undefined : sourceLights;
     if (!textureTurn && parallel && this.prepareClubProgram(renderer, camera, prepared, apartmentLights, ready)) return;
     if (this.prepareColorTexture(renderer, roomTextures) || this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) return;
-    if (textureTurn && parallel) this.prepareClubProgram(renderer, camera, prepared, apartmentLights, ready);
+    if (textureTurn && parallel && this.prepareClubProgram(renderer, camera, prepared, apartmentLights, ready)) return;
+    const buffers = prepared.buffers!;
+    if (buffers.meshes.length) buffers.upload ??= prepareMeshBuffers(renderer, camera, buffers.meshes);
+    if (buffers.upload?.next().done) buffers.upload = undefined;
   }
   private prepareClubExit(renderer: THREE.WebGLRenderer, camera: THREE.Camera, actor: (id: string) => THREE.Group | undefined,
     lighting: LightCulling): void {
@@ -1803,7 +1812,7 @@ export class FilmSetRenderer {
     const casters = shadowCasterProxies(meshes, shadows.materials, shadows.variants);
     shadows.source.push(...casters); shadows.destination.push(...casters);
   }
-  private queueEntryBuffers(prepared: EntryPreparation, meshes: Iterable<THREE.Object3D>): void {
+  private queueEntryBuffers(prepared: Pick<EntryPreparation, 'buffers'>, meshes: Iterable<THREE.Object3D>): void {
     const buffers = prepared.buffers;
     if (!buffers) return;
     for (const mesh of meshes) {
@@ -3929,6 +3938,7 @@ export class FilmSetRenderer {
         ? this.preparedClub : undefined;
       if (preparedClub) {
         this.preparedClub = undefined; preparedClub.textureUpload?.return(false);
+        preparedClub.buffers?.upload?.return(undefined);
         preparedClub.lighting?.dispose(); preparedClub.root.removeFromParent();
       }
       if (resumingClub) this.preparedClub = undefined;
@@ -7183,6 +7193,7 @@ export class FilmSetRenderer {
   private cancelClubPreparation(): void {
     const prepared = this.preparedClub; if (!prepared) return;
     this.preparedClub = undefined; prepared.textureUpload?.return(false); prepared.lighting?.dispose();
+    prepared.buffers?.upload?.return(undefined);
     prepared.shadows?.materials.forEach(material => material.dispose());
     prepared.root.removeFromParent(); prepared.renderer.dispose();
   }

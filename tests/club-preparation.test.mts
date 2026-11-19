@@ -54,8 +54,11 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   face.castShadow = true; face.material.alphaTest = .5;
   skin.name = 'Club_upper_body'; skin.userData.club = true; skin.visible = false;
   face.name = 'Anatomical_head_and_hands'; actor.add(skin, face);
+  const apartmentBody = new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+  neoActor.add(apartmentBody);
   t.after(() => {
     film.dispose(); lights.dispose(); skin.geometry.dispose(); skin.material.dispose(); face.material.dispose();
+    apartmentBody.geometry.dispose(); apartmentBody.material.dispose();
     skinMap.dispose(); faceMap.dispose(); patientNeck.material.dispose(); shadow.geometry.dispose(); shadow.material.dispose();
     scene.environment!.dispose(); globalThis.document = document;
     if (previousBitmap) globalThis.ImageBitmap = previousBitmap;
@@ -71,6 +74,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   let target: THREE.WebGLRenderTarget | null = null, work = 0, preparationFrame = 0;
   const reads: { ready: number | undefined; frame: number }[] = [];
   const rooms = new Set<THREE.Object3D>(), compiled = new Set<THREE.Object3D>();
+  const geometryUploads = new Map<THREE.BufferGeometry, number>();
   const bounded = new Set<THREE.SkinnedMesh>();
   const computeBounds = THREE.SkinnedMesh.prototype.computeBoundingSphere;
   t.mock.method(THREE.SkinnedMesh.prototype, 'computeBoundingSphere', function (this: THREE.SkinnedMesh) {
@@ -101,8 +105,18 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     : uploaded.get(object as THREE.Texture) ?? {} }, info: { programs },
     shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
     capabilities: { maxTextureSize: 4096 }, getContext: () => gl, getRenderTarget: () => target,
+    autoClear: true, sortObjects: true, getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
     state: { bindTexture(_target: number, texture: Allocation) { bound = texture; }, unbindTexture() { bound = undefined; } },
     setRenderTarget: (value: typeof target) => { target = value; },
+    render(view: THREE.Scene) {
+      assert.equal(target?.width, 1);
+      assert.ok(view.children.length <= 4);
+      for (const object of view.children) {
+        assert.ok(object instanceof THREE.Mesh && !Array.isArray(object.material) && !object.material.visible);
+        geometryUploads.set(object.geometry, (geometryUploads.get(object.geometry) ?? 0) + 1);
+      }
+      work++;
+    },
     compile(subject: THREE.Object3D, _eye: THREE.Camera, view: THREE.Scene) {
       assert.equal(target?.width, 1);
       let directionalLights = 0, points = 0, spots = 0;
@@ -185,6 +199,15 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   assert.equal(first.children.filter(child => child.name.startsWith('club-dancer-')).length, 16);
   assert.ok(compiled.has(crowd));
   assert.equal([...compiled].filter(mesh => mesh.name === 'crowd-surface').length, 2);
+  await t.test('stage the room, shared dancer buffers and entrance costume before the cut', () => {
+    const roomMeshes = first.children.filter(object => object instanceof THREE.Mesh);
+    for (const geometry of [...roomMeshes.map(mesh => mesh.geometry), crowd.geometry, skin.geometry])
+      assert.equal(geometryUploads.get(geometry), 1, 'upload each original geometry once offstage');
+    assert.ok(!geometryUploads.has(apartmentBody.geometry), 'leave the apartment actor out of the club buffer queue');
+    assert.equal(crowd.parent, first.getObjectByName('club-dancer-0'));
+    assert.equal(skin.parent, actor);
+    assert.equal(skin.visible, false);
+  });
   await t.test('dancer bounds advance while the room programs and texture uploads are pending', () => {
     assert.equal(landingBounds, 12, 'prepare one dancer on each frame after the crowd loads');
   });
