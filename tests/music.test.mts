@@ -240,6 +240,23 @@ test('a queued door knock starts and opens its gain envelope on the same audio c
   assert.equal(context.gains.at(-1)?.gain.events[0].time, knock.startAt);
 });
 
+test('the 101 score makes room for the knocks only during Neo’s live scene', async t => {
+  const h = audioHarness(t), game = scene();
+  game.player!.currentLocation = FILM_SCENE_BY_ID.m1_wake_up.set;
+  const journey = game.sandbox!.neoLife!.journey = { scene: 'm1_wake_up', actor: 'neo', contact: { phase: 'reply', elapsed: 0 } } as FilmJourney;
+  h.audio.update(game); await h.audio.resume();
+  const music = h.contexts[0].gains[0].gain;
+  assert.equal(music.value, .48);
+  journey.contact!.phase = 'knocking'; h.audio.update(game);
+  assert.equal(music.value, .48 * .42);
+  journey.contact!.phase = 'door'; h.audio.update(game);
+  assert.equal(music.value, .48);
+  journey.contact!.phase = 'knocking'; journey.visiting = 'm1_wake_up'; h.audio.update(game);
+  assert.equal(music.value, .48);
+  delete journey.visiting; game.player!.id = 'smith'; h.audio.update(game);
+  assert.equal(music.value, .48);
+});
+
 test('the Room 303 kick sends a low impact and a short latch crack to the effects bus', async t => {
   const h = audioHarness(t);
   await h.audio.resume();

@@ -91,6 +91,9 @@ export class GameAudio {
     const crosscut = scene.player?.currentAction?.parameters.crosscut as import('@auto_matrix/shared').CrosscutGesture | undefined;
     if (crosscut?.phase === 'call') this.reading.add('cypher-call'); else this.reading.delete('cypher-call');
     const journey = scene.sandbox?.neoLife?.journey;
+    if (journey?.scene === 'm1_wake_up' && !journey.visiting && scene.player?.id === journey.actor && journey.contact?.phase === 'knocking')
+      this.reading.add('apartment-knocking');
+    else this.reading.delete('apartment-knocking');
     const hotel = journey?.scene === 'm1_room303' && !journey.visiting && scene.player?.id === journey.actor ? journey.openingHotel : undefined;
     const trace = openingHotelTraceTime(hotel, scene.player);
     if (hotel?.phase === 'answering' && openingHotelPhoneLine(hotel.elapsed) || trace !== undefined && openingHotelTraceLine(trace)) this.reading.add('hotel-conversation');
