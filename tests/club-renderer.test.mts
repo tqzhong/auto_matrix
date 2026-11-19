@@ -102,6 +102,26 @@ test('the undershirt stays under Choi’s jacket and the same club wardrobe', as
   });
 });
 
+test('the whisper has a cool backlight that covers both marks with the existing shadow cast', async t => {
+  const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(assets.get(url.split('/').at(-1)!.replace('.glb', ''))!));
+  const root = new THREE.Group(), club = new ClubSetRenderer(root);
+  t.after(() => club.dispose());
+  await club.ready;
+  const key = root.getObjectByName('club-conversation-light');
+  assert.ok(key instanceof THREE.SpotLight && key.castShadow);
+  assert.deepEqual(key.shadow.mapSize.toArray(), [1024, 1024]);
+  assert.ok(key.color.g > key.color.r && key.color.b > key.color.r);
+  const direction = key.target.position.clone().sub(key.position).normalize();
+  for (const role of ['neo', 'trinity'] as const) {
+    const mark = clubRoot({ phase: 'whisper', elapsed: 6.4 }, role);
+    const fromLight = new THREE.Vector3(mark.x, 3.65, mark.z).sub(key.position);
+    assert.ok(fromLight.normalize().dot(direction) > Math.cos(key.angle));
+    if (role === 'trinity') assert.ok(fromLight.dot(new THREE.Vector3(Math.sin(mark.yaw), 0, Math.cos(mark.yaw))) > .45);
+  }
+});
+
 test('wide dance gestures leave the elbows and wrists clear of the torso', async t => {
   const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());

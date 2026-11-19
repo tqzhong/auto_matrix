@@ -1942,15 +1942,15 @@ export class FilmSetRenderer {
     if (!prepared || prepared.gpu !== renderer.properties || prepared.retry !== retry) {
       this.cancelSentinelControlsPreparation();
       prepared = this.preparedSentinelControls = { gpu: renderer.properties, scene: this.scene, retry,
-        meshes: [], programs: [], textures: new Set(), versions: new WeakMap() };
+        meshes: retry ? [] : [this.marker], programs: [], textures: new Set(), versions: new WeakMap() };
     }
-    const crew: ColorMesh[] = [];
+    const subjects: THREE.Mesh[] = retry ? [] : [this.marker];
     for (const [id, names] of Object.entries(retry ? SENTINEL_RETRY_CAST : SENTINEL_CONTROL_CAST)) {
       const group = actor(id);
       for (const name of names) {
         const mesh = group?.getObjectByName(name);
         if (!(mesh instanceof THREE.Mesh) || !(mesh.material instanceof THREE.MeshStandardMaterial)) continue;
-        crew.push(mesh);
+        subjects.push(mesh);
         const material = mesh.material, queued = prepared.versions.get(mesh);
         if (mesh instanceof THREE.SkinnedMesh) prepareSkinnedMaterial(material);
         if (id === 'neo' && name === 'Anatomical_head_and_hands' && prepared.normalMeshes?.[0] !== mesh)
@@ -1961,7 +1961,7 @@ export class FilmSetRenderer {
         this.queueColorTextures(prepared.textures, [mesh]);
       }
     }
-    const linking = this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true, crew);
+    const linking = this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true, subjects);
     if (linking && !retry) return true;
     return this.prepareStagedColorTexture(renderer, prepared, prepared.textures, 2) || linking;
   }
@@ -4935,7 +4935,7 @@ export class FilmSetRenderer {
       return { color: 0xdce7d2, ambient: .6, sun: .2 };
     }
     if (this.office) return { color: 0xe8e8d7, ambient: .65, sun: .3 };
-    if (this.club) { fog.density = .005; fog.color.setHex(0x111913); this.scene.environmentIntensity = .28; return { color: 0xc1c8ac, ambient: .38, sun: .025, fill: .22 }; }
+    if (this.club) { fog.density = .005; fog.color.setHex(0x111913); this.scene.environmentIntensity = .18; return { color: 0xc1c8ac, ambient: .26, sun: .025, fill: .11 }; }
     if (this.interrogation) { fog.density = .001; this.scene.environmentIntensity = .38; return { color: 0xdce4ce, ambient: .48, sun: .08 }; }
     if (this.meeting) { fog.density = .007; fog.color.setHex(0x111b1d); (this.scene.background as THREE.Color).copy(fog.color); this.scene.environmentIntensity = .7; return { color: 0xb8cdc6, ambient: .62, sun: .15 }; }
     if (this.matrixEscape && this.current.id === 'film_subway_platform') { fog.density = .006; fog.color.setHex(0x15231f); this.scene.environmentIntensity = .58; return { color: 0xd5e1d3, ambient: .72, sun: .08 }; }

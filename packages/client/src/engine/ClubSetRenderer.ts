@@ -105,11 +105,11 @@ export class ClubSetRenderer {
       this.box(metal, x, 9.4, -16, 4.3, .18, .5); this.box(glow, x, 9.28, -16, 3.9, .055, .12);
       const lamp = new THREE.PointLight(0xc3cba9, 65, 27, 2); lamp.position.set(x, 8.8, -16); this.root.add(lamp);
     }
-    const key = new THREE.SpotLight(0xc3c7a0, 155, 26, .78, .75, 2);
-    key.name = 'club-conversation-light'; key.position.set(10, 8, 1); key.target.position.set(7, 3.5, -5);
+    const key = new THREE.SpotLight(0xa4cdb8, 125, 26, .58, .75, 2);
+    key.name = 'club-conversation-light'; key.position.set(3.2, 6.6, -7.8); key.target.position.set(6.65, 3.65, -4.35);
     key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.normalBias = .035; this.root.add(key, key.target);
-    const fill = new THREE.PointLight(0xadbda8, 35, 18, 2); fill.position.set(4, 5, -10); this.root.add(fill);
-    const barLight = new THREE.PointLight(0xc7a570, 85, 25, 2); barLight.position.set(18, 6, -8); this.root.add(barLight);
+    const fill = new THREE.PointLight(0x90b2a1, 34, 18, 2); fill.position.set(4.1, 6, -1.8); this.root.add(fill);
+    const barLight = new THREE.PointLight(0xc7a570, 64, 25, 2); barLight.position.set(18, 6, -8); this.root.add(barLight);
     for (const [i, x] of [-9, 9].entries()) {
       const light = new THREE.SpotLight(i ? 0xa2aea1 : 0xb1b99c, 145, 30, .42, .9, 2);
       light.position.set(x, 10, 4); light.target.position.set(-x * .4, 0, 7); this.root.add(light, light.target); this.spots.push(light);

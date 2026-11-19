@@ -191,6 +191,8 @@ test('the Sentinel viewport prepares the actual crew with the live lights before
   Object.assign(film, { current: FILM_SETS.film_service_tunnels, currentScene: 'm1_sentinels' });
   const journey = { scene: 'm1_sentinels', actor: 'neo', sentinel: { phase: 'sweep', elapsed: 2, noise: 0, attempt: 0 } } as FilmJourney;
   const liveProgram = {}, bindings = new Map<THREE.Material, { currentProgram: object; uniforms: { gain: { value: number } } }>();
+  const marker = film.goalMarker;
+  bindings.set(marker.material as THREE.Material, { currentProgram: liveProgram, uniforms: { gain: { value: .7 } } });
   function crew(names: string[]) {
     const group = new THREE.Group();
     for (const name of names) {
@@ -243,18 +245,21 @@ test('the Sentinel viewport prepares the actual crew with the live lights before
   };
   prepare(); assert.equal(compiled.length, 0);
   journey.sentinel!.phase = 'clear'; prepare();
-  assert.deepEqual(compiled.map(mesh => mesh.id), morpheus.children.slice(0, 2).map(mesh => mesh.id));
+  const early = [marker, ...morpheus.children.slice(0, 2)];
+  const ids = (meshes: THREE.Object3D[]) => new Set(meshes.map(mesh => mesh.id));
+  assert.deepEqual(ids(compiled), ids(early));
+  assert.equal(marker.visible, false);
   assert.equal(reflected.length, 0);
   actors.set('neo', neo); actors.set('tank', tank);
   for (let i = 0; i < 32; i++) prepare();
-  assert.deepEqual(new Set(compiled), new Set([...morpheus.children.slice(0, 2), ...neo.children, ...tank.children]));
+  assert.deepEqual(ids(compiled), ids([...early, ...neo.children, ...tank.children]));
   assert.deepEqual(film.sentinelControlNormalMeshes, [neo.children[0]]);
-  assert.equal(reflected.length, 7);
+  assert.equal(reflected.length, 8);
   journey.sentinel!.phase = 'verify'; assert.equal(prepare(), false);
   journey.sentinel!.phase = 'confirming'; actors.set('trinity', trinity);
   for (let i = 0; i < 12; i++) prepare();
-  assert.deepEqual(new Set(compiled), new Set([...morpheus.children.slice(0, 2), ...neo.children, ...tank.children, ...trinity.children]));
-  assert.equal(reflected.length, 9); assert.equal(prepare(), false);
+  assert.deepEqual(ids(compiled), ids([...early, ...neo.children, ...tank.children, ...trinity.children]));
+  assert.equal(reflected.length, 10); assert.equal(prepare(), false);
   journey.sentinel!.phase = 'done'; assert.equal(prepare(), false);
 });
 
