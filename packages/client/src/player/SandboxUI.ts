@@ -205,6 +205,7 @@ export class SandboxUI {
     if (journey && journey.actor === this.player?.id) {
       const step = filmSceneForJourney(journey)!.steps[journey.step];
       if (!journey.visiting && journey.scene === 'm1_smith_question' && journey.government?.phase === 'monologue') return;
+      if (pillLocked(journey) && journey.pills?.phase === 'taking') return;
       if (!journey.visiting && journey.scene === 'm1_room303' && (journey.openingHotel?.phase === 'answering'
         || openingHotelTraceTime(journey.openingHotel) !== undefined)) return;
       if (!journey.visiting && journey.scene === 'm1_phone_escape' && (['answering', 'connected'].includes(journey.openingPhone?.phase ?? '')

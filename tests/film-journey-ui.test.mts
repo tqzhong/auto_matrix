@@ -445,6 +445,28 @@ test('the pill choice clears the central subtitle over Morpheus palms and restor
   assert.match(element('#sandbox-nearby').textContent, /追问矩阵/);
 });
 
+test('G during either pill-taking animation keeps the journal closed and resumes normal interaction in the tracking room', async () => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { SandboxUI } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const player = { id: 'neo', position: filmPosition('film_lafayette', 1.75, -6) } as AgentState;
+  const sandbox = { neoLife: { journey: { scene: 'm1_pills', actor: 'neo', step: 1, completed: [],
+    pills: { phase: 'taking', elapsed: 8, approach: { x: 1.75, z: -6, yaw: -Math.PI / 2 } } } } } as SandboxState;
+  const calls: unknown[] = [];
+  const ui = Object.assign(Object.create(SandboxUI.prototype), { player, state: sandbox,
+    open: (panel: string) => calls.push(panel), send: (command: unknown) => calls.push(command) });
+  const journey = sandbox.neoLife!.journey!;
+  for (const choice of ['red', 'blue'] as const) {
+    journey.pills!.choice = choice;
+    ui.interact();
+    assert.deepEqual(calls, [], `G while Neo takes the ${choice} pill must leave the view clear`);
+  }
+  journey.scene = 'm1_mirror'; journey.step = 0; delete journey.pills;
+  const mirror = FILM_SCENE_BY_ID.m1_mirror;
+  player.position = filmStepPosition(mirror, mirror.steps[0]);
+  ui.interact(); assert.deepEqual(calls, [{ kind: 'life', target: 'film:act' }]);
+});
+
 test('the pill journal offers the saved dialogue response without exposing the later pill decision', async () => {
   const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
     platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });

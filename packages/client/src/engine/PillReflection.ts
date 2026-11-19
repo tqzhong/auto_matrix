@@ -77,6 +77,9 @@ export class PillReflection {
         }
       }
     });
+    const matrices = scene.matrixWorldAutoUpdate;
+    // The main color pass already updated the scene, and the revealed subject was refreshed above.
+    scene.matrixWorldAutoUpdate = false;
     try {
       this.probe.update(renderer, scene);
       this.pmrem ??= new THREE.PMREMGenerator(renderer);
@@ -86,6 +89,7 @@ export class PillReflection {
       for (const [mirror, callback] of mirrors) mirror.onBeforeRender = callback;
       for (const [material, value] of transmission) { material.transmission = value; material.needsUpdate = true; }
       glasses.visible = visible; if (this.subject) this.subject.visible = subjectVisible!;
+      scene.matrixWorldAutoUpdate = matrices;
       renderer.setRenderTarget(target, face, mip); renderer.xr.enabled = xr;
       renderer.shadowMap.autoUpdate = autoUpdate; renderer.shadowMap.needsUpdate = needsUpdate; this.busy = false;
     }

@@ -29,12 +29,14 @@ test('the actual room capture sees the first-person body and restores visibility
   let captures = 0;
   t.mock.method(THREE.CubeCamera.prototype, 'update', function(renderer: THREE.WebGLRenderer, scene: THREE.Scene) {
     captures++; assert.equal(scene, h.scene); assert.equal(h.subject.visible, true); assert.equal(h.glasses.visible, false);
+    assert.equal(scene.matrixWorldAutoUpdate, false, 'each cube face must reuse the main draw transforms');
     assert.equal(renderer.shadowMap.autoUpdate, false); assert.equal(renderer.shadowMap.needsUpdate, false);
     renderer.xr.enabled = false;
   });
   h.reflection.update(h.journey, h.body, h.subject); h.draw();
   assert.equal(captures, 1); assert.equal(h.material.envMap?.mapping, THREE.CubeUVReflectionMapping); assert.equal(h.subject.visible, false); assert.equal(h.glasses.visible, true);
   assert.deepEqual(h.renderer.shadowMap, { autoUpdate: true, needsUpdate: true }); assert.equal(h.renderer.xr.enabled, true);
+  assert.equal(h.scene.matrixWorldAutoUpdate, true);
   assert.deepEqual(h.restored.at(-1), [h.target, 2, 1]);
   h.draw(); h.draw(); assert.equal(captures, 1, 'a frozen room must reuse its completed capture');
   let released = false; h.material.envMap.addEventListener('dispose', () => released = true);
@@ -61,6 +63,7 @@ test('a failed nested capture restores the first-person body, shadow settings an
   t.mock.method(THREE.CubeCamera.prototype, 'update', (renderer: THREE.WebGLRenderer) => { renderer.xr.enabled = false; throw new Error('capture failed'); });
   h.reflection.update(h.journey, h.body, h.subject); assert.throws(h.draw, /capture failed/);
   assert.equal(h.subject.visible, false); assert.equal(h.glasses.visible, true); assert.equal(h.renderer.xr.enabled, true);
+  assert.equal(h.scene.matrixWorldAutoUpdate, true);
   assert.deepEqual(h.renderer.shadowMap, { autoUpdate: true, needsUpdate: true }); assert.deepEqual(h.restored.at(-1), [h.target, 2, 1]);
   assert.equal(h.material.envMap, null);
 });
