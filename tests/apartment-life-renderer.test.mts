@@ -90,6 +90,28 @@ test('the physical bedside clock shows world time, flashes while ringing and dep
   } finally { renderer.dispose(); globalThis.document = original; }
 });
 
+test('the narrow street exit label leaves room for every letter', t => {
+  const original = globalThis.document;
+  const signs: { font: string; height: number; width: number; maxWidth?: number }[] = [];
+  globalThis.document = { createElement: () => {
+    const canvas = { width: 0, height: 0, getContext: () => ({
+      font: '', fillRect() {},
+      fillText(text: string, _x: number, _y: number, maxWidth?: number) {
+        if (text === 'STREET') signs.push({ font: this.font, height: canvas.height, width: canvas.width, maxWidth });
+      },
+    }) };
+    return canvas;
+  } } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.after(() => { globalThis.document = original; });
+  const renderer = new ApartmentSetRenderer(new THREE.Group());
+  t.after(() => renderer.dispose());
+  assert.equal(signs.length, 1);
+  const [sign] = signs;
+  assert.ok(parseFloat(sign.font) < sign.height);
+  assert.ok(sign.maxWidth !== undefined && sign.maxWidth < sign.width);
+});
+
 test('the rendered blanket covers the mattress and hangs clear of both sides', t => {
   const original = globalThis.document;
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
@@ -177,6 +199,16 @@ test('one persistent city apartment renders ordinary life, contact, daylight and
     assert.ok(landing.getWorldPosition(new THREE.Vector3()).distanceTo(lampPosition) < .001);
     assert.equal(landing.intensity, 180);
     assert.equal(landing.shadow.autoUpdate, true);
+    const fill = home.getObjectByName('apartment-doorway-fill') as THREE.PointLight;
+    const regularFill = { intensity: fill.intensity, x: fill.position.x, color: fill.color.getHex() };
+    const entrance = { ...life, journey: { ...journey, contact: { phase: 'invitation', elapsed: 0 } as const } };
+    interiors.update(22000, neo.position, entrance);
+    assert.ok(fill.intensity < regularFill.intensity / 2 && fill.position.x * regularFill.x < 0,
+      'the open doorway uses side light and leaves a visible shadow side on the visitors');
+    assert.ok(fill.color.g > fill.color.r && fill.color.g > fill.color.b);
+    assert.ok(landing.intensity > 0 && landing.intensity < 180 && landing.castShadow);
+    interiors.update(12000, neo.position);
+    assert.deepEqual({ intensity: fill.intensity, x: fill.position.x, color: fill.color.getHex() }, regularFill);
     const street = { ...neo.position, z: neo.position.z + 140 };
     const commute = { ...life, journey: { ...journey, scene: 'm1_commute' } };
     interiors.update(12000, street, commute, street, undefined, undefined, true);

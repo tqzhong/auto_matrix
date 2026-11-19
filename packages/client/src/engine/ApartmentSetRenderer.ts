@@ -63,6 +63,8 @@ export class ApartmentSetRenderer {
   private clockButton: THREE.Mesh;
   private glow = new THREE.PointLight(0x8bba81, 14, 10, 2);
   private landingLight = new THREE.SpotLight(0xc9d2a3, 0, 30, 1.05, .65, 2);
+  private hallBounce = new THREE.PointLight(0xd7d0a7, 82, 20, 2);
+  private doorwayFill = new THREE.PointLight(0xc3c8aa, 105, 14, 2);
   private windowGlass: THREE.MeshStandardMaterial;
   private windowLights: THREE.PointLight[] = [];
   private roomLights: THREE.Light[] = [];
@@ -272,8 +274,8 @@ export class ApartmentSetRenderer {
     // The commute can retain the landing light slot after the room itself is culled.
     if (cityLights) { cityLights.attach(light); cityLights.attach(light.target); }
     const luminous = new THREE.MeshBasicMaterial({ color: 0xc2cba1, toneMapped: false }); this.materials.add(luminous);
-    const hallBounce = new THREE.PointLight(0xd7d0a7, 82, 20, 2); hallBounce.position.set(0, 5.8, 15.5); this.root.add(hallBounce);
-    const doorwayFill = new THREE.PointLight(0xc3c8aa, 105, 14, 2); doorwayFill.name = 'apartment-doorway-fill'; doorwayFill.position.set(2, 4.8, 8.4); this.root.add(doorwayFill);
+    this.hallBounce.position.set(0, 5.8, 15.5); this.root.add(this.hallBounce);
+    this.doorwayFill.name = 'apartment-doorway-fill'; this.doorwayFill.position.set(2, 4.8, 8.4); this.root.add(this.doorwayFill);
     this.box(trim, 0, 8.55, 16, 3.4, .16, .7); this.box(luminous, 0, 8.42, 16, 3.1, .08, .32);
     this.root.traverse(object => { if (object instanceof THREE.Light && object !== light) this.roomLights.push(object); });
     this.batch(); this.update();
@@ -595,18 +597,28 @@ export class ApartmentSetRenderer {
   }
   private label(text: string, w: number, h: number, color: string, background: string, size: number) {
     const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = Math.round(size * h / w); const ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = background; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `${text.length > 8 ? size / 12 : size / 3}px Georgia`;
-    text.split('\n').forEach((line, i, lines) => ctx.fillText(line, size / 2, canvas.height / 2 + (i - (lines.length - 1) / 2) * size / 8));
+    const fontSize = Math.min(text.length > 8 ? size / 12 : size / 3, canvas.height * .9);
+    ctx.fillStyle = background; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `${fontSize}px Georgia`;
+    text.split('\n').forEach((line, i, lines) => ctx.fillText(line, size / 2, canvas.height / 2 + (i - (lines.length - 1) / 2) * size / 8, size * .9));
     const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace; this.textures.add(map);
     const mat = new THREE.MeshStandardMaterial({ map, roughness: .8 }); this.materials.add(mat); return this.mesh(new THREE.PlaneGeometry(w, h), mat, 0, 0, 0);
   }
   update(journey?: FilmJourney, time = 22000, nearby = true, contactSignal = false, life?: NeoLifeState, check: ComputerInvestigation | undefined = life?.computerCheck, reserveLandingSlot = false): void {
+    const contact = journey?.scene === 'm1_wake_up' && !journey.visiting ? journey.contact : undefined;
+    const visitors = contact && apartmentAfter(contact, 'door');
     const daylight = Math.max(0, Math.sin((time / 24000 - .25) * Math.PI * 2));
     this.windowGlass.emissiveIntensity = .025 + daylight * .55;
     for (const light of this.roomLights) light.visible = nearby;
     this.landingLight.visible = nearby || reserveLandingSlot;
-    this.landingLight.intensity = nearby ? 180 : 0;
+    this.landingLight.intensity = nearby ? visitors ? 115 : 180 : 0;
+    this.landingLight.color.setHex(visitors ? 0x9db6a5 : 0xc9d2a3);
     this.landingLight.shadow.autoUpdate = nearby;
+    // The visitors are lit from one side of the doorway and from behind.
+    this.hallBounce.color.setHex(visitors ? 0xa1bfc2 : 0xd7d0a7);
+    this.hallBounce.intensity = visitors ? 54 : 82;
+    this.doorwayFill.color.setHex(visitors ? 0x9fbb9c : 0xc3c8aa);
+    this.doorwayFill.intensity = visitors ? 36 : 105;
+    this.doorwayFill.position.x = visitors ? -2.8 : 2;
     for (const light of this.windowLights) light.intensity = daylight * 100;
     const morning = journey?.scene === 'm1_morning' && !journey.visiting ? journey.morning : undefined;
     const alarm = morning?.phase === 'alarm' || morning?.phase === 'stopping' && morning.elapsed < .55;
@@ -621,7 +633,6 @@ export class ApartmentSetRenderer {
       if (blink) { ctx.font = '14px monospace'; ctx.fillText('ALARM', 128, 83); }
       this.clockScreen.needsUpdate = true;
     }
-    const contact = journey?.scene === 'm1_wake_up' && !journey.visiting ? journey.contact : undefined;
     const call = journey?.scene === 'm1_wake_again' && !journey.visiting ? journey.wakeCall : undefined;
     this.door.rotation.y = (contact ? apartmentDoor(contact) : 1) * 1.42;
     if (journey?.scene === 'm1_wake_again') this.door.rotation.y = (journey.visiting || journey.step >= 2 ? 1 : wakeCallDoor(call)) * 1.42;
