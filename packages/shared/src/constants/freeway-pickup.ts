@@ -3,10 +3,11 @@ import type { PlayerInput } from './city.js';
 import { FREEWAY_BIKE, freewayTraffic, type FreewayTraffic } from './freeway.js';
 
 export const FREEWAY_PICKUP = {
-  bridge: { x: 14, z: 400, height: 18, edge: 407 },
+  bridge: { x: 14, z: 400, height: 18, edge: 407, takeoff: 406 },
   carrier: { x: 14, start: 350, speed: 18, width: 7.4, length: 26, deck: 5.8 },
   bike: { x: -1.75, z: 6, rider: FREEWAY_BIKE.rider },
   leap: { speed: 14, lift: 11.4, gravity: 18.5, clearRail: .4 },
+  landing: { halfWidth: 1.7, rear: -11, front: -2 },
   callSeconds: 1.3,
   handoffSeconds: 1.65,
   keyContact: .85,
@@ -32,6 +33,20 @@ export interface FreewayPickup {
 }
 const clamp = (n: number, low: number, high: number) => Math.max(low, Math.min(high, n));
 const smooth = (n: number) => { const t = clamp(n, 0, 1); return t * t * (3 - 2 * t); };
+const { bridge, carrier, leap, landing } = FREEWAY_PICKUP;
+const landingSeconds = (leap.lift + Math.sqrt(leap.lift ** 2 + 2 * leap.gravity * (bridge.height - carrier.deck))) / leap.gravity;
+function landingRelativeZ(from: number, takeoffAt: number): number {
+  const z = from + leap.speed * (landingSeconds - leap.clearRail);
+  return z - (carrier.start + (takeoffAt + landingSeconds) * carrier.speed);
+}
+export function freewayPickupBridgeCue(state: FreewayPickup): string {
+  if (state.phase !== 'bridge' || state.paused || state.unavailable) return freewayPickupText(state);
+  if (state.z < bridge.takeoff) return 'W 走到桥边，观察下方运车卡车。';
+  const relativeZ = landingRelativeZ(state.z, state.total);
+  if (relativeZ > landing.front) return '等卡车靠近，留意起跳提示。';
+  if (relativeZ < landing.rear) return '起跳窗口已过，等卡车驶过后从高架重试。';
+  return '现在按空格起跳，落向卡车后部的空载平台。';
+}
 export function newFreewayPickup(attempts = 0): FreewayPickup {
   return { phase: 'ready', elapsed: 0, total: 0, attempts, x: 14, z: 403, heading: 0, speed: 0, walking: 0, stride: 0, key: false, chain: true, route: 1 };
 }
@@ -128,15 +143,18 @@ export function stepFreewayPickup(state: FreewayPickup, input: Partial<PlayerInp
   if (state.phase === 'bridge') {
     next.x = clamp(state.x + (input.x ?? 0) * 4 * dt, 11.7, 15.7);
     next.z = clamp(state.z + (input.z ?? 0) * 4 * dt, 396, FREEWAY_PICKUP.bridge.edge);
-    if (input.jump && next.z >= 406) { next.phase = 'jumping'; next.elapsed = 0; next.start = { x: next.x, z: next.z, yaw: 0 }; }
+    if (input.jump && next.z >= bridge.takeoff) { next.phase = 'jumping'; next.elapsed = 0; next.start = { x: next.x, z: next.z, yaw: 0 }; }
     else if (freewayCarrierZ(next) > 430) { next.phase = 'failed'; next.failure = '卡车已驶过可用的起跳窗口。'; }
   } else if (state.phase === 'jumping') {
     next.x += (input.x ?? 0) * 3 * dt;
-    const root = freewayPickupRoot(next, 'trinity');
-    if (root.y <= FREEWAY_PICKUP.carrier.deck && next.elapsed > 1) {
-      const relativeZ = root.z - freewayCarrierZ(next);
-      if (Math.abs(next.x - 14) > 1.7 || relativeZ < -11 || relativeZ > -2) { next.phase = 'failed'; next.failure = '没有落到卡车后方的空载平台。'; }
-      else { next.phase = 'deck'; next.z = relativeZ; next.elapsed = 0; }
+    if (next.elapsed >= landingSeconds) {
+      const contactX = state.x + (input.x ?? 0) * 3 * Math.max(0, landingSeconds - state.elapsed);
+      const relativeZ = landingRelativeZ(state.start!.z, state.total - state.elapsed);
+      if (Math.abs(contactX - carrier.x) > landing.halfWidth || relativeZ < landing.rear || relativeZ > landing.front) {
+        next.phase = 'failed'; next.failure = '没有落到卡车后方的空载平台。';
+      } else {
+        next.phase = 'deck'; next.x = contactX; next.z = relativeZ; next.elapsed = 0;
+      }
     }
   } else if (state.phase === 'deck') {
     next.x = clamp(state.x + (input.x ?? 0) * 3 * dt, 11.4, 16.6);

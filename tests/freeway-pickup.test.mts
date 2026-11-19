@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FREEWAY_PICKUP, freewayPickupBike, freewayPickupRoot, newFreewayPickup, newFreewayRide, stepFreeway, stepFreewayPickup, filmPosition, type PlayerInput, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FREEWAY_PICKUP, freewayPickupBike, freewayPickupBridgeCue, freewayPickupRoot, newFreewayPickup, newFreewayRide, stepFreeway, stepFreewayPickup, filmPosition, type PlayerInput, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -154,6 +154,45 @@ test('a missed leap keeps its real failure pose, then an explicit retry restores
   h.command('act'); assert.equal(h.state().freewayPickup!.phase, 'ready');
   assert.equal(h.state().freewayPickup!.attempts, 1); assert.equal(h.state().freewayPickup!.total, 0);
   assert.equal(h.state().ride, undefined); assert.equal(h.state().step, 0);
+});
+
+test('contact with the same deck edge has the same outcome across frame schedules and an airborne save', () => {
+  const land = (launch: number, interval: number) => {
+    const atEdge = { ...newFreewayPickup(1), phase: 'bridge' as const, total: launch - .05, z: FREEWAY_PICKUP.bridge.edge };
+    let state = stepFreewayPickup(atEdge, { jump: true }, .05);
+    assert.equal(state.phase, 'jumping');
+    for (let i = 0; i < 300 && state.phase === 'jumping'; i++) {
+      state = stepFreewayPickup(state, {}, interval);
+      if (i === 2) state = JSON.parse(JSON.stringify(state));
+    }
+    return state;
+  };
+  assert.equal(land(2.53, .01).phase, 'failed');
+  assert.equal(land(2.53, .1).phase, 'failed', 'crossing later in the frame cannot turn an early miss into a landing');
+  const fine = land(3.035, .01), coarse = land(3.035, .1);
+  assert.equal(fine.phase, 'deck');
+  assert.equal(coarse.phase, 'deck', 'the rear of the deck touched during the frame still catches the jump');
+  assert.ok(Math.abs(coarse.z - fine.z) < 1e-8);
+});
+
+test('the bridge instruction cues the jump when the moving landing platform is reachable', () => {
+  const bridge = { ...newFreewayPickup(), phase: 'bridge' as const, z: FREEWAY_PICKUP.bridge.edge };
+  assert.match(freewayPickupBridgeCue({ ...bridge, z: 403, total: 2.65 }), /走到桥边/);
+  assert.match(freewayPickupBridgeCue({ ...bridge, total: 2.3 }), /等卡车靠近/);
+  assert.match(freewayPickupBridgeCue({ ...bridge, total: 2.65 }), /现在按空格起跳/);
+  assert.match(freewayPickupBridgeCue({ ...bridge, total: 3.15 }), /起跳窗口已过/);
+  assert.match(freewayPickupBridgeCue({ ...bridge, total: 2.65, paused: '钥匙匠' }), /已暂停/);
+});
+
+test('an older paused bridge save preserves its recorded story text when Trinity reconnects', () => {
+  const h = setup(); h.command('act'); h.frame({ z: 1 }, 20);
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state));
+  const recorded = 'W 走到桥边。看准下方运车卡车，空格跳下；错过落点会失手。';
+  saved.neoLife.journey.lastText = recorded;
+  h.players.release('pickup-player', h.tick()); h.sandbox.restore(saved);
+  assert.equal(h.players.possess('pickup-player', 'trinity', h.tick()).agentId, 'trinity');
+  assert.equal(h.state().lastText, recorded);
+  assert.deepEqual(h.state().freewayPickup, saved.neoLife.journey.freewayPickup);
 });
 
 test('a guardrail failure keeps the motorcycle beneath its passengers rather than returning it to the carrier', () => {

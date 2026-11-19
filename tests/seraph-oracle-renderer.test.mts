@@ -271,6 +271,11 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     assert.equal(abandonedDisposals, 1);
   });
   await t.test('the flight prepares the close garage cast and keeps the same car after the cut', t => {
+    t.mock.method(THREE.TextureLoader.prototype, 'load', (_url: string, onLoad?: (texture: THREE.Texture) => void) => {
+      const texture = new THREE.Texture({ width: 1, complete: true });
+      onLoad?.(texture);
+      return texture;
+    });
     const twin = new THREE.Group(), keymaker = new THREE.Group();
     const twinCoat = new THREE.Mesh(body.geometry, body.material);
     const standIn = new THREE.Mesh(body.geometry, body.material);
@@ -283,6 +288,11 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     preview = undefined; prepare(); assert.ok(!preview);
     Object.assign(journey.mountain, { phase: 'flying', elapsed: 2, z: 112, altitude: 48 });
     const car = warm('garage-chase-car');
+    const order = [...compiled];
+    const mappedShell = order.find(object => object instanceof THREE.Mesh && object.parent === car.parent
+      && object.material instanceof THREE.MeshStandardMaterial && object.material.normalMap);
+    assert.ok(mappedShell, 'prepare the mapped garage shell');
+    assert.ok(order.indexOf(mappedShell) < order.indexOf(twinCoat), 'link the mapped garage shell before the cast can fill the queue');
     assert(compiled.has(twinCoat));
     assert.equal(twin.visible, false);
     assert(!compiled.has(standIn));

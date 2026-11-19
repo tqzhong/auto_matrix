@@ -307,6 +307,37 @@ test('the meeting defers offscreen skin shading and resumes it when the camera t
   assert.equal(renderer.getAgent(persephone.id)?.visible, true, 'other routes recover the normal Matrix view');
 });
 
+test('the château garage renders local riders and Twins while keeping other sets out of the draw', t => {
+  const originalDocument = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new AgentRenderer(new THREE.Scene());
+  t.after(() => { renderer.dispose(); globalThis.document = originalDocument; });
+  t.mock.method(renderer['models'], 'requestHero', () => {});
+  t.mock.method(renderer['models'], 'animate', () => {});
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const garage = 'film_chateau_garage', occupants = ['trinity', 'morpheus', 'keymaker', 'twin1', 'twin2'];
+  for (const [index, id] of occupants.entries()) {
+    const actor = world.agents.get(id)!;
+    Object.assign(actor, { position: filmPosition(garage, index, 14), currentLocation: garage, isInMatrix: true });
+    renderer.updateAgent(id, actor);
+  }
+  const jones = world.agents.get('agent_jones')!;
+  Object.assign(jones, { position: filmPosition('film_heart_hotel'), currentLocation: 'film_heart_hotel', isInMatrix: true });
+  renderer.updateAgent(jones.id, jones);
+  renderer.setPlayer('trinity');
+  const state: FilmJourney = { ...journey('dream'), scene: 'm2_garage', reloaded: undefined };
+  const camera = new THREE.PerspectiveCamera(60, 16 / 9, .1, 3000);
+  camera.position.copy(filmPosition(garage, 0, 19));
+  renderer.update(.02, camera, 1, 0, state);
+  assert.equal(renderer.getAgent(jones.id)?.visible, false, 'the hotel cast stays out of the garage render and its shadows');
+  assert(occupants.every(id => renderer.getAgent(id)?.visible), 'keep all garage cast visible');
+  renderer.update(.02, camera, 1, 0, { ...state, scene: 'm2_freeway' });
+  assert.equal(renderer.getAgent(jones.id)?.visible, true, 'leaving the garage restores ordinary visibility');
+});
+
 test('completed scene revisits retain their environment without replaying the current encounter', () => {
   const renderer = new ReloadedOpeningRenderer(new THREE.Group(), 'film_captains_meeting');
   const current = journey('dream'); current.visiting = 'm2_meeting';

@@ -2412,6 +2412,17 @@ export class FilmSetRenderer {
         const shadow = shipEntry ? shipCast?.(next.actor).shadow : undefined;
         if (shadow) { colors.meshes.unshift(shadow); prepared.liveMeshes?.push(shadow); }
       }
+      if (garageEntry) {
+        // Give the mapped room surfaces a batch before the arriving cast adds its meshes.
+        const shell = colors.meshes.filter(mesh => mesh.parent === room.root && mesh instanceof THREE.Mesh
+          && mesh.material instanceof THREE.MeshStandardMaterial && mesh.material.map).slice(0, 4);
+        if (shell.length) {
+          prepared.colors.meshes = colors.meshes.filter(mesh => !shell.includes(mesh));
+          this.linkColorBatch(renderer, camera, { ...colors, meshes: shell }, prepared.lighting, 'isolated');
+          this.prepareStagedColorTexture(renderer, prepared, colors.textures, 4);
+          return;
+        }
+      }
     }
     if (prepared.colors) {
       const cast = [next.actor, ...next.cast];

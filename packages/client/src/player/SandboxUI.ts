@@ -18,7 +18,7 @@ import { DOCK_GUNNERY } from '@auto_matrix/shared';
 import { APU_ROUTE } from '@auto_matrix/shared';
 import { dockEmpLocked, empOperatorText, empOperatorPose } from '@auto_matrix/shared';
 import { dockReunionLocked, dockReunionText } from '@auto_matrix/shared';
-import { FREEWAY_PICKUP, freewayPickupText } from '@auto_matrix/shared';
+import { FREEWAY_PICKUP, freewayPickupBridgeCue } from '@auto_matrix/shared';
 import { dockBriefingActive, dockBriefingLocked, dockBriefingText } from '@auto_matrix/shared';
 import { dockEvacuationActive, dockEvacuationLocked, dockEvacuationText, shaftSealActive, shaftSealLocked, shaftSealText } from '@auto_matrix/shared';
 import { templeDefenseActive, templeDefenseLocked, templeDefenseText } from '@auto_matrix/shared';
@@ -2374,7 +2374,7 @@ export class SandboxUI {
       this.el('film-ride-health').textContent = pickup.key ? '钥匙已接过' : '钥匙匠同行';
       this.el('film-ride-controls').textContent = pickup.phase === 'mounted' ? pickup.chain ? 'F 开枪断链 · V 视角' : 'W 加速驶出 · V 视角' : pickup.phase === 'shooting' ? '拔枪 · 射击 · 收枪 · V 视角' : pickup.phase === 'keyhandoff' ? '递出 · 接过 · 收回 · V 视角' : pickup.phase === 'mounting' ? '登上摩托 · V 视角' : pickup.phase === 'launching' ? '腾空驶出 · V 视角' : pickup.phase === 'merging' ? 'S 降速 · A / D 掉头 · W 加速' : 'WASD 移动 · 空格起跳 · G 互动 · V 视角';
       if (pickup.phase === 'merging' && pickup.chase) this.el('film-ride-controls').textContent = pickup.chase.phase === 'crossing' ? 'S 降速 · A / D 横穿转向 · W 逆向脱离' : 'W 加速 · S 刹车 · A / D 避开实体车身';
-      document.getElementById('game-objective-copy')!.textContent = freewayPickupText(pickup);
+      document.getElementById('game-objective-copy')!.textContent = freewayPickupBridgeCue(pickup);
       this.el('sandbox-interact').classList.toggle('hidden', !['ready', 'deck', 'key', 'failed'].includes(pickup.phase) || pickup.phase === 'key' && pickup.elapsed < FREEWAY_PICKUP.callSeconds);
       this.el('sandbox-nearby').textContent = pickup.phase === 'ready' ? '观察接近的卡车' : pickup.phase === 'key' ? '接过钥匙' : pickup.phase === 'failed' ? '从高架重试' : '检查前排摩托车';
       this.el('sandbox-waypoint').textContent = ''; return;
