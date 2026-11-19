@@ -88,6 +88,7 @@ export class SandboxUI {
   private tick = 0;
   private time = 7500;
   private panel: Panel | null = null;
+  private panelScroll = 0;
   private signature = '';
   private selectedFilm = 1;
   private nearest = '';
@@ -183,12 +184,13 @@ export class SandboxUI {
   }
   open(panel: Panel): void {
     if (!this.player || !this.state) return;
+    const scroll = this.panel === null ? this.panelScroll : undefined;
     this.cancelVisit();
     if (panel === 'journal' && this.panel !== 'journal') this.selectedFilm = MISSIONS.find(m => m.id === this.state!.profiles[this.player!.id].trackedMission)?.film ?? this.selectedFilm;
     this.panel = panel; this.signature = ''; this.menu(true);
     if (document.pointerLockElement) document.exitPointerLock();
     this.el('sandbox-panel').classList.remove('hidden');
-    this.renderPanel();
+    this.renderPanel(scroll);
   }
   toggle(panel: Panel): void { if (this.panel === panel) this.close(); else this.open(panel); }
   interact(): void {
@@ -246,6 +248,7 @@ export class SandboxUI {
   close(): boolean {
     if (!this.panel) return false;
     this.cancelVisit();
+    this.panelScroll = this.el('sandbox-panel-body').scrollTop;
     this.panel = null; this.el('sandbox-panel').classList.add('hidden'); this.menu(false); return true;
   }
   update(player: AgentState | undefined, state: SandboxState | undefined, time: number, tick: number, day?: number): void {
@@ -2458,7 +2461,7 @@ export class SandboxUI {
     } else this.el('sandbox-waypoint').textContent = journey.visiting ? '回访不会改变剧情进度' : '本场景已记录';
   }
 
-  private renderPanel(): void {
+  private renderPanel(savedScroll?: number): void {
     if (!this.panel || !this.player || !this.state || this.visitLoading) return;
     const player = this.player; const state = this.state; const profile = state.profiles[player.id];
     const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
@@ -2476,7 +2479,7 @@ export class SandboxUI {
       life && [life.chapter, life.day, life.money, life.cycle, Math.floor(this.time / 500), life.anomaly, life.computerCheck?.phase, life.activity, life.journal[0], life.appointment, life.journey, player.status, state.threats.length]]);
     if (signature === this.signature) return;
     this.signature = signature;
-    const body = this.el('sandbox-panel-body'); const scroll = body.scrollTop;
+    const body = this.el('sandbox-panel-body'); const scroll = savedScroll ?? body.scrollTop;
     const expanded = [...body.querySelectorAll('details')].map(detail => detail.open);
     const neoPanel = Boolean(life && (this.panel === 'journal' || life.journey && this.panel === 'map'));
     this.el('sandbox-panel').classList.toggle('neo-panel', neoPanel);
@@ -2517,7 +2520,8 @@ export class SandboxUI {
       this.drawWorldMap();
     }
     body.querySelectorAll('details').forEach((detail, index) => { detail.open = expanded[index] ?? detail.open; });
-    body.scrollTop = scroll;
+    // A top-aligned panel can let the browser lay out the new content at paint.
+    if (scroll !== 0) body.scrollTop = scroll;
   }
   private drawMinimap(): void {
     if (!this.player || !this.state) return;

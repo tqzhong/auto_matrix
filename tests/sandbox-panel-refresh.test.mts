@@ -33,7 +33,7 @@ function fixture(panel = 'journal') {
   };
   const elements = new Map<string, unknown>([['#sandbox-panel-body', body]]);
   const root = { querySelectorAll: () => [], querySelector(id: string) {
-    if (!elements.has(id)) elements.set(id, { textContent: '', classList: { toggle() {} } });
+    if (!elements.has(id)) elements.set(id, { textContent: '', classList: { toggle() {}, add() {}, remove() {} } });
     return elements.get(id);
   } };
   const ui = Object.assign(Object.create(SandboxUI.prototype), { root, player, state: sandbox.state,
@@ -41,6 +41,29 @@ function fixture(panel = 'journal') {
   ui.renderPanel();
   return { ui, body, sandbox, player, world };
 }
+
+test('opening the journal at the top avoids synchronous scroll layout and reopening preserves a scrolled position', t => {
+  const { ui, body } = fixture();
+  const previous = globalThis.document;
+  globalThis.document = { pointerLockElement: null } as Document;
+  t.after(() => { globalThis.document = previous; });
+  Object.assign(ui, { panel: null, panelScroll: 0, menu() {} });
+  const operations: (string | number)[] = [];
+  let scrollTop = 0;
+  Object.defineProperty(body, 'scrollTop', {
+    get() { operations.push('read'); return scrollTop; },
+    set(value: number) { operations.push(value); scrollTop = value; },
+  });
+  ui.open('journal');
+  assert.deepEqual(operations, [], 'opening at the top should require no scroll layout');
+  assert.ok(body.action('breakfast'));
+  scrollTop = 120;
+  ui.close();
+  scrollTop = 0;
+  ui.open('journal');
+  assert.deepEqual(operations, ['read', 120]);
+  assert.equal(scrollTop, 120);
+});
 
 test('traffic movement preserves the open daily journal action targets between pointer down and click', () => {
   const { ui, body, sandbox } = fixture();
