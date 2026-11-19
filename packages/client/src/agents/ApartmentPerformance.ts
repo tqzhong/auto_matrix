@@ -3,12 +3,23 @@ import { FILM_SETS, APARTMENT_BOOK, APARTMENT_NETWORK, computerCheckLocked, comp
 import { apartmentDisc } from './ApartmentDisc.js';
 import type { HeroRig } from './HeroModel.js';
 
+// Head-local forehead sections from the Dujour rig, sampled from the center toward the temple.
+const dujourFringe = [
+  { y: .170, width: .159, depth: [.272, .267, .250, .211, .124] },
+  { y: .207, width: .158, depth: [.260, .254, .236, .200, .112] },
+  { y: .244, width: .148, depth: [.243, .237, .225, .194, .118] },
+  { y: .274, width: .127, depth: [.223, .218, .208, .186, .137] },
+  { y: .300, width: .105, depth: [.198, .194, .185, .168, .136] },
+  { y: .324, width: .075, depth: [.166, .162, .154, .140, .120] },
+];
+
 export class ApartmentPerformance {
   private disk = apartmentDisc();
   private cash = new THREE.Group();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private tattoo?: THREE.CanvasTexture;
+  private dujourHair?: THREE.Group;
   constructor(private rig: HeroRig) {
     this.disk.name = 'apartment-held-disc'; this.cash.name = 'apartment-held-cash';
     this.disk.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } });
@@ -17,6 +28,7 @@ export class ApartmentPerformance {
     this.mesh(this.cash, new THREE.BoxGeometry(.08, .045, .19), new THREE.MeshStandardMaterial({ color: 0xc4bfa5, roughness: .98 }));
     rig.root.add(this.disk, this.cash);
     if (rig.apartmentRole === 'dujour') {
+      this.fitDujourHair();
       const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
       const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#d4d0bf'; ctx.strokeStyle = '#555a4e'; ctx.lineWidth = 7;
       const oval = (x: number, y: number, rx: number, ry: number, angle: number) => { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, angle, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); };
@@ -42,6 +54,34 @@ export class ApartmentPerformance {
         mat.customProgramCacheKey = () => 'dujour-shoulder-rabbit-v1'; mat.needsUpdate = true;
       });
     }
+  }
+  private fitDujourHair(): void {
+    const shortHair = this.rig.root.getObjectByName('short04') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+    const material = shortHair.material.clone();
+    const attachment = this.dujourHair = new THREE.Group();
+    this.bone('head').add(attachment);
+    const fringePosition: number[] = [], fringeUv: number[] = [], indices: number[] = [];
+    for (const [row, section] of dujourFringe.entries()) {
+      for (let column = 0; column < 9; column++) {
+        const side = column - 4;
+        fringePosition.push(section.width * side / 4, section.y, section.depth[Math.abs(side)]);
+        // Both pieces use the opaque center of the existing hair atlas.
+        fringeUv.push(.436 + column / 8 * .1, .272 + row / 5 * .04);
+        if (row && column) {
+          const corner = row * 9 + column;
+          indices.push(corner - 10, corner - 9, corner, corner - 10, corner, corner - 1);
+        }
+      }
+    }
+    const fringe = new THREE.BufferGeometry();
+    fringe.setAttribute('position', new THREE.Float32BufferAttribute(fringePosition, 3));
+    fringe.setAttribute('uv', new THREE.Float32BufferAttribute(fringeUv, 2));
+    fringe.setIndex(indices); fringe.computeVertexNormals();
+    this.mesh(attachment, fringe, material).name = 'dujour-fringe';
+    const crown = new THREE.SphereGeometry(1, 24, 16), uv = crown.getAttribute('uv');
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, .436 + uv.getX(i) * .1, .272 + uv.getY(i) * .04);
+    const bun = this.mesh(attachment, crown, material);
+    bun.name = 'dujour-hair-bun'; bun.position.set(0, .353, -.105); bun.scale.set(.144, .164, .155);
   }
   private mesh(parent: THREE.Group, geo: THREE.BufferGeometry, mat: THREE.Material) {
     this.geometries.add(geo); this.materials.add(mat); const mesh = new THREE.Mesh(geo, mat); mesh.castShadow = true; parent.add(mesh); return mesh;
@@ -198,5 +238,5 @@ export class ApartmentPerformance {
       this.disk.quaternion.copy(heading.invert().multiply(rotation));
     }
   }
-  dispose(): void { this.disk.removeFromParent(); this.cash.removeFromParent(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.tattoo?.dispose(); }
+  dispose(): void { this.disk.removeFromParent(); this.cash.removeFromParent(); this.dujourHair?.removeFromParent(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.tattoo?.dispose(); }
 }

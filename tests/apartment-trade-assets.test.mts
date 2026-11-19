@@ -46,6 +46,29 @@ test('the apartment visitors keep the fitted jacket and dark hair of their own r
     hair.material.onBeforeCompile(shader, {} as THREE.WebGLRenderer);
     assert.equal(shader.fragmentShader, '#include <map_fragment>', 'the hair samples its authored dark material without lightening the color');
   });
+  await t.test('Dujour has a high bun and a fitted fringe on the apartment rig', async () => {
+    const rig = (await models.create('trinity', undefined, 'dujour'))!;
+    const head = rig.bones.get('head')!;
+    const bun = head.getObjectByName('dujour-hair-bun');
+    const fringe = head.getObjectByName('dujour-fringe');
+    assert.ok(bun instanceof THREE.Mesh && fringe instanceof THREE.Mesh);
+    assert.equal(bun.material, fringe.material, 'the finished hair uses one surface');
+    const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    const surface = new THREE.Mesh(skin.geometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+    const rest = assets.get('dujour')!.parser.json.extras.head as [number, number, number];
+    const positions = fringe.geometry.getAttribute('position');
+    try {
+      for (let i = 0; i < positions.count; i++) {
+        const position = new THREE.Vector3().fromBufferAttribute(positions, i).add(new THREE.Vector3(...rest));
+        const ray = new THREE.Raycaster(position.clone().setZ(1), new THREE.Vector3(0, 0, -1), 0, 1);
+        const [scalp] = ray.intersectObject(surface);
+        assert.ok(scalp && position.z - scalp.point.z >= .004, 'fringe roots stay outside the real forehead');
+        assert.ok(position.y > 4.01, 'the lower edge stays above the brows');
+      }
+    } finally { surface.material.dispose(); }
+    bun.geometry.computeBoundingBox();
+    assert.ok(bun.position.y + bun.geometry.boundingBox!.max.y * bun.scale.y > .48, 'the bun rises above the crown');
+  });
 });
 
 test('the actual Neo carries the collected cartridge into the handover and the disc remains continuous across ownership transfer', async () => {
