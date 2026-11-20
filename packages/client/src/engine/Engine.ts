@@ -285,10 +285,11 @@ export class Engine {
     const morningApartment = liveMatrixJourney?.scene === 'm1_morning' && apartmentSet;
     const deferredContact = this.matrix && !meeting && player?.id === 'neo' && insideLifeRoom(player.position) === 'neo_apartment'
       && this.sandbox?.neoLife?.deferredContact?.contact?.phase === 'noticed';
+    const apartmentView = openingApartment || morningApartment || deferredContact;
     this.lightCulling.minimumPointSlots = filmSet?.id === 'film_government_lobby' ? LOBBY_POINT_SLOTS
       : filmSet?.id === 'film_subway_platform' ? SUBWAY_POINT_SLOTS
       : officeSet ? OFFICE_POINT_SLOTS
-      : openingApartment || morningApartment || deferredContact ? APARTMENT_POINT_SLOTS
+      : apartmentView ? APARTMENT_POINT_SLOTS
       : this.filmSets.minimumPointSlots || (reserveStreetLights && !cinematicSet ? POINT_SLOT_FLOOR : 0);
     if (!cinematicSet && previousSet?.id !== filmSet?.id) this.updateAtmosphere();
     this.voxelRenderer.matrix.visible = this.matrix && !cinematicSet; this.voxelRenderer.real.visible = !this.matrix && !cinematicSet;
@@ -592,7 +593,7 @@ export class Engine {
       if (roomFar < cameraFar) { this.camera.far = roomFar; this.camera.updateProjectionMatrix(); }
       // The trace covers the frame. Resume all passes while it still covers the first hall view.
       const covered = openingTrace !== undefined && openingTrace < OPENING_HOTEL.trace.located;
-      this.postProcessing.render(filmSet?.id !== 'film_extraction_car', covered);
+      this.postProcessing.render(filmSet?.id !== 'film_extraction_car', covered, apartmentView ? .5 : 1);
       this.openingTrace.render(this.renderer, openingTrace);
     } finally {
       if (roomFar < cameraFar) { this.camera.far = cameraFar; this.camera.updateProjectionMatrix(); }

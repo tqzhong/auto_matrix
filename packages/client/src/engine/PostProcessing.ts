@@ -249,13 +249,18 @@ export class PostProcessing {
     }
     this.pixelRatio = renderer.getPixelRatio(); this.resize(window.innerWidth, window.innerHeight);
   }
-  render(occlusion = true, covered = false): void {
+  render(occlusion = true, covered = false, occlusionScale = 1): void {
     this.occlusion.enabled = occlusion;
     // The comparison AO path can swap the buffers. Always start the scene
     // on the depth-capable target, regardless of the previous frame's swaps.
     this.composer.readBuffer = this.composer.renderTarget2;
     this.composer.writeBuffer = this.composer.renderTarget1;
     const { renderer, readBuffer, writeBuffer } = this.composer;
+    if (occlusion) {
+      const width = Math.max(1, Math.round(readBuffer.width * occlusionScale));
+      const height = Math.max(1, Math.round(readBuffer.height * occlusionScale));
+      if (this.occlusion.width !== width || this.occlusion.height !== height) this.occlusion.setSize(width, height);
+    }
     // Prepare the normal and fullscreen programs once before the hall enters view.
     if (!covered || this.coveredGpu !== renderer.properties) {
       this.composer.render();

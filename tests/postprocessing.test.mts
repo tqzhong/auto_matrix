@@ -31,6 +31,28 @@ test('changing render quality resizes both compositor buffers, occlusion and ant
   } finally { occlusion.dispose(); antialias.dispose(); composer.dispose(); }
 });
 
+test('a smaller occlusion pass keeps full-size scene colors and restores its normal resolution after the cut', t => {
+  const renderer = { getPixelRatio: () => 1.5, getSize: (size: THREE.Vector2) => size.set(1280, 720) } as THREE.WebGLRenderer;
+  const composer = new EffectComposer(renderer), antialias = new ShaderPass(FXAAShader);
+  const occlusion = new WorldOcclusionPass(new THREE.Scene(), new THREE.PerspectiveCamera(), 1920, 1080);
+  composer.addPass(occlusion); composer.addPass(antialias);
+  const post = Object.assign(Object.create(PostProcessing.prototype), { composer, occlusion, antialias, pixelRatio: 1.5 }) as PostProcessing;
+  t.after(() => { occlusion.dispose(); antialias.dispose(); composer.dispose(); });
+  t.mock.method(composer, 'render', () => {});
+  const resized = t.mock.method(occlusion, 'setSize');
+  post.resize(1280, 720);
+  const oldCalls = resized.mock.callCount();
+  post.render(true, false, .5); post.render(true, false, .5);
+  for (const buffer of [composer.readBuffer, composer.writeBuffer]) assert.deepEqual([buffer.width, buffer.height], [1920, 1080]);
+  assert.deepEqual(antialias.uniforms.resolution.value.toArray(), [1 / 1920, 1 / 1080]);
+  for (const buffer of [occlusion.normalRenderTarget, occlusion.gtaoRenderTarget, occlusion.pdRenderTarget])
+    assert.deepEqual([buffer.width, buffer.height], [960, 540]);
+  assert.equal(resized.mock.callCount(), oldCalls + 1);
+  post.render();
+  assert.deepEqual([occlusion.normalRenderTarget.width, occlusion.normalRenderTarget.height], [1920, 1080]);
+  assert.equal(resized.mock.callCount(), oldCalls + 2);
+});
+
 test('fullscreen color passes keep depth only on the scene and normal targets', () => {
   const previousWindow = globalThis.window;
   globalThis.window = { innerWidth: 1920, innerHeight: 1080 } as Window & typeof globalThis;
