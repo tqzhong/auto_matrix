@@ -204,7 +204,7 @@ test('Zee and Link hand over one visible charm using their delivered wrists', as
   };
   const render = (tick: number) => {
     h.renderer.update(.05, undefined, 0, tick, journey);
-    hangar.update(journey, 300, undefined, undefined, h.renderer.departureCharm);
+    hangar.update(journey, 300, undefined, undefined, h.renderer.departureGift);
     h.scene.updateMatrixWorld(true);
     return charm.localToWorld(new THREE.Vector3(0, .21, 0));
   };
@@ -219,4 +219,63 @@ test('Zee and Link hand over one visible charm using their delivered wrists', as
   assert(loop.distanceTo(palm('zee')) > .35);
   journey.step = 1; delete journey.started; render(108);
   assert.equal(charm.visible, false);
+});
+
+test('Kid holds one spoon, Neo takes it by the handle, and a cancelled exchange gives it back to Kid', async t => {
+  const h = await setup(t, ['kid-body']);
+  const set = 'film_zion_hangar', center = FILM_SETS[set].center, root = new THREE.Group();
+  root.position.set(center.x, center.y - 1, center.z); h.scene.add(root);
+  const hangar = new ZionHomecomingRenderer(root, set, 'm2_departure');
+  t.after(() => hangar.dispose());
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const journey = { scene: 'm2_departure', step: 2, actor: 'neo', completed: [] } as unknown as FilmJourney;
+  for (const id of ['kid', 'neo'] as const) {
+    const actor = world.agents.get(id)!, mark = id === 'kid' ? ZION_CAST.m2_departure.kid : { x: -3, z: 10.2, yaw: Math.PI };
+    Object.assign(actor, { currentLocation: set, isInMatrix: false, position: filmPosition(set, mark.x, mark.z), rotation: mark.yaw });
+    h.renderer.updateAgent(id, actor, journey);
+    h.renderer.getAgent(id)!.position.copy(actor.position);
+    h.renderer.getAgentBody(id)!.rotation.y = actor.rotation;
+  }
+  h.renderer.setPlayerMotion({ speed: 0, turn: 0, grounded: true, verticalVelocity: 0, realWorld: true });
+  for (let frame = 0; frame < 12; frame++) {
+    h.renderer.update(.05, undefined, 0, 100, journey);
+    await new Promise(resolve => setImmediate(resolve));
+  }
+  const spoon = root.getObjectByName('kid-spoon-gift')!;
+  const kidBody = h.renderer.getAgentDetail('kid')!.getObjectByName('kid-detailed-body')!;
+  assert.ok(kidBody?.visible);
+  const kidPalm = () => kidBody.getObjectByName('wrist_R')!.localToWorld(new THREE.Vector3(0, -.14, .05));
+  const neo = h.renderer.getAgentHero('neo')!, garment = neo.getObjectByName('neo-logos-sweater') as THREE.SkinnedMesh;
+  const trousers = neo.getObjectByName('Tailored_trousers')!, fullGarment = garment.geometry;
+  const render = (tick: number, first: boolean) => {
+    h.renderer.setPlayer('neo', first);
+    h.renderer.setPlayerMotion({ speed: 0, turn: 0, grounded: true, verticalVelocity: 0, realWorld: true, firstPerson: first });
+    h.renderer.update(.05, undefined, 0, tick, journey);
+    hangar.update(journey, 300, undefined, undefined, h.renderer.departureGift);
+    h.scene.updateMatrixWorld(true);
+    return spoon.getWorldPosition(new THREE.Vector3());
+  };
+  assert.equal(root.getObjectsByProperty('name', spoon.name).length, 1);
+  for (const first of [false, true]) {
+    journey.step = 2; delete journey.started;
+    assert.ok(render(100, first).distanceTo(kidPalm()) < .11, 'Kid holds the waiting spoon');
+    assert.ok(spoon.visible);
+    journey.started = 100;
+    const contact = render(103, first);
+    const gaps = [contact.distanceTo(kidPalm()), contact.distanceTo(h.palm('neo'))];
+    assert.ok(gaps.every(gap => gap < .24), `both hands meet at the shaft: ${JSON.stringify(gaps)}`);
+    assert.ok(h.renderer.getAgentBody('neo')!.visible, 'the receiving hand remains visible in either view');
+    if (first) {
+      assert.equal(trousers.visible, false, 'Neo’s torso and legs stay out of the camera');
+      const sleeveIndices = garment.geometry.index!.count;
+      assert.ok(garment.visible && sleeveIndices > 0 && sleeveIndices < fullGarment.index!.count, 'the visible sleeve covers the receiving forearm');
+      render(103, false);
+      assert.ok(trousers.visible && garment.geometry === fullGarment, 'external view restores the full outfit');
+    }
+    assert.ok(render(105, first).distanceTo(h.palm('neo')) < .11, 'the spoon follows Neo before stowing');
+    delete journey.started;
+    assert.ok(render(106, first).distanceTo(kidPalm()) < .11, 'leaving the exchange returns the same spoon to Kid');
+    journey.step = 3; render(107, first);
+    assert.equal(spoon.visible, false);
+  }
 });

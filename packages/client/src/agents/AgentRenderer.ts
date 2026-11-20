@@ -26,7 +26,7 @@ import { poseTruckRescue } from './TruckRescueContact.js';
 import { poseSmithFinaleContact } from './SmithFinaleContact.js';
 import { SmithEndingAppearance } from './SmithEndingAppearance.js';
 import { poseUpperDigger } from './UpperDiggerPerformance.js';
-import { poseDockDeparture, poseDockReunion, poseZionDepartureCharm } from './DockReunionPerformance.js';
+import { poseDockDeparture, poseDockReunion, poseZionDepartureCharm, poseZionDepartureSpoon, type ZionDepartureGiftPose } from './DockReunionPerformance.js';
 import { poseTempleDefense } from './TempleDefensePerformance.js';
 import { ceasefireReunionPose, gardenPose, gardenGroundHeight, type CeasefireReunionRole, type TrilogyEpilogueGesture } from '@auto_matrix/shared';
 import { poseCeasefireReunionPair } from './CeasefireReunionPerformance.js';
@@ -96,8 +96,8 @@ export class AgentRenderer {
   private firstPerson = false;
   private matrix = true;
   private playerMotion?: MotionInput;
-  departureCharm?: THREE.Vector3;
-  private departureCharmClock?: { started: number; tick: number; fraction: number };
+  departureGift?: ZionDepartureGiftPose;
+  private departureGiftClock?: { started: number; tick: number; fraction: number };
   private openingRoofAttempt?: number;
   private models = new CharacterModels();
   private preparedOpeningApartment = new WeakSet<THREE.Group>();
@@ -690,6 +690,13 @@ export class AgentRenderer {
 
   update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0, journey?: FilmJourney, garageCar?: GarageCarPose): boolean {
     const scene = journey?.visiting ?? journey?.scene;
+    const departure = journey?.scene === 'm2_departure' && !journey.visiting && !this.matrix ? journey : undefined;
+    const giver = departure?.step === 0 ? this.agents.get('zee') : departure?.step === 2 ? this.agents.get('kid') : undefined;
+    const receiver = departure?.step === 0 ? this.agents.get('link') : departure?.step === 2 ? this.agents.get('neo') : undefined;
+    const giftPresent = giver?.state.status === 'alive' && receiver?.state.status === 'alive' && !giver.state.controller
+      && (!receiver.state.controller || departure?.step === 2 && this.playerId === 'neo')
+      && giver.state.currentLocation === 'film_zion_hangar' && receiver.state.currentLocation === 'film_zion_hangar';
+    const spoonHandoff = giftPresent && departure?.step === 2 && departure.started !== undefined;
     const prepareRequestCast = !journey?.visiting && (!this.playerId || this.playerId === journey?.actor);
     const prepareOracleRequest = prepareRequestCast && journey?.scene === 'm3_trainman' && journey.step >= 3;
     const prepareTrainmanChase = prepareRequestCast && journey?.scene === 'm3_oracle_request' && journey.step >= 3;
@@ -881,15 +888,16 @@ export class AgentRenderer {
       const pistolView = id === this.playerId && this.firstPerson && (disarmGesture || this.playerMotion?.hotel303?.phase === 'pickup'
         || this.playerMotion?.armed && this.playerMotion.weaponStyle === 'hel_pistol');
       const apuView = id === this.playerId && this.firstPerson && Boolean(this.playerMotion?.apuDriving || this.playerMotion?.dockReload || this.playerMotion?.dockLastStand || this.playerMotion?.dockGate);
+      const spoonView = id === 'neo' && id === this.playerId && this.firstPerson && spoonHandoff;
       const recoveryView = id === this.playerId && this.firstPerson && (this.playerMotion?.performance === 'recover' || this.playerMotion?.cabin?.kind === 'wake');
       const constructView = id === this.playerId && this.firstPerson && (this.playerMotion?.construct?.role === 'neo' && this.playerMotion.construct.phase === 'image' || this.playerMotion?.reveal?.kind === 'construct' && this.playerMotion.reveal.role === 'neo');
       const truthView = id === this.playerId && this.firstPerson && this.playerMotion?.truth?.role === 'neo';
       const downloadView = id === this.playerId && this.firstPerson && (this.playerMotion?.cabin?.kind === 'core' && this.playerMotion.cabin.role === 'neo' || this.playerMotion?.training && ['download', 'jump_fall', 'jump_return', 'red_dress'].includes(this.playerMotion.training.kind) && this.playerMotion.training.role === 'neo');
       const interludeView = id === this.playerId && this.firstPerson && this.playerMotion?.interlude?.role === 'neo'
         && ['console', 'meal'].includes(this.playerMotion.interlude.kind);
-      entry.body.visible = (id !== this.playerId || !this.firstPerson || this.playerMotion?.roofExit?.stairwell || phoneFailed || apuView || pistolView || recoveryView || constructView || truthView || downloadView || interludeView || burlyStaffHeld(this.playerMotion?.burly) || this.playerMotion?.chateauWeapon !== undefined || this.playerMotion?.engineering !== undefined || this.playerMotion?.zionMessage !== undefined || doorPush !== undefined || (this.playerMotion?.primaryDemolition?.phase === 'mounting' || this.playerMotion?.primaryDemolition?.blast?.phase === 'countdown') || this.playerMotion?.signal !== undefined || this.playerMotion?.helGarage !== undefined || this.playerMotion?.helElevator !== undefined || this.playerMotion?.trainmanChase !== undefined || this.playerMotion?.baneInquiry !== undefined || this.playerMotion?.hammerBriefing !== undefined || this.playerMotion?.hammerPilot !== undefined || this.playerMotion?.logosPilot !== undefined || this.playerMotion?.zionDeployment !== undefined || this.playerMotion?.maggieDiscovery !== undefined || this.playerMotion?.logosBane !== undefined || this.playerMotion?.architect?.role === 'neo' || this.playerMotion?.catch?.role === 'neo' || this.playerMotion?.truckHood !== undefined || this.playerMotion?.truckWeapons !== undefined || this.playerMotion?.freewayPickup !== undefined || this.playerMotion?.freewayRide !== undefined || this.playerMotion?.dockEvacuation !== undefined || this.playerMotion?.shaftSeal !== undefined || this.playerMotion?.templeDefense?.phase === 'mounting' || this.playerMotion?.dockReunion !== undefined || this.playerMotion?.empOperator !== undefined || this.playerMotion?.upperDigger !== undefined || this.playerMotion?.diggers !== undefined || this.playerMotion?.smithFinale?.pitFight && smithLocked || this.playerMotion?.morning !== undefined || state.id === 'neo' && state.currentLocation === 'film_power_plant_pods' && this.playerMotion?.performance !== undefined && ['pod', 'fall', 'float', 'lift'].includes(this.playerMotion.performance) || Boolean(this.playerMotion?.workday?.role === 'neo' && this.playerMotion.workday.phase === 'signing') || this.playerMotion?.computerCheck !== undefined || Boolean(this.playerMotion?.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.playerMotion.contact.phase)) || this.playerMotion?.pills !== undefined || this.playerMotion?.wetwall?.hanging || this.playerMotion?.inspecting === true || this.playerMotion?.spoon !== undefined || this.playerMotion?.spoonLesson !== undefined || Boolean(this.playerMotion?.oracleVisit && oracleCookieOwner(this.playerMotion.oracleVisit) === 'neo') || this.playerMotion?.oracleDeparture?.role === 'neo') && bodyPresent && !state.currentAction?.parameters.filmDuel && !state.currentAction?.parameters.ghostPhase;
+      entry.body.visible = (id !== this.playerId || !this.firstPerson || this.playerMotion?.roofExit?.stairwell || phoneFailed || apuView || spoonView || pistolView || recoveryView || constructView || truthView || downloadView || interludeView || burlyStaffHeld(this.playerMotion?.burly) || this.playerMotion?.chateauWeapon !== undefined || this.playerMotion?.engineering !== undefined || this.playerMotion?.zionMessage !== undefined || doorPush !== undefined || (this.playerMotion?.primaryDemolition?.phase === 'mounting' || this.playerMotion?.primaryDemolition?.blast?.phase === 'countdown') || this.playerMotion?.signal !== undefined || this.playerMotion?.helGarage !== undefined || this.playerMotion?.helElevator !== undefined || this.playerMotion?.trainmanChase !== undefined || this.playerMotion?.baneInquiry !== undefined || this.playerMotion?.hammerBriefing !== undefined || this.playerMotion?.hammerPilot !== undefined || this.playerMotion?.logosPilot !== undefined || this.playerMotion?.zionDeployment !== undefined || this.playerMotion?.maggieDiscovery !== undefined || this.playerMotion?.logosBane !== undefined || this.playerMotion?.architect?.role === 'neo' || this.playerMotion?.catch?.role === 'neo' || this.playerMotion?.truckHood !== undefined || this.playerMotion?.truckWeapons !== undefined || this.playerMotion?.freewayPickup !== undefined || this.playerMotion?.freewayRide !== undefined || this.playerMotion?.dockEvacuation !== undefined || this.playerMotion?.shaftSeal !== undefined || this.playerMotion?.templeDefense?.phase === 'mounting' || this.playerMotion?.dockReunion !== undefined || this.playerMotion?.empOperator !== undefined || this.playerMotion?.upperDigger !== undefined || this.playerMotion?.diggers !== undefined || this.playerMotion?.smithFinale?.pitFight && smithLocked || this.playerMotion?.morning !== undefined || state.id === 'neo' && state.currentLocation === 'film_power_plant_pods' && this.playerMotion?.performance !== undefined && ['pod', 'fall', 'float', 'lift'].includes(this.playerMotion.performance) || Boolean(this.playerMotion?.workday?.role === 'neo' && this.playerMotion.workday.phase === 'signing') || this.playerMotion?.computerCheck !== undefined || Boolean(this.playerMotion?.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.playerMotion.contact.phase)) || this.playerMotion?.pills !== undefined || this.playerMotion?.wetwall?.hanging || this.playerMotion?.inspecting === true || this.playerMotion?.spoon !== undefined || this.playerMotion?.spoonLesson !== undefined || Boolean(this.playerMotion?.oracleVisit && oracleCookieOwner(this.playerMotion.oracleVisit) === 'neo') || this.playerMotion?.oracleDeparture?.role === 'neo') && bodyPresent && !state.currentAction?.parameters.filmDuel && !state.currentAction?.parameters.ghostPhase;
       const warning = state.currentAction?.type === 'attack' && state.currentAction.target === this.playerId && Number(state.currentAction.parameters.contactTick ?? 0) > tick;
-      entry.marker.visible = !physical && (warning || !this.playerId || id === this.selected);
+      entry.marker.visible = !physical && !spoonView && (warning || !this.playerId || id === this.selected);
       (entry.marker.material as THREE.MeshBasicMaterial).color.set(warning ? '#f6b177' : FACTION_COLORS[state.faction] ?? '#91cfb0');
       entry.marker.position.y = this.playerId ? -.94 : .1;
       entry.time += delta * (id === this.playerId ? 1 : speed);
@@ -1206,6 +1214,7 @@ export class AgentRenderer {
         input.armed = id === 'trinity' && breakoutClock.phase === 'catching';
       }
       input.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
+      input.departureSpoon = spoonHandoff && id === 'neo';
       input.dojoOutfit = state.currentLocation === 'film_kungfu_dojo' && (id === 'neo' || id === 'morpheus') ? id : undefined;
       input.dojoSparring = input.dojoOutfit !== undefined && journey?.scene === 'm1_dojo' && journey.step === 0 && journey.fighting === true;
       input.constructSuit = id === 'morpheus' && ['film_white_construct', 'film_real_desert'].includes(state.currentLocation)
@@ -1226,7 +1235,8 @@ export class AgentRenderer {
       input.nebCrewEarly = input.realWorld && (state.currentLocation === 'film_neb_deck'
         || state.currentLocation === 'film_service_tunnels' && shipScene === 'm1_sentinels') && shipScene?.startsWith('m1_') === true
         && shipScene !== 'm1_pod' && shipScene !== 'm1_recovery';
-      input.nebCrew = input.realWorld && (input.nebCrewEarly || shipScene?.startsWith('m2_') || journey?.scene === 'm3_logos_plan')
+      const departureCrew = departure && id === 'neo' && state.currentLocation === 'film_zion_hangar';
+      input.nebCrew = departureCrew ? 'neo' : input.realWorld && (input.nebCrewEarly || shipScene?.startsWith('m2_') || journey?.scene === 'm3_logos_plan')
         && ['film_neb_deck', 'film_service_tunnels', 'film_hammer_deck'].includes(state.currentLocation)
         && ['neo', 'morpheus', 'trinity', 'link'].includes(id) ? id as NonNullable<MotionInput['nebCrew']> : undefined;
       input.signal = id === 'neo' && input.realWorld && journey?.scene === 'm2_stop_sentinels' && !journey.visiting
@@ -1510,17 +1520,16 @@ export class AgentRenderer {
       }
     }
     const reunionLink = this.agents.get('link'), reunionZee = this.agents.get('zee');
-    if (journey?.scene === 'm2_departure' && journey.step === 0 && !journey.visiting && !this.matrix
-      && reunionLink?.state.status === 'alive' && reunionZee?.state.status === 'alive'
-      && !reunionLink.state.controller && !reunionZee.state.controller
-      && reunionLink.state.currentLocation === 'film_zion_hangar' && reunionZee.state.currentLocation === 'film_zion_hangar') {
-      const started = journey.started, clock = this.departureCharmClock;
+    if (departure && giftPresent) {
+      const started = departure.started, clock = this.departureGiftClock;
       const fraction = speed > 0 && started !== undefined && clock?.started === started && clock.tick === tick
         ? Math.min(.5, clock.fraction + delta * speed) : 0;
-      this.departureCharmClock = started === undefined ? undefined : { started, tick, fraction };
-      this.departureCharm = poseZionDepartureCharm(reunionZee.rig, reunionLink.rig, started === undefined ? 0 : Math.max(0, (tick - started) / 2 + fraction));
+      this.departureGiftClock = started === undefined ? undefined : { started, tick, fraction };
+      const age = started === undefined ? 0 : Math.max(0, (tick - started) / 2 + fraction);
+      this.departureGift = departure.step === 0 ? { position: poseZionDepartureCharm(giver.rig, receiver.rig, age) }
+        : poseZionDepartureSpoon(giver.rig, receiver.rig, age * 4 / 3, giver.state.rotation, receiver.state.rotation);
     } else {
-      this.departureCharm = undefined; this.departureCharmClock = undefined;
+      this.departureGift = undefined; this.departureGiftClock = undefined;
     }
     for (const roles of [['morpheus', 'niobe'], ['link', 'zee']] as const) {
       const a = this.agents.get(roles[0]), b = this.agents.get(roles[1]);

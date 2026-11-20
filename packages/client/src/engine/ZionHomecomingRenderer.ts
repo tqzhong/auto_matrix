@@ -15,6 +15,8 @@ import { dockGateAim, dockGatePose } from '@auto_matrix/shared';
 import { DOCK_RELOAD, dockReloadBox } from '@auto_matrix/shared';
 import { TempleDefenseRenderer } from './TempleDefenseRenderer.js';
 import { ZionCrowdRenderer } from './ZionCrowdRenderer.js';
+import { SpoonModel } from '../agents/SpoonModel.js';
+import type { ZionDepartureGiftPose } from '../agents/DockReunionPerformance.js';
 import { ZION_ENGINEERING, engineeringProgress, engineeringReadings } from '@auto_matrix/shared';
 
 /** Six authored Zion interiors share rock, metal and service-light materials, not a generic cave layout. */
@@ -32,7 +34,7 @@ export class ZionHomecomingRenderer {
   private messageDisk?: THREE.Group;
   private messageDoor?: THREE.Group;
   private boarding?: { closedRail: THREE.Mesh; bridge: THREE.Mesh; bay: THREE.Group };
-  private departureGifts?: { charm: THREE.Group; spoon: THREE.Group; engines: THREE.MeshStandardMaterial };
+  private departureGifts?: { charm: THREE.Group; spoon: THREE.Group; spoonModel: SpoonModel; engines: THREE.MeshStandardMaterial };
   private apu?: THREE.Group;
   private apuModel?: ApuModel;
   private diggers?: DiggersRenderer;
@@ -210,10 +212,9 @@ export class ZionHomecomingRenderer {
     const charm = new THREE.Group(); charm.name = 'zee-farewell-charm'; charm.visible = false; this.moving.add(charm);
     this.mesh(new THREE.TorusGeometry(.24, .055, 8, 20), this.material(0xbca77b, .42, .6), charm);
     this.mesh(new THREE.CylinderGeometry(.08, .09, .5, 8), metal, charm).position.y = -.18;
-    const spoon = new THREE.Group(); spoon.name = 'kid-spoon-gift'; spoon.position.set(-4.2, 2.3, 10); this.moving.add(spoon);
-    this.mesh(new THREE.SphereGeometry(.18, 12, 8), metal, spoon).scale.set(.7, .15, 1.7);
-    this.box(metal, 0, -.42, -.2, .055, .06, .75, spoon);
-    this.departureGifts = { charm, spoon, engines: engine };
+    const spoon = new THREE.Group(); spoon.name = 'kid-spoon-gift'; spoon.visible = false; this.moving.add(spoon);
+    const spoonModel = new SpoonModel(); spoonModel.root.scale.setScalar(.55); spoonModel.root.position.y = -.2; spoon.add(spoonModel.root);
+    this.departureGifts = { charm, spoon, spoonModel, engines: engine };
     this.glow(0xffb273, 420, 52, 0, 19, -54);
     this.glow(0xffd0a0, 560, 68, 21, 18, 18); this.glow(0xeeb573, 330, 75, 18, 23, -28); this.glow(0x9cbaab, 180, 65, -29, 35, 18);
     this.dockElectrical = { lights: [...this.lights].map(light => [light, light.intensity]), lit, engines: engine };
@@ -445,7 +446,7 @@ export class ZionHomecomingRenderer {
     const live = new Set<THREE.BufferGeometry>(); this.group.traverse(object => { if (object instanceof THREE.Mesh) live.add(object.geometry); });
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
   }
-  update(journey: FilmJourney | undefined, elapsed: number, cameraPosition?: Vector3, camera?: THREE.Camera, departureCharm?: THREE.Vector3): void {
+  update(journey: FilmJourney | undefined, elapsed: number, cameraPosition?: Vector3, camera?: THREE.Camera, departureGift?: ZionDepartureGiftPose): void {
     for (const light of this.culledLights) light.visible = true;
     this.culledLights.length = 0;
     const departure = journey?.scene === 'm2_departure' && !journey.visiting;
@@ -552,13 +553,17 @@ export class ZionHomecomingRenderer {
       const point = zionMessageDisk(message); this.messageDisk.position.set(point.x, point.y, point.z);
     }
     if (this.departureGifts) {
-      const { charm } = this.departureGifts;
-      charm.visible = departure && journey.step === 0 && departureCharm !== undefined;
-      if (charm.visible && departureCharm) {
-        this.moving.worldToLocal(charm.position.copy(departureCharm));
+      const { charm, spoon } = this.departureGifts;
+      charm.visible = departure && journey.step === 0 && departureGift !== undefined;
+      if (charm.visible && departureGift) {
+        this.moving.worldToLocal(charm.position.copy(departureGift.position));
         charm.position.y -= .21;
       }
-      this.departureGifts.spoon.visible = departure && journey.step >= 2 && journey.step < 3;
+      spoon.visible = departure && journey.step === 2 && departureGift?.spoonYaw !== undefined;
+      if (spoon.visible && departureGift?.spoonYaw !== undefined) {
+        this.moving.worldToLocal(spoon.position.copy(departureGift.position));
+        spoon.rotation.set(-Math.PI / 2, departureGift.spoonYaw, 0, 'YXZ');
+      }
       this.departureGifts.engines.emissiveIntensity = departure && journey.step >= 4 ? 4 : 1.2;
     }
     if (this.dockElectrical) {
@@ -594,6 +599,7 @@ export class ZionHomecomingRenderer {
     this.gateRescue?.dispose();
     this.gunnery?.dispose();
     this.gate?.dispose();
+    this.departureGifts?.spoonModel.dispose();
     this.disposed = true; this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.lights.forEach(l => l.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear();

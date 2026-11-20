@@ -765,6 +765,7 @@ export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3
   const radius = scene.id === 'm2_library' && step === scene.steps[2] ? BOOK_DOOR.radius : (scene.id === 'm2_seraph' || scene.id === 'm2_backdoors') && step === scene.steps[1] ? 1.2 : scene.id === 'm2_oracle_message' && (step === scene.steps[0] || step === scene.steps[1]) ? ZION_MESSAGE.radius : scene.id === 'm2_hamann' && (step === scene.steps[1] || step === scene.steps[2]) ? ZION_ENGINEERING.radius : scene.id === 'm3_hel_garage' ? journey?.helGarage?.phase === 'cleared' ? 1.05 : 1.6 : primaryActive(journey) ? .8 : scene.id === 'm2_plan' || scene.id === 'm3_oracle_request' || scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed' ? 1.6 : scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
     : scene.id === 'm3_logos_plan' || scene.id === 'm3_zion_prepare' || scene.id === 'm3_maggie_discovery' ? step.kind === 'reach' ? 1.1 : 1.6
     : scene.id === 'm3_bane_questions' ? step === scene.steps[5] ? 1.1 : step === scene.steps[0] ? 1.05 : 1.4
+    : scene.id === 'm2_departure' && step === scene.steps[2] ? .8
     : scene.id === 'm2_departure' && step.kind === 'reach' ? 1.15
     : scene.id === 'm3_hel_entry' && step === scene.steps[0] ? 1.1
     : scene.id === 'm3_dock_evacuation' ? step === scene.steps[0] || step === scene.steps[1] ? .45 : 1.2

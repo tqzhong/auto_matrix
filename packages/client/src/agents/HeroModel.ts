@@ -173,6 +173,8 @@ export class HeroModels {
   private regularCoatTails = new Map<HeroRig, RegularCoatTails>();
   private mice = new Map<HeroRig, MouseAppearance>();
   private geometries = new Set<THREE.BufferGeometry>();
+  private departureArmViews = new WeakMap<THREE.Mesh, { source: THREE.BufferGeometry; arm: THREE.BufferGeometry }>();
+  private departureArmVisible = new WeakSet<HeroRig>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
   private sharedShortHair = new Map<string, THREE.Texture>();
@@ -1433,6 +1435,10 @@ export class HeroModels {
   }
 
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
+    if (this.departureArmVisible.delete(rig)) for (const { mesh } of rig.wardrobe) {
+      const view = this.departureArmViews.get(mesh);
+      if (view && mesh.geometry === view.arm) mesh.geometry = view.source;
+    }
     const fightingHands = this.fightingHands.get(rig); fightingHands?.begin(input);
     if (input.interlude?.kind === 'meal' && (input.interlude.role === 'neo' || input.interlude.role === 'tank') && !this.meals.has(rig))
       this.meals.set(rig, new MealPerformance(rig, input.interlude.role));
@@ -1442,7 +1448,7 @@ export class HeroModels {
     const constructView = input.construct?.role === 'neo' && input.construct.phase === 'image' || input.reveal?.kind === 'construct' && input.reveal.role === 'neo';
     const truthView = input.truth?.role === 'neo';
     const downloadView = input.cabin?.kind === 'core' && input.cabin.role === 'neo' || input.training && ['download', 'jump_fall', 'jump_return', 'red_dress'].includes(input.training.kind) && input.training.role === 'neo';
-    const interactionView = Boolean(input.firstPerson && (constructView || truthView || downloadView || burlyStaffHeld(input.burly) || input.chateauWeapon || input.interlude && ['console', 'meal'].includes(input.interlude.kind) && input.interlude.role === 'neo' || input.performance === 'recover' || input.cabin?.kind === 'wake' || input.armed && input.weaponStyle === 'hel_pistol' || input.hotel303?.phase === 'pickup' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.logosBane || input.logosPilot || input.engineering || input.zionMessage || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.podDisconnect !== undefined || input.podRescue !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
+    const interactionView = Boolean(input.firstPerson && (constructView || truthView || downloadView || burlyStaffHeld(input.burly) || input.chateauWeapon || input.interlude && ['console', 'meal'].includes(input.interlude.kind) && input.interlude.role === 'neo' || input.performance === 'recover' || input.cabin?.kind === 'wake' || input.armed && input.weaponStyle === 'hel_pistol' || input.hotel303?.phase === 'pickup' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.logosBane || input.logosPilot || input.engineering || input.zionMessage || input.departureSpoon || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.podDisconnect !== undefined || input.podRescue !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
     if (rig.support === 'link') for (const part of rig.bones.get('head')!.children)
       if (part.name === 'link-hair-cap' || part.name === 'link-braid') part.visible = !interactionView;
     rig.silver.value = input.mirror ?? 0;
@@ -1506,6 +1512,15 @@ export class HeroModels {
       } else if (input.dojoOutfit && (part.outer || part.cloth || /Black.crew.neck|shoes01/i.test(part.mesh.name))) part.mesh.visible = false;
     }
     this.mice.get(rig)?.update(input);
+    if (input.firstPerson && input.departureSpoon) {
+      this.departureArmVisible.add(rig);
+      for (const { mesh } of rig.wardrobe) {
+        if (!mesh.visible) continue;
+        if (mesh instanceof THREE.SkinnedMesh && (mesh === rig.trackingSkin?.mesh || mesh.name === 'neo-logos-sweater' || mesh.userData.wristSkin))
+          mesh.geometry = this.departureArm(mesh);
+        else mesh.visible = false;
+      }
+    }
     const bone = (name: string) => rig.bones.get(name)!;
     const pelvis = bone('pelvis');
     pelvis.position.copy(rig.rest.get('pelvis')!);
@@ -1938,6 +1953,29 @@ export class HeroModels {
   }
 
   trainingPistolHands(rig: HeroRig): void { this.fightingHands.get(rig)?.posePistol(); }
+
+  private departureArm(mesh: THREE.SkinnedMesh): THREE.BufferGeometry {
+    const cached = this.departureArmViews.get(mesh);
+    const source = mesh.geometry;
+    if (cached?.source === source) return cached.arm;
+    const { skinIndex, skinWeight } = source.attributes;
+    const armJoints = mesh.skeleton.bones.map(bone => /^(?:elbow_R|wrist_R|finger[1-5]-[1-3]_R|forearm_twist_R_[1-3])$/.test(bone.name));
+    const onArm = new Uint8Array(skinIndex.count);
+    for (let vertex = 0; vertex < onArm.length; vertex++) {
+      let weight = 0;
+      for (let joint = 0; joint < 4; joint++) if (armJoints[skinIndex.getComponent(vertex, joint)]) weight += skinWeight.getComponent(vertex, joint);
+      onArm[vertex] = weight >= .5 ? 1 : 0;
+    }
+    const indices: number[] = [], index = source.index!;
+    for (let i = 0; i < index.count; i += 3) {
+      const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+      if (onArm[a] && onArm[b] && onArm[c]) indices.push(a, b, c);
+    }
+    const arm = new THREE.BufferGeometry(); arm.setIndex(indices); arm.attributes = source.attributes;
+    arm.morphAttributes = source.morphAttributes; arm.morphTargetsRelative = source.morphTargetsRelative;
+    this.geometries.add(arm); this.departureArmViews.set(mesh, { source, arm });
+    return arm;
+  }
 
   prepareEarlyShipGarments(rig: HeroRig) { return this.farewellAppearances.get(rig)?.prepareEarlyShipGarments() ?? []; }
 

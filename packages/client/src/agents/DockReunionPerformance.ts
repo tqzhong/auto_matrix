@@ -4,7 +4,7 @@ import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 import { crosscutPalm } from './CrosscutPerformance.js';
 
-function departureCharmHand(rig: CharacterRig, exchange: THREE.Vector3, age: number, giver: boolean): THREE.Vector3 {
+function departureGiftHand(rig: CharacterRig, exchange: THREE.Vector3, age: number, giver: boolean): THREE.Vector3 {
   const wrist = rig.hero?.bones.get('wrist_R'), elbow = rig.elbows[0];
   const palm = wrist ? new THREE.Vector3(0, -.19, .035) : new THREE.Vector3(0, -.79, .055);
   const joint = wrist ?? elbow, rest = joint.localToWorld(palm.clone());
@@ -27,9 +27,28 @@ export function poseZionDepartureCharm(zee: CharacterRig, link: CharacterRig, ag
   const source = zee.root.getWorldPosition(new THREE.Vector3()), target = link.root.getWorldPosition(new THREE.Vector3());
   const direction = target.clone().sub(source).normalize(), middle = source.lerp(target, .5);
   middle.y += 2.36;
-  const offered = departureCharmHand(zee, middle.clone().addScaledVector(direction, -.11), age, true);
-  const received = departureCharmHand(link, middle.addScaledVector(direction, .11), age, false);
+  const offered = departureGiftHand(zee, middle.clone().addScaledVector(direction, -.11), age, true);
+  const received = departureGiftHand(link, middle.addScaledVector(direction, .11), age, false);
   return offered.lerp(received, THREE.MathUtils.smoothstep(age, 1.75, 2.25));
+}
+
+export interface ZionDepartureGiftPose { position: THREE.Vector3; spoonYaw?: number }
+
+export function poseZionDepartureSpoon(kid: CharacterRig, neo: CharacterRig, age: number, kidYaw: number, neoYaw: number): ZionDepartureGiftPose {
+  const smooth = THREE.MathUtils.smoothstep;
+  const source = kid.root.getWorldPosition(new THREE.Vector3()), target = neo.root.getWorldPosition(new THREE.Vector3());
+  const direction = target.clone().sub(source); direction.y = 0; direction.normalize();
+  const yaw = Math.atan2(direction.x, direction.z);
+  const turn = smooth(age, 0, 1.25) * (1 - smooth(age, 2.3, 3.85));
+  if (turn > 0) {
+    kid.root.rotation.y = kidYaw + turn * Math.atan2(Math.sin(yaw - kidYaw), Math.cos(yaw - kidYaw));
+    const back = yaw + Math.PI - neoYaw;
+    neo.root.rotation.y = neoYaw + turn * Math.atan2(Math.sin(back), Math.cos(back));
+  }
+  const middle = source.lerp(target, .5); middle.y += 2.36;
+  const offered = departureGiftHand(kid, middle.clone().addScaledVector(direction, -.1), age, true);
+  const received = departureGiftHand(neo, middle.addScaledVector(direction, .1), age, false);
+  return { position: offered.lerp(received, smooth(age, 1.75, 2.25)), spoonYaw: yaw };
 }
 
 const departureRayMeshes = new WeakMap<THREE.SkinnedMesh, { mesh: THREE.SkinnedMesh; sampled: Uint8Array }>();

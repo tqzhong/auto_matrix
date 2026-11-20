@@ -13,6 +13,7 @@ import { TvRepairRenderer } from './TvRepairRenderer.js';
 import { WellsStreetRenderer } from './WellsStreetRenderer.js';
 import { bitmapUploadImage, stageBitmapTexture } from './BitmapTextureRows.js';
 import { HardlineHandset } from '../agents/HardlineHandset.js';
+import type { ZionDepartureGiftPose } from '../agents/DockReunionPerformance.js';
 import { OPENING_PHONE, WELLS_AFTERMATH, WELLS_BOOTH, WELLS_CURB, WELLS_STREET, WELLS_TRUCK, openingBoothCrush, openingBoothPartPose, streetLamps, wellsAftermathDoor, type OpeningPhoneEncounter } from '@auto_matrix/shared';
 import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
 import { SENTINEL_POWER } from '@auto_matrix/shared';
@@ -3886,7 +3887,7 @@ export class FilmSetRenderer {
       target.dispose();
     }
   }
-  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000, camera?: THREE.Camera, tick = 0, garageCar?: GarageCarPose, departureCharm?: THREE.Vector3): FilmSet | undefined {
+  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000, camera?: THREE.Camera, tick = 0, garageCar?: GarageCarPose, departureGift?: ZionDepartureGiftPose): FilmSet | undefined {
     this.resetMirrorFrame?.();
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;
     if (set?.id === 'film_extraction_car' && player?.currentLocation === 'film_adams_bridge') set = FILM_SETS.film_adams_bridge;
@@ -4628,7 +4629,7 @@ export class FilmSetRenderer {
     this.catchSet?.update(journey, this.phoneBodies?.('trinity'));
     // For fixed slots, the render pass mutes off-view lights without changing the shader layout.
     this.zion?.update(epilogue && journey?.scene === 'm3_ceasefire' && !journey.visiting ? { ...journey, epilogue } : journey,
-      elapsed, cameraPosition, this.stablePointSlots ? undefined : camera, departureCharm);
+      elapsed, cameraPosition, this.stablePointSlots ? undefined : camera, departureGift);
     this.baneCopy?.update(journey, elapsed, player && journey?.actor === player.id ? player.position : undefined, set?.center);
     if (this.logosBane) {
       const encounter = journey?.scene === 'm3_bane' && !journey.visiting ? journey.bane : undefined;

@@ -272,6 +272,25 @@ test('Link and Zee can face and reach each other, including in an older unfinish
   assert.equal(h.sandbox.state.neoLife!.choices.zee_charm_given, 'link');
 });
 
+test('Neo must stay within handing distance of Kid and can return to take the same spoon', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m2_departure, state = h.state();
+  h.players.possess('p', 'neo', 2);
+  state.scene = 'm2_oracle_message'; state.actor = 'neo'; state.step = FILM_SCENE_BY_ID.m2_oracle_message.steps.length;
+  h.command('next'); assert.equal(state.scene, scene.id);
+  state.step = 2;
+  const mark = filmStepPosition(scene, scene.steps[2]), distant = { ...mark, x: mark.x + 2.5 };
+  h.actor().position = distant; h.command('act');
+  assert.equal(state.started, undefined, 'Neo cannot take a spoon from across the dock');
+  h.actor().position = mark; h.command('act'); h.advance(1);
+  assert.equal(typeof state.started, 'number');
+  h.actor().position = distant; h.advance(1);
+  assert.equal(state.started, undefined);
+  assert.equal(h.sandbox.state.neoLife!.choices.kid_spoon, undefined);
+  h.actor().position = mark; h.command('act'); h.advance(7);
+  assert.equal(state.step, 3);
+  assert.equal(h.sandbox.state.neoLife!.choices.kid_spoon, 'received');
+});
+
 test('departure completes inside the ship bay after crossing the gangway', () => {
   const h = game(), scene = FILM_SCENE_BY_ID.m2_departure, state = h.state();
   h.players.possess('p', 'neo', 2);
