@@ -550,6 +550,8 @@ export class HeroModels {
       if (support === 'courier' && material.name === 'Office cotton') material.color.setHex(0x455c6b);
       if (police && /Office cotton|Trousers/.test(material.name)) material.color.setHex(0x202e36);
       if (support === 'rhineheart' && /Coat|Trousers/.test(material.name)) material.color.setHex(0x56594f);
+      // Lift the dark strand atlas to the warm brown of Choi's doorway shot.
+      if (apartmentRole === 'choi' && object.name === 'short04') material.color.setRGB(4.25, 3.45, 2.4);
       if (oracleStaff && /Coat|Trousers/.test(material.name)) { material.color.setHex(support === 'oracle_priestess' ? 0xdedbd0 : 0xc7c5b9); material.roughness = .95; }
       if (support === 'rhineheart' && /Hair|hair|Groom|groom/.test(material.name)) {
         material.onBeforeCompile = shader => { shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.23, 0.24, 0.21), 0.55);'); };

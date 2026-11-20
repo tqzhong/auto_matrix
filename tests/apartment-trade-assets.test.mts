@@ -23,7 +23,7 @@ async function geometry(id: string) {
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
 
-test('the apartment visitors keep the fitted jacket and dark hair of their own rigs', async t => {
+test('the apartment visitors keep their fitted clothes and hair on their own rigs', async t => {
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({
     beginPath() {}, ellipse() {}, fill() {}, stroke() {}, arc() {},
@@ -36,6 +36,19 @@ test('the apartment visitors keep the fitted jacket and dark hair of their own r
     const rig = (await models.create('neo', undefined, 'choi'))!;
     assert.ok(rig.root.getObjectByName('Tailored_coat_upper'));
     assert.equal(rig.panels.length, 0, 'Neo’s long coat tails cross Choi’s trousers');
+  });
+  await t.test('Choi’s lighter brown hair retains the shared cutout and leaves the donor unchanged', async () => {
+    const rig = (await models.create('neo', undefined, 'choi'))!, generic = (await models.create('choi'))!;
+    const hair = (root: THREE.Object3D) => root.getObjectByName('short04') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+    const fitted = hair(rig.root), donor = hair(assets.get('choi')!.scene), ordinary = hair(generic.root);
+    assert.ok(fitted.material.color.r > fitted.material.color.g && fitted.material.color.g > fitted.material.color.b);
+    assert.ok(fitted.material.color.r >= donor.material.color.r * 5, 'lift the dark hair atlas enough for the brown tone to read at the doorway');
+    assert.equal(fitted.material.alphaTest, donor.material.alphaTest);
+    for (const name of ['position', 'uv']) {
+      const fittedData = fitted.geometry.getAttribute(name).array, originalData = donor.geometry.getAttribute(name).array;
+      assert.ok(fittedData.length === originalData.length && fittedData.every((value, index) => value === originalData[index]), name);
+    }
+    assert.ok(ordinary.material.color.equals(donor.material.color));
   });
   await t.test('Choi’s goatee is painted on his own skinned face', async () => {
     const rig = (await models.create('neo', undefined, 'choi'))!;
