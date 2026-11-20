@@ -7,6 +7,7 @@ import { FILM_SETS, OFFICE_DESKS, OFFICE_LADDER, metacortexPosition, type AgentS
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
+import { MetacortexRenderer } from '../packages/client/src/engine/MetacortexRenderer.js';
 import { OfficeWorkdayRenderer } from '../packages/client/src/engine/OfficeWorkdayRenderer.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.js';
@@ -542,6 +543,45 @@ for (const street of [true, false]) test(`a cold ${street ? 'commute street' : '
   gpu.properties = { ...properties };
   assert.equal(prepare(), true, 'a recreated GPU context prepares its own color program');
   assert.equal(compiles, 2);
+});
+
+test('the commute prepares the existing Metacortex entrance sign before the player sees it', t => {
+  const original = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  const scene = new THREE.Scene(), city = new THREE.Group(), camera = new THREE.PerspectiveCamera(); scene.add(city);
+  const film = new FilmSetRenderer(scene), lights = new LightCulling(scene), lobby = new MetacortexRenderer(city);
+  const sign = city.getObjectByName('metacortex-city-lobby')!.children.find(object => object instanceof THREE.Mesh && object.position.z === 34.8) as THREE.Mesh;
+  assert.ok(sign && sign.material instanceof THREE.MeshStandardMaterial && sign.material.emissiveMap);
+  const canopy = new THREE.InstancedMesh(new THREE.SphereGeometry(), new THREE.MeshStandardMaterial(), 1); canopy.name = 'central-park-canopy'; city.add(canopy);
+  t.after(() => { canopy.geometry.dispose(); canopy.material.dispose(); lobby.dispose(); film.dispose(); lights.dispose(); globalThis.document = original; });
+  const position = { x: 1210, y: 1, z: 712.5 }, player = { id: 'neo', position, isInMatrix: true } as AgentState;
+  const journey: FilmJourney = { version: 1, scene: 'm1_commute', actor: 'neo', step: 0, completed: [], enteredAt: 0,
+    reflections: {}, checkpoint: position, lastText: '' };
+  const sandbox = { neoLife: { journey } } as unknown as SandboxState;
+  camera.position.set(position.x, 5, position.z); lights.minimumPointSlots = 4;
+  const compiled: THREE.Object3D[] = [], finished: THREE.Mesh[] = [];
+  let ready = false, target: THREE.WebGLRenderTarget | null = null;
+  const programs = new Map([canopy, sign].map(mesh => [mesh.material, { program: {}, isReady: () => ready, getUniforms() { finished.push(mesh); } }]));
+  const gpu = {
+    info: { programs: [...programs.values()] }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
+    properties: { get: (material: THREE.Material) => ({ currentProgram: programs.get(material) }) },
+    getRenderTarget: () => target, setRenderTarget: (next: typeof target) => { target = next; },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    compile: (subject: THREE.Group, eye: THREE.Camera, litScene: THREE.Scene) => {
+      assert.equal(eye, camera); assert.notEqual(litScene, scene); assert.equal(target?.width, 1);
+      const previous = compiled.length; subject.traverse(mesh => compiled.push(mesh));
+      assert.equal(compiled.length, previous + 1, 'only one street surface should link per frame');
+    },
+  };
+  const prepare = () => film.prepareOffice(gpu as unknown as THREE.WebGLRenderer, camera, lights, player, sandbox, undefined, city);
+  assert.equal(prepare(), true); assert.deepEqual(compiled, [canopy]);
+  assert.equal(prepare(), true, 'link the entrance letters while the park program is still pending');
+  assert.deepEqual(compiled, [canopy, sign]);
+  assert.equal(prepare(), false); ready = true;
+  assert.equal(prepare(), true); assert.equal(prepare(), true); assert.equal(prepare(), false);
+  assert.deepEqual(finished, [canopy, sign]);
+  assert.equal(sign.parent?.name, 'metacortex-city-lobby');
+  assert.equal(target, null);
 });
 
 test('the office prepares the city sign and masked Smith shadow before answering', t => {

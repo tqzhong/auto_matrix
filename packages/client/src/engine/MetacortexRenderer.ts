@@ -51,7 +51,7 @@ export class MetacortexRenderer {
     this.box(this.root, 0, 9.6, 33, 10, .8, .5, stone);
     this.box(this.root, 0, .025, 29, 9.5, .02, 6, dark);
     this.box(this.root, 0, 8.4, 34, 18, .4, 3.5, dark);
-    this.label(this.root, 'METACORTEX', 0, 7.3, 34.8, 13);
+    this.label(this.root, 'METACORTEX', 0, 7.3, 34.8, 13).name = 'metacortex-entrance-sign';
     for (const prop of METACORTEX_LOBBY.slice(3)) {
       this.box(this.root, prop.x, prop.height / 2, prop.z, prop.width, prop.height, prop.depth, prop.x === -13 ? stone : dark);
       this.box(this.root, prop.x, prop.height, prop.z, prop.width + .1, .13, prop.depth + .1, prop.x === -13 ? dark : 0x596159);
@@ -103,13 +103,14 @@ export class MetacortexRenderer {
     if (!this.materials.has(color)) this.materials.set(color, new THREE.MeshStandardMaterial({ color, roughness: color === 0x686e69 ? .34 : .72, metalness: color === 0x686e69 ? .65 : .12 }));
     const mesh = new THREE.Mesh(this.geometry, this.materials.get(color)); mesh.position.set(x, y, z); mesh.scale.set(w, h, d); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh;
   }
-  private label(parent: THREE.Group, text: string, x: number, y: number, z: number, width: number, display = false): void {
+  private label(parent: THREE.Group, text: string, x: number, y: number, z: number, width: number, display = false): THREE.Mesh {
     const canvas = document.createElement('canvas'); canvas.width = 768; canvas.height = 96;
     const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#24302c'; ctx.fillRect(0, 0, 768, 96); ctx.fillStyle = '#d7d8bd'; ctx.font = '34px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 384, 48);
     const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; this.textures.push(texture);
     const material = new THREE.MeshStandardMaterial({ map: texture, roughness: .65, emissiveMap: texture, emissive: 0xffffff, emissiveIntensity: display ? .5 : .12 });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, display ? .7 : width / 8), material); mesh.position.set(x, y, z); parent.add(mesh);
     if (display) this.displays.push({ canvas, texture });
+    return mesh;
   }
   update(lift?: MetacortexLift, nearby = false, custody?: OfficeCustody, subject?: THREE.Object3D, carHeight?: number): void {
     if (custody?.lift && !this.street) this.street = new CustodyStreetRenderer(this.root);

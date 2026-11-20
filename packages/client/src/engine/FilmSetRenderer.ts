@@ -407,7 +407,7 @@ export class FilmSetRenderer {
     actor?: THREE.Group; city?: THREE.Group; cleaners?: THREE.Group;
     manager?: { root: THREE.Group; gpu: THREE.WebGLRenderer['properties'] };
   };
-  private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
+  private preparedOfficeStreetSet?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; meshes: ColorMesh[]; programs: ColorProgram[] };
   private morningStreet?: ColorPreparation & { actor: THREE.Group; gpu: THREE.WebGLRenderer['properties']; eye: THREE.PerspectiveCamera; lighting: LightCulling };
   private commuteOutfit?: ColorPreparation & { actor: THREE.Group; gpu: THREE.WebGLRenderer['properties']; textureUpload?: Generator<void, boolean> };
   private preparedOfficeStreetPhone?: { phone: THREE.Mesh; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
@@ -3184,11 +3184,11 @@ export class FilmSetRenderer {
       || !lift?.passenger || lift.target !== 1 || !['closing', 'travel'].includes(lift.phase)) {
       this.cancelOfficePreparation();
       if (this.office && live) {
-        if (city?.visible && this.prepareOfficeCanopy(renderer, camera, lighting, city)) return true;
+        if (city?.visible && this.prepareOfficeStreetSet(renderer, camera, lighting, city)) return true;
         if (journey.scene === 'm1_commute') return this.office.prepareWindowCleanerTexture(renderer);
       }
       if (live && !this.current && journey.scene === 'm1_commute' && !lift?.passenger && city?.visible)
-        return this.prepareOfficeCanopy(renderer, camera, lighting, city);
+        return this.prepareOfficeStreetSet(renderer, camera, lighting, city);
       return false;
     }
     const set = FILM_SETS.film_metacortex_floor;
@@ -3283,22 +3283,28 @@ export class FilmSetRenderer {
     }
     return true;
   }
-  private prepareOfficeCanopy(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, city: THREE.Group): boolean {
+  private prepareOfficeStreetSet(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, city: THREE.Group): boolean {
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return false;
-    const prepared = this.preparedOfficeCanopy, gpu = renderer.properties;
-    if (prepared?.gpu === gpu && prepared.city === city) {
-      const program = prepared.program;
-      if (!program || !renderer.info.programs?.includes(program) || !program.isReady()) return false;
-      prepared.program = undefined;
+    const gpu = renderer.properties;
+    let prepared = this.preparedOfficeStreetSet;
+    if (prepared?.gpu !== gpu || prepared.city !== city) {
+      // A cold street or office load can see these surfaces before moving toward them.
+      const meshes = ['central-park-canopy', 'metacortex-entrance-sign'].map(name => city.getObjectByName(name))
+        .filter((mesh): mesh is ColorMesh => mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshStandardMaterial);
+      if (!meshes.length) return false;
+      this.preparedOfficeStreetSet = prepared = { city, gpu, meshes, programs: [] };
+    }
+    const ready = prepared.programs.findIndex(program => renderer.info.programs?.includes(program) && program.isReady());
+    if (ready >= 0) {
+      const [program] = prepared.programs.splice(ready, 1);
       cacheReadyProgramLocations(renderer, program);
       return true;
     }
-    // A save on the floor bypasses the elevator's preparation of the street.
-    const canopy = city.getObjectByName('central-park-canopy');
-    if (!(canopy instanceof THREE.InstancedMesh) || !(canopy.material instanceof THREE.MeshStandardMaterial)) return false;
-    this.compileColorBatch(renderer, [canopy], subject => lighting.compileSubject(renderer, camera, subject, undefined, undefined, 'isolated'));
-    const { currentProgram } = gpu.get(canopy.material) as { currentProgram?: ColorProgram };
-    this.preparedOfficeCanopy = { city, gpu, program: currentProgram };
+    const mesh = prepared.meshes.shift();
+    if (!mesh) return false;
+    this.compileColorBatch(renderer, [mesh], subject => lighting.compileSubject(renderer, camera, subject, undefined, undefined, 'isolated'));
+    const { currentProgram } = gpu.get(mesh.material) as { currentProgram?: ColorProgram };
+    if (currentProgram && !prepared.programs.includes(currentProgram)) prepared.programs.push(currentProgram);
     return true;
   }
   prepareMorningStreet(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, actor: THREE.Group | undefined, city: THREE.Group): void {
@@ -7455,7 +7461,7 @@ export class FilmSetRenderer {
       this.crosscutTv = undefined; this.crosscutDeck = undefined;
     }
     this.cancelOfficePreparation();
-    this.preparedOfficeCanopy = undefined;
+    this.preparedOfficeStreetSet = undefined;
     this.preparedOfficeStreet = undefined;
     this.preparedOfficeStreetPhone = undefined;
     this.preparedOfficePhone?.depth.dispose(); this.preparedOfficePhone = undefined;
