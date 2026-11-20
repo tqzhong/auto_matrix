@@ -45,6 +45,7 @@ export class ApartmentSetRenderer {
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
   private door = new THREE.Group();
+  private streetDoors: THREE.Group[] = [];
   private cover = new THREE.Group();
   private book = new THREE.Group();
   private disk = apartmentDisc();
@@ -92,6 +93,21 @@ export class ApartmentSetRenderer {
     this.box(plaster, 0, (8.8 + exitHeight) / 2, 20, APARTMENT_ROOM.exitWidth, 8.8 - exitHeight, .3);
     for (const side of [-1, 1]) this.box(trim, side * 5, exitHeight / 2, 20, .18, exitHeight, .4);
     const exit = this.label('STREET', 2, .5, '#c6cebd', '#35413b', 256); exit.rotation.y = Math.PI; exit.position.set(0, 7.6, 19.8); this.root.add(exit);
+    const doorWidth = APARTMENT_ROOM.exitWidth / 2, doorGlass = this.mat(0x28352d, .51, .14);
+    for (const side of [-1, 1]) {
+      const leaf = new THREE.Group(); leaf.name = 'apartment-street-door'; leaf.userData.dynamic = true;
+      leaf.position.set(side * doorWidth / 2, 0, homeDepth / 2);
+      this.root.add(leaf); this.streetDoors.push(leaf);
+      this.mesh(new THREE.BoxGeometry(doorWidth, exitHeight - .16, .16), trim, 0, exitHeight / 2, 0, leaf);
+      this.mesh(new THREE.BoxGeometry(doorWidth - .55, 3.64, .04), doorGlass, 0, 4.73, -.09, leaf);
+      this.mesh(new THREE.BoxGeometry(doorWidth - .4, .13, .07), metal, 0, 2.76, -.1, leaf);
+    }
+    const shade = this.mat(0x8a2822, .78), bulb = this.mat(0xffbf73, .65);
+    shade.emissive.setHex(0x7d1c15); shade.emissiveIntensity = .36;
+    bulb.emissive.setHex(0xffba72); bulb.emissiveIntensity = .9;
+    this.mesh(new THREE.CylinderGeometry(.03, .03, 2.65, 6), dark, 1.25, 7.4, 18.7);
+    this.mesh(new THREE.CylinderGeometry(.26, .4, .64, 12), shade, 1.25, 5.85, 18.7);
+    this.mesh(new THREE.CylinderGeometry(.35, .35, .07, 12), bulb, 1.25, 5.51, 18.7);
     this.box(this.mat(0x5f6354, .94), 0, 8.8, 0, 34, .25, 40);
     for (const x of [-9.5, 9.5]) this.box(plaster, x, 4.4, APARTMENT.doorZ, 15, 8.8, .4);
     this.box(plaster, 0, 7.7, APARTMENT.doorZ, 4, 2.2, .4);
@@ -603,7 +619,7 @@ export class ApartmentSetRenderer {
     const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace; this.textures.add(map);
     const mat = new THREE.MeshStandardMaterial({ map, roughness: .8 }); this.materials.add(mat); return this.mesh(new THREE.PlaneGeometry(w, h), mat, 0, 0, 0);
   }
-  update(journey?: FilmJourney, time = 22000, nearby = true, contactSignal = false, life?: NeoLifeState, check: ComputerInvestigation | undefined = life?.computerCheck, reserveLandingSlot = false): void {
+  update(journey?: FilmJourney, time = 22000, nearby = true, contactSignal = false, life?: NeoLifeState, check: ComputerInvestigation | undefined = life?.computerCheck, reserveLandingSlot = false, player?: { x: number; z: number }): void {
     const contact = journey?.scene === 'm1_wake_up' && !journey.visiting ? journey.contact : undefined;
     const visitors = contact && apartmentAfter(contact, 'door');
     const daylight = Math.max(0, Math.sin((time / 24000 - .25) * Math.PI * 2));
@@ -637,6 +653,12 @@ export class ApartmentSetRenderer {
     this.door.rotation.y = (contact ? apartmentDoor(contact) : 1) * 1.42;
     if (journey?.scene === 'm1_wake_again') this.door.rotation.y = (journey.visiting || journey.step >= 2 ? 1 : wakeCallDoor(call)) * 1.42;
     else if (journey?.visiting) this.door.rotation.y = 1.42;
+    // Both approaches clear the doorway before the actor reaches its plane.
+    const distanceToStreetDoor = player && Math.abs(player.x - home.x) <= APARTMENT_ROOM.exitWidth
+      ? Math.abs(player.z - home.z - homeDepth / 2) : Infinity;
+    const doorTravel = visitors ? 1 - THREE.MathUtils.smoothstep(distanceToStreetDoor, 2.4, 4.6) : 1;
+    const leafX = APARTMENT_ROOM.exitWidth * (.25 + .5 * doorTravel) + .04 * doorTravel;
+    this.streetDoors[0].position.x = -leafX; this.streetDoors[1].position.x = leafX;
     const legacyBook = contact?.phase === 'retrieving' && contact.propMotion !== 'minidisc';
     this.book.position.set(6, legacyBook ? 1.85 : APARTMENT_BOOK.y, legacyBook ? 6.2 : APARTMENT_BOOK.z);
     this.book.scale.setScalar(legacyBook ? 1 : APARTMENT_BOOK.scale);

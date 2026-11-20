@@ -32,6 +32,32 @@ test('the city road and lane markings stop at the apartment floor', t => {
   } finally { city.matrix.clear(); }
 });
 
+test('the street door encloses the visitor landing and clears the existing walking route on approach', t => {
+  const original = globalThis.document;
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(), { center } = APARTMENT_ROOM;
+  root.position.set(center.x, center.y - 1, center.z);
+  const renderer = new ApartmentSetRenderer(root);
+  try {
+    const leaves = root.getObjectsByProperty('name', 'apartment-street-door');
+    assert.equal(leaves.length, 2);
+    const invitation = { scene: 'm1_wake_up', contact: { phase: 'invitation', elapsed: 0 } } as FilmJourney;
+    const view = (z: number, journey: FilmJourney | undefined = invitation) => {
+      renderer.update(journey, 22000, true, false, undefined, undefined, false, { x: center.x, z: center.z + z });
+      root.updateMatrixWorld(true);
+      return [-3.5, -.25, .25, 3.5].map(x => new THREE.Raycaster(new THREE.Vector3(center.x + x, 4, center.z + 14), new THREE.Vector3(0, 0, 1))
+        .intersectObjects(leaves, true).length > 0);
+    };
+    assert.deepEqual(view(10), [true, true, true, true], 'the view behind the visitors ends in a solid interior');
+    assert.deepEqual(view(18), [false, false, false, false], 'the whole walking gap is clear before the actor reaches the door');
+    assert.deepEqual(view(22), [false, false, false, false], 'an actor on the pavement can walk back in');
+    assert.deepEqual(view(28), [true, true, true, true]);
+    assert.deepEqual(view(10, { scene: 'm1_morning' } as FilmJourney), [false, false, false, false]);
+    for (const z of [18, 19, 20, 21, MORNING.exit.z]) assert.equal(playerBlocked(filmPosition('film_anderson_flat', MORNING.exit.x, z), true), false);
+  } finally { renderer.dispose(); globalThis.document = original; }
+});
+
 test('the hollow book is a small floor prop beside the bed, rather than a large book on a raised table', t => {
   const original = globalThis.document;
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;

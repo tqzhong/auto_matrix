@@ -137,7 +137,7 @@ export class LifeInteriors {
     }
     const room = player ? insideLifeRoom(player) : undefined;
     const home = lifeRoomCenter('neo_apartment')!;
-    this.apartment.update(life?.journey, time, Boolean(player && Math.hypot(player.x - home.x, player.y - home.y, player.z - home.z) < 55), life?.contactSignal, life, check ?? life?.computerCheck, reserveLandingSlot);
+    this.apartment.update(life?.journey, time, Boolean(player && Math.hypot(player.x - home.x, player.y - home.y, player.z - home.z) < 55), life?.contactSignal, life, check ?? life?.computerCheck, reserveLandingSlot, player);
     for (const entry of this.lights) entry.light.visible = entry.location === room;
     for (const hand of this.clocks) hand.rotation.z = -time / 1000 * Math.PI * 2 + (life?.anomaly?.id === 'clock' ? Math.sin(time * 3) * .2 : 0);
     const office = lifeRoomCenter('metacortex_office')!;
