@@ -58,9 +58,9 @@ export function shadowCasterProxies(meshes: Iterable<THREE.Object3D>, materials:
       if (seen.has(key)) continue;
       seen.add(key);
       const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side, map, alphaMap, alphaTest: surface.alphaTest });
-      // Instanced cutouts have a stock per-material shadow variant. The shared
-      // opaque depth material is also used by the locally skinned cast.
-      if (!instanced || !((map || alphaMap) && surface.alphaTest > 0)) prepareSkinnedMaterial(depth);
+      // Cutouts use their own depth material. Only skinned draws patch that
+      // material, while opaque draws share the patched depth material.
+      if (skinned || !((map || alphaMap) && surface.alphaTest > 0)) prepareSkinnedMaterial(depth);
       materials.add(depth);
       let caster: THREE.Mesh;
       if (instanced) {

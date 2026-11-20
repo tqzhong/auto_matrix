@@ -5,6 +5,7 @@ import { lifeRoomCenter, type FilmJourney } from '@auto_matrix/shared';
 import { ApartmentSetRenderer, closedApartmentFar, type ReturnSubject } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { prepareOpaqueShadowDepth } from '../packages/client/src/engine/OpaqueShadowDepth.js';
+import { shadowCasterProxies } from '../packages/client/src/engine/PrepareShaderProgram.js';
 
 test('the workroom clips the distant street only while the camera and its near plane are enclosed', () => {
   const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
@@ -374,6 +375,21 @@ test('a saved invitation submits the shared distant cast and ground shadow with 
   assert.equal(h.apartment.prepareReturn(h.renderer, camera, h.scene, h.journey, undefined, [shadow, body], undefined, true, true), true);
   assert.ok(h.batches[0].includes(body));
   assert.ok(h.batches[0].includes(shadow));
+});
+
+test('rigid hair cards prepare the stock cutout depth program used when Dujour returns', t => {
+  const geometry = new THREE.PlaneGeometry(), map = new THREE.Texture();
+  const hair = new THREE.MeshStandardMaterial({ map, alphaTest: .42, side: THREE.DoubleSide });
+  const fringe = new THREE.Mesh(geometry, hair), scalp = new THREE.SkinnedMesh(geometry, hair);
+  fringe.castShadow = scalp.castShadow = true;
+  const materials = new Set<THREE.MeshDepthMaterial>(), stock = new THREE.MeshDepthMaterial();
+  t.after(() => { geometry.dispose(); map.dispose(); hair.dispose(); stock.dispose(); materials.forEach(material => material.dispose()); });
+  const [rigid, skinned] = shadowCasterProxies([fringe, scalp], materials);
+  assert.ok(rigid.material instanceof THREE.MeshDepthMaterial && skinned.material instanceof THREE.MeshDepthMaterial);
+  assert.equal(rigid.material.map, map);
+  assert.equal(rigid.material.alphaTest, .42);
+  assert.equal(rigid.material.customProgramCacheKey(), stock.customProgramCacheKey());
+  assert.match(skinned.material.customProgramCacheKey(), /actor-local-skin-v1$/);
 });
 
 test('a deferred invitation prepares priority maps and retains visitor shadow programs through the handoff', t => {
