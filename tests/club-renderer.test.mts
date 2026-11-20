@@ -176,6 +176,33 @@ test('wide dance gestures leave the elbows and wrists clear of the torso', async
   }
 });
 
+test('dancers keep a planted shoe on the floor while shifting weight or lifting the other foot', async t => {
+  const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(assets.get(url.split('/').at(-1)!.replace('.glb', ''))!));
+  const root = new THREE.Group(), club = new ClubSetRenderer(root);
+  t.after(() => club.dispose());
+  await club.ready;
+  const point = new THREE.Vector3();
+  const dancers = CLUB_DANCERS.map((_, i) => root.getObjectByName(`club-dancer-${i}`)!.getObjectByName('shoes01') as THREE.SkinnedMesh);
+  const lifted = dancers.map(() => [false, false]);
+  for (let frame = 0; frame < 42; frame++) {
+    club.update(frame * .075); root.updateMatrixWorld(true);
+    for (const [i, shoe] of dancers.entries()) {
+      const positions = shoe.geometry.attributes.position, soles = [Infinity, Infinity];
+      for (let vertex = 0; vertex < positions.count; vertex++) {
+        const side = Number(positions.getX(vertex) > 0);
+        shoe.getVertexPosition(vertex, point).applyMatrix4(shoe.matrixWorld);
+        soles[side] = Math.min(soles[side], point.y);
+      }
+      const lowest = Math.min(...soles);
+      assert.ok(lowest >= -.02 && lowest <= .015, `dancer ${i} frame ${frame}: support sole is at ${lowest}`);
+      soles.forEach((height, side) => { lifted[i][side] ||= height > .04; });
+    }
+  }
+  assert.ok(lifted.every(feet => feet.every(Boolean)), 'each dancer can visibly lift either foot without leaving the floor');
+});
+
 test('offscreen dancers can be culled without clipping their animated meshes', async t => {
   const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());

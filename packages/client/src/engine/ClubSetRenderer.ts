@@ -3,6 +3,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CLUB_DANCERS, CLUB_OBSTACLES } from '@auto_matrix/shared';
+import { reach } from '../agents/SpoonPerformance.js';
+
+interface DanceFoot { thigh: THREE.Bone; shin: THREE.Bone; ankle: THREE.Bone; mark: THREE.Vector3 }
 
 /** A navigable, vaulted underground room. The principal encounter stays clear of the dance floor. */
 export class ClubSetRenderer {
@@ -12,7 +15,11 @@ export class ClubSetRenderer {
   private textures = new Set<THREE.Texture>();
   private roomBitmaps = new Set<ImageBitmap>();
   private skeletons = new Set<THREE.Skeleton>();
-  private dancers: { root: THREE.Group; bones: Map<string, THREE.Bone>; pelvis: THREE.Vector3 }[] = [];
+  private dancers: { root: THREE.Group; bones: Map<string, THREE.Bone>; pelvis: THREE.Vector3; feet: DanceFoot[] }[] = [];
+  private footTarget = new THREE.Vector3();
+  private kneeDirection = new THREE.Vector3();
+  private dancerFacing = new THREE.Quaternion();
+  private shoeFacing = new THREE.Quaternion();
   private preparedDancers = 0;
   private spots: THREE.SpotLight[] = [];
   private disposed = false;
@@ -206,12 +213,16 @@ export class ClubSetRenderer {
         if (/Coat|Trousers/.test(source.name)) { const mat = source.clone(); mat.color.setHex(colors[i % colors.length]); object.material = mat; this.materials.add(mat); }
       });
       root.position.set(position.x, 0, position.z); root.rotation.y = position.yaw; root.scale.setScalar(position.scale); this.root.add(root);
-      this.dancers.push({ root, bones, pelvis: bones.get('pelvis')!.position.clone() });
+      const feet = ['R', 'L'].map(side => {
+        const thigh = bones.get('hip_' + side)!, shin = bones.get('knee_' + side)!, ankle = bones.get('ankle_' + side)!;
+        return { thigh, shin, ankle, mark: root.worldToLocal(ankle.getWorldPosition(new THREE.Vector3())) };
+      });
+      this.dancers.push({ root, bones, pelvis: bones.get('pelvis')!.position.clone(), feet });
     }
     this.update(0);
   }
   update(time: number): void {
-    this.dancers.forEach(({ bones, pelvis }, i) => {
+    this.dancers.forEach(({ root, bones, pelvis, feet }, i) => {
       const beat = time * 2.7 + i * 1.39; const weight = Math.sin(beat) * .07;
       const hip = bones.get('pelvis')!; hip.position.copy(pelvis); hip.position.y -= .04 + Math.abs(weight) * .6; hip.rotation.z = weight * .5;
       bones.get('spine')!.rotation.set(.025, Math.sin(beat * .5) * .07, -weight * .7);
@@ -221,8 +232,18 @@ export class ClubSetRenderer {
         const sign = side === 'R' ? 1 : -1; const sway = Math.sin(beat + sign) * .12;
         bones.get('shoulder_' + side)!.rotation.set(-.3 + sway, 0, -sign * (.1 + (i % 3 === 0 ? .7 : .08)));
         bones.get('elbow_' + side)!.rotation.set(-.6 + sway, 0, 0);
-        bones.get('hip_' + side)!.rotation.set(-.06 + sway * .3, 0, sign * .07);
-        bones.get('knee_' + side)!.rotation.x = .12 + Math.abs(sway) * .3;
+      }
+      root.getWorldQuaternion(this.dancerFacing);
+      // One shoe stays on its mark while the other lifts into the next weight shift.
+      for (const [foot, { thigh, shin, ankle, mark }] of feet.entries()) {
+        const swing = THREE.MathUtils.smoothstep(Math.sin(beat) * (foot ? -1 : 1), .35, 1);
+        this.footTarget.copy(mark);
+        this.footTarget.y += .008 + .085 * swing;
+        this.footTarget.z += .13 * swing;
+        root.localToWorld(this.footTarget);
+        this.kneeDirection.set(foot ? .08 : -.08, 0, 1).applyQuaternion(this.dancerFacing);
+        reach(thigh, shin, ankle.position, this.footTarget, this.kneeDirection);
+        ankle.quaternion.copy(shin.getWorldQuaternion(this.shoeFacing).invert().multiply(this.dancerFacing));
       }
     });
     this.spots.forEach((light, i) => { light.target.position.x = Math.sin(time * .19 + i * 2) * 7; light.target.position.z = 6 + Math.cos(time * .23 + i) * 5; });

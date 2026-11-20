@@ -35,8 +35,15 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   });
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => {
     const scene = new THREE.Group();
-    const names = ['pelvis', 'spine', 'chest', 'head', ...['R', 'L'].flatMap(side => ['shoulder', 'elbow', 'hip', 'knee'].map(joint => `${joint}_${side}`))];
+    const names = ['pelvis', 'spine', 'chest', 'head', ...['R', 'L'].flatMap(side => ['shoulder', 'elbow', 'hip', 'knee', 'ankle'].map(joint => `${joint}_${side}`))];
     for (const name of names) { const bone = new THREE.Bone(); bone.name = name; scene.add(bone); }
+    const pelvis = scene.getObjectByName('pelvis')!;
+    pelvis.position.y = 2;
+    for (const side of ['R', 'L']) {
+      const hip = scene.getObjectByName('hip_' + side)!, knee = scene.getObjectByName('knee_' + side)!, ankle = scene.getObjectByName('ankle_' + side)!;
+      pelvis.add(hip); hip.add(knee); knee.add(ankle);
+      knee.position.y = ankle.position.y = -.9;
+    }
     const map = new THREE.Texture(new Bitmap()); map.flipY = false; map.needsUpdate = true;
     const material = new THREE.MeshStandardMaterial({ map }); material.name = 'Trousers';
     const geometry = new THREE.BoxGeometry(), joints = new Uint16Array(geometry.attributes.position.count * 4);
@@ -46,7 +53,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
     geometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(weights, 4));
     const mesh = new THREE.SkinnedMesh(geometry, material);
     mesh.name = 'crowd-surface'; scene.add(mesh);
-    mesh.bind(new THREE.Skeleton([scene.getObjectByName('pelvis') as THREE.Bone]));
+    mesh.bind(new THREE.Skeleton([pelvis as THREE.Bone]));
     return { scene };
   });
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), camera = new THREE.PerspectiveCamera();
