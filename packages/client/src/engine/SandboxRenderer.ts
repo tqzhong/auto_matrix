@@ -170,7 +170,8 @@ export class SandboxRenderer {
           : scene === 'm1_room303' ? { ...base.appearance, clothing: '#222c36' }
           : kind === 'soldier' ? { ...base.appearance, clothing: '#172121' } : base.appearance };
       const officePatrol = kind === 'agent' && (scene === 'm1_boss' || scene === 'm1_office_escape') && OFFICE_AGENT_ROLES.some(id => id === character);
-      if (officePatrol || scene === 'm1_room303' || scene === 'm2_burly' && kind === 'smith' && !character) sharedActor = this.agentRenderer?.createThreatActor(state);
+      const streetPursuer = scene === 'm1_city_chase' && kind === 'smith' && character === 'smith';
+      if (officePatrol || streetPursuer || scene === 'm1_room303' || scene === 'm2_burly' && kind === 'smith' && !character) sharedActor = this.agentRenderer?.createThreatActor(state);
       rig = sharedActor?.rig ?? this.models.create(state); rig.root.position.y = -1; group.add(rig.root);
       if (scene === 'm1_room303') {
         group.name = `hotel-303-officer-${character}`;

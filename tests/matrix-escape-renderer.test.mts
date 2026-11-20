@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { MATRIX_ESCAPE, filmPosition, matrixEscapeRoot, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MATRIX_ESCAPE, filmPosition, matrixEscapeRoot, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { MatrixEscapeRenderer } from '../packages/client/src/engine/MatrixEscapeRenderer.js';
+import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
@@ -233,6 +236,36 @@ test('the saved truck dodge clears the actual body and wheels before the truck p
     assert.ok(neo.z < bounds.min.z - .55 || neo.z > bounds.max.z + .55 || neo.x > bounds.max.x + .55,
       `the garbage truck intersects Neo at ${elapsed.toFixed(2)}s`);
   }
+});
+
+test('street pursuit reuses the loaded Smith asset and keeps its own body and retry pool', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const load = t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const document = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const scene = new THREE.Scene(), actors = new AgentRenderer(scene), enemies = new SandboxRenderer(scene, actors);
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  t.after(() => { enemies.dispose(); actors.dispose(); globalThis.document = document; });
+  actors.updateAgent('smith', world.agents.get('smith')!);
+  const original = actors.getAgent('smith')!, body = actors.getAgentBody('smith')!;
+  const actorStates = Object.fromEntries(world.agents);
+  const pursuit = { id: 'first-pursuit', scene: 'm1_city_chase', kind: 'smith', character: 'smith', matrix: true,
+    position: filmPosition('film_escape_streets', 0, 30), health: 100, maxHealth: 100 } as SandboxThreat;
+  const state = (threats: SandboxThreat[]) => ({ nodes: [], structures: [], incidents: [], missions: {}, threats } as unknown as SandboxState);
+  const smithLoads = () => load.mock.calls.filter(call => call.arguments[0] === '/assets/characters/smith.glb').length;
+  assert.equal(smithLoads(), 1);
+  enemies.sync(state([pursuit]), actorStates);
+  assert.equal(smithLoads(), 1, 'spawning the pursuer reuses the Smith asset promise');
+  const runner = scene.children.find(object => object !== original)!;
+  assert.ok(runner && runner.children.some(object => object instanceof THREE.Group && object !== body));
+  assert.equal(body.parent, original);
+  enemies.sync(state([]), actorStates);
+  assert.equal(runner.parent, null);
+  enemies.sync(state([{ ...pursuit, id: 'pursuit-retry' }]), actorStates);
+  assert.equal(runner.parent, scene, 'retry takes the same prepared body');
+  assert.equal(smithLoads(), 1);
 });
 
 test('street windows face out of their backing instead of being buried in the facade', t => {
