@@ -593,7 +593,8 @@ export class Engine {
       if (roomFar < cameraFar) { this.camera.far = roomFar; this.camera.updateProjectionMatrix(); }
       // The trace covers the frame. Resume all passes while it still covers the first hall view.
       const covered = openingTrace !== undefined && openingTrace < OPENING_HOTEL.trace.located;
-      this.postProcessing.render(filmSet?.id !== 'film_extraction_car', covered, apartmentView ? .5 : 1);
+      const halfOcclusion = apartmentView || filmSet?.id === 'film_white_rabbit_club';
+      this.postProcessing.render(filmSet?.id !== 'film_extraction_car', covered, halfOcclusion ? .5 : 1);
       this.openingTrace.render(this.renderer, openingTrace);
     } finally {
       if (roomFar < cameraFar) { this.camera.far = cameraFar; this.camera.updateProjectionMatrix(); }
