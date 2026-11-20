@@ -33,6 +33,7 @@ export type MatrixEscapeGesture = MatrixEscapeEncounter & { role: MatrixEscapeRo
 
 export const MATRIX_ESCAPE = {
   subway: {
+    columns: { x: [-15.3, 8.2], z: [-46, -33, -20, -7, 6, 19, 32, 45], height: 11.4, radius: .72, depthScale: .82, bandRadius: .76, bandTube: .055 },
     crewApproach: 4,
     crewPickup: 4.4,
     receiver: { x: -7.52, y: 3.15, z: 31.72 },
@@ -64,6 +65,14 @@ export const MATRIX_ESCAPE = {
     pursuitSprint: .14,
   },
 } as const;
+
+export function subwayCameraBlocked(x: number, y: number, z: number, margin: number): boolean {
+  const columns = MATRIX_ESCAPE.subway.columns;
+  if (y < -margin || y > columns.height + margin) return false;
+  const band = columns.bandRadius + columns.bandTube;
+  return columns.x.some(cx => columns.z.some(cz =>
+    Math.hypot((x - cx) / (band + margin), (z - cz) / (band * columns.depthScale + margin)) < 1));
+}
 
 const clamp = (value: number): number => Math.max(0, Math.min(1, value));
 const smooth = (value: number): number => { const t = clamp(value); return t * t * (3 - 2 * t); };

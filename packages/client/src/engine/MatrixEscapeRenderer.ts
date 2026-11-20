@@ -98,10 +98,11 @@ export class MatrixEscapeRenderer {
       this.box(platform, (Math.round(y) + Math.round(z)) % 3 ? this.tile : this.tileDark, -22.28, y, z, .06, .92, 4.78);
       this.box(platform, this.tile, 22.28, y, z, .06, .92, 4.78);
     }
-    for (let z = -46; z <= 46; z += 13) {
-      for (const x of [-15.3, 8.2]) {
-        const column = this.cylinder(platform, this.steel, x, 5.7, z, .72, 11.4); column.scale.z = .82;
-        for (let y = 1.15; y < 10.8; y += 1.2) this.mesh(new THREE.TorusGeometry(.76, .055, 8, 22), this.black, column).position.y = y - 5.7;
+    const columns = MATRIX_ESCAPE.subway.columns;
+    for (const z of columns.z) {
+      for (const x of columns.x) {
+        const column = this.cylinder(platform, this.steel, x, columns.height / 2, z, columns.radius, columns.height); column.scale.z = columns.depthScale;
+        for (let y = 1.15; y < 10.8; y += 1.2) this.mesh(new THREE.TorusGeometry(columns.bandRadius, columns.bandTube, 8, 22), this.black, column).position.y = y - columns.height / 2;
       }
       const rib = new THREE.Shape(); rib.moveTo(-22, 0); rib.absellipse(0, 0, 22, 7.8, Math.PI, 0, true); rib.lineTo(22, .55);
       rib.absellipse(0, .55, 22.55, 8.35, 0, Math.PI, false); rib.closePath();

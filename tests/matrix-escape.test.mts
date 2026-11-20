@@ -137,9 +137,10 @@ function browserControls(t: test.TestContext, send: (input: PlayerInput) => void
   const oldWindow = globalThis.window, oldDocument = globalThis.document;
   const window = new InputTarget();
   Object.assign(globalThis, { window, document: Object.assign(new InputTarget(), { pointerLockElement: null }) });
-  const controls = new PlayerControls(new InputTarget() as unknown as HTMLCanvasElement, new THREE.PerspectiveCamera(), send, () => {});
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const controls = new PlayerControls(new InputTarget() as unknown as HTMLCanvasElement, camera, send, () => {});
   t.after(() => { controls.dispose(); Object.assign(globalThis, { window: oldWindow, document: oldDocument }); });
-  return { controls, window, group: new THREE.Group() };
+  return { controls, camera, window, group: new THREE.Group() };
 }
 
 test('a paused subway crouch drives the local pose without a held key', t => {
@@ -153,6 +154,26 @@ test('a paused subway crouch drives the local pose without a held key', t => {
   assert.equal(controls.motion.crouching, true, 'a freshly loaded, paused avatar shows the saved pose');
   controls.update(.05, h.actor, group, true);
   assert.equal(controls.motion.crouching, false, 'live input takes over when play resumes');
+});
+
+test('the restored subway platform view has a clear line from the follow camera to Neo', t => {
+  const h = setup('m1_subway'), encounter = h.sandbox.life.film.state!.matrixEscape!;
+  encounter.phase = 'done'; encounter.elapsed = MATRIX_ESCAPE.subway.bodySwap;
+  const pose = matrixEscapeRoot(encounter, 'neo'), set = FILM_SETS.film_subway_platform;
+  h.actor.position = filmPosition(set.id, pose.x, pose.z); h.actor.rotation = pose.yaw; h.actor.currentAction = null;
+  const root = new THREE.Group(); root.position.set(set.center.x, set.center.y - 1, set.center.z);
+  const station = new MatrixEscapeRenderer(root, set.id);
+  t.after(() => station.dispose());
+  station.update(h.sandbox.life.film.state!, 0); root.updateMatrixWorld(true);
+  const { controls, camera, group } = browserControls(t);
+  controls.possess(h.actor);
+  const chest = new THREE.Vector3(h.actor.position.x, h.actor.position.y + 2.1, h.actor.position.z);
+  for (const aspect of [16 / 9, 3 / 4]) {
+    camera.aspect = aspect;
+    for (let frame = 0; frame < 12; frame++) controls.update(.05, h.actor, group, false);
+    const ray = new THREE.Raycaster(camera.position, chest.clone().sub(camera.position).normalize(), 0, camera.position.distanceTo(chest));
+    assert.equal(ray.intersectObject(root, true).length, 0, `the platform column obscures Neo in the ${aspect} walking view`);
+  }
 });
 
 test('a late retry acknowledgement keeps the sprint already sent for the same actor', t => {
