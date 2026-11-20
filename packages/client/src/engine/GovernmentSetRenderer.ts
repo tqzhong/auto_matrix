@@ -26,6 +26,7 @@ export class GovernmentSetRenderer {
   private glassShards?: THREE.Group;
   private rescueRope?: THREE.Mesh;
   private rescueRopeDrop?: THREE.Mesh;
+  private impactWindows?: THREE.InstancedMesh;
   private impactRipples?: THREE.Group;
   private crashFire?: THREE.Group;
   private crashLight?: THREE.PointLight;
@@ -228,7 +229,16 @@ export class GovernmentSetRenderer {
     this.buildRope();
     const facade = new THREE.Group(); facade.name = 'air-rescue-impact-facade'; facade.position.set(-2.5, 0, -48); this.group.add(facade);
     this.box(facade, this.darkConcrete, 0, 12, 0, 55, 24, 1.2);
-    for (let row = 0; row < 6; row++) for (let col = -6; col <= 6; col++) this.box(facade, this.glass, col * 4, 2.1 + row * 3.8, .65, 3.65, 3.35, .1);
+    // The concrete backing meets the back of every pane. Only the exposed glazing needs shading.
+    const glazing = this.physical(0x9cb8b8, .12, .24); glazing.transmission = 0; glazing.side = THREE.FrontSide;
+    const pane = new THREE.BoxGeometry(3.65, 3.35, .1); this.geometries.add(pane);
+    const windows = this.impactWindows = new THREE.InstancedMesh(pane, glazing, 6 * 13);
+    windows.name = 'air-rescue-impact-glazing'; windows.castShadow = windows.receiveShadow = true;
+    const transform = new THREE.Matrix4(); let index = 0;
+    for (let row = 0; row < 6; row++) for (let col = -6; col <= 6; col++) {
+      windows.setMatrixAt(index++, transform.makeTranslation(col * 4, 2.1 + row * 3.8, .65));
+    }
+    windows.instanceMatrix.needsUpdate = true; facade.add(windows);
     const ripples = new THREE.Group(); ripples.name = 'air-rescue-impact-ripples'; ripples.position.set(-3, 8, -47.25); ripples.visible = false; this.group.add(ripples); this.impactRipples = ripples;
     const rippleMaterial = this.material(0xc7eeea, .16, .55, 0x6ec4b4, 2.2);
     for (let i = 0; i < 6; i++) { const ring = this.mesh(new THREE.TorusGeometry(1 + i * 1.7, .065, 8, 48), rippleMaterial, ripples); ring.position.z = -.02 * i; }
@@ -425,7 +435,8 @@ export class GovernmentSetRenderer {
   }
 
   dispose(): void {
-    this.group.removeFromParent(); this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());
+    this.group.removeFromParent(); this.impactWindows?.dispose();
+    this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());
     this.lights.forEach(light => light.dispose()); this.geometries.clear(); this.materials.clear(); this.lights.clear(); this.bullets = [];
   }
 }

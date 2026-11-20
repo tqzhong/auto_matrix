@@ -109,6 +109,37 @@ test('roof air rescue renders the suspended rope, facade ripple and burning heli
   renderer.dispose(); assert.equal(root.children.length, 0);
 });
 
+test('the solid impact facade draws its reflective window grid in one batch', () => {
+  const root = new THREE.Group(), renderer = new GovernmentSetRenderer(root, 'film_government_roof');
+  const facade = root.getObjectByName('air-rescue-impact-facade')!;
+  const windows = facade.children.find(child => child instanceof THREE.InstancedMesh) as THREE.InstancedMesh<THREE.BoxGeometry, THREE.MeshPhysicalMaterial> | undefined;
+  let released = 0;
+  windows?.addEventListener('dispose', () => released++);
+  try {
+    assert.ok(windows && windows.count === 78);
+    assert.equal(facade.children.length, 2);
+    assert.equal(windows.material.transmission, 0);
+    assert.ok(windows.material.transparent && windows.material.clearcoat > 0);
+    assert.equal(windows.material.side, THREE.FrontSide);
+    assert.ok(windows.castShadow && windows.receiveShadow);
+    root.updateMatrixWorld(true);
+    const backing = new THREE.Box3().setFromObject(facade.children[0], true);
+    const offset = new THREE.Matrix4(), position = new THREE.Vector3();
+    for (let i = 0; i < windows.count; i++) {
+      windows.getMatrixAt(i, offset);
+      position.setFromMatrixPosition(offset).applyMatrix4(facade.matrixWorld);
+      assert.ok(Math.abs(position.x - (facade.position.x - 24 + i % 13 * 4)) < .0001);
+      assert.ok(Math.abs(position.y - (2.1 + Math.floor(i / 13) * 3.8)) < .0001);
+      assert.ok(Math.abs(position.z - windows.geometry.parameters.depth / 2 - backing.max.z) < .0001);
+    }
+    const cockpit = root.getObjectByName('government-cockpit') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial>;
+    assert.ok(cockpit.material.transmission > 0, 'the open cockpit still needs refractive glazing');
+  } finally {
+    renderer.dispose();
+  }
+  assert.equal(released, 1, 'leaving the roof releases the instance buffer');
+});
+
 test('the rooftop cast stays clear of the HVAC and the pull lifts Trinity over the actual parapet', t => {
   const root = new THREE.Group(); const renderer = new GovernmentSetRenderer(root, 'film_government_roof');
   t.after(() => renderer.dispose());
