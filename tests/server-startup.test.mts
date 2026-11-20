@@ -20,6 +20,7 @@ import { CATCH, catchRoot, catchText, newCatch, type CatchEncounter } from '@aut
 import { morningRoot, morningText, morningWakePose, type MorningRoutine } from '@auto_matrix/shared';
 import { wakeCallRoot, wakeCallText, type WakeCall } from '@auto_matrix/shared';
 import { APARTMENT, apartmentText, type ApartmentContact } from '@auto_matrix/shared';
+import { clubRoot, clubText, type ClubEncounter } from '@auto_matrix/shared';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fingerprint = (data: string) => createHash('sha256').update(data).digest('hex');
@@ -595,6 +596,37 @@ for (const savedAction of ['matching', 'missing', 'stale'] as const) {
       assert.ok(Date.now() < deadline, 'the paused actor must be released'); await new Promise(resolve => setTimeout(resolve, 20));
     }
     check(await client.world()); await server.stop();
+  });
+}
+
+for (const phase of ['listen', 'whisper'] as const) {
+  test(`a cold paused nightclub ${phase} keeps both saved action clocks before input`, { timeout: 30000 }, async t => {
+    const { directory, file, checkpoint } = await fixture(t, 'm1_club');
+    const journey = checkpoint.sandbox.neoLife.journey, set = FILM_SCENE_BY_ID.m1_club.set;
+    const club: ClubEncounter = { phase, elapsed: phase === 'whisper' ? .8 : 0, approach: { x: 7, z: -4, yaw: Math.PI } };
+    Object.assign(journey, { step: 1, club, lastText: clubText(club) });
+    const roles = ['neo', 'trinity'] as const;
+    for (const role of roles) {
+      const actor = checkpoint.agents[role], pose = clubRoot(club, role);
+      Object.assign(actor, { position: filmPosition(set, pose.x, pose.z), rotation: pose.yaw, currentLocation: set,
+        isInMatrix: true, targetPosition: null, currentPath: [], velocity: { x: 0, y: 0, z: 0 } });
+      actor.currentAction = { type: 'idle', parameters: { resolved: true, player: role === 'neo', club: { ...club, role } },
+        startedAt: checkpoint.tick - 1, duration: 1, progress: role === 'neo' ? 0 : 1 };
+    }
+    journey.checkpoint = { ...checkpoint.agents.neo.position };
+    checkpoint.simulation = { running: false, speed: 1 };
+    await writeFile(file, JSON.stringify(checkpoint));
+
+    const server = start(t, directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+    const released = await client.world();
+    const attached = await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller));
+    for (const state of [released, attached]) {
+      assert.equal(state.simulation!.tick, checkpoint.tick);
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.club, club);
+      for (const role of roles) for (const field of ['position', 'rotation', 'velocity', 'currentAction'] as const)
+        assert.deepEqual(state.agents[role][field], checkpoint.agents[role][field], `${role}: ${field}`);
+    }
+    await server.stop();
   });
 }
 

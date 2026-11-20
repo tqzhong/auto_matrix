@@ -22,8 +22,8 @@ export const CLUB_OBSTACLES: FilmObstacle[] = [
 ];
 // Leave the entrance aisle, conversation and Trinity's approach free of dancers.
 export const CLUB_DANCERS = [
-  [-7, 10], [-3, 8], [4, 9], [8, 12], [-8, 4], [-4, 1], [2, 2], [-8, -5],
-  [-3, -8], [1, -6], [-14, -8], [-15, 4], [12, -12], [11, 6], [-3, -22], [2, -20],
+  [-7, 10], [-3, 8], [4, 9], [8, 12], [10.3, -16.2], [-4, 1], [13.5, -6.7], [-8, -5],
+  [-3, -8], [1, -6], [-14, -8], [10, -21], [12, -13.3], [14.55, -20.5], [-3, -22], [2, -20],
 ].map(([x, z], i) => ({ x, z, yaw: i * 2.31, scale: .88 + i % 4 * .05 }));
 const smooth = (value: number) => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
 

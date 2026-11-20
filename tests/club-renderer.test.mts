@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, clubRoot, filmPosition, type ClubGesture } from '@auto_matrix/shared';
+import { CLUB, CLUB_DANCERS, CLUB_ROUTE, FILM_SETS, clubRoot, filmPosition, playerBlocked, type ClubGesture } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { ClubSetRenderer } from '../packages/client/src/engine/ClubSetRenderer.js';
@@ -126,6 +126,31 @@ test('the whisper has a cool backlight over both marks and the bar light stays b
     assert.ok(fromLight.normalize().dot(direction) > Math.cos(key.angle));
     if (role === 'trinity') assert.ok(fromLight.dot(new THREE.Vector3(Math.sin(mark.yaw), 0, Math.cos(mark.yaw))) > .45);
   }
+});
+
+test('the whisper has dancers in the third-person background with clear walking and approach lanes', async t => {
+  const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(assets.get(url.split('/').at(-1)!.replace('.glb', ''))!));
+  const root = new THREE.Group(), club = new ClubSetRenderer(root);
+  t.after(() => club.dispose());
+  await club.ready; root.updateMatrixWorld(true);
+  const eye = new THREE.PerspectiveCamera(57, 16 / 9, .5, 100);
+  eye.position.set(4.2, 4.5, -2.2); eye.lookAt(6.65, 3.92, -4.55); eye.updateMatrixWorld(true);
+  const walkway = [CLUB.exit, { x: 0, z: 6 }, { x: 7, z: 6 }, CLUB.neo];
+  let visible = 0;
+  for (const [i, mark] of CLUB_DANCERS.entries()) {
+    const head = root.getObjectByName(`club-dancer-${i}`)!.getObjectByName('head')!.getWorldPosition(new THREE.Vector3());
+    const projected = head.clone().project(eye);
+    if (Math.abs(projected.x) < .88 && Math.abs(projected.y) < .88 && projected.z > -1 && projected.z < 1) visible++;
+    assert.equal(playerBlocked(filmPosition('film_white_rabbit_club', mark.x, mark.z), true, 1), false, `dancer ${i} enters a set obstacle`);
+    for (const path of [walkway, CLUB_ROUTE]) for (let j = 1; j < path.length; j++) {
+      const line = new THREE.Line3(new THREE.Vector3(path[j - 1].x, 0, path[j - 1].z), new THREE.Vector3(path[j].x, 0, path[j].z));
+      const point = new THREE.Vector3(mark.x, 0, mark.z);
+      assert.ok(line.closestPointToPoint(point, true, new THREE.Vector3()).distanceTo(point) >= 2.8, `dancer ${i} blocks a walking lane`);
+    }
+  }
+  assert.ok(visible >= 5, `only ${visible} dancers fill the background behind the conversation`);
 });
 
 test('wide dance gestures leave the elbows and wrists clear of the torso', async t => {
