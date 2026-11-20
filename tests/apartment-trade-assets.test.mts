@@ -37,6 +37,16 @@ test('the apartment visitors keep the fitted jacket and dark hair of their own r
     assert.ok(rig.root.getObjectByName('Tailored_coat_upper'));
     assert.equal(rig.panels.length, 0, 'Neo’s long coat tails cross Choi’s trousers');
   });
+  await t.test('Choi’s goatee is painted on his own skinned face', async () => {
+    const rig = (await models.create('neo', undefined, 'choi'))!;
+    const generic = (await models.create('choi'))!;
+    const skin = (model: typeof rig) => (model.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>).material;
+    const shader = { ...THREE.ShaderLib.standard, uniforms: {} } as THREE.WebGLProgramParametersWithUniforms;
+    skin(rig).onBeforeCompile(shader, {} as THREE.WebGLRenderer);
+    assert.match(shader.vertexShader, /choiFace = position/, 'the facial hair follows the existing skin without a second surface');
+    assert.match(shader.fragmentShader, /diffuseColor\.rgb = mix\(diffuseColor\.rgb, goateeColor/);
+    assert.doesNotMatch(skin(generic).customProgramCacheKey(), /choi-goatee/, 'the same source mesh can be used without Choi’s costume');
+  });
   await t.test('Dujour keeps her dark hair', async () => {
     const rig = (await models.create('trinity', undefined, 'dujour'))!;
     const hair = rig.root.getObjectByName('short04') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
@@ -68,6 +78,25 @@ test('the apartment visitors keep the fitted jacket and dark hair of their own r
     } finally { surface.material.dispose(); }
     bun.geometry.computeBoundingBox();
     assert.ok(bun.position.y + bun.geometry.boundingBox!.max.y * bun.scale.y > .48, 'the bun rises above the crown');
+  });
+  await t.test('Dujour’s silver collar sits just outside the actual neck', async () => {
+    const rig = (await models.create('trinity', undefined, 'dujour'))!;
+    const collar = rig.bones.get('chest')!.getObjectByName('dujour-silver-collar');
+    assert.ok(collar instanceof THREE.Mesh && collar.material instanceof THREE.MeshStandardMaterial && collar.material.metalness > .5);
+    const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    const surface = new THREE.Mesh(skin.geometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+    rig.root.updateMatrixWorld(true);
+    try {
+      for (const [point, direction] of [
+        [new THREE.Vector3(0, 3.61, 1), new THREE.Vector3(0, 0, -1)],
+        [new THREE.Vector3(1, 3.61, .068), new THREE.Vector3(-1, 0, 0)],
+      ]) {
+        const ray = new THREE.Raycaster(point, direction);
+        const [outer] = ray.intersectObject(collar), [neck] = ray.intersectObject(surface);
+        assert.ok(outer && neck && neck.distance - outer.distance > .008 && neck.distance - outer.distance < .07,
+          'the choker should cover the neck without a visible gap');
+      }
+    } finally { surface.material.dispose(); }
   });
 });
 

@@ -20,6 +20,7 @@ export class ApartmentPerformance {
   private materials = new Set<THREE.Material>();
   private tattoo?: THREE.CanvasTexture;
   private dujourHair?: THREE.Group;
+  private dujourCollar?: THREE.Mesh;
   constructor(private rig: HeroRig) {
     this.disk.name = 'apartment-held-disc'; this.cash.name = 'apartment-held-cash';
     this.disk.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } });
@@ -27,8 +28,10 @@ export class ApartmentPerformance {
     this.mesh(this.cash, new THREE.BoxGeometry(.36, .04, .18), money);
     this.mesh(this.cash, new THREE.BoxGeometry(.08, .045, .19), new THREE.MeshStandardMaterial({ color: 0xc4bfa5, roughness: .98 }));
     rig.root.add(this.disk, this.cash);
+    if (rig.apartmentRole === 'choi') this.fitChoiGoatee();
     if (rig.apartmentRole === 'dujour') {
       this.fitDujourHair();
+      this.fitDujourCollar();
       const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
       const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#d4d0bf'; ctx.strokeStyle = '#555a4e'; ctx.lineWidth = 7;
       const oval = (x: number, y: number, rx: number, ry: number, angle: number) => { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, angle, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); };
@@ -54,6 +57,47 @@ export class ApartmentPerformance {
         mat.customProgramCacheKey = () => 'dujour-shoulder-rabbit-v1'; mat.needsUpdate = true;
       });
     }
+  }
+  private fitChoiGoatee(): void {
+    const face = this.rig.root.getObjectByName('Anatomical_head_and_hands');
+    if (!(face instanceof THREE.Mesh) || !(face.material instanceof THREE.MeshStandardMaterial)) return;
+    const material = face.material, original = material.onBeforeCompile, key = material.customProgramCacheKey();
+    material.onBeforeCompile = (shader, renderer) => {
+      original.call(material, shader, renderer);
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 choiFace;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nchoiFace = position;');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 choiFace;')
+        .replace('#include <map_fragment>', `#include <map_fragment>
+          if (choiFace.z > 0.29 && abs(choiFace.x) < 0.14 && choiFace.y > 3.77 && choiFace.y < 3.972) {
+            float x = abs(choiFace.x), y = choiFace.y;
+            float chinWidth = mix(.065, .098, smoothstep(3.799, 3.903, y));
+            vec2 chin = vec2(x / chinWidth, (y - 3.849) / .061);
+            vec2 sides = vec2((x - .082) / .027, (y - 3.894) / .044);
+            vec2 mustache = vec2((x - .038) / .062, (y - 3.944 + x * .115) / .023);
+            vec2 lips = vec2(x / .076, (y - 3.910) / .019);
+            float outline = min(dot(chin, chin), min(dot(sides, sides), dot(mustache, mustache)));
+            float grain = fract(sin(dot(floor(choiFace.xy * vec2(990.0, 460.0)), vec2(36.73, 78.23))) * 4872.19);
+            float hair = (1.0 - smoothstep(.68, 1.13, outline + .15 * (grain - .5))) * smoothstep(.75, 1.14, dot(lips, lips));
+            vec3 goateeColor = mix(vec3(.036, .018, .008), vec3(.103, .057, .028), grain);
+            diffuseColor.rgb = mix(diffuseColor.rgb, goateeColor, hair * (.76 + .20 * grain));
+          }`);
+    };
+    material.customProgramCacheKey = () => `${key}:choi-goatee`; material.needsUpdate = true;
+  }
+  private fitDujourCollar(): void {
+    // Neck cross-sections from the rest mesh taper and shift forward toward the jaw.
+    const sections = [[0, .183], [.012, .174], [.025, .163], [.039, .156], [.052, .153], [.066, .152]];
+    const profile = sections.flatMap(([y, r], index) => index === sections.length - 1
+      ? [new THREE.Vector2(r + .006, y), new THREE.Vector2(r, y)]
+      : [new THREE.Vector2(r + .003, y), new THREE.Vector2(r + .008, y + .003), new THREE.Vector2(r + .002, y + .008)]);
+    const geometry = new THREE.LatheGeometry(profile, 40), position = geometry.getAttribute('position');
+    for (let i = 0; i < position.count; i++) position.setZ(i, .86 * position.getZ(i) + .026 * position.getY(i) / .066);
+    geometry.computeVertexNormals();
+    const chest = this.bone('chest'), root = this.rig.root;
+    const collar = this.dujourCollar = this.mesh(chest, geometry, new THREE.MeshStandardMaterial({ color: 0xb8c4bd, metalness: .7, roughness: .28 }));
+    collar.name = 'dujour-silver-collar';
+    collar.position.copy(chest.worldToLocal(root.localToWorld(new THREE.Vector3(0, 3.57, .054))));
+    collar.quaternion.copy(chest.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(root.getWorldQuaternion(new THREE.Quaternion())));
   }
   private fitDujourHair(): void {
     const shortHair = this.rig.root.getObjectByName('short04') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
@@ -83,7 +127,7 @@ export class ApartmentPerformance {
     const bun = this.mesh(attachment, crown, material);
     bun.name = 'dujour-hair-bun'; bun.position.set(0, .353, -.105); bun.scale.set(.144, .164, .155);
   }
-  private mesh(parent: THREE.Group, geo: THREE.BufferGeometry, mat: THREE.Material) {
+  private mesh(parent: THREE.Object3D, geo: THREE.BufferGeometry, mat: THREE.Material) {
     this.geometries.add(geo); this.materials.add(mat); const mesh = new THREE.Mesh(geo, mat); mesh.castShadow = true; parent.add(mesh); return mesh;
   }
   private bone(name: string) { return this.rig.bones.get(name)!; }
@@ -238,5 +282,5 @@ export class ApartmentPerformance {
       this.disk.quaternion.copy(heading.invert().multiply(rotation));
     }
   }
-  dispose(): void { this.disk.removeFromParent(); this.cash.removeFromParent(); this.dujourHair?.removeFromParent(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.tattoo?.dispose(); }
+  dispose(): void { this.disk.removeFromParent(); this.cash.removeFromParent(); this.dujourHair?.removeFromParent(); this.dujourCollar?.removeFromParent(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.tattoo?.dispose(); }
 }
