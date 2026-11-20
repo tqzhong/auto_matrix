@@ -128,6 +128,27 @@ test('the whisper has a cool backlight over both marks and the bar light stays b
   }
 });
 
+test('the moving dance lights illuminate the crowd from behind at shoulder height', async t => {
+  const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(assets.get(url.split('/').at(-1)!.replace('.glb', ''))!));
+  const root = new THREE.Group(), club = new ClubSetRenderer(root);
+  t.after(() => club.dispose());
+  await club.ready;
+  const lights = root.getObjectByName('white-rabbit-club')!.children.filter(
+    (object): object is THREE.SpotLight => object instanceof THREE.SpotLight && !object.castShadow,
+  );
+  assert.equal(lights.length, 2);
+  for (const time of [0, 3, 7]) {
+    club.update(time);
+    for (const light of lights) {
+      assert.ok(light.position.z < -17 && light.target.position.z - light.position.z > 12, 'rim light comes from beyond the dancers');
+      assert.ok(light.target.position.y >= 2 && light.target.position.y <= 3.6, 'beam crosses the crowd rather than only the floor');
+      assert.ok(light.color.g > light.color.r * 1.25 && light.color.g > light.color.b * 1.25, 'the stage light reads as green');
+    }
+  }
+});
+
 test('the whisper has dancers in the third-person background with clear walking and approach lanes', async t => {
   const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());

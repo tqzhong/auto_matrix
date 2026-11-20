@@ -128,8 +128,16 @@ export class ClubSetRenderer {
     const fill = new THREE.PointLight(0x90b2a1, 34, 18, 2); fill.position.set(4.1, 6, -1.8); this.root.add(fill);
     const barLight = new THREE.PointLight(0xb5a879, 38, 13, 2); barLight.position.set(18.5, 5.85, -13.65); this.root.add(barLight);
     for (const [i, x] of [-9, 9].entries()) {
-      const light = new THREE.SpotLight(i ? 0xa2aea1 : 0xb1b99c, 145, 30, .42, .9, 2);
-      light.position.set(x, 10, 4); light.target.position.set(-x * .4, 0, 7); this.root.add(light, light.target); this.spots.push(light);
+      const y = 8.05, z = -20.2;
+      this.box(metal, x, y + .68, z - .15, 4.2, .25, .55);
+      for (const offset of [-.95, .95]) {
+        const housing = this.cylinder(metal, x + offset, y, z, .52, .64);
+        const lens = this.cylinder(glow, x + offset, y, z + .34, .38, .06);
+        housing.rotation.x = lens.rotation.x = Math.PI / 2;
+      }
+      const light = new THREE.SpotLight(i ? 0x7ac393 : 0xa6c867, 225, 34, .48, .62, 2);
+      light.position.set(x, y, z + .42); light.target.position.set(-x * .4, 2.7, -3);
+      this.root.add(light, light.target); this.spots.push(light);
     }
     this.box(glow, 0, 7.45, 27.65, 2.7, .35, .08);
     this.batch();
@@ -246,7 +254,7 @@ export class ClubSetRenderer {
         ankle.quaternion.copy(shin.getWorldQuaternion(this.shoeFacing).invert().multiply(this.dancerFacing));
       }
     });
-    this.spots.forEach((light, i) => { light.target.position.x = Math.sin(time * .19 + i * 2) * 7; light.target.position.z = 6 + Math.cos(time * .23 + i) * 5; });
+    this.spots.forEach((light, i) => { light.target.position.x = Math.sin(time * .19 + i * 2) * 7; light.target.position.z = -3 + Math.cos(time * .23 + i) * 3.5; });
   }
   private release(): void {
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.skeletons.forEach(s => s.dispose());
