@@ -220,6 +220,22 @@ test('the actual home body picks up the floor cartridge without teleporting the 
     const samples = Array.from({ length: 64 }, (_, i) => i * .05).sort((a, b) => Math.abs(a - APARTMENT_BOOK.pickup) - Math.abs(b - APARTMENT_BOOK.pickup));
     for (const elapsed of samples) {
       const prop = frame(elapsed)[0]; let sole = Infinity, gripGap = Infinity;
+      const leftPalm = rig.bones.get('wrist_L')!.localToWorld(new THREE.Vector3(-.065, -.17, .01));
+      const rightPalm = rig.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(.065, -.17, .01));
+      if (elapsed >= 1.35 && elapsed <= 2.15) {
+        const knee = rig.bones.get('knee_L')!.getWorldPosition(new THREE.Vector3());
+        assert.ok(leftPalm.x >= knee.x + .18 && leftPalm.y > knee.y + .05 && leftPalm.z >= knee.z - .3 && leftPalm.distanceTo(knee) < .72,
+          `retrieving ${elapsed}: the free palm must stay beside the left knee instead of folding behind the torso`);
+      }
+      if (elapsed >= .95 && elapsed <= 1.55) {
+        const knee = rig.bones.get('knee_R')!.getWorldPosition(new THREE.Vector3());
+        assert.ok(rightPalm.z >= knee.z - .68, `retrieving ${elapsed}: the right hand must be forward before reaching for the disc`);
+        const wrist = rig.bones.get('wrist_R')!.getWorldPosition(new THREE.Vector3());
+        const elbow = rig.bones.get('elbow_R')!.getWorldPosition(new THREE.Vector3());
+        assert.ok(rightPalm.clone().sub(wrist).normalize().dot(wrist.sub(elbow).normalize()) > 0,
+          `retrieving ${elapsed}: the ready wrist must face along the forearm`);
+      }
+      assert.ok(rightPalm.distanceTo(leftPalm) > .23, `retrieving ${elapsed}: the two palms cross during the transfer`);
       const solidFrames = bookSolids.map(mesh => ({ mesh, inverse: mesh.matrixWorld.clone().invert(), bounds: mesh.geometry.boundingBox!.clone().expandByScalar(-.0125) }));
       const propInverse = prop.matrixWorld.clone().invert();
       for (const { mesh } of rig.wardrobe) {

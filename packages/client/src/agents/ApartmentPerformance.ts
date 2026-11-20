@@ -233,11 +233,17 @@ export class ApartmentPerformance {
       this.feet(0, { R: { x: approach.x - .276, z: approach.z, yaw: 0, lift: 0 }, L: { x: approach.x + .276, z: approach.z, yaw: 0, lift: 0 } });
       const angle = smooth(Math.min(t, .8), .35, 1.35) * 2.88, size = APARTMENT_BOOK.scale, withdraw = smooth(t, .8, 1.1);
       root.updateWorldMatrix(true, true);
-      this.hand('L', this.local(6 + (-.84 + .35 * Math.cos(angle)) * size - Math.sin(angle) * .21 - .4 * withdraw,
-        APARTMENT_BOOK.y + (.39 + .35 * Math.sin(angle)) * size + Math.cos(angle) * .21 + .3 * withdraw, APARTMENT_BOOK.z - .3 - .45 * withdraw), smooth(t, .25, .55) * (1 - smooth(t, 1.1, 1.5)), true, angle);
+      const coverGrip = this.local(6 + (-.84 + .35 * Math.cos(angle)) * size - Math.sin(angle) * .21 - .4 * withdraw,
+        APARTMENT_BOOK.y + (.39 + .35 * Math.sin(angle)) * size + Math.cos(angle) * .21 + .3 * withdraw, APARTMENT_BOOK.z - .3 - .45 * withdraw);
+      const knee = root.worldToLocal(this.bone('knee_L').getWorldPosition(new THREE.Vector3()));
+      const brace = smooth(t, .93, 1.35);
+      coverGrip.lerp(knee.add(new THREE.Vector3(.43, .24, -.09)), brace);
+      this.hand('L', coverGrip, smooth(t, .25, .55) * (1 - smooth(t, 2.15, 3.2)), true, angle * (1 - brace));
       const grip = this.local(6, APARTMENT_BOOK.y + .09 * size + .17 + .45 * (1 - smooth(t, 1.75, APARTMENT_BOOK.pickup)), APARTMENT_BOOK.z);
       grip.lerp(new THREE.Vector3(-.5, 2.5, .38), smooth(t, APARTMENT_BOOK.pickup, 3.1));
-      this.hand('R', grip, smooth(t, 1.35, 1.8), true);
+      const readyHand = root.worldToLocal(this.bone('knee_R').getWorldPosition(new THREE.Vector3())).add(new THREE.Vector3(-.64, .5, .22));
+      readyHand.lerp(grip, smooth(t, 1.35, 1.8));
+      this.hand('R', readyHand, smooth(t, .28, .88), true);
     } else if (role === 'neo' && phase === 'retrieving') {
       const lean = smooth(t, 0, .65) * (1 - smooth(t, 2.5, 3.2));
       this.bone('spine').rotation.x += .26 * lean; this.bone('chest').rotation.x += .36 * lean; this.bone('head').rotation.x += .2 * lean;
