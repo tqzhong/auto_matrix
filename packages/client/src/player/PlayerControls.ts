@@ -1460,7 +1460,9 @@ export class PlayerControls {
     if (drainWide) this.camera.fov = this.camera.aspect < .85 ? 80 : 70;
     if (this.motion.training?.kind === 'red_dress' && !this.firstPerson)
       this.camera.fov = Math.max(58, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(21)) / this.camera.aspect)));
-    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.performance !== undefined && ['pod', 'fall', 'float', 'lift'].includes(this.motion.performance) && state.currentLocation === 'film_power_plant_pods' || this.motion.morning || this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' || this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.farewell || this.motion.mobilReunion?.reunion.phase === 'embracing' || this.motion.catch || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || this.motion.dockGate || this.motion.dockLastStand || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
+    const apartmentHandsView = this.motion.contact?.phase === 'opening'
+      || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase);
+    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.performance !== undefined && ['pod', 'fall', 'float', 'lift'].includes(this.motion.performance) && state.currentLocation === 'film_power_plant_pods' || this.motion.morning || this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' || this.motion.computerCheck || apartmentHandsView || this.motion.pills || this.motion.farewell || this.motion.mobilReunion?.reunion.phase === 'embracing' || this.motion.catch || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || this.motion.dockGate || this.motion.dockLastStand || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     const arrest = this.motion.officeCustody?.street;
     if (this.motion.epilogue?.kind === 'neo_carried') this.camera.fov = this.firstPerson ? 68 : 58;
     if (deusPactLocked(this.motion.deusPact)) this.camera.fov = this.firstPerson ? 68 : 57;
@@ -3261,7 +3263,7 @@ export class PlayerControls {
       ideal.x = THREE.MathUtils.clamp(ideal.x, METACORTEX.center.x - 2.65, METACORTEX.center.x + 2.65);
       ideal.z = THREE.MathUtils.clamp(ideal.z, METACORTEX.center.z - 31.65, METACORTEX.center.z - 26.2);
       this.camera.position.copy(ideal); this.camera.lookAt(focus);
-    } else if (this.firstPerson && this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase)) {
+    } else if (this.firstPerson && apartmentHandsView) {
       const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
       const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .44)) : target;
       if (this.bookAim) {

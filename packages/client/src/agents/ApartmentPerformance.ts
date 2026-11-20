@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, APARTMENT_BOOK, APARTMENT_NETWORK, computerCheckLocked, computerNetworkPull, apartmentAfter, apartmentDoor, apartmentAtComputer, apartmentComputerPose, apartmentPaymentPose, apartmentSleepWeight, apartmentBookCrouch, type ApartmentGesture, type ComputerInvestigation } from '@auto_matrix/shared';
+import { FILM_SETS, APARTMENT, APARTMENT_BOOK, APARTMENT_NETWORK, computerCheckLocked, computerNetworkPull, apartmentAfter, apartmentDoor, apartmentAtComputer, apartmentComputerPose, apartmentPaymentPose, apartmentSleepWeight, apartmentBookCrouch, type ApartmentGesture, type ComputerInvestigation } from '@auto_matrix/shared';
 import { apartmentDisc } from './ApartmentDisc.js';
 import type { HeroRig } from './HeroModel.js';
 
@@ -135,13 +135,13 @@ export class ApartmentPerformance {
     const center = FILM_SETS.film_anderson_flat.center;
     return this.rig.root.worldToLocal(new THREE.Vector3(center.x + x, center.y - 1 + y, center.z + z));
   }
-  private hand(side: 'R' | 'L', point: THREE.Vector3, blend: number, typing = false, tilt = 0): void {
+  private hand(side: 'R' | 'L', point: THREE.Vector3, blend: number, typing = false, tilt = 0, heading = 0): void {
     if (blend <= 0) return;
     const root = this.rig.root; root.updateWorldMatrix(true, true);
     const upper = this.bone('shoulder_' + side); const lower = this.bone('elbow_' + side); const wrist = this.bone('wrist_' + side);
     const rotation = root.getWorldQuaternion(new THREE.Quaternion());
     const palm = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, typing ? 0 : side === 'R' ? Math.PI / 2 : -Math.PI / 2));
-    if (tilt) palm.premultiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, tilt)));
+    if (tilt || heading) palm.premultiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, heading, tilt)));
     const desired = rotation.clone().invert().multiply(wrist.getWorldQuaternion(new THREE.Quaternion())).slerp(palm, blend);
     const offset = new THREE.Vector3(side === 'R' ? .065 : -.065, -.17, .01);
     const target = root.worldToLocal(wrist.localToWorld(offset.clone())).lerp(point, blend).sub(offset.clone().applyQuaternion(desired)); root.localToWorld(target);
@@ -222,9 +222,23 @@ export class ApartmentPerformance {
         2.65 + .45 * Math.sin(Math.PI * seated) + (phase === 'knocking' && t < .6 ? Math.sin(t * 28) * .025 : 0),
         -10.49 + .6 * (1 - seated) - .22 * sleep), seated, true);
     } else if (role === 'neo' && phase === 'opening') {
-      const angle = apartmentDoor(gesture) * 1.42; const hold = smooth(t, 0, .3) * (1 - smooth(t, 1.1, 1.6));
+      const { x, z, yaw } = APARTMENT.openDoor;
+      const step = (side: number, start: number, end: number, back: number, stand: number) => {
+        const out = smooth(t, start, end), returning = smooth(t, back, stand), clearance = out - returning;
+        return { x: x + side * .276 + .92 * clearance, z: z - .43 * clearance, yaw,
+          lift: .16 * (Math.sin(Math.PI * out) + Math.sin(Math.PI * returning)) };
+      };
+      const feet = { L: step(1, .02, .30, 1.86, 2.23), R: step(-1, .18, .55, 1.48, 1.86) };
+      // Step beyond the latch's swing before it crosses the old stance.
+      const pelvis = this.bone('pelvis').position;
+      pelvis.x += (feet.L.x + feet.R.x) / 2 - x; pelvis.z += (feet.L.z + feet.R.z) / 2 - z;
+      this.feet(0, feet);
+      const angle = apartmentDoor(gesture) * 1.42, release = smooth(t, .57, .8);
+      const aroundLatch = Math.sin(Math.PI * release), reach = 3.3 + .85 * aroundLatch, grip = .35 + .32 * aroundLatch;
+      const hold = smooth(t, 0, .31) * (1 - release);
       this.bone('chest').rotation.y -= angle * .12;
-      root.updateWorldMatrix(true, true); this.hand('L', this.local(-1.9 + Math.cos(angle) * 3.3 - Math.sin(angle) * .26, 2.85, 12 - Math.sin(angle) * 3.3 - Math.cos(angle) * .26), hold);
+      root.updateWorldMatrix(true, true);
+      this.hand('R', this.local(-1.9 + Math.cos(angle) * reach - Math.sin(angle) * grip, 2.85, APARTMENT.doorZ - Math.sin(angle) * reach - Math.cos(angle) * grip), hold, false, 0, -2.28);
     } else if (role === 'neo' && phase === 'retrieving' && cartridge) {
       const crouch = apartmentBookCrouch(gesture), pelvis = this.bone('pelvis');
       pelvis.position.y = THREE.MathUtils.lerp(pelvis.position.y, .88, crouch); pelvis.position.z += .15 * crouch;

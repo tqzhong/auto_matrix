@@ -8,6 +8,7 @@ import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -113,6 +114,60 @@ test('the apartment visitors keep their fitted clothes and hair on their own rig
   });
 });
 
+test('Neo pulls open the real 101 door without the moving leaf or his arm crossing his body', async t => {
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await geometry(id)] as const)));
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<NonNullable<ReturnType<typeof assets.get>>> }).load = async id => assets.get(id)!;
+  const origin = new THREE.Vector3(APARTMENT_ROOM.center.x, 0, APARTMENT_ROOM.center.z);
+  const rig = (await models.create('neo'))!, root = new THREE.Group(); root.position.copy(origin);
+  const room = new ApartmentSetRenderer(root);
+  const door = root.getObjectByName('apartment-101-door')!;
+  const panel = door.children[0] as THREE.Mesh;
+  panel.geometry.computeBoundingBox();
+  const solid = panel.geometry.boundingBox!.clone().expandByScalar(-.02);
+  const handle = door.children.find(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.SphereGeometry && object.position.z < 0)!;
+  const frame = (elapsed: number) => {
+    const contact: ApartmentGesture = { role: 'neo', phase: 'opening', elapsed, propMotion: 'minidisc' };
+    rig.root.position.copy(origin).add(new THREE.Vector3(APARTMENT.openDoor.x, 0, APARTMENT.openDoor.z));
+    const motion = newMotion(), input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, homeClothes: true, contact };
+    models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+    room.update({ scene: 'm1_wake_up', contact } as FilmJourney, 22000); root.updateMatrixWorld(true);
+  };
+  try {
+    const inverse = new THREE.Matrix4(), point = new THREE.Vector3();
+    for (const elapsed of Array.from({ length: 61 }, (_, i) => i * APARTMENT.opening / 60)) {
+      frame(elapsed); inverse.copy(panel.matrixWorld).invert();
+      let sole = Infinity;
+      for (const { mesh } of rig.wardrobe) if (mesh.visible && mesh instanceof THREE.SkinnedMesh) {
+        mesh.skeleton.update();
+        for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
+          mesh.getVertexPosition(i, point).applyMatrix4(mesh.matrixWorld);
+          if (mesh.name === 'shoes01') sole = Math.min(sole, point.y);
+          point.applyMatrix4(inverse);
+          if (solid.containsPoint(point)) assert.fail(`the moving door cuts through ${mesh.name} at ${elapsed}s: ${point.toArray()}`);
+        }
+      }
+      assert.ok(sole > -.025 && sole < .065, `one shoe must stay planted while Neo steps aside at ${elapsed}s: ${sole}`);
+    }
+    for (const elapsed of [.32, .42, .53, .56]) {
+      frame(elapsed);
+      const grasp = handle.getWorldPosition(point);
+      const wrist = rig.bones.get('wrist_R')!, joint = wrist.getWorldPosition(new THREE.Vector3());
+      const elbow = rig.bones.get('elbow_R')!.getWorldPosition(new THREE.Vector3());
+      const palm = wrist.localToWorld(new THREE.Vector3(.065, -.17, .01));
+      assert.ok(palm.distanceTo(grasp) < .18, `the right hand must pull the actual handle at ${elapsed}s: ${palm.distanceTo(grasp)}`);
+      assert.ok(palm.sub(joint).normalize().dot(joint.sub(elbow).normalize()) > .2, `the reaching wrist must follow the forearm at ${elapsed}s`);
+    }
+    frame(1.189);
+    const chest = rig.bones.get('chest')!, wrist = rig.bones.get('wrist_R')!;
+    const wristSide = chest.worldToLocal(wrist.getWorldPosition(point)).x;
+    assert.ok(wristSide < -.32, `the released hand must stay on the right side of Neo's torso: ${wristSide}`);
+  } finally { room.dispose(); models.dispose(); globalThis.document = previous; }
+});
+
 test('the actual Neo carries the collected cartridge into the handover and the disc remains continuous across ownership transfer', async () => {
   const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking', 'choi'].map(async id => [id, await geometry(id)] as const)));
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
@@ -186,7 +241,7 @@ test('the actual Neo carries the collected cartridge into the handover and the d
   } finally { models.dispose(); }
 });
 
-test('first-person retrieval follows the delivered head, sees the book and keeps the player’s mouse offset while crouching', async t => {
+test('first-person apartment interactions track the delivered head without overriding voluntary looking', async t => {
   class InputTarget extends EventTarget { matches() { return false; } }
   const window = new InputTarget(), canvas = new InputTarget(), document = Object.assign(new InputTarget(), { pointerLockElement: canvas, hidden: false, exitPointerLock() {} });
   const previous = ['window', 'document'].map(key => Object.getOwnPropertyDescriptor(globalThis, key)); Object.assign(globalThis, { window, document });
@@ -226,6 +281,42 @@ test('first-person retrieval follows the delivered head, sees the book and keeps
   document.dispatchEvent(Object.assign(new Event('mousemove'), { movementX: 100, movementY: -40 }));
   controls.update(.05, neo, group, false); camera.updateMatrixWorld();
   assert.ok(camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .1, 'the tracked crouch must preserve voluntary looking');
+
+  neo.position = { x: APARTMENT_ROOM.center.x + APARTMENT.openDoor.x, y: 1, z: APARTMENT_ROOM.center.z + APARTMENT.openDoor.z };
+  controls.possess(neo); controls.firstPerson = true;
+  const opening: ApartmentGesture = { role: 'neo', phase: 'opening', elapsed: 0, propMotion: 'minidisc' };
+  neo.currentAction!.parameters.contact = opening;
+  for (const elapsed of [.05, .38, .65, 1.189, 2.23]) {
+    opening.elapsed = elapsed;
+    for (let i = 0; i < 3; i++) {
+      controls.update(.05, neo, group, false); models.animate(rig, advanceMotion(motion, controls.motion, 0), motion, controls.motion, 0); group.updateMatrixWorld(true);
+    }
+    const eye = rig.bones.get('head')!.localToWorld(new THREE.Vector3(0, .1, .44));
+    assert.ok(camera.position.distanceTo(eye) < .02, `${elapsed}: the first-person camera must follow Neo's sidestep with the physical door`);
+    assert.ok(camera.near < .1, 'the near plane must leave the grasping hand in view');
+    assert.ok(rig.wardrobe.filter(part => part.hair || part.mesh.material.name === 'Eyes').every(part => !part.mesh.visible),
+      'Neo must be able to look toward the handle without his own face in the foreground');
+  }
+});
+
+test('the first-person apartment door draws the actual player body until the pull finishes', t => {
+  const previous = globalThis.document;
+  const context = { fillRect() {}, fillText() {}, strokeRect() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!;
+  neo.currentLocation = 'neo_apartment';
+  const renderer = new AgentRenderer(new THREE.Scene());
+  t.after(() => { renderer.dispose(); globalThis.document = previous; });
+  renderer.updateAgent('neo', neo); renderer.setPlayer('neo', true);
+  for (const phase of ['opening', 'door', 'book'] as const) {
+    const contact = { role: 'neo' as const, phase, elapsed: .48 };
+    renderer.setPlayerMotion({ speed: 0, grounded: true, verticalVelocity: 0, turn: 0, contact });
+    renderer.update(0, undefined, 0);
+    assert.equal(renderer.getAgentBody('neo')!.visible, phase === 'opening', 'the first-person player must be able to see the actual hand on the knob');
+  }
 });
 
 test('the actual home body picks up the floor cartridge without teleporting the prop, sinking its shoes or clipping the bed', async t => {
