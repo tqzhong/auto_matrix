@@ -701,13 +701,15 @@ def main(source, character, office=False, tracking=False, club=False, dock=False
                      and (np.max(np.abs(base[[i for i, _ in f], 0])) < 1.58 or character == 'trinity')
                      and np.mean(weights[[i for i, _ in f]][:, hand_bones].sum(axis=1)) < .8]
         shirt_vertices = base.copy(); shirt_vertices[:, [0, 2]] *= 1.025
-        v, uv, faces, w = trim_neckline(shirt_vertices, skin_uv, undershirt, weights, neckline)
-        v, uv, faces, w = subdivide(v, uv, faces, w)
         if character == 'dujour':
-            # A sleeveless top leaves the upper back and shoulder available for
-            # the story clue. The anatomical skin remains continuous underneath.
-            faces = [f for f in faces if np.mean(v[[i for i, _ in f], 1]) < neckline - .85 and
-                     np.mean(w[[i for i, _ in f]][:, arm_bones].sum(axis=1)) < .25]
+            # Cut through faces to keep the binding continuous on the low-detail dance rig.
+            v, uv, faces, w = trim_neckline(shirt_vertices, skin_uv, body_faces, weights, neckline - .85)
+            v, uv, faces, w = trim_neckline(v, uv, faces, w, waistline - .3, above=True)
+            arm = w[:, arm_bones + hand_bones].sum(axis=1)
+            v, uv, faces, w = trim_neckline(v, uv, faces, w, v[:, 1] + .25 - arm)
+        else:
+            v, uv, faces, w = trim_neckline(shirt_vertices, skin_uv, undershirt, weights, neckline)
+        v, uv, faces, w = subdivide(v, uv, faces, w)
         export_mesh('Fitted leather jacket' if character == 'trinity' else 'Black crew neck', v, uv, faces, w, suit if character == 'trinity' else pants)
 
     def clothing(folder, name):

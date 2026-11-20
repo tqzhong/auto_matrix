@@ -81,6 +81,30 @@ test('Dujour and the club dancers have continuous exposed skin', async t => {
         assert.ok(skinHit.distance >= pantsHit.distance - .008, `skin breaks through the waistband at ${x}`);
       }
     });
+    await t.test('the cropped top follows a continuous seam across the chest and back', () => {
+      const shirt = torso.find(mesh => mesh.name === 'Black_crew_neck')!;
+      const skin = torso.find(mesh => mesh.name === 'Anatomical_head_and_hands')!;
+      for (const side of [-1, 1]) {
+        const heights: number[] = [];
+        const ray = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, 0, -side), 0, 1.5);
+        for (let column = -8; column <= 8; column++) {
+          const x = column * .03;
+          for (let index = 0; index < 100; index++) {
+            const y = 3.48 - index * .004;
+            ray.ray.origin.set(x, y, side);
+            if (!ray.intersectObject(shirt, false).length) continue;
+            heights.push(y);
+            ray.ray.origin.y -= .028;
+            const [cloth] = ray.intersectObject(shirt, false), [body] = ray.intersectObject(skin, false);
+            assert.ok(cloth && body && cloth.distance + .002 < body.distance, `skin breaks through the seam at ${x}, ${side}`);
+            break;
+          }
+        }
+        assert.equal(heights.length, 17, 'the seam spans the torso');
+        const discontinuity = Math.max(...heights.slice(1).map((height, i) => Math.abs(height - heights[i])));
+        assert.ok(discontinuity < .023, `the top edge jumps ${discontinuity} units between adjacent chest samples`);
+      }
+    });
   });
 });
 
@@ -158,12 +182,21 @@ test('the whisper has dancers in the third-person background with clear walking 
   await club.ready; root.updateMatrixWorld(true);
   const eye = new THREE.PerspectiveCamera(57, 16 / 9, .5, 100);
   eye.position.set(4.2, 4.5, -2.2); eye.lookAt(6.65, 3.92, -4.55); eye.updateMatrixWorld(true);
+  const entrance = new THREE.PerspectiveCamera(67.37, 16 / 9, .5, 100);
+  entrance.position.set(0, 3.99, 17.92); entrance.lookAt(0, 3.75, 16.95); entrance.updateMatrixWorld(true);
+  const shoulder = eye.clone();
+  shoulder.position.set(6.72, 4.14, -2.5); shoulder.lookAt(6.745, 4.0215, -3.4926); shoulder.updateMatrixWorld(true);
   const walkway = [CLUB.exit, { x: 0, z: 6 }, { x: 7, z: 6 }, CLUB.neo];
-  let visible = 0;
+  const nearView = (head: THREE.Vector3, camera: THREE.Camera, radius: number) => {
+    const projected = head.clone().project(camera);
+    return head.distanceTo(camera.position) < radius && Math.abs(projected.x) < .88 && Math.abs(projected.y) < .88 && projected.z > -1 && projected.z < 1;
+  };
+  let visible = 0, entranceSilhouettes = 0, closeBackground = 0;
   for (const [i, mark] of CLUB_DANCERS.entries()) {
     const head = root.getObjectByName(`club-dancer-${i}`)!.getObjectByName('head')!.getWorldPosition(new THREE.Vector3());
-    const projected = head.clone().project(eye);
-    if (Math.abs(projected.x) < .88 && Math.abs(projected.y) < .88 && projected.z > -1 && projected.z < 1) visible++;
+    visible += Number(nearView(head, eye, 95));
+    entranceSilhouettes += Number(nearView(head, entrance, 6.5));
+    closeBackground += Number(nearView(head, shoulder, 8));
     assert.equal(playerBlocked(filmPosition('film_white_rabbit_club', mark.x, mark.z), true, 1), false, `dancer ${i} enters a set obstacle`);
     for (const path of [walkway, CLUB_ROUTE]) for (let j = 1; j < path.length; j++) {
       const line = new THREE.Line3(new THREE.Vector3(path[j - 1].x, 0, path[j - 1].z), new THREE.Vector3(path[j].x, 0, path[j].z));
@@ -171,7 +204,32 @@ test('the whisper has dancers in the third-person background with clear walking 
       assert.ok(line.closestPointToPoint(point, true, new THREE.Vector3()).distanceTo(point) >= 2.8, `dancer ${i} blocks a walking lane`);
     }
   }
+  assert.ok(entranceSilhouettes >= 2, `only ${entranceSilhouettes} dancers frame the actual entrance aisle`);
+  assert.ok(closeBackground >= 2, `only ${closeBackground} dancers are close behind the whisper`);
   assert.ok(visible >= 5, `only ${visible} dancers fill the background behind the conversation`);
+});
+
+test('existing dance rigs carry distinct light tops and dark floor-lit trousers', async t => {
+  const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(assets.get(url.split('/').at(-1)!.replace('.glb', ''))!));
+  const root = new THREE.Group(), club = new ClubSetRenderer(root);
+  t.after(() => club.dispose());
+  await club.ready;
+  const garment = (dancer: THREE.Object3D, name: string) => {
+    const mesh = dancer.getObjectByName(name);
+    assert.ok(mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshStandardMaterial);
+    return mesh.material;
+  };
+  const female = CLUB_DANCERS.flatMap((_, i) => i % 2 ? [root.getObjectByName(`club-dancer-${i}`)!] : []);
+  const tops = female.map(dancer => garment(dancer, 'Black_crew_neck'));
+  const trousers = female.map(dancer => garment(dancer, 'Tailored_trousers'));
+  assert.ok(new Set(tops.map(material => material.color.getHex())).size >= 4);
+  assert.ok(tops.some((material, i) => material.color.g > .2 && trousers[i].color.g < .1), 'a light top can separate from the darker trousers under the moving lights');
+  assert.ok(trousers.some(material => material.roughness < .5), 'some trousers should catch a defined reflection in the rear light');
+  for (const asset of assets.values()) {
+    assert.equal(garment(asset.scene, 'Tailored_trousers').roughness, .86, 'the shared source wardrobe keeps its original material');
+  }
 });
 
 test('wide dance gestures leave the elbows and wrists clear of the torso', async t => {

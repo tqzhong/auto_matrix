@@ -7,6 +7,13 @@ import { reach } from '../agents/SpoonPerformance.js';
 
 interface DanceFoot { thigh: THREE.Bone; shin: THREE.Bone; ankle: THREE.Bone; mark: THREE.Vector3 }
 
+const danceWardrobe = [
+  [0x28272d, 0x25232a, .84], [0xaaa086, 0x2c3133, .35],
+  [0x3e483b, 0x2c312e, .81], [0x5c353c, 0x34282e, .46],
+  [0x3e3832, 0x2e3033, .67], [0x696351, 0x322d35, .8],
+  [0x342e36, 0x312b2c, .45], [0x373e41, 0x282b30, .38],
+] as const;
+
 /** A navigable, vaulted underground room. The principal encounter stays clear of the dance floor. */
 export class ClubSetRenderer {
   private root = new THREE.Group();
@@ -25,7 +32,7 @@ export class ClubSetRenderer {
   private disposed = false;
   readonly ready: Promise<void>;
 
-  // The two source rigs cover all geometry and maps. The other dancers only change tints.
+  // The two source rigs cover all geometry, maps and shader variants.
   get crowdSources(): THREE.Group[] { return this.dancers.slice(0, 2).map(({ root }) => root); }
 
   prepareCrowdBounds(): void {
@@ -203,7 +210,8 @@ export class ClubSetRenderer {
     if (this.disposed) { this.release(); return; }
     for (const [i, position] of CLUB_DANCERS.entries()) {
       const asset = assets[i % 2], root = clone(asset.scene) as THREE.Group; root.name = `club-dancer-${i}`;
-      const bones = new Map<string, THREE.Bone>(); const colors = [0x302c30, 0x242c2b, 0x49483a, 0x3b2226];
+      const bones = new Map<string, THREE.Bone>();
+      const [topColor, trouserColor, trouserRoughness] = danceWardrobe[i % danceWardrobe.length];
       const clonedSkins = new Map<THREE.Skeleton, THREE.Skeleton>();
       let skinIndex = 0;
       root.traverse(object => {
@@ -217,8 +225,13 @@ export class ClubSetRenderer {
           else { clonedSkins.set(sourceSkin, object.skeleton); this.skeletons.add(object.skeleton); }
           object.frustumCulled = false;
         }
-        const source = object.material as THREE.MeshStandardMaterial;
-        if (/Coat|Trousers/.test(source.name)) { const mat = source.clone(); mat.color.setHex(colors[i % colors.length]); object.material = mat; this.materials.add(mat); }
+        const trousers = object.name === 'Tailored_trousers';
+        if (trousers || object.name === 'Tailored_coat_upper' || object.name === 'Black_crew_neck') {
+          const mat = (object.material as THREE.MeshStandardMaterial).clone();
+          mat.color.setHex(trousers ? trouserColor : topColor);
+          if (trousers) mat.roughness = trouserRoughness;
+          object.material = mat; this.materials.add(mat);
+        }
       });
       root.position.set(position.x, 0, position.z); root.rotation.y = position.yaw; root.scale.setScalar(position.scale); this.root.add(root);
       const feet = ['R', 'L'].map(side => {
