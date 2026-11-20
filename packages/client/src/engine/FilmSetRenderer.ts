@@ -343,7 +343,7 @@ const ZION_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m2_oracle_message: { scene: 'm2_departure', step: 1 },
   m3_shaft_seal: { scene: 'm3_temple_defense', step: 1 },
 };
-const SECOND_ORACLE_ACTOR_CUTS = new Set(['m3_oracle_request', 'm3_trainman_chase', 'm3_mobil_release']);
+const SECOND_ORACLE_ACTOR_CUTS = new Set(['m3_oracle_request', 'm3_trainman_chase', 'm3_mobil_release', 'm3_oracle_last']);
 const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m1_meal: { scene: 'm1_spoon', step: 0 },
   m2_departure: { scene: 'm2_seraph', step: 4 },
@@ -365,6 +365,7 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m3_trainman_chase: { scene: 'm3_hel_garage', step: 2 },
   m3_hel_garage: { scene: 'm3_hel_entry', step: 1 },
   m3_hel_bargain: { scene: 'm3_mobil_release', step: 5 },
+  m3_mobil_release: { scene: 'm3_oracle_last', step: 1 },
   m3_zion_prepare: { scene: 'm3_maggie_discovery', step: 3 },
   m3_maggie_discovery: { scene: 'm3_bane', step: 5 },
   m3_bane: { scene: 'm3_hammer_tunnels', step: 2 },
@@ -2629,6 +2630,7 @@ export class FilmSetRenderer {
       const readyCast = actorCut ? (id: string) => {
         const group = actor(id);
         if (id === 'oracle' && !group?.getObjectByName('oracle-revolutions-detailed-head')) return;
+        if (id === 'sati' && next.id === 'm3_oracle_last' && !group?.getObjectByName('sati-anatomical-head')) return;
         if ((id === 'seraph' || id === 'trainman') && (!group?.getObjectByName(`${id}-detailed-body`)
           || !group.getObjectByName(`${id}-detailed-head`))) return;
         return group;
@@ -3670,6 +3672,7 @@ export class FilmSetRenderer {
     yield* this.buildSteps(set, lights, true);
     yield* this.batchSteps(true);
     if (set.id === 'film_chateau_hall') this.buildChateauProps();
+    if (this.currentScene === 'm3_oracle_last') this.oracleLast = new OracleLastRenderer(this.root);
   }
   private adoptRoomGeometry(room: FilmSetRenderer): void {
     this.root.add(...room.root.children.slice());
@@ -3721,6 +3724,7 @@ export class FilmSetRenderer {
     this.oracleBlocks = room.oracleBlocks;
     this.oracleVase = room.oracleVase; room.oracleVase = undefined;
     this.oracleVase?.moveTo(this.root);
+    this.oracleLast = room.oracleLast; room.oracleLast = undefined;
     this.trainmanChase = room.trainmanChase; room.trainmanChase = undefined;
     this.helGarage = room.helGarage; room.helGarage = undefined;
     this.helLift = room.helLift;
@@ -4362,7 +4366,8 @@ export class FilmSetRenderer {
           } else {
             this.build(set, lafayetteRoom?.lights); this.batch();
           }
-          if (['m3_oracle_last', 'm3_oracle_absorbed'].includes(sceneId ?? '') && set.id === 'film_oracle_home') this.oracleLast = new OracleLastRenderer(this.root);
+          if (!this.oracleLast && ['m3_oracle_last', 'm3_oracle_absorbed'].includes(sceneId ?? '') && set.id === 'film_oracle_home')
+            this.oracleLast = new OracleLastRenderer(this.root);
           if (sceneId === 'm3_oracle_absorbed' && set.id === 'film_oracle_home') this.oracleAbsorption = new OracleAbsorptionRenderer(this.root);
           if (sceneId === 'm3_oracle_absorbed' && set.id === 'film_oracle_home'
             || ['m3_bane_questions', 'm3_logos_plan', 'm3_emp'].includes(sceneId ?? '') && set.id === 'film_hammer_deck')

@@ -699,6 +699,7 @@ export class AgentRenderer {
     const spoonHandoff = giftPresent && departure?.step === 2 && departure.started !== undefined;
     const prepareRequestCast = !journey?.visiting && (!this.playerId || this.playerId === journey?.actor);
     const prepareOracleRequest = prepareRequestCast && journey?.scene === 'm3_trainman' && journey.step >= 3;
+    const prepareOracleLast = prepareRequestCast && journey?.scene === 'm3_mobil_release' && journey.step >= 1;
     const prepareTrainmanChase = prepareRequestCast && journey?.scene === 'm3_oracle_request' && journey.step >= 3;
     const opening = scene && scene !== 'm1_wake_up' && openingScenes.includes(scene) ? FILM_SCENE_BY_ID[scene] : undefined;
     const playerEntry = this.playerId ? this.agents.get(this.playerId) : undefined;
@@ -1246,7 +1247,7 @@ export class AgentRenderer {
       const luggage = !journey?.visiting && journey?.scene === 'm3_trainman' ? journey.mobil?.luggage : undefined;
       input.mobilLuggage = luggage && (id === 'neo' && ['lifting', 'carried'].includes(luggage.phase)
         || id === 'rama_kandra' && ['retrieving', 'returned'].includes(luggage.phase)) ? { role: id as 'neo' | 'rama_kandra', luggage } : undefined;
-      input.oracleRevolutions = id === 'oracle' && (prepareOracleRequest || state.currentLocation === 'film_oracle_home'
+      input.oracleRevolutions = id === 'oracle' && (prepareOracleRequest || prepareOracleLast || state.currentLocation === 'film_oracle_home'
         && ['m3_oracle_request', 'm3_oracle_last', 'm3_oracle_absorbed'].includes(scene ?? ''));
       input.oracleKitchen = id === 'oracle' && state.currentLocation === 'film_oracle_home' && !input.oracleRevolutions;
       input.oracleBench = id === 'oracle' && scene === 'm2_bench' && state.currentLocation === 'film_oracle_courtyard' && input.seated;
@@ -1288,7 +1289,8 @@ export class AgentRenderer {
       input.seraphDoor = state.currentAction?.parameters.seraphDoor as MotionInput['seraphDoor'];
       input.bookDoor = state.currentAction?.parameters.bookDoor as MotionInput['bookDoor'];
       input.smithProjection = id === 'bane' && state.isInMatrix && state.faction === 'machines';
-      input.prepareDetailedCast = prepareOracleRequest && (id === 'oracle' || id === 'seraph') || prepareTrainmanChase && id === 'trainman'
+      input.prepareDetailedCast = (prepareOracleRequest || prepareOracleLast) && (id === 'oracle' || id === 'seraph')
+        || prepareOracleLast && id === 'sati' || prepareTrainmanChase && id === 'trainman'
         || !journey?.visiting && (this.playerId === journey?.actor
         && (id === 'hamann' && journey?.scene === 'm2_bane_copy' && (journey.step > 2 || journey.step === 2 && (journey.baneCopy?.progress ?? 0) >= .2)
           || id === 'seraph' && journey?.scene === 'm2_departure' && journey.step >= 4

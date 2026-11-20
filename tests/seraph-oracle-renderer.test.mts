@@ -639,6 +639,33 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     enter('m2_departure', 0);
     assert.equal(disposals, 1);
   });
+  for (const resume of [false, true]) await t.test(`the ${resume ? 'saved' : 'live'} reunion prepares the final Oracle kitchen and detailed cast`, t => {
+    const sati = new THREE.Group(), fallback = new THREE.Mesh(body.geometry, body.material);
+    sati.visible = false; sati.add(fallback); libraryCast.set('sati', sati);
+    t.after(() => { libraryCast.delete('sati'); enter('m2_departure', 0); });
+    enter('m3_mobil_release', 0); preview = undefined; prepare(); assert.ok(!preview);
+    const step = resume ? FILM_SCENE_BY_ID.m3_mobil_release.steps.length : 1;
+    enter('m3_mobil_release', step);
+    if (resume) sets.update(undefined, sandbox, 0);
+    const bowl = warm('sati-cookie-bowl', resume), kitchen = preview!.getObjectByName('oracle-last-kitchen');
+    const basin = kitchen?.getObjectByName('oracle-handwash-basin') as THREE.Mesh;
+    assert.ok(basin && compiled.has(basin));
+    assert.ok(!compiled.has(fallback));
+    const face = new THREE.Mesh(body.geometry, body.material); face.name = 'sati-anatomical-head';
+    fallback.visible = false; sati.add(face);
+    for (let i = 0; i < 30; i++) prepare(resume);
+    assert.ok(compiled.has(face), 'the arriving detailed Sati is prepared while she is offstage');
+    assert.equal(sati.visible, false);
+    enter('m3_mobil_release', step);
+    assert.equal(scene.getObjectByName(bowl.name), undefined);
+    enter('m3_oracle_last', 0);
+    assert.equal(scene.getObjectByName('oracle-last-kitchen'), kitchen);
+    assert.equal(scene.getObjectsByProperty('name', bowl.name).length, 1);
+    assert.equal(scene.getObjectByName(bowl.name), bowl);
+    let disposals = 0; basin.geometry.addEventListener('dispose', () => disposals++);
+    enter('m2_departure', 0);
+    assert.equal(disposals, 1);
+  });
   await t.test('a completed Mobil save keeps the prepared apartment through the landing screen', t => {
     enter('m3_trainman', FILM_SCENE_BY_ID.m3_trainman.steps.length);
     journey.completed.push('m3_trainman');
