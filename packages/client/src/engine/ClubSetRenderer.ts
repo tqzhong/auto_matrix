@@ -43,7 +43,7 @@ export class ClubSetRenderer {
     const metal = this.mat(0x333b34, .5, .6, 'metal_plate', 1);
     const dark = this.mat(0x141a18, .84); const bronze = this.mat(0x797458, .4, .7);
     const wood = this.mat(0x37372d, .72, 0, 'old_wood_floor', 2);
-    const recess = this.mat(0x383f37, .92); const paper = this.mat(0xaaa88b, .97);
+    const recess = this.mat(0x383f37, .92); const paper = this.mat(0x706f5f, .97);
     const glow = new THREE.MeshBasicMaterial({ color: 0xcdd4b4, toneMapped: false }); this.materials.add(glow);
     this.box(stone, 0, -.18, 0, 42, .35, 56);
     this.box(wall, 0, 5.5, -28, 42, 11, .4);
@@ -71,18 +71,28 @@ export class ClubSetRenderer {
       const pipe = this.cylinder(metal, x, 9.8, 0, .12, 55); pipe.rotation.x = Math.PI / 2;
       for (let z = -25; z <= 25; z += 5) this.mesh(new THREE.TorusGeometry(.16, .035, 6, 12), bronze, x, 9.8, z);
     }
-    // Bar, foot rail, back shelves, bottles and glasses are real geometry rather than a backdrop.
+    // Keep the service counter and foot rail aligned with the shared obstacle.
     const bar = CLUB_OBSTACLES[0];
     this.box(wood, bar.x, 1.25, bar.z, bar.width, 2.5, bar.depth);
     this.box(metal, bar.x, 2.6, bar.z, 3.5, .16, 21.3);
     const rail = this.cylinder(bronze, 15.8, .62, -8, .045, 20.5); rail.rotation.x = Math.PI / 2;
     for (let z = -17; z <= 1; z += 3) this.box(bronze, 17.8, 1.3, z, 3.23, 2.2, .045);
-    for (const y of [3.2, 5.1, 7]) this.box(wood, 20.1, y, -9, 1.4, .14, 20);
-    const bottleMaterial = this.mat(0x53684b, .22, .22); const amber = this.mat(0x87714b, .27, .25);
-    for (let i = 0; i < 42; i++) {
-      const y = 3.27 + Math.floor(i / 14) * 1.9; const z = -18 + i % 14 * 1.35; const mat = i % 3 ? bottleMaterial : amber;
-      this.cylinder(mat, 19.9, y + .38, z, .16, .75); this.cylinder(mat, 19.9, y + .87, z, .065, .25);
-      this.box(paper, 19.72, y + .39, z, .012, .3, .23);
+    for (const [z, width] of [[-15.25, 6.6], [-8.6, 6.3], [-2.15, 5.9]]) {
+      this.box(recess, 20.68, 5.2, z, .12, 5, width);
+      for (const y of [3.2, 4.95]) this.box(wood, 20.1, y, z, 1.25, .14, width);
+      this.box(metal, 20.47, 7.6, z, .28, .18, width);
+    }
+    for (const z of [-18.7, -11.85, -5.27, .95]) this.box(wall, 20.26, 5.17, z, .78, 5.35, .32);
+    const bottleMaterial = this.mat(0x394c3a, .34, .18); const amber = this.mat(0x5b4d35, .36, .2);
+    for (const [y, start, count, spacing] of [[3.27, -17.9, 5, .51], [5.02, -14.6, 3, .58], [3.27, -10.9, 4, .75],
+      [5.02, -8.4, 4, .45], [3.27, -4.7, 4, .65], [5.02, -1.5, 3, .52]]) {
+      for (let i = 0; i < count; i++) {
+        const z = start + i * spacing, height = .53 + i % 3 * .13, radius = .13 + i % 2 * .035;
+        const mat = i % 3 ? bottleMaterial : amber;
+        this.cylinder(mat, 19.94, y + height / 2, z, radius, height);
+        this.cylinder(mat, 19.94, y + height + .09, z, .06, .18);
+        if (i % 3 !== 2) this.box(paper, 19.94 - radius - .008, y + height * .44, z, .012, .24, .18);
+      }
     }
     for (const table of CLUB_OBSTACLES) {
       if (table.circleRadius === undefined) continue;
@@ -109,7 +119,7 @@ export class ClubSetRenderer {
     key.name = 'club-conversation-light'; key.position.set(3.2, 6.6, -7.8); key.target.position.set(6.65, 3.65, -4.35);
     key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.normalBias = .035; this.root.add(key, key.target);
     const fill = new THREE.PointLight(0x90b2a1, 34, 18, 2); fill.position.set(4.1, 6, -1.8); this.root.add(fill);
-    const barLight = new THREE.PointLight(0xc7a570, 64, 25, 2); barLight.position.set(18, 6, -8); this.root.add(barLight);
+    const barLight = new THREE.PointLight(0xb5a879, 38, 13, 2); barLight.position.set(18.5, 5.85, -13.65); this.root.add(barLight);
     for (const [i, x] of [-9, 9].entries()) {
       const light = new THREE.SpotLight(i ? 0xa2aea1 : 0xb1b99c, 145, 30, .42, .9, 2);
       light.position.set(x, 10, 4); light.target.position.set(-x * .4, 0, 7); this.root.add(light, light.target); this.spots.push(light);
