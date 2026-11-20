@@ -678,6 +678,8 @@ export class FilmSetRenderer {
     if (this.current?.id === 'film_government_roof' && this.currentScene === 'm1_bullet_dodge') return ROOF_GUN_LINE_POINT_SLOTS;
     // The hotel lamp and the market muzzle flash share this layout.
     if (this.matrixEscape?.setId === 'film_escape_streets') return CITY_CHASE_POINT_SLOTS;
+    // The truck landing clears the objective without changing the lighting layout.
+    if (this.freeway && this.currentScene === 'm2_trucks') return 1;
     if (this.current?.id === 'film_kungfu_dojo' && this.currentScene === 'm1_dojo') return 1;
     if (this.current?.id === 'film_jump_roofs' && this.currentScene === 'm1_jump') return 2;
     if (this.current?.id === 'film_red_dress_plaza' && this.currentScene === 'm1_red_dress') return 1;

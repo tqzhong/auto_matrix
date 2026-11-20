@@ -6,6 +6,7 @@ import { FILM_SETS, TRUCKS, FREEWAY_PICKUP, filmObstacles, filmPosition, truckAp
 import { FreewaySetRenderer } from '../packages/client/src/engine/FreewaySetRenderer.js';
 import { newFreewayRide, freewayRideRoot, stepFreeway, freewayPursuitVehicles, newFreewayHandoff, newTruckRoad, newGarageEscape, garageCarPose } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
@@ -73,6 +74,37 @@ test('the completed transfer keeps the truck visible and carries the same road i
     { visibleAfterConfirmation: true, sameTruck: true, visibleInDuel: true });
   assert.equal(truck.position.z, state.trucks.road!.truck.z);
   assert.equal(snapshot(truck.parent!), snapshot(coldScene.getObjectByName(truck.name)!.parent!));
+});
+
+test('the truck rescue retains its light slot as the landing clears the objective marker', t => {
+  const original = globalThis.document; globalThis.document = canvasDocument();
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  t.after(() => { lighting.dispose(); film.dispose(); globalThis.document = original; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const player = world.agents.get('morpheus')!, state = journey(), trucks = state.trucks!;
+  const roof = { x: 0, y: TRUCKS.roof.height, z: 0, yaw: Math.PI };
+  trucks.road = newTruckRoad({ x: 13.7, z: 493, speed: 24 }, roof, roof, 100);
+  Object.assign(player, { currentLocation: 'film_freeway_101', isInMatrix: true, position: filmPosition('film_freeway_101', 20, 503) });
+  const sandbox = { neoLife: { journey: state } } as SandboxState;
+  const camera = new THREE.PerspectiveCamera(60, 16 / 9, .1, 300), gpu = {} as THREE.WebGLRenderer;
+  const draw = () => {
+    film.update(player, sandbox, 0, player.position);
+    lighting.stablePointSlots = film.stablePointSlots;
+    lighting.minimumPointSlots = film.minimumPointSlots;
+    camera.position.copy(film.goalMarker.position).add(new THREE.Vector3(5, 5, 5));
+    camera.lookAt(film.goalMarker.position);
+    scene.updateMatrixWorld(); camera.updateMatrixWorld(); scene.onBeforeRender(gpu, scene, camera, null);
+    const lights: number[] = [];
+    scene.traverseVisible(object => { if (object instanceof THREE.PointLight) lights.push(object.intensity); });
+    scene.onAfterRender(gpu, scene, camera);
+    return lights;
+  };
+  state.step = 2; trucks.phase = 'rescue'; trucks.rescueElapsed = 1;
+  assert.deepEqual(draw(), [5]);
+  state.step = 3; trucks.phase = 'rescued'; trucks.rescueElapsed = TRUCKS.rescueSeconds;
+  assert.deepEqual(draw(), [0], 'the landing should retain one dark slot for the finished objective');
+  film.update(undefined, undefined, 0);
+  assert.equal(film.minimumPointSlots, 0);
 });
 
 test('Trinity can walk away from the garage car after driving it out', t => {
