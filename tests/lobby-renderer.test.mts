@@ -2,13 +2,16 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { FILM_SETS, filmPosition, type AgentState, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
-import { LobbySetRenderer } from '../packages/client/src/engine/LobbySetRenderer.js';
+import { LobbySetRenderer, LOBBY_POINT_SLOTS } from '../packages/client/src/engine/LobbySetRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import type { GameAudio } from '../packages/client/src/engine/GameAudio.js';
+import { GunfireEffects } from '../packages/client/src/engine/GunfireEffects.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 
 const canvasDocument = () => ({
   createElement: () => ({ width: 0, height: 0, getContext: () => ({
     createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {},
+    createRadialGradient: () => ({ addColorStop() {} }), fillRect() {},
   }) }),
 }) as unknown as Document;
 
@@ -69,4 +72,43 @@ test('the lobby keeps the goal light shader slot through security, combat and th
   state.fighting = false; state.lobby!.phase = 'cleared'; state.step = 2;
   assert.deepEqual(lights(), ready);
   assert.equal(marker.intensity, 5);
+});
+
+test('the lobby keeps the same shader layout while Neo, Trinity and three guards fire together', t => {
+  const savedDocument = globalThis.document; globalThis.document = canvasDocument();
+  const scene = new THREE.Scene(), renderer = new FilmSetRenderer(scene), culling = new LightCulling(scene);
+  const gunfire = new GunfireEffects(scene, { effects: () => undefined } as unknown as GameAudio);
+  t.after(() => { gunfire.dispose(); culling.dispose(); renderer.dispose(); globalThis.document = savedDocument; });
+  const actor = { id: 'neo', position: filmPosition('film_government_lobby', 0, 0), isInMatrix: true } as AgentState;
+  const state = journey(); Object.assign(state.lobby!, { phase: 'combat', wave: 3 });
+  const sandbox = { neoLife: { journey: state } } as SandboxState;
+  const camera = new THREE.PerspectiveCamera(60, 16 / 9, .1, 200), graphics = {} as THREE.WebGLRenderer;
+  camera.position.set(actor.position.x, actor.position.y + 4, actor.position.z + 6);
+  camera.lookAt(actor.position.x, actor.position.y + 2, actor.position.z - 7);
+  camera.updateMatrixWorld(true);
+  renderer.update(actor, sandbox, 0, actor.position);
+  culling.stablePointSlots = renderer.stablePointSlots;
+  culling.minimumPointSlots = LOBBY_POINT_SLOTS;
+  const activeLights = () => {
+    scene.updateMatrixWorld(true);
+    scene.onBeforeRender(graphics, scene, camera, null);
+    try {
+      const lights: number[] = [];
+      scene.traverseVisible(object => { if (object instanceof THREE.PointLight) lights.push(object.intensity); });
+      return lights;
+    } finally { scene.onAfterRender(graphics, scene, camera); }
+  };
+  const idleSlots = activeLights().length;
+  for (const [index, source] of ['neo', 'trinity', 'film:1', 'film:2', 'film:3'].entries()) {
+    const from = { x: actor.position.x + index - 2, y: actor.position.y + 2.3, z: actor.position.z - 5 };
+    gunfire.shot({ source, target: 'neo', position: { ...from, z: from.z + 5 }, direction: { x: 0, y: 0, z: 1 },
+      damage: 0, combo: 0, matrix: true, downed: false, shot: { from, surface: 'body' } });
+    const active = activeLights();
+    assert.equal(active.filter(energy => energy === 85).length, index + 1, 'each real muzzle light must retain its energy');
+    assert.equal(active.length, idleSlots, `${index + 1} overlapping flashes must reuse the prepared slots`);
+  }
+  gunfire.update(.12);
+  const after = activeLights();
+  assert.equal(after.filter(energy => energy === 85).length, 0);
+  assert.equal(after.length, idleSlots);
 });

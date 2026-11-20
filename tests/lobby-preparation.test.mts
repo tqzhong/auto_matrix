@@ -37,7 +37,7 @@ function fixture(t: TestContext) {
         if (object instanceof THREE.DirectionalLight && object.castShadow) shadows++;
         if (object instanceof THREE.Group && object.parent instanceof THREE.Scene && object.getObjectByName('lobby-security-checkpoint')) root = object;
       });
-      assert.equal(points, 9); assert.equal(shadows, 1); assert.ok(root); roots.add(root);
+      assert.equal(points, 12); assert.equal(shadows, 1); assert.ok(root); roots.add(root);
       assert.equal(scene.children.includes(root), false, 'the future lobby must stay offstage');
       const meshes: THREE.Object3D[] = []; subject.traverse(object => meshes.push(object)); assert.ok(meshes.length && meshes.length <= 4);
       if (meshes.includes(skin)) assert.match(material.customProgramCacheKey(), /actor-local-skin-v1$/);
