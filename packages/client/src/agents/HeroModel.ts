@@ -351,13 +351,14 @@ export class HeroModels {
         const skin = (source.material as THREE.Material).name === 'Office skin';
         const geometry = skin || !support ? source.geometry.clone() : source.geometry;
         if (skin) {
-          // The torso otherwise pierces Neo's black shirt when he reclines for the scanner.
+          // Keep the skin beneath the collar, shirt and tucked waist after the torso bends.
           const position = geometry.getAttribute('position');
           for (let i = 0; i < position.count; i++) {
-            position.setX(i, position.getX(i) * .98);
+            const tuck = support ? 0 : waistTuck(position.getY(i));
+            position.setX(i, position.getX(i) * .98 * (1 - .24 * tuck));
             const front = position.getZ(i) > 0;
             const coveredChest = front ? THREE.MathUtils.smoothstep(position.getY(i), 3.02, 3.14) : 0;
-            const tuckedSkin = support ? 0 : (front ? .18 : .28) * waistTuck(position.getY(i));
+            const tuckedSkin = (front ? .18 : .28) * tuck;
             position.setZ(i, position.getZ(i) * (.97 - .08 * coveredChest) * (1 - tuckedSkin));
           }
         } else if (!support) {

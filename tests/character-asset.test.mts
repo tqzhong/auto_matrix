@@ -1908,6 +1908,32 @@ test('Neo’s office shirt covers his waist when he leans over the signature for
   } finally { models.dispose(); }
 });
 
+test('Neo’s office shirt covers both sides of his waist when he answers the phone', async () => {
+  const [neo, office] = await Promise.all([loadGeometry(), loadGeometry('neo-office')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<typeof neo> }).load = async id => id === 'neo-office' ? office : neo;
+  const rig = (await models.create('neo'))!;
+  try {
+    const clothes = ['Office_shirt', 'Tailored_trousers'].map(name => rig.root.getObjectByName(name) as THREE.SkinnedMesh);
+    const torso = rig.root.getObjectByName('Office_torso') as THREE.SkinnedMesh;
+    const axis = new THREE.Vector3(0, 1, 0);
+    for (const elapsed of [1.845, 1.1, 2.5]) {
+      const motion = newMotion();
+      const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, officeShirt: true,
+        phone: { phase: 'answering', elapsed } };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      for (const mesh of [...clothes, torso]) { mesh.skeleton.update(); mesh.computeBoundingSphere(); }
+      for (const [angle, x, y] of [[-1.2, -.04, 2.57], [-.8, -.18, 2.57], [-.4, -.3, 2.57],
+        [0, .34, 2.555], [.4, .28, 2.57], [.8, .16, 2.57]]) {
+        const ray = new THREE.Raycaster(new THREE.Vector3(x, y, 1.8).applyAxisAngle(axis, -angle),
+          new THREE.Vector3(0, 0, -1).applyAxisAngle(axis, -angle), 0, 2.4);
+        const skin = ray.intersectObject(torso)[0], clothing = ray.intersectObjects(clothes)[0];
+        assert.ok(clothing && (!skin || clothing.distance <= skin.distance + .004), `skin shows through the waist at ${elapsed}s from ${angle} radians`);
+      }
+    }
+  } finally { models.dispose(); }
+});
+
 test('the physical glass doorway stays clear at walking height and the delivered board follows the saved clock', t => {
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
