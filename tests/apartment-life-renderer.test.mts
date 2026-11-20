@@ -71,6 +71,37 @@ test('the hollow book is a small floor prop beside the bed, rather than a large 
   } finally { renderer.dispose(); globalThis.document = original; }
 });
 
+test('the hollow book opens from the green title to an upright printed leaf without hiding the cartridge', t => {
+  const original = globalThis.document;
+  globalThis.document = { createElement: () => {
+    const lines: string[] = [];
+    return { width: 0, height: 0, lines, getContext: () => ({ fillRect() {}, fillText(text: string) { lines.push(text); } }) };
+  } } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.after(() => { globalThis.document = original; });
+  const root = new THREE.Group(), renderer = new ApartmentSetRenderer(root);
+  t.after(() => renderer.dispose());
+  const cover = (renderer as unknown as { cover: THREE.Group }).cover;
+  const disk = root.getObjectByName('apartment-book-disc')!;
+  const readCover = (elapsed: number) => {
+    renderer.update({ scene: 'm1_wake_up', contact: { phase: 'retrieving', elapsed, propMotion: 'minidisc' } } as FilmJourney);
+    root.updateMatrixWorld(true);
+    const center = cover.localToWorld(new THREE.Vector3(.84, 0, 0));
+    const ray = new THREE.Raycaster(center.add(new THREE.Vector3(0, 1, 0)), new THREE.Vector3(0, -1, 0));
+    const face = ray.intersectObject(cover)[0]?.object as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>;
+    assert.ok(face.material.map instanceof THREE.CanvasTexture, 'the visible board should carry a printed surface');
+    assert.ok(face.localToWorld(new THREE.Vector3(0, 1, 0)).z > face.getWorldPosition(new THREE.Vector3()).z, 'print reads upright from Neo’s side');
+    return (face.material.map.image as { lines: string[] }).lines;
+  };
+  assert.ok(readCover(1.4).includes('ON NIHILISM'));
+  assert.ok(disk.visible);
+  const approach = disk.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 1, 0));
+  assert.equal(new THREE.Raycaster(approach, new THREE.Vector3(0, -1, 0)).intersectObject(cover).length, 0);
+  assert.deepEqual(readCover(0), ['SIMULACRA', '&', 'SIMULATION']);
+  const board = cover.children.find(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.BoxGeometry) as THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>;
+  assert.ok(board.material.color.g > board.material.color.r && board.material.color.g > board.material.color.b);
+});
+
 test('the rendered computer seat and back agree with their shared walking collider', t => {
   const original = globalThis.document;
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;

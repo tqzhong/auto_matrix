@@ -249,14 +249,30 @@ export class ApartmentSetRenderer {
     this.mesh(new THREE.PlaneGeometry(.88, .33), clockMaterial, 0, -.015, .285, clock);
     this.box(walnut, 6, 1.68, 6.2, 2.8, .22, 1.8, .035);
     for (const x of [4.85, 7.15]) for (const z of [5.45, 6.95]) this.box(metal, x, .78, z, .1, 1.55, .1);
-    const book = this.mat(0x403b31, .96);
+    const book = this.mat(0x263e32, .96);
     this.book.name = 'apartment-hollow-book'; this.book.userData.dynamic = true; this.root.add(this.book);
     this.mesh(new THREE.BoxGeometry(1.65, .08, 2.05), book, 0, 0, 0, this.book);
     for (const x of [-.69, .69]) this.mesh(new THREE.BoxGeometry(.23, .31, 1.92), paper, x, .2, 0, this.book);
     for (const z of [-.85, .85]) this.mesh(new THREE.BoxGeometry(1.4, .31, .23), paper, 0, .2, z, this.book);
     this.cover.position.set(-.84, .39, 0); this.cover.userData.dynamic = true; this.book.add(this.cover);
     this.mesh(new THREE.BoxGeometry(1.65, .06, 2.05), book, .84, 0, 0, this.cover);
-    const title = this.label('SIMULACRA\nAND SIMULATION', 1.42, 1.65, '#c0b799', '#403b31', 256); title.position.set(.84, .035, 0); title.rotation.x = -Math.PI / 2; this.cover.add(title);
+    const title = this.label('SIMULACRA\n&\nSIMULATION', 1.42, 1.65, '#c6b985', '#263e32', 256); title.position.set(.84, .035, 0); title.rotation.set(-Math.PI / 2, 0, Math.PI); this.cover.add(title);
+    const leaf = document.createElement('canvas'); leaf.width = 256; leaf.height = 320;
+    const print = leaf.getContext('2d')!;
+    print.fillStyle = '#c5c2a5'; print.fillRect(0, 0, leaf.width, leaf.height);
+    print.fillStyle = '#414638'; print.font = '17px Georgia'; print.textAlign = 'center'; print.fillText('ON NIHILISM', 128, 63);
+    print.fillStyle = '#555a49';
+    for (let y = 90; y < 283; y += 8) {
+      if (y === 154 || y === 226) continue;
+      for (let x = 25; x < 231;) {
+        const word = 4 + (x * 7 + y * 3) % 15;
+        print.fillRect(x, y, Math.min(word, 231 - x), 1.4); x += word + 4;
+      }
+    }
+    const leafMap = new THREE.CanvasTexture(leaf); leafMap.colorSpace = THREE.SRGBColorSpace; this.textures.add(leafMap);
+    const leafMaterial = new THREE.MeshStandardMaterial({ map: leafMap, roughness: .94 }); this.materials.add(leafMaterial);
+    const page = this.mesh(new THREE.PlaneGeometry(1.53, 1.92), leafMaterial, .84, -.032, 0, this.cover);
+    page.rotation.x = Math.PI / 2; page.castShadow = false;
     this.disk.name = 'apartment-book-disc'; this.disk.userData.dynamic = true; this.root.add(this.disk);
     this.disk.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } });
     for (let shelf = 0; shelf < 5; shelf++) {
