@@ -1,7 +1,7 @@
 import type { FilmJourney } from './film-story.js';
 import type { AgentState } from '../types/agent.js';
 
-export type ApartmentPhase = 'arrival' | 'idle' | 'signal' | 'reply' | 'knocking' | 'door' | 'opening' | 'book' | 'retrieving' | 'disk' | 'handover' | 'invitation' | 'inspecting' | 'noticed' | 'accepted';
+export type ApartmentPhase = 'arrival' | 'idle' | 'signal' | 'reply' | 'knocking' | 'door' | 'opening' | 'payment' | 'book' | 'retrieving' | 'disk' | 'handover' | 'invitation' | 'inspecting' | 'noticed' | 'accepted';
 export interface ApartmentContact { phase: ApartmentPhase; elapsed: number; paid?: boolean; chairMotion?: 'stepping' | 'seated'; propMotion?: 'minidisc' }
 export interface ApartmentGesture extends ApartmentContact { role: 'neo' | 'choi' | 'dujour' }
 export interface ComputerInvestigation { phase: 'reading' | 'unplugging' | 'offline' | 'evidence' | 'saved' | 'replugging'; elapsed: number }
@@ -32,6 +32,7 @@ export const APARTMENT = {
   breakfast: { x: -7, z: 3.7 },
   phone: { x: -5.78, y: 2.62, z: -10.45, approachX: -5.8, approachZ: -9.15, yaw: Math.PI },
   door: { x: 0, z: 10.2, yaw: 0 },
+  openDoor: { x: 1.4, z: 10.6, yaw: 0 },
   book: APARTMENT_BOOK.approach,
   choi: { x: 0, z: 13, yaw: Math.PI },
   dujour: { x: -1.1, z: 14.5, yaw: Math.PI - .4 },
@@ -59,7 +60,7 @@ export const APARTMENT_FURNITURE = [
   { x: -9.5, z: 12, width: 15, depth: .4, height: 8.8 },
   { x: 9.5, z: 12, width: 15, depth: .4, height: 8.8 },
 ];
-const phases: ApartmentPhase[] = ['arrival', 'idle', 'signal', 'reply', 'knocking', 'door', 'opening', 'book', 'retrieving', 'disk', 'handover', 'invitation', 'inspecting', 'noticed', 'accepted'];
+const phases: ApartmentPhase[] = ['arrival', 'idle', 'signal', 'reply', 'knocking', 'door', 'opening', 'payment', 'book', 'retrieving', 'disk', 'handover', 'invitation', 'inspecting', 'noticed', 'accepted'];
 export function apartmentAtComputer(phase?: ApartmentPhase): boolean {
   return phase === 'arrival' || phase === 'signal' || phase === 'reply' || phase === 'knocking';
 }
@@ -118,11 +119,22 @@ export function apartmentDoor(contact?: ApartmentContact): number {
   if (!contact || !apartmentAfter(contact, 'opening')) return 0;
   return contact.phase === 'opening' ? Math.min(1, contact.elapsed / APARTMENT.opening) : 1;
 }
+export function apartmentPaymentPose(elapsed: number) {
+  const { openDoor, door } = APARTMENT, footOffset = .276;
+  const foot = (side: number, start: number, end: number) => {
+    const step = Math.max(0, Math.min(1, (elapsed - start) / (end - start))), progress = smooth(step);
+    return { x: openDoor.x + (door.x - openDoor.x) * progress + footOffset * side,
+      z: openDoor.z + (door.z - openDoor.z) * progress, yaw: door.yaw, lift: .18 * Math.sin(Math.PI * step) };
+  };
+  const feet = { R: foot(-1, .06, .46), L: foot(1, .51, .94) };
+  const lowering = Math.max(0, feet.L.x - feet.R.x - 2 * footOffset) * .12;
+  return { x: (feet.R.x + feet.L.x) / 2, z: (feet.R.z + feet.L.z) / 2, yaw: door.yaw, feet, lowering };
+}
 export function apartmentLocked(journey: FilmJourney): boolean {
   return journey.scene === 'm1_wake_up' && !journey.visiting && apartmentContactLocked(journey.contact);
 }
 export function apartmentContactLocked(contact?: ApartmentContact): boolean {
-  return apartmentAtComputer(contact?.phase) || ['opening', 'retrieving', 'handover', 'inspecting'].includes(contact?.phase ?? '');
+  return apartmentAtComputer(contact?.phase) || ['opening', 'payment', 'retrieving', 'handover', 'inspecting'].includes(contact?.phase ?? '');
 }
 export function wakeCallLocked(journey: FilmJourney): boolean {
   return journey.scene === 'm1_wake_again' && !journey.visiting && ['waking', 'pickup', 'listening', 'decision', 'reply', 'leaving'].includes(journey.wakeCall?.phase ?? '');
@@ -221,10 +233,11 @@ export function apartmentText(contact: ApartmentContact): string {
     case 'knocking': return contact.elapsed < 1.4 ? '键盘没有回应。屏幕先出现了一句敲门提示，门外随即传来声响。' : 'CHOI · 是我。东西准备好了吗？';
     case 'door': return '有人站在 101 门外。走到门前按 G 开门。';
     case 'opening': return '你转动把手。Choi 和同行的 Dujour 站在楼道灯下。';
-    case 'book': return 'CHOI · 带来了报酬。Neo 把备用磁盘藏在一本挖空的书里，去床边取出来。';
+    case 'payment': return 'Choi 把约定的报酬递给你。';
+    case 'book': return contact.paid ? '报酬已经收下。去床边，从空心书里取出磁盘。' : 'CHOI · 带来了报酬。Neo 把备用磁盘藏在一本挖空的书里，去床边取出来。';
     case 'retrieving': return '你翻开书，空心书页里藏着一张磁盘。';
     case 'disk': return '磁盘已取出。回到门口，亲手交给 Choi。';
-    case 'handover': return contact.elapsed < 2.5 ? 'Choi 接过磁盘，把事先约定的报酬交给你。' : 'CHOI · 我们准备去一趟夜店。要一起吗？';
+    case 'handover': return contact.elapsed < 2.5 ? contact.paid ? '你把磁盘交给 Choi。' : 'Choi 接过磁盘，把事先约定的报酬交给你。' : 'CHOI · 我们准备去一趟夜店。要一起吗？';
     case 'invitation': return 'Dujour 转身时，左肩露出一只白兔。靠近门口按 G 核对它与屏幕上的线索。';
     case 'inspecting': return '你望向 Dujour 左肩的白兔，再回想刚才电脑里的字。两件事对上了，但原因仍然未知。';
     case 'noticed': return '屏幕上的白兔与肩上的纹身对应上了。巧合并不等于证明；你要亲自去核对，还是先回到生活中？J 作出决定。';

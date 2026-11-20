@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, APARTMENT_BOOK, APARTMENT_NETWORK, computerCheckLocked, computerNetworkPull, apartmentAfter, apartmentDoor, apartmentAtComputer, apartmentComputerPose, apartmentSleepWeight, apartmentBookCrouch, type ApartmentGesture, type ComputerInvestigation } from '@auto_matrix/shared';
+import { FILM_SETS, APARTMENT_BOOK, APARTMENT_NETWORK, computerCheckLocked, computerNetworkPull, apartmentAfter, apartmentDoor, apartmentAtComputer, apartmentComputerPose, apartmentPaymentPose, apartmentSleepWeight, apartmentBookCrouch, type ApartmentGesture, type ComputerInvestigation } from '@auto_matrix/shared';
 import { apartmentDisc } from './ApartmentDisc.js';
 import type { HeroRig } from './HeroModel.js';
 
@@ -256,20 +256,26 @@ export class ApartmentPerformance {
     } else if (role === 'choi' && phase === 'knocking') {
       const tap = [1.05, 1.36, 1.68].reduce((amount, beat) => Math.max(amount, Math.max(0, 1 - Math.abs(t - beat) / .14)), 0);
       root.updateWorldMatrix(true, true); this.hand('R', this.local(-.35, 3.7, 12.25 + (1 - tap) * .16), smooth(t, .2, .8) * (1 - smooth(t, 1.9, 2.6)));
-    } else if ((role === 'neo' || role === 'choi') && phase === 'handover') {
-      const hold = smooth(t, .2, 1.5) * (1 - smooth(t, 3, 4));
+    } else if ((role === 'neo' || role === 'choi') && (phase === 'payment' || phase === 'handover')) {
+      const payment = phase === 'payment', exchangesCash = payment || !gesture.paid, fittedCash = payment || cartridge;
+      const hold = smooth(t, payment ? .94 : .2, 1.5) * (1 - smooth(t, 3, 4));
+      if (payment && role === 'neo') {
+        const { feet, lowering } = apartmentPaymentPose(t);
+        this.bone('pelvis').position.y -= lowering;
+        this.feet(0, feet);
+      }
       this.bone('spine').rotation.x += .12 * hold; this.bone('chest').rotation.x += .14 * hold;
       root.updateWorldMatrix(true, true);
       const diskGrip = new THREE.Vector3(0, .17, diskSide === 'R' ? -.125 : .125), cashGrip = new THREE.Vector3(cashSide === 'R' ? -.18 : .18, .17, 0);
-      if (cartridge) this.hand(cashSide, new THREE.Vector3(cashSide === 'R' ? -.5 : .5, 2.5, .38), 1, true);
-      this.hand(cartridge ? diskSide : 'R', this.local(-.35, 2.9 + (cartridge ? diskGrip.y : 0), 11.65 + (cartridge ? diskGrip.z : 0)), hold, cartridge);
-      this.hand(cartridge ? cashSide : 'L', this.local(.4 + (cartridge ? cashGrip.x : 0), 2.82 + (cartridge ? cashGrip.y : 0), 11.65), hold, cartridge);
+      if (exchangesCash && fittedCash) this.hand(cashSide, new THREE.Vector3(cashSide === 'R' ? -.5 : .5, 2.5, .38), 1, true);
+      if (!payment) this.hand(cartridge ? diskSide : 'R', this.local(-.35, 2.9 + (cartridge ? diskGrip.y : 0), 11.65 + (cartridge ? diskGrip.z : 0)), hold, cartridge);
+      if (exchangesCash) this.hand(fittedCash ? cashSide : 'L', this.local(.4 + (fittedCash ? cashGrip.x : 0), 2.82 + (fittedCash ? cashGrip.y : 0), 11.65), hold, fittedCash);
       root.updateWorldMatrix(true, true);
-      if (!cartridge && role === (t < 2.3 ? 'neo' : 'choi')) { this.disk.visible = true; this.disk.position.copy(root.worldToLocal(this.bone('wrist_R').localToWorld(new THREE.Vector3(.065, -.17, .01)))); }
-      if (role === (t < 2.3 ? 'choi' : 'neo')) {
-        this.cash.visible = true; const side = cartridge ? cashSide : 'L';
+      if (!payment && !cartridge && role === (t < 2.3 ? 'neo' : 'choi')) { this.disk.visible = true; this.disk.position.copy(root.worldToLocal(this.bone('wrist_R').localToWorld(new THREE.Vector3(.065, -.17, .01)))); }
+      if (exchangesCash && role === (t < 2.3 ? 'choi' : 'neo')) {
+        this.cash.visible = true; const side = fittedCash ? cashSide : 'L';
         const position = this.bone('wrist_' + side).localToWorld(new THREE.Vector3(side === 'R' ? .065 : -.065, -.17, .01));
-        if (cartridge) {
+        if (fittedCash) {
           const rotation = this.bone('wrist_' + side).getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)));
           rotation.copy(new THREE.Quaternion().slerp(rotation, smooth(t, 3, 4))); position.sub(cashGrip.clone().applyQuaternion(rotation));
           this.cash.quaternion.copy(root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));

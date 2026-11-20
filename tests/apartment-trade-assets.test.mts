@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { APARTMENT, APARTMENT_BOOK, APARTMENT_ROOM, type ApartmentGesture, type FilmJourney } from '@auto_matrix/shared';
+import { APARTMENT, APARTMENT_BOOK, APARTMENT_ROOM, apartmentPaymentPose, type ApartmentGesture, type FilmJourney } from '@auto_matrix/shared';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
@@ -119,11 +119,11 @@ test('the actual Neo carries the collected cartridge into the handover and the d
   (models as unknown as { load: (id: string) => Promise<NonNullable<ReturnType<typeof assets.get>>> }).load = async id => assets.get(id)!;
   const rigs = { neo: (await models.create('neo'))!, choi: (await models.create('choi'))! };
   const origin = new THREE.Vector3(APARTMENT_ROOM.center.x, 0, APARTMENT_ROOM.center.z);
-  const frame = (phase: 'disk' | 'handover', elapsed: number) => {
+  const frame = (phase: 'disk' | 'handover' | 'payment', elapsed: number, paid?: boolean) => {
     for (const role of ['neo', 'choi'] as const) {
-      const rig = rigs[role], root = role === 'neo' ? APARTMENT.door : APARTMENT.choi;
+      const rig = rigs[role], root = role === 'neo' ? phase === 'payment' ? apartmentPaymentPose(elapsed) : APARTMENT.door : APARTMENT.choi;
       rig.root.position.copy(origin).add(new THREE.Vector3(root.x, 0, root.z)); rig.root.rotation.y = root.yaw;
-      const contact = { role, phase, elapsed, propMotion: 'minidisc' } as ApartmentGesture, motion = newMotion();
+      const contact = { role, phase, elapsed, propMotion: 'minidisc', paid } as ApartmentGesture, motion = newMotion();
       const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, homeClothes: role === 'neo', contact };
       models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
     }
@@ -145,6 +145,23 @@ test('the actual Neo carries the collected cartridge into the handover and the d
     assert.equal(cashBefore[0].role, 'choi'); assert.equal(cashAfter[0].role, 'neo');
     assert.ok(cashBefore[0].position.distanceTo(cashAfter[0].position) < .015, 'the same cash bundle must pass between the hands without a jump');
     assert.ok(cashBefore[0].rotation.angleTo(cashAfter[0].rotation) < .03, 'payment cannot flip orientation when Neo receives it');
+    const tendered = frame('payment', 2.299), received = frame('payment', 2.301);
+    assert.deepEqual(tendered.map(({ role, kind }) => [role, kind]), [['choi', 'cash']]);
+    assert.deepEqual(received.map(({ role, kind }) => [role, kind]), [['neo', 'cash']]);
+    assert.ok(tendered[0].position.distanceTo(received[0].position) < .015);
+    assert.ok(tendered[0].rotation.angleTo(received[0].rotation) < .03);
+    assert.deepEqual(frame('handover', 2.299, true).map(({ role, kind }) => [role, kind]), [['neo', 'disc']]);
+    assert.deepEqual(frame('handover', 2.301, true).map(({ role, kind }) => [role, kind]), [['choi', 'disc']]);
+    const shoes = rigs.neo.root.getObjectByName('shoes01') as THREE.SkinnedMesh;
+    const sole = new THREE.Vector3();
+    for (let i = 0; i <= 20; i++) {
+      const elapsed = i * .05;
+      frame('payment', elapsed);
+      let height = Infinity;
+      for (let vertex = 0; vertex < shoes.geometry.getAttribute('position').count; vertex++)
+        height = Math.min(height, shoes.getVertexPosition(vertex, sole).applyMatrix4(shoes.matrixWorld).y);
+      assert.ok(height >= -.025 && height < .06, `one shoe should stay on the floor while stepping toward the payment at ${elapsed}: ${height}`);
+    }
   } finally { models.dispose(); }
 });
 

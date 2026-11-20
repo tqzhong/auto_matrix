@@ -95,15 +95,16 @@ function completeContactAndClub(h: Harness) {
   h.command('act'); h.frames(9); assert.equal(h.state().contact?.phase, 'reply');
   h.command('act'); h.frames(5); assert.equal(h.state().contact?.phase, 'door');
   h.walkLocal('film_anderson_flat', APARTMENT.door.x, APARTMENT.door.z);
-  h.command('act'); h.frames(3); assert.equal(h.state().contact?.phase, 'book');
+  const balance = h.sandbox.state.neoLife!.money;
+  h.command('act'); h.frames(APARTMENT.opening + APARTMENT.handover + .2); assert.equal(h.state().contact?.phase, 'book');
+  assert.equal(h.sandbox.state.neoLife!.money, balance + 2000);
   h.walkLocal('film_anderson_flat', 3, 3); h.walkLocal('film_anderson_flat', 3, APARTMENT.book.z);
   h.walkLocal('film_anderson_flat', APARTMENT.book.x, APARTMENT.book.z);
   h.command('act'); h.frames(4); assert.equal(h.state().contact?.phase, 'disk');
   h.walkLocal('film_anderson_flat', 3, APARTMENT.book.z); h.walkLocal('film_anderson_flat', 3, 3);
   h.walkLocal('film_anderson_flat', APARTMENT.door.x, APARTMENT.door.z);
-  const cash = h.sandbox.state.neoLife!.money;
   h.command('act'); h.frames(5); assert.equal(h.state().contact?.phase, 'invitation');
-  assert.equal(h.sandbox.state.neoLife!.money, cash + 2000);
+  assert.equal(h.sandbox.state.neoLife!.money, balance + 2000);
   h.command('act'); h.frames(4); assert.equal(h.state().contact?.phase, 'noticed');
   h.command('contact:follow'); h.command('next'); assert.equal(h.state().scene, 'm1_club');
   h.walkLocal('film_white_rabbit_club', CLUB.neo.x, CLUB.neo.z); h.frames(10);
@@ -127,7 +128,7 @@ function completeContactAndClub(h: Harness) {
   assert.equal(h.state().scene, 'm1_boss'); h.reload(); assert.equal(h.state().scene, 'm1_boss');
   assert.equal(h.sandbox.state.neoLife!.choices.white_rabbit, 'follow');
   assert.equal(h.sandbox.state.neoLife!.choices['m1_club:2'], 'trust');
-  assert.equal(h.sandbox.state.neoLife!.money, cash + 2000);
+  assert.equal(h.sandbox.state.neoLife!.money, balance + 2000);
 }
 
 function completeWorkday(h: Harness) {

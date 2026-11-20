@@ -40,7 +40,7 @@ test('the computer waits for Neo to try the keyboard; time alone cannot answer o
 
 function atBook(h: ReturnType<typeof setup>) {
   h.near(); h.command('act'); h.frames(9); h.command('act'); h.frames(5);
-  h.near(); h.command('act'); h.frames(3);
+  h.near(); h.command('act'); h.frames(APARTMENT.opening + APARTMENT.handover + .2);
   assert.equal(h.state().contact?.phase, 'book');
 }
 function atInvitation(h: ReturnType<typeof setup>) {
@@ -148,6 +148,42 @@ test('freeing an old chair position during an apartment revisit preserves the ac
   assert.equal(playerBlocked(h.neo.position, true, 1.1, h.sandbox.state.structures), false);
   assert.deepEqual(h.state().checkpoint, checkpoint); assert.deepEqual(h.state().returnPosition, returnPosition);
   assert.equal(h.state().visiting, 'm1_wake_up'); assert.equal(h.state().step, 1);
+});
+
+test('Choi pays at the open door before Neo collects the disk, including after a payment save and reconnect', () => {
+  const h = setup(); const balance = h.sandbox.life.state!.money;
+  h.near(); h.command('act'); h.frames(9); h.command('act'); h.frames(5);
+  h.near(); h.command('act'); h.frames(3);
+  assert.equal(h.state().contact?.phase, 'payment');
+  assert.equal(h.state().step, 1, 'payment is part of the existing visit objective');
+  assert.equal(h.sandbox.life.state!.money, balance);
+  const saved = structuredClone(h.state().contact), root = { ...h.neo.position };
+  h.players.release('apartment-player', 1); h.frames(2);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('apartment-player', 'neo', 1);
+  assert.deepEqual(h.state().contact, saved); assert.deepEqual(h.neo.position, root);
+  h.frames(5);
+  assert.equal(h.state().contact?.phase, 'book');
+  assert.equal(h.state().contact!.paid, true);
+  assert.equal(h.sandbox.life.state!.money, balance + 2000);
+  h.near(); h.command('act'); h.frames(4);
+  h.near(); h.command('act'); h.frames(5);
+  assert.equal(h.state().contact?.phase, 'invitation');
+  assert.equal(h.sandbox.life.state!.money, balance + 2000, 'delivering the disk must not pay a second time');
+});
+
+test('an unpaid legacy handover keeps its saved clock and settles on delivery exactly once', () => {
+  const h = setup(); const balance = h.sandbox.life.state!.money;
+  h.state().step = 3; h.state().contact = { phase: 'disk', elapsed: 0, propMotion: 'minidisc' };
+  h.near(); h.command('act'); h.frames(2);
+  const saved = structuredClone(h.state().contact);
+  assert.equal(saved?.phase, 'handover'); assert.equal(saved?.paid, undefined);
+  h.players.release('apartment-player', 1);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('apartment-player', 'neo', 1);
+  assert.deepEqual(h.state().contact, saved);
+  assert.equal(h.sandbox.life.state!.money, balance);
+  h.frames(5); assert.equal(h.state().contact?.phase, 'invitation');
+  assert.equal(h.sandbox.life.state!.money, balance + 2000);
+  h.frames(5); assert.equal(h.sandbox.life.state!.money, balance + 2000);
 });
 
 test('disk trade, rabbit investigation and following the invitation are separate deliberate actions', () => {
