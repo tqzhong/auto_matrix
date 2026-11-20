@@ -13,6 +13,27 @@ import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.j
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
+test('the courtyard pigeons stand on the paving before they take off at Smith’s arrival', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene);
+  t.after(() => sets.dispose());
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, courtyard = 'film_oracle_courtyard';
+  Object.assign(neo, { position: filmPosition(courtyard), isInMatrix: true, currentLocation: courtyard });
+  const journey: FilmJourney = { version: 1, scene: 'm2_bench', actor: 'neo', step: 1, completed: [], enteredAt: 0,
+    checkpoint: neo.position, reflections: {}, lastText: '' };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  sets.update(neo, sandbox, 0); scene.updateMatrixWorld(true);
+  const birds = sets.root.getObjectsByProperty('name', 'courtyard-startled-bird');
+  assert.equal(birds.length, 3);
+  const paving = FILM_SETS[courtyard].center.y - 1 + .015;
+  const clearance = (bird: THREE.Object3D) => new THREE.Box3().setFromObject(bird).min.y - paving;
+  assert.ok(birds.every(bird => Math.abs(clearance(bird)) < .04), JSON.stringify(birds.map(clearance)));
+  journey.scene = 'm2_burly'; journey.step = 0;
+  sets.update(neo, sandbox, 1); sets.update(neo, sandbox, 1.8); scene.updateMatrixWorld(true);
+  assert.ok(birds.every(bird => clearance(bird) > 1), 'Smith’s arrival still scatters the flock');
+});
+
 test('the Oracle routes adopt prepared sets and keep their interactive props live', async t => {
   const previous = globalThis.document;
   const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {}, ellipse() {},

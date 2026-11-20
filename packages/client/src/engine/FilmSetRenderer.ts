@@ -4758,7 +4758,12 @@ export class FilmSetRenderer {
         bird.position.y = rise * (6 + index * 2); bird.position.x = [-15, -12, -2][index] + rise * (index - 1) * 5;
         bird.position.z = -14 + ([-15, -12, -2][index] % 3) - rise * (9 + index * 3);
         bird.rotation.y = Math.sin(elapsed * 7 + index) * .35;
-        for (const wing of bird.children.filter(child => child.name === 'bird-wing')) wing.rotation.z = Math.sin(elapsed * 24 + index) * .8 * rise;
+        const spread = Math.min(rise * 4, 1);
+        for (const wing of bird.children) if (wing.name === 'bird-wing') {
+          const side = Math.sign(wing.position.x);
+          wing.scale.x = side * (.36 + .64 * spread);
+          wing.rotation.z = side * (-.64 * (1 - spread) + Math.sin(elapsed * 24 + index) * .8 * spread);
+        }
       });
     }
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
@@ -7060,11 +7065,26 @@ export class FilmSetRenderer {
       this.box(iron, x, 1.18, -19.3, .15, .55, .22);
       this.box(iron, x, 1.5, -20, .28, .18, 2.4);
     }
+    const pigeonParts = [
+      new THREE.SphereGeometry(1, 12, 8).scale(.244, .157, .322).translate(0, .35, 0),
+      new THREE.SphereGeometry(.13, 10, 8).translate(0, .46, .225),
+      new THREE.ConeGeometry(.031, .092, 6).rotateX(Math.PI / 2).translate(0, .455, .365),
+    ];
+    const pigeonFeet = [-.08, .08].flatMap(x => [
+      new THREE.CylinderGeometry(.023, .025, .182, 6).translate(x, .109, .01),
+      new THREE.BoxGeometry(.046, .018, .13).translate(x, .023, .04),
+    ]);
+    const pigeonBody = mergeGeometries(pigeonParts), pigeonLegs = mergeGeometries(pigeonFeet);
+    for (const geometry of [...pigeonParts, ...pigeonFeet]) geometry.dispose();
+    const pigeonWing = new THREE.SphereGeometry(1, 12, 8).scale(.275, .035, .17).translate(.22, 0, -.06);
+    const pigeonFootColor = this.mat(0x75564e, .78);
     for (const x of [-15, -12, -2]) {
       const bird = new THREE.Group(); bird.userData.dynamic = true; bird.name = 'courtyard-startled-bird'; bird.position.set(x, 0, -14 + (x % 3)); this.root.add(bird);
-      this.mesh(new THREE.SphereGeometry(.23, 12, 8), iron, 0, .55, 0, bird).scale.set(1.1, .7, 1.4);
-      this.mesh(new THREE.SphereGeometry(.13, 10, 8), iron, .11, .76, 0, bird);
-      for (const side of [-1, 1]) { const wing = this.mesh(new THREE.BoxGeometry(.52, .05, .22), iron, side * .27, .6, 0, bird); wing.name = 'bird-wing'; }
+      this.mesh(pigeonBody, iron, 0, 0, 0, bird);
+      this.mesh(pigeonLegs, pigeonFootColor, 0, 0, 0, bird);
+      for (const side of [-1, 1]) {
+        const wing = this.mesh(pigeonWing, iron, side * .17, .395, -.02, bird); wing.name = 'bird-wing';
+      }
       this.courtyardBirds.push(bird);
     }
     const staff = new THREE.Group(); staff.userData.dynamic = true; staff.name = 'courtyard-loose-fence-post'; staff.position.set(BURLY.staff.x, 0, BURLY.staff.z); this.root.add(staff);
