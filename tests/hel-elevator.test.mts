@@ -3,8 +3,10 @@ import test from 'node:test';
 import { FILM_SCENE_BY_ID, FILM_SETS, filmPosition, filmStepPosition, playerBlocked } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { RelationshipGraph } from '../packages/server/src/agents/RelationshipGraph.js';
+import { MemoryManager } from '../packages/server/src/memory/MemoryManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
-import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -78,4 +80,31 @@ test('a saved moving floor survives pause, release and restore without dropping 
   assert.deepEqual(['trinity', 'morpheus', 'seraph'].map(id => h.world.agents.get(id)!.position), before.positions);
   h.trinity.controller = 'player'; h.film.tick(41);
   assert.ok(h.trinity.position.y < before.positions[0].y, 'resuming continues the saved descent');
+});
+
+test('Hel keeps the garage injuries through the lift and the coat-check approach', () => {
+  const h = setup(); h.film.reconcileCast();
+  const morpheus = h.world.agents.get('morpheus')!;
+  h.trinity.health = 91; morpheus.health = 83;
+  h.trinity.mind!.stress = morpheus.mind!.stress = 0;
+  const dynamics = new WorldDynamics(h.world, new MemoryManager(), new RelationshipGraph(), () => {});
+  dynamics.neoStory = true;
+  const idle = { type: 'idle' as const, parameters: { player: true, resolved: true }, startedAt: 0, duration: 1, progress: 0 };
+  const check = (tick: number) => {
+    dynamics.tick(tick, h.film.state);
+    assert.equal(h.trinity.health, 91, 'a story pause is not a chance to heal the garage wound');
+  };
+  h.trinity.currentAction = idle; check(0);
+  h.film.command(h.trinity, 'act', 1); h.film.tick(7);
+  assert.equal(h.film.state!.helElevator!.phase, 'descending');
+  check(7); assert.equal(morpheus.health, 83, 'a staged passenger does not heal in the cage');
+  h.film.tick(30); assert.equal(h.film.state!.helElevator!.phase, 'arrived');
+  h.trinity.currentAction = idle; check(30);
+  const scene = FILM_SCENE_BY_ID.m3_hel_entry;
+  h.trinity.position = filmStepPosition(scene, scene.steps[0], h.film.state!);
+  h.film.command(h.trinity, 'act', 31); h.film.tick(35);
+  assert.equal(h.film.state!.step, 1);
+  h.trinity.currentAction = idle; check(35);
+  dynamics.tick(36);
+  assert.equal(h.trinity.health, 91.15, 'ordinary rest after leaving the directed scene still heals');
 });
