@@ -8,6 +8,7 @@ export class GovernmentSetRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private lights = new Set<THREE.Light>();
+  private instances: THREE.InstancedMesh[] = [];
   private sprinklers?: THREE.Group;
   private alarm?: THREE.PointLight;
   private serum?: THREE.Object3D;
@@ -26,7 +27,6 @@ export class GovernmentSetRenderer {
   private glassShards?: THREE.Group;
   private rescueRope?: THREE.Mesh;
   private rescueRopeDrop?: THREE.Mesh;
-  private impactWindows?: THREE.InstancedMesh;
   private impactRipples?: THREE.Group;
   private crashFire?: THREE.Group;
   private crashLight?: THREE.PointLight;
@@ -160,9 +160,42 @@ export class GovernmentSetRenderer {
       this.box(hvac, this.metal, 0, 1.7, 0, 6, 3.4, 7);
       for (let slit = -2.3; slit <= 2.3; slit += .75) this.box(hvac, this.black, slit, 1.9, -3.53, .38, 2.2, .05);
     }
-    this.buildHelicopter(false); this.buildBulletLines(); this.buildRoofRescueEffects();
+    this.buildRoofCity(); this.buildHelicopter(false); this.buildBulletLines(); this.buildRoofRescueEffects();
     const sun = new THREE.DirectionalLight(0xe7eee5, .62); sun.position.set(-25, 48, 18); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); this.light(sun);
     const sky = new THREE.HemisphereLight(0xb9c9ca, 0x424845, .34); this.light(sky);
+  }
+
+  private buildRoofCity(): void {
+    const city = new THREE.Group(); city.name = 'government-roof-city'; this.group.add(city);
+    const street = -104;
+    this.box(city, this.black, 0, street - .2, -15, 332, .4, 326, 'government-street-below');
+    const towers = [ // x, z, width, depth, roof height
+      [0, 0, 62, 90, -.5], [-2.5, -60.6, 55, 24, 24],
+      [-80, -53, 32, 39, -16], [-81, 2, 28, 42, -24], [-73, 62, 31, 38, -20],
+      [-56, -109, 30, 34, 8], [-6, -118, 36, 30, -9], [44, -100, 29, 32, 14],
+      [67, -46, 24, 38, -9], [71, 12, 28, 42, -22],
+    ] as const;
+    const transforms: THREE.Matrix4[] = [];
+    for (const [index, [x, z, width, depth, top]] of towers.entries()) {
+      const body = this.box(city, index % 3 === 1 ? this.concrete : this.darkConcrete, x, (street + top) / 2, z,
+        width, top - street, depth, index === 0 ? 'government-roof-supporting-tower' : undefined);
+      body.castShadow = false;
+      if (index > 1) this.box(city, this.metal, x, top, z, width + .6, .42, depth + .6).castShadow = false;
+      for (let y = top - 3; y > street + 3; y -= 5.2) {
+        // The crash facade already has its own glass grid above the canyon.
+        if (index === 1 && y > 0) continue;
+        for (const side of [-1, 1]) {
+          transforms.push(new THREE.Matrix4().makeScale(.08, 2.8, depth - 4).setPosition(x + side * (width / 2 + .035), y, z));
+          transforms.push(new THREE.Matrix4().makeScale(width - 4, 2.8, .08).setPosition(x, y, z + side * (depth / 2 + .035)));
+        }
+      }
+    }
+    const geometry = new THREE.BoxGeometry(1, 1, 1); this.geometries.add(geometry);
+    const windows = new THREE.InstancedMesh(geometry, this.material(0x395354, .4, .45), transforms.length);
+    windows.name = 'government-tower-window-strips'; this.instances.push(windows);
+    transforms.forEach((transform, index) => windows.setMatrixAt(index, transform));
+    windows.instanceMatrix.needsUpdate = true; city.add(windows);
+    city.traverse(object => { object.userData.distantBackdrop = true; });
   }
 
   private buildHelicopter(office: boolean): void {
@@ -232,7 +265,7 @@ export class GovernmentSetRenderer {
     // The concrete backing meets the back of every pane. Only the exposed glazing needs shading.
     const glazing = this.physical(0x9cb8b8, .12, .24); glazing.transmission = 0; glazing.side = THREE.FrontSide;
     const pane = new THREE.BoxGeometry(3.65, 3.35, .1); this.geometries.add(pane);
-    const windows = this.impactWindows = new THREE.InstancedMesh(pane, glazing, 6 * 13);
+    const windows = new THREE.InstancedMesh(pane, glazing, 6 * 13); this.instances.push(windows);
     windows.name = 'air-rescue-impact-glazing'; windows.castShadow = windows.receiveShadow = true;
     const transform = new THREE.Matrix4(); let index = 0;
     for (let row = 0; row < 6; row++) for (let col = -6; col <= 6; col++) {
@@ -435,7 +468,7 @@ export class GovernmentSetRenderer {
   }
 
   dispose(): void {
-    this.group.removeFromParent(); this.impactWindows?.dispose();
+    this.group.removeFromParent(); this.instances.forEach(mesh => mesh.dispose()); this.instances.length = 0;
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());
     this.lights.forEach(light => light.dispose()); this.geometries.clear(); this.materials.clear(); this.lights.clear(); this.bullets = [];
   }

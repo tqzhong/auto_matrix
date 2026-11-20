@@ -140,6 +140,22 @@ test('the solid impact facade draws its reflective window grid in one batch', ()
   assert.equal(released, 1, 'leaving the roof releases the instance buffer');
 });
 
+test('the hanging camera sees a tower beneath the ledge and a street below the drop', t => {
+  const root = new THREE.Group(), renderer = new GovernmentSetRenderer(root, 'film_government_roof');
+  t.after(() => renderer.dispose());
+  const encounter: AirRescueEncounter = { kind: 'roof', phase: 'pulling', elapsed: 1.38, attempt: 0, ropeCut: true };
+  renderer.update({ ...journey('m1_rooftop_rescue'), airRescue: encounter }, 0);
+  root.updateMatrixWorld(true);
+  const trinity = airRescueRoot(encounter, 'trinity');
+  const towardTower = new THREE.Raycaster(new THREE.Vector3(trinity.x, trinity.y, trinity.z), new THREE.Vector3(1, 0, 0));
+  const wall = towardTower.intersectObject(root, true)[0];
+  assert.ok(wall && wall.point.x > trinity.x + .6 && wall.point.x <= -30.7,
+    'the wall should run directly below the parapet with room for the hanging body');
+  const downward = new THREE.Raycaster(new THREE.Vector3(-46, 1, -12), new THREE.Vector3(0, -1, 0));
+  const street = downward.intersectObject(root, true)[0];
+  assert.ok(street && street.point.y < -60, 'the gap alongside the tower must look down to a street far below');
+});
+
 test('the rooftop cast stays clear of the HVAC and the pull lifts Trinity over the actual parapet', t => {
   const root = new THREE.Group(); const renderer = new GovernmentSetRenderer(root, 'film_government_roof');
   t.after(() => renderer.dispose());
