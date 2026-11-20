@@ -3,11 +3,13 @@ import test from 'node:test';
 import { filmPosition, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { RelationshipGraph } from '../packages/server/src/agents/RelationshipGraph.js';
+import { MemoryManager } from '../packages/server/src/memory/MemoryManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
+import { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
-import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -22,7 +24,8 @@ function setup() {
   Object.assign(journey, { scene: 'm3_mobil_release', actor: 'neo', step: 0,
     mobil: { phase: 'approaching', elapsed: 0, lastTick: tick, loops: 0 } });
   actor.position = filmPosition('film_mobil_station', 0, -22); actor.currentLocation = 'film_mobil_station';
-  actor.health = 61; world.agents.get('trinity')!.health = 43;
+  actor.health = 61;
+  Object.assign(world.agents.get('trinity')!, { currentLocation: 'film_mobil_station', isInMatrix: true, health: 43 });
   sandbox.life.film.reconcileCast();
   const frame = (seconds: number, running = true) => { for (let i = 0; i < Math.ceil(seconds * 20); i++) players.step(.05, running, tick); };
   const advance = () => { world.simulationTick = ++tick; sandbox.tick(tick); };
@@ -121,6 +124,20 @@ test('a saved embrace resumes its contact roots and only the subsequent player a
   h.command('act'); assert.equal(current.step, 2);
 });
 
+test('world ticks during the reunion preserve both injuries through the departure', () => {
+  const h = setup(), trinity = h.world.agents.get('trinity')!;
+  const dynamics = new WorldDynamics(h.world, new MemoryManager(), new RelationshipGraph(), () => {});
+  dynamics.neoStory = true;
+  h.actor.mind!.stress = trinity.mind!.stress = 0;
+  h.frame(9); h.advance();
+  dynamics.tick(h.tick(), h.journey);
+  h.command('act'); h.frame(1);
+  for (let i = 0; i < 5; i++) { h.advance(); dynamics.tick(h.tick(), h.journey); }
+  h.frame(7); h.command('act'); h.command('next');
+  assert.equal(h.journey.scene, 'm3_oracle_last');
+  assert.deepEqual([h.actor.health, trinity.health], [61, 43]);
+});
+
 test('returning from Mobil to the Oracle preserves Neo health and depleted medical supplies', () => {
   const h = setup(); h.frame(9); h.advance(); h.command('act'); h.frame(7); h.command('act');
   h.sandbox.state.profiles.neo.inventory.medkit = 0;
@@ -129,6 +146,37 @@ test('returning from Mobil to the Oracle preserves Neo health and depleted medic
   assert.equal(h.actor.health, 61, 'the cut back to the Matrix is not medical treatment');
   assert.equal(h.sandbox.state.profiles.neo.inventory.medkit, 0, 'a new set must not award replacement medicine');
   assert.equal(h.world.agents.get('trinity')!.health, 43);
+});
+
+test('leaving Mobil returns Trinity and Morpheus to the Hammer while Neo goes to the Oracle', () => {
+  const h = setup(), trinity = h.world.agents.get('trinity')!, morpheus = h.world.agents.get('morpheus')!;
+  Object.assign(morpheus, { position: filmPosition('film_club_hel'), isInMatrix: true, currentLocation: 'film_club_hel', health: 57 });
+  h.frame(9); h.advance(); h.command('act'); h.frame(7); h.command('act');
+  assert.equal(h.journey.step, 2);
+  const companions = [trinity, morpheus], oldCrew = companions.map(member => structuredClone(member));
+  for (const member of companions) {
+    member.controller = 'other-player';
+    const occupied = structuredClone(member);
+    h.command('next');
+    assert.equal(h.journey.scene, 'm3_mobil_release');
+    assert.deepEqual(member, occupied);
+    member.controller = null;
+  }
+  h.command('next');
+  assert.equal(h.actor.currentLocation, 'film_oracle_home');
+  const returned = () => companions.map(member => [member.currentLocation, member.isInMatrix, member.currentAction, member.health]);
+  assert.deepEqual(returned(), [['film_hammer_deck', false, null, 43], ['film_hammer_deck', false, null, 57]]);
+  const destination = companions.map(member => ({ ...member.position }));
+
+  // A save from the previous version could already be at the Oracle with the crew still in the Matrix.
+  companions.forEach((member, i) => Object.assign(member, oldCrew[i]));
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state));
+  h.sandbox.restore(saved);
+  assert.deepEqual(returned(), [['film_hammer_deck', false, null, 43], ['film_hammer_deck', false, null, 57]]);
+  assert.deepEqual(companions.map(member => member.position), destination);
+  const restored = companions.map(member => structuredClone(member));
+  h.sandbox.life.film.reconcileCast();
+  assert.deepEqual(companions, restored, 'reloading again keeps the crew in their saved positions');
 });
 
 test('the next Oracle visit waits for a living, unoccupied cast instead of silently rebuilding them', () => {

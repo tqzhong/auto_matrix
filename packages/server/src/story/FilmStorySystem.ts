@@ -27,7 +27,7 @@ import { LogosBaneSystem } from './LogosBaneSystem.js';
 import { maggieDiscoveryLocked } from '@auto_matrix/shared';
 import { ZionDeploymentSystem } from './ZionDeploymentSystem.js';
 import { zionDeploymentLocked } from '@auto_matrix/shared';
-import { hammerBriefingLocked } from '@auto_matrix/shared';
+import { HAMMER_BRIEFING, hammerBriefingLocked } from '@auto_matrix/shared';
 import { baneInquiryLocked } from '@auto_matrix/shared';
 import { OracleAbsorptionSystem } from './OracleAbsorptionSystem.js';
 import { oracleAbsorptionLocked, oracleAbsorptionActive } from '@auto_matrix/shared';
@@ -142,6 +142,10 @@ import { nebEscapeLocked } from '@auto_matrix/shared';
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
 const DOJO_COUNTER_TICKS = DOJO_COMBO_WINDOW * 2;
+const MOBIL_RESCUERS = [
+  { id: 'trinity', source: 'film_mobil_station' },
+  { id: 'morpheus', source: 'film_club_hel' },
+] as const;
 
 function wellsConnectionCaption(phone: OpeningPhoneEncounter): string {
   return openingBoothCrush(openingTruckPose(phone)) > 0
@@ -6223,6 +6227,16 @@ export class FilmStorySystem {
         guest.rotation = Math.PI; guest.currentAction = null; guest.targetPosition = null; guest.currentPath = []; guest.velocity = { x: 0, y: 0, z: 0 };
       }
     }
+    if (!this.state.visiting && ['m3_oracle_last', 'm3_oracle_absorbed'].includes(this.state.scene)
+      && this.state.completed.includes('m3_mobil_release')) {
+      const hammer = FILM_SCENE_BY_ID.m3_logos_plan;
+      for (const { id, source } of MOBIL_RESCUERS) {
+        const member = this.world.agents.get(id);
+        if (member?.status !== 'alive' || member.health <= 0 || member.controller || member.currentLocation !== source || !member.isInMatrix) continue;
+        const { x, z, yaw } = HAMMER_BRIEFING.roots[id];
+        this.place(member, hammer, filmPosition(hammer.set, x, z)); member.rotation = yaw;
+      }
+    }
     const child = this.scene?.film === 3 ? this.world.agents.get('spoon_boy') : undefined;
     if (child?.currentLocation === 'film_oracle_home' && !child.controller) {
       const home = CHARACTERS.spoon_boy.initialLocation;
@@ -7116,6 +7130,10 @@ export class FilmStorySystem {
         const member = this.world.agents.get(id);
         return !member || member.status !== 'alive' || member.health <= 0 || id !== agent.id && member.controller;
       })) return next.id === 'm3_oracle_last' ? '先知会面的参与者暂不可用；保留当前伤势和进度，等待他们能够参与。' : '交涉中的人物暂不可用；保留当前队伍、伤势和进度，等待他们能够参与。';
+      if (state.scene === 'm3_mobil_release' && MOBIL_RESCUERS.some(({ id, source }) => {
+        const member = this.world.agents.get(id);
+        return member?.currentLocation === source && member.isInMatrix && member.controller;
+      })) return '营救同伴正由另一位玩家控制。离站进度保留，等他们完成当前行动。';
       if (next.id === 'm3_hel_bargain' && ['morpheus', 'seraph'].some(id => {
         const member = this.world.agents.get(id)!;
         return member.currentLocation !== next.set || Math.hypot(member.position.x - agent.position.x, member.position.z - agent.position.z) > 8;
