@@ -63,6 +63,7 @@ export class ApartmentSetRenderer {
   private clockKey = '';
   private clockButton: THREE.Mesh;
   private glow = new THREE.PointLight(0x8bba81, 14, 10, 2);
+  private phoneTaskLight = new THREE.PointLight(0xffd69c, 75, 9, 2);
   private landingLight = new THREE.SpotLight(0xc9d2a3, 0, 30, 1.05, .65, 2);
   private hallBounce = new THREE.PointLight(0xd7d0a7, 82, 20, 2);
   private doorwayFill = new THREE.PointLight(0xc3c8aa, 105, 14, 2);
@@ -206,8 +207,7 @@ export class ApartmentSetRenderer {
     phoneShade.name = 'apartment-phone-task-shade'; phoneShade.userData.dynamic = true;
     const phoneBulb = new THREE.MeshBasicMaterial({ color: 0xffe6b3, toneMapped: false }); this.materials.add(phoneBulb);
     this.mesh(new THREE.SphereGeometry(.15, 16, 12), phoneBulb, -5.95, 3.62, -11.42);
-    const phoneLight = new THREE.PointLight(0xffd69c, 75, 9, 2);
-    phoneLight.name = 'apartment-phone-task-light'; phoneLight.position.set(-5.95, 3.6, -11.42); this.root.add(phoneLight);
+    this.phoneTaskLight.name = 'apartment-phone-task-light'; this.phoneTaskLight.position.set(-5.95, 3.6, -11.42); this.root.add(this.phoneTaskLight);
     const chair = this.mat(0x292f2b, .92);
     chair.name = 'apartment-computer-chair';
     this.box(chair, APARTMENT_CHAIR.x, APARTMENT_CHAIR.seatY, APARTMENT_CHAIR.z, APARTMENT_CHAIR.width, .3, APARTMENT_CHAIR.seatDepth, .14);
@@ -725,7 +725,9 @@ export class ApartmentSetRenderer {
       text = line.slice(0, Math.floor((t - start) * 18));
     } else if (contact?.phase === 'reply') text = 'Follow the white rabbit.';
     else if (contact && apartmentAfter(contact, 'knocking')) text = contact.phase === 'knocking' && contact.elapsed < 2.2 ? 'Knock, knock, Neo.' : '';
-    this.glow.intensity = text ? 100 - daylight * 65 : 2;
+    const atContactDesk = apartmentAtComputer(contact?.phase);
+    this.phoneTaskLight.intensity = atContactDesk ? 14 : 75;
+    this.glow.intensity = text ? atContactDesk ? 27 : 100 - daylight * 65 : 2;
     if (text === this.screenKey) return;
     this.screenKey = text;
     const ctx = this.canvas.getContext('2d')!; ctx.fillStyle = '#050a07'; ctx.fillRect(0, 0, 1024, 640);

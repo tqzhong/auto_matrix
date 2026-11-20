@@ -169,6 +169,22 @@ test('the narrow street exit label leaves room for every letter', t => {
   assert.ok(sign.maxWidth !== undefined && sign.maxWidth < sign.width);
 });
 
+test('the white rabbit message lights the workbench without the handset lamp dominating the CRT shot', t => {
+  const original = globalThis.document, text: string[] = [];
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText(line: string) { text.push(line); } }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.after(() => { globalThis.document = original; });
+  const root = new THREE.Group(), renderer = new ApartmentSetRenderer(root);
+  t.after(() => renderer.dispose());
+  const phone = root.getObjectByName('apartment-phone-task-light') as THREE.PointLight;
+  const { glow } = renderer as unknown as { glow: THREE.PointLight };
+  renderer.update({ scene: 'm1_wake_up', contact: { phase: 'signal', elapsed: 7.14 } } as FilmJourney);
+  assert.ok(text.includes('Follow the white rabbit.'));
+  assert.ok(glow.intensity >= 16 && glow.intensity <= 35 && phone.intensity <= 20 && phone.intensity > 0);
+  renderer.update({ scene: 'm1_wake_again', step: 0, wakeCall: { phase: 'ringing', elapsed: .2, nightmare: true } } as FilmJourney);
+  assert.ok(phone.intensity >= 55, 'returning to the phone scene restores its task lighting');
+});
+
 test('the rendered blanket covers the mattress and hangs clear of both sides', t => {
   const original = globalThis.document;
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
