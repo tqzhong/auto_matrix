@@ -134,6 +134,50 @@ test('the train keeps the headlight in the subway light layout when its body is 
   }
 });
 
+test('the possession shot prepares the returning cast under the live subway lights', t => {
+  const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene), lights = new LightCulling(scene);
+  const sun = new THREE.DirectionalLight(); sun.castShadow = true; scene.add(sun);
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  neo.position = filmPosition('film_subway_platform'); neo.isInMatrix = true;
+  const subway = journey('m1_subway');
+  const sandbox = { neoLife: { journey: subway } } as SandboxState;
+  sets.update(neo, sandbox, 0);
+  lights.stablePointSlots = sets.stablePointSlots; lights.minimumPointSlots = 12;
+
+  const geometry = new THREE.BoxGeometry(), surface = new THREE.MeshStandardMaterial();
+  const smith = new THREE.Group(), neoModel = new THREE.Group();
+  const suit = new THREE.Mesh(geometry, surface), coat = new THREE.Mesh(geometry, surface);
+  smith.visible = false; smith.add(suit); neoModel.add(coat);
+  t.after(() => { sets.dispose(); lights.dispose(); geometry.dispose(); surface.dispose(); });
+  const liveLamp = sets.root.getObjectByName('matrix-subway-train-headlight')!;
+  const linked = new Set<THREE.Object3D>();
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
+    setRenderTarget() {}, properties: { get: () => ({}) },
+    compile(subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) {
+      const pointLights: THREE.Object3D[] = [];
+      target.traverseVisible(object => { if (object instanceof THREE.PointLight) pointLights.push(object); });
+      if (!pointLights.includes(liveLamp)) return;
+      assert.equal(pointLights.length, 12, 'use the same slots as the first frame after the shot');
+      subject.traverse(object => linked.add(object));
+    } } as unknown as THREE.WebGLRenderer;
+  const camera = new THREE.PerspectiveCamera();
+  camera.position.set(neo.position.x, neo.position.y + 4, neo.position.z);
+  const prepare = () => sets.prepareMatrixEscape(graphics, camera, subway, () => undefined,
+    id => id === 'smith' ? smith : id === 'neo' ? neoModel : undefined, sun, lights);
+  prepare();
+  assert.equal(linked.size, 0, 'keep the queue out of the playable fight');
+
+  subway.matrixEscape!.phase = 'body_swap'; subway.matrixEscape!.elapsed = .3;
+  sets.update(neo, sandbox, 1);
+  for (let frame = 0; frame < 10; frame++) prepare();
+  assert.ok(linked.has(suit) && linked.has(coat), 'prepare both actual models even when the shot keeps them offscreen');
+  const face = new THREE.Mesh(geometry, surface); smith.add(face);
+  prepare();
+  assert.ok(linked.has(face), 'prepare details that arrive after the rig');
+  assert.equal(smith.visible, false);
+});
+
 test('backed train windows keep their reflective glazing without requesting a transmission pass', t => {
   const root = new THREE.Group(); const renderer = new MatrixEscapeRenderer(root, 'film_subway_platform');
   t.after(() => renderer.dispose());
