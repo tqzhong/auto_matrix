@@ -130,19 +130,18 @@ export class ClubSetRenderer {
   private roomMap(url: string): THREE.Texture {
     if (typeof createImageBitmap !== 'function') return new THREE.TextureLoader().load(url);
     const texture = new THREE.Texture();
-    new THREE.ImageLoader().load(url, image => {
-      if (this.disposed) return;
-      const install = (loaded: HTMLImageElement | ImageBitmap) => {
-        if ('close' in loaded) {
-          if (this.disposed) { loaded.close(); return; }
-          this.roomBitmaps.add(loaded); texture.flipY = false;
-        }
-        if (this.disposed) return;
-        texture.image = loaded; texture.needsUpdate = true;
-      };
+    const install = (image: HTMLImageElement | ImageBitmap) => {
+      if (this.disposed) { if ('close' in image) image.close(); return; }
       // Bitmap uploads use the decode orientation in place of WebGL's flipY setting.
-      void createImageBitmap(image, { imageOrientation: 'flipY', premultiplyAlpha: 'none' }).then(install, () => install(image));
-    });
+      if ('close' in image) { this.roomBitmaps.add(image); texture.flipY = false; }
+      texture.image = image; texture.needsUpdate = true;
+    };
+    // Decode the response without an image element load callback on the render thread.
+    void fetch(url).then(response => response.blob())
+      .then(blob => this.disposed ? undefined : createImageBitmap(blob, { imageOrientation: 'flipY', premultiplyAlpha: 'none' }))
+      .then(bitmap => { if (bitmap) install(bitmap); }, () => {
+        if (!this.disposed) new THREE.ImageLoader().load(url, install);
+      });
     return texture;
   }
   private mesh(geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number): THREE.Mesh {

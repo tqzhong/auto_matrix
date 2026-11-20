@@ -10,7 +10,7 @@ import type { ConversationEngine } from '../packages/server/src/agents/Conversat
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 
 function setup() {
-  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const world = new WorldState(); const manager = new AgentManager(world); manager.initializeAllAgents();
   const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
   const players = new PlayerController(world, { interrupt() {}, isAgentInConversation: () => false } as unknown as ConversationEngine,
@@ -23,7 +23,7 @@ function setup() {
   state.step = FILM_SCENE_BY_ID.m1_wake_up.steps.length; state.completed.push('m1_wake_up'); command('next');
   const frames = (seconds: number, running = true) => { for (let i = 0; i < seconds * 10; i++) { players.step(.1, running, ++tick); if (running) sandbox.tick(tick); } };
   const near = () => { const state = sandbox.life.film.state!; neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_club, FILM_SCENE_BY_ID.m1_club.steps[state.step]); };
-  return { world, sandbox, players, neo, command, near, frames, state: () => sandbox.life.film.state! };
+  return { world, manager, sandbox, players, neo, command, near, frames, state: () => sandbox.life.film.state! };
 }
 
 function ready(h: ReturnType<typeof setup>) { h.near(); h.frames(10); assert.equal(h.state().club?.phase, 'ready'); }
@@ -105,6 +105,29 @@ test('close conversation retains its exact two-person pose across pause, disconn
   assert.ok(Math.hypot(h.neo.position.x - neo.x, h.neo.position.z - neo.z) < .01);
   h.frames(15); assert.equal(h.state().club?.phase, 'question');
 });
+
+for (const phase of ['listen', 'whisper']) {
+  test(`the paused club ${phase} checkpoint preserves both actors’ actions and motion through reconnect`, () => {
+    const h = setup(); ready(h); h.command('act'); h.frames(7);
+    if (phase === 'whisper') { h.command('act'); h.frames(.8); }
+    assert.equal(h.state().club?.phase, phase);
+    const trinity = h.world.agents.get('trinity')!;
+    const tick = h.world.simulationTick = h.neo.currentAction!.startedAt + 1;
+    h.manager.updateAgentState('trinity', tick);
+    assert.equal(trinity.currentAction!.progress, 1);
+    if (phase === 'whisper') assert.ok(Math.hypot(trinity.velocity.x, trinity.velocity.z) > 0);
+    h.players.step(0, false, tick);
+    const motion = () => [h.neo, trinity].map(({ position, rotation, velocity, currentAction }) => ({ position, rotation, velocity, currentAction }));
+    const before = structuredClone(motion());
+    h.players.release('club-player', tick);
+    h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+    h.players.possess('club-player', 'neo', tick);
+    assert.deepEqual(motion(), before);
+    if (phase === 'listen') h.command('act');
+    h.frames(15);
+    assert.equal(h.state().club?.phase, 'question');
+  });
+}
 
 test('another player owning Trinity freezes the encounter without moving or stealing her', () => {
   const h = setup(); ready(h); h.command('act'); h.frames(2);

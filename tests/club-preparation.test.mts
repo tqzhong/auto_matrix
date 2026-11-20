@@ -10,16 +10,22 @@ import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
 test('the invitation prepares the actual club and crowd offstage and transfers ownership on entry', async t => {
   const document = globalThis.document, previousBitmap = globalThis.ImageBitmap, previousCreateBitmap = globalThis.createImageBitmap;
-  let closedRoomBitmaps = 0;
+  let closedRoomBitmaps = 0, decodedRoomBlobs = 0;
   class Bitmap {
     constructor(readonly width = 2048, readonly height = width) {}
     close() { closedRoomBitmaps++; }
   }
   globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
-  globalThis.createImageBitmap = (async (image: HTMLImageElement, options: ImageBitmapOptions) => {
+  globalThis.createImageBitmap = (async (image: Blob | HTMLImageElement, options: ImageBitmapOptions) => {
     assert.equal(options.imageOrientation, 'flipY');
+    assert.equal(options.premultiplyAlpha, 'none');
+    if (image instanceof Blob) { decodedRoomBlobs++; return new Bitmap(1024); }
     return new Bitmap(image.width, image.height);
   }) as typeof createImageBitmap;
+  t.mock.method(globalThis, 'fetch', async (url: string) => {
+    assert.match(url, /^\/assets\/film-materials\/.+\.jpg$/);
+    return new Response(new Blob(['room map']));
+  });
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
   t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string) => {
     const map = new THREE.Texture(new Bitmap(1024)); map.flipY = false; map.name = url; map.needsUpdate = true; return map;
@@ -204,6 +210,7 @@ test('the invitation prepares the actual club and crowd offstage and transfers o
   fill.visible = true;
   film.update(neo, sandbox, 0);
   await drain();
+  assert.equal(decodedRoomBlobs, 12, 'decode the room maps directly from their responses without the image element load path');
   assert.ok([skinMap, faceMap].every(map => uploaded.get(map)?.__webglTexture?.mipmaps));
   assert.ok(uploads.indexOf(skinMap) < uploads.findIndex(map => map.name.startsWith('/assets/film-materials/')),
     'finish the entrance costume before uploading the waiting room and crowd maps');

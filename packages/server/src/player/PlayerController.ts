@@ -9,7 +9,7 @@ import type { ConversationEngine } from '../agents/ConversationEngine.js';
 import type { ActionExecutor } from '../agents/ActionExecutor.js';
 import type { WorldDynamics } from '../story/WorldDynamics.js';
 import { savedMetacortexLiftIdle } from '../story/NeoLifeSystem.js';
-import { savedMorningIdle, savedWakeCallIdle } from '../story/FilmStorySystem.js';
+import { savedClubIdle, savedMorningIdle, savedWakeCallIdle } from '../story/FilmStorySystem.js';
 import { INTERROGATION_CAST, interrogationLocked } from '@auto_matrix/shared';
 import { MEETING_CAST, meetingLocked } from '@auto_matrix/shared';
 import { SENTINEL_CAST, sentinelActive } from '@auto_matrix/shared';
@@ -242,6 +242,7 @@ export class PlayerController {
     }
     const restoredPose = restoredWells || savedCatchPose(interlude, agent) || this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick)
       || interlude?.actor === id && savedApartmentIdle(interlude, agent.currentAction, id)
+      || interlude?.actor === id && savedClubIdle(interlude, agent)
       || savedMorningIdle(interlude, agent) || savedWakeCallIdle(interlude, agent)
       || !this.running && (savedOfficeCustodyAction(this.sandbox?.life.film.state, agent) || savedOfficeCrouchAction(this.sandbox?.life.film.state, agent))
       || this.sandbox?.life.film.workdayFrame(agent, 0, tick)
@@ -353,6 +354,7 @@ export class PlayerController {
       const journey = this.sandbox?.life.film.state;
       const restoredPose = savedCatchPose(journey, agent) || this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick)
         || journey?.actor === agent.id && savedApartmentIdle(journey, agent.currentAction, agent.id)
+        || journey?.actor === agent.id && savedClubIdle(journey, agent)
         || savedMorningIdle(journey, agent) || savedWakeCallIdle(journey, agent)
         || !this.running && (savedOfficeCustodyAction(journey, agent) || savedOfficeCrouchAction(journey, agent))
         || this.sandbox?.life.film.workdayFrame(agent, 0, tick)

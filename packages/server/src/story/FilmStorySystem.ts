@@ -170,6 +170,15 @@ export function savedWakeCallIdle(journey: FilmJourney | undefined, agent: Agent
     && isDeepStrictEqual(action.parameters.wakeCall, journey.wakeCall));
 }
 
+export function savedClubIdle(journey: FilmJourney | undefined, agent: AgentState): boolean {
+  const action = agent.currentAction;
+  return Boolean(journey?.scene === 'm1_club' && !journey.visiting && journey.club
+    && (agent.id === 'neo' ? clubLocked(journey) : agent.id === 'trinity')
+    && action?.type === 'idle' && action.duration === 1 && action.parameters.resolved === true
+    && action.parameters.player === (agent.id === 'neo')
+    && isDeepStrictEqual(action.parameters.club, { ...journey.club, role: agent.id }));
+}
+
 export function savedGarageDriveTick(action: AgentState['currentAction']): number | undefined {
   if (action?.type === 'move_to' && action.parameters.riding === true && action.parameters.seated === true
     && action.parameters.resolved === true && Number.isFinite(action.startedAt)) return action.startedAt;
@@ -1981,10 +1990,14 @@ export class FilmStorySystem {
     }
     for (const role of ['neo', 'trinity'] as const) {
       if (role === 'neo' && !clubLocked(state)) continue;
-      const actor = this.world.agents.get(role)!; const before = { ...actor.position }; const pose = clubRoot(club, role);
-      this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
-      actor.velocity = dt ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
-      actor.currentAction = { type: 'idle', parameters: { resolved: true, player: role === 'neo', club: { ...club, role } }, startedAt: tick, duration: 1, progress: 0 };
+      const actor = this.world.agents.get(role)!; const before = actor.position; const pose = clubRoot(club, role);
+      const position = filmPosition(this.scene!.set, pose.x, pose.z);
+      const saved = dt === 0 && savedClubIdle(state, actor) ? actor.currentAction : null;
+      const velocity = actor.velocity;
+      this.place(actor, this.scene!, position); actor.rotation = pose.yaw;
+      if (dt > 0) actor.velocity = { x: (position.x - before.x) / dt, y: 0, z: (position.z - before.z) / dt };
+      else if (saved && isDeepStrictEqual(before, position)) actor.velocity = velocity;
+      actor.currentAction = saved ?? { type: 'idle', parameters: { resolved: true, player: role === 'neo', club: { ...club, role } }, startedAt: tick, duration: 1, progress: 0 };
     }
     if (clubLocked(state)) state.checkpoint = { ...agent.position };
     state.lastText = club.phase === 'reply' ? filmReflections('m1_club').find(choice => choice.id === club.answer)!.response : clubText(club);
