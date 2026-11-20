@@ -150,6 +150,27 @@ test('the actual Neo carries the collected cartridge into the handover and the d
     assert.deepEqual(received.map(({ role, kind }) => [role, kind]), [['neo', 'cash']]);
     assert.ok(tendered[0].position.distanceTo(received[0].position) < .015);
     assert.ok(tendered[0].rotation.angleTo(received[0].rotation) < .03);
+    const cashBounds = new THREE.Box3().setFromObject(rigs.neo.root.getObjectByName('apartment-held-cash')!, true);
+    for (const [role, side, direction] of [['neo', 'L', -1], ['choi', 'R', 1]] as const) {
+      const rig = rigs[role], palm = rig.bones.get(`wrist_${side}`)!.localToWorld(new THREE.Vector3(.065 * direction, -.17, .01));
+      assert.ok((palm.z - received[0].position.z) * direction > .18, `${role} should reach the bundle from their own side`);
+      const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+      const { position, skinIndex, skinWeight } = skin.geometry.attributes;
+      const vertex = new THREE.Vector3();
+      for (const finger of [2, 3]) {
+        const joint = skin.skeleton.bones.indexOf(rig.bones.get(`finger${finger}-3_${side}`)!);
+        let nearest = Infinity;
+        for (let i = 0; i < position.count; i++) for (let k = 0; k < 4; k++) {
+          if (skinIndex.getComponent(i, k) !== joint || skinWeight.getComponent(i, k) < .8) continue;
+          nearest = Math.min(nearest, cashBounds.distanceToPoint(skin.getVertexPosition(i, vertex).applyMatrix4(skin.matrixWorld)));
+          break;
+        }
+        assert.ok(nearest < .045, `${role}'s finger ${finger} should meet the bill bundle: ${nearest}`);
+      }
+    }
+    const withdrawing = frame('payment', 2.85)[0];
+    const released = rigs.choi.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(.065, -.17, .01));
+    assert.ok(released.z - withdrawing.position.z > .35, 'Choi withdraws the empty hand once Neo has the bills');
     assert.deepEqual(frame('handover', 2.299, true).map(({ role, kind }) => [role, kind]), [['neo', 'disc']]);
     assert.deepEqual(frame('handover', 2.301, true).map(({ role, kind }) => [role, kind]), [['choi', 'disc']]);
     const shoes = rigs.neo.root.getObjectByName('shoes01') as THREE.SkinnedMesh;

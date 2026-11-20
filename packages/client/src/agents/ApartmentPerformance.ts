@@ -266,10 +266,14 @@ export class ApartmentPerformance {
       }
       this.bone('spine').rotation.x += .12 * hold; this.bone('chest').rotation.x += .14 * hold;
       root.updateWorldMatrix(true, true);
-      const diskGrip = new THREE.Vector3(0, .17, diskSide === 'R' ? -.125 : .125), cashGrip = new THREE.Vector3(cashSide === 'R' ? -.18 : .18, .17, 0);
+      const diskGrip = new THREE.Vector3(0, .17, diskSide === 'R' ? -.125 : .125);
+      const cashDirection = cashSide === 'R' ? -1 : 1;
+      // Approach from opposite sides, with the bills between the index and middle fingers.
+      const cashGrip = payment ? new THREE.Vector3(.18 * cashDirection + .025, -.048, -.23 * cashDirection) : new THREE.Vector3(.18 * cashDirection, .17, 0);
+      const cashHold = payment && role === 'choi' ? hold * (1 - smooth(t, 2.45, 3.35)) : hold;
       if (exchangesCash && fittedCash) this.hand(cashSide, new THREE.Vector3(cashSide === 'R' ? -.5 : .5, 2.5, .38), 1, true);
       if (!payment) this.hand(cartridge ? diskSide : 'R', this.local(-.35, 2.9 + (cartridge ? diskGrip.y : 0), 11.65 + (cartridge ? diskGrip.z : 0)), hold, cartridge);
-      if (exchangesCash) this.hand(fittedCash ? cashSide : 'L', this.local(.4 + (fittedCash ? cashGrip.x : 0), 2.82 + (fittedCash ? cashGrip.y : 0), 11.65), hold, fittedCash);
+      if (exchangesCash) this.hand(fittedCash ? cashSide : 'L', this.local(.4 + (fittedCash ? cashGrip.x : 0), 2.82 + (fittedCash ? cashGrip.y : 0), 11.65 + cashGrip.z), cashHold, fittedCash);
       root.updateWorldMatrix(true, true);
       if (!payment && !cartridge && role === (t < 2.3 ? 'neo' : 'choi')) { this.disk.visible = true; this.disk.position.copy(root.worldToLocal(this.bone('wrist_R').localToWorld(new THREE.Vector3(.065, -.17, .01)))); }
       if (exchangesCash && role === (t < 2.3 ? 'choi' : 'neo')) {
