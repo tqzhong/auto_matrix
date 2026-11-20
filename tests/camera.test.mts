@@ -2118,6 +2118,11 @@ test('the club whisper keeps Trinity visible beside Neo and first person can sti
     const neo = new THREE.Sphere(new THREE.Vector3(center.x + 7, center.y + 3.02, center.z - 4.1), .34);
     const ray = new THREE.Ray(game.camera.position, face.clone().sub(game.camera.position).normalize());
     assert.equal(ray.intersectsSphere(neo), false, 'Neo must not obscure Trinity’s face during her warning');
+    const fromFace = game.camera.position.clone().sub(face).setY(0).normalize();
+    assert.ok(fromFace.dot(new THREE.Vector3(.77, 0, .64)) > .55, 'the close shot sees Trinity’s eyes from in front of her cheek');
+    const forehead = face.clone().add(new THREE.Vector3(0, .31, 0)).project(game.camera);
+    const chin = face.clone().add(new THREE.Vector3(0, -.36, 0)).project(game.camera);
+    assert.ok(forehead.y - chin.y > .52, `the warning remains a close shot at aspect ${aspect}`);
     const screen = face.project(game.camera); assert.ok(Math.abs(screen.x) < .8 && Math.abs(screen.y) < .8);
   }
   game.camera.aspect = 16 / 9;
