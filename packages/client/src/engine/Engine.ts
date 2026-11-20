@@ -465,7 +465,7 @@ export class Engine {
       || resumeOnLanding && (meeting?.scene === 'm2_persephone' || meeting?.scene === 'm2_mountain'
       || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_ship_lost' || meeting?.scene === 'm2_stop_sentinels' || meeting?.scene === 'm2_medical'
       || meeting?.scene === 'm3_trainman' || meeting?.scene === 'm3_oracle_request' || meeting?.scene === 'm3_trainman_chase'
-      || meeting?.scene === 'm3_hel_garage' || meeting?.scene === 'm3_maggie_discovery' || meeting?.scene === 'm3_bane');
+      || meeting?.scene === 'm3_hel_garage' || meeting?.scene === 'm3_hel_bargain' || meeting?.scene === 'm3_maggie_discovery' || meeting?.scene === 'm3_bane');
     this.filmSets.prepareSecondOracle(this.renderer, this.camera, player?.id === meeting?.actor || resumeSecondOracle ? meeting : undefined,
       id => (id === 'seraph' && (meeting?.scene === 'm2_departure' || meeting?.scene === 'm3_trainman' || meeting?.scene === 'm3_oracle_request')
         || id === 'oracle' && (meeting?.scene === 'm2_backdoors' || meeting?.scene === 'm3_trainman')

@@ -576,6 +576,37 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     enter('m2_departure', 0);
     assert.equal(disposals, 1);
   });
+  for (const resume of [false, true]) await t.test(`the ${resume ? 'saved' : 'live'} Hel standoff transfers the prepared Mobil platform to Neo`, t => {
+    const trinity = world.agents.get('trinity')!, hel = FILM_SCENE_BY_ID.m3_hel_bargain;
+    const standoff = (step: number) => {
+      Object.assign(journey, { actor: trinity.id, scene: hel.id, step });
+      Object.assign(trinity, { position: filmEntry(hel), isInMatrix: true, currentLocation: hel.set });
+      sets.update(trinity, sandbox, 0);
+    };
+    t.after(() => { journey.actor = neo.id; enter('m2_departure', 0); });
+    standoff(4); preview = undefined; prepare(); assert.ok(!preview);
+    standoff(5);
+    if (resume) sets.update(undefined, sandbox, 0);
+    const platform = warm('mobil-platform-support', resume) as THREE.Mesh;
+    const floorMirror = preview!.getObjectByName('mobil-polished-platform')!;
+    const original = floorMirror.onBeforeRender;
+    const slots = pointSlots(preview!);
+    assert.ok(compiled.has(platform));
+    standoff(5);
+    assert.ok(!scene.getObjectByName(platform.name));
+
+    Object.assign(journey, { actor: neo.id, scene: 'm3_mobil_release', step: 0 });
+    assert.equal(sets.update(trinity, sandbox, 0)?.id, hel.set);
+    prepare();
+    enter('m3_mobil_release', 0);
+    assert.equal(scene.getObjectByName(platform.name), platform);
+    assert.equal(scene.getObjectByName(floorMirror.name), floorMirror);
+    assert.notEqual(floorMirror.onBeforeRender, original);
+    assert.equal(pointSlots(scene), slots);
+    let disposals = 0; platform.geometry.addEventListener('dispose', () => disposals++);
+    enter('m2_departure', 0);
+    assert.equal(disposals, 1);
+  });
   await t.test('Mobil prepares the Oracle apartment with its open entrance and intact vase', t => {
     enter('m3_trainman', 2); preview = undefined; prepare(); assert.ok(!preview);
     enter('m3_trainman', 3);
