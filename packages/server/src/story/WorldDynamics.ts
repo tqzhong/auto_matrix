@@ -20,7 +20,7 @@ export class WorldDynamics {
       ? journey.actor : undefined;
     const meetingFighter = journey?.scene === 'm2_meeting' && !journey.visiting
       && ['breach', 'combat', 'departure_ready', 'departing'].includes(journey.reloaded?.phase ?? '') ? journey.actor : undefined;
-    const helEntry = journey?.scene === 'm3_hel_entry' && !journey.visiting;
+    const helRescue = (journey?.scene === 'm3_hel_entry' || journey?.scene === 'm3_hel_bargain') && !journey.visiting;
     for (const agent of this.world.agents.values()) {
       const mind = agent.mind;
       if (!mind || agent.status !== 'alive') continue;
@@ -33,8 +33,9 @@ export class WorldDynamics {
       const training = action?.parameters.training as TrainingGesture | undefined;
       const jumpInjury = training?.role === 'neo' && (training.kind === 'jump_fall' || training.kind === 'jump_return');
       const tendingNeo = agent.id === 'tank' && action?.parameters.theOne;
-      const inHelRescue = helEntry && (agent.id === journey.actor || action?.parameters.helElevator !== undefined);
-      if (resting && mind.stress < 20 && !jumpInjury && !tendingNeo && !inHelRescue && agent.id !== rooftopInjuredActor && agent.id !== meetingFighter && !action.parameters.crosscut && !action.parameters.rescue
+      const helRescuer = helRescue && (agent.id === journey.actor
+        || agent.currentLocation === 'film_club_hel' && (agent.id === 'morpheus' || agent.id === 'seraph'));
+      if (resting && mind.stress < 20 && !jumpInjury && !tendingNeo && !helRescuer && agent.id !== rooftopInjuredActor && agent.id !== meetingFighter && !action.parameters.crosscut && !action.parameters.rescue
         && !action.parameters.government && !action.parameters.sourcePortal && !action.parameters.helGarage)
         agent.health = Math.min(agent.maxHealth, agent.health + 0.15);
       const destination = agent.currentAction?.parameters.location as string | undefined;

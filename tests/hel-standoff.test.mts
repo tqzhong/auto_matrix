@@ -3,8 +3,10 @@ import test from 'node:test';
 import { HEL_TRIO, FILM_SCENE_BY_ID, FILM_SETS, filmPosition, filmStepPosition, groundHeight } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { RelationshipGraph } from '../packages/server/src/agents/RelationshipGraph.js';
+import { MemoryManager } from '../packages/server/src/memory/MemoryManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
-import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
@@ -51,6 +53,18 @@ test('living Trinity keeps her wounds when retrying a failed standoff', () => {
   const h = setup(); h.state.step = 3; h.state.helBargain!.phase = 'failed';
   h.film.command(h.trinity, 'retry', 1);
   assert.equal(h.state.helBargain?.phase, 'ready'); assert.equal(h.trinity.health, 47);
+});
+
+test('the world clock preserves the coat-check injuries while the rescuers wait and surrender', () => {
+  const h = setup(), morpheus = h.world.agents.get('morpheus')!;
+  morpheus.health = 23; h.trinity.mind!.stress = morpheus.mind!.stress = 0;
+  const dynamics = new WorldDynamics(h.world, new MemoryManager(), new RelationshipGraph(), () => {});
+  dynamics.neoStory = true;
+  h.film.restoreHelBargain(1); dynamics.tick(1, h.state);
+  assert.deepEqual([h.trinity.health, morpheus.health], [47, 23]);
+  h.film.command(h.trinity, 'act', 2); dynamics.tick(2, h.state);
+  assert.equal(h.state.helBargain?.phase, 'disarming');
+  assert.deepEqual([h.trinity.health, morpheus.health], [47, 23]);
 });
 
 test('the Hel VIP platform and every visible tread share the actual floor height', () => {
