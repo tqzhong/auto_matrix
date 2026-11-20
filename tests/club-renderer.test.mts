@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { CLUB, CLUB_DANCERS, CLUB_ROUTE, FILM_SETS, clubRoot, filmPosition, playerBlocked, type ClubGesture } from '@auto_matrix/shared';
+import { CLUB, CLUB_CAGE, CLUB_DANCERS, CLUB_ROUTE, FILM_SETS, clubRoot, filmPosition, playerBlocked, type ClubGesture } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { ClubSetRenderer } from '../packages/client/src/engine/ClubSetRenderer.js';
@@ -173,6 +173,47 @@ test('the moving dance lights illuminate the crowd from behind at shoulder heigh
   }
 });
 
+test('the rear cage replaces a solid speaker with bars and an elevated dancer inside the same footprint', async t => {
+  const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(assets.get(url.split('/').at(-1)!.replace('.glb', ''))!));
+  const root = new THREE.Group(), club = new ClubSetRenderer(root);
+  t.after(() => club.dispose());
+  await club.ready; root.updateMatrixWorld(true);
+  const venue = root.getObjectByName('white-rabbit-club')!;
+  const stage = venue.children.filter(object => object instanceof THREE.Mesh);
+  const { x: stageX, z: stageZ, width, depth, height } = CLUB_CAGE;
+  const window = new THREE.Raycaster(new THREE.Vector3(stageX, 3.5, -21), new THREE.Vector3(0, 0, -1), 0, 4);
+  assert.equal(window.intersectObjects(stage, false).length, 0, 'there is an open line of sight through the bars');
+  const bar = new THREE.Raycaster(new THREE.Vector3(stageX + .305, 3.5, -21), new THREE.Vector3(0, 0, -1), 0, 4);
+  assert.ok(bar.intersectObjects(stage, false).length > 0, 'the frame has a visible bar near the aperture');
+  const floor = new THREE.Raycaster(new THREE.Vector3(stageX, 2, stageZ), new THREE.Vector3(0, -1, 0), 0, 2);
+  const [deck] = floor.intersectObjects(stage, false);
+  assert.ok(deck && deck.point.y > .6 && deck.point.y < .9, 'the platform supports a raised dancer');
+  floor.ray.origin.set(stageX + width / 2 - .08, 2, stageZ + depth / 2 - .08);
+  const [corner] = floor.intersectObjects(stage, false);
+  assert.ok(corner && Math.abs(corner.point.y - deck.point.y) < .015, 'the floor extends to the existing rectangular collision corner');
+  const dancer = venue.getObjectByName('club-dancer-15')!;
+  assert.ok(dancer.position.distanceTo(deck.point) < .015);
+  assert.equal(playerBlocked(filmPosition('film_white_rabbit_club', stageX, stageZ), true, .7), true);
+  assert.equal(playerBlocked(filmPosition('film_white_rabbit_club', stageX, stageZ + 2.25), true, .7), false);
+  const point = new THREE.Vector3();
+  for (const time of [0, .57, 1.14, 1.71, 2.28, 2.85]) {
+    club.update(time); root.updateMatrixWorld(true);
+    dancer.traverse(mesh => {
+      if (!(mesh instanceof THREE.SkinnedMesh)) return;
+      const vertices = mesh.geometry.getAttribute('position').count;
+      let outermost = 0, tallest = 0;
+      for (let i = 0; i < vertices; i++) {
+        mesh.getVertexPosition(i, point).applyMatrix4(mesh.matrixWorld);
+        outermost = Math.max(outermost, Math.hypot((point.x - stageX) / (width / 2 - .115), (point.z - stageZ) / (depth / 2 - .115)));
+        tallest = Math.max(tallest, point.y);
+      }
+      assert.ok(outermost < 1 && tallest < height - .045, `${mesh.name} leaves the cage at ${time}: ${outermost}, ${tallest}`);
+    });
+  }
+});
+
 test('the whisper has dancers in the third-person background with clear walking and approach lanes', async t => {
   const assets = new Map(await Promise.all(['club-male', 'club-female'].map(async id => [id, await geometry(id)] as const)));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
@@ -197,7 +238,7 @@ test('the whisper has dancers in the third-person background with clear walking 
     visible += Number(nearView(head, eye, 95));
     entranceSilhouettes += Number(nearView(head, entrance, 6.5));
     closeBackground += Number(nearView(head, shoulder, 8));
-    assert.equal(playerBlocked(filmPosition('film_white_rabbit_club', mark.x, mark.z), true, 1), false, `dancer ${i} enters a set obstacle`);
+    assert.equal(playerBlocked(filmPosition('film_white_rabbit_club', mark.x, mark.z), true, 1), mark.y > 0, `dancer ${i} occupies the wrong part of the set`);
     for (const path of [walkway, CLUB_ROUTE]) for (let j = 1; j < path.length; j++) {
       const line = new THREE.Line3(new THREE.Vector3(path[j - 1].x, 0, path[j - 1].z), new THREE.Vector3(path[j].x, 0, path[j].z));
       const point = new THREE.Vector3(mark.x, 0, mark.z);
@@ -272,7 +313,7 @@ test('dancers keep a planted shoe on the floor while shifting weight or lifting 
       for (let vertex = 0; vertex < positions.count; vertex++) {
         const side = Number(positions.getX(vertex) > 0);
         shoe.getVertexPosition(vertex, point).applyMatrix4(shoe.matrixWorld);
-        soles[side] = Math.min(soles[side], point.y);
+        soles[side] = Math.min(soles[side], point.y - CLUB_DANCERS[i].y);
       }
       const lowest = Math.min(...soles);
       assert.ok(lowest >= -.02 && lowest <= .015, `dancer ${i} frame ${frame}: support sole is at ${lowest}`);

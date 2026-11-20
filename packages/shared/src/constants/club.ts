@@ -14,17 +14,21 @@ export const CLUB = {
 } as const;
 export const CLUB_ROUTE = [{ x: -9, z: -17 }, { x: -4, z: -17 }, { x: 7, z: -12 }, CLUB.trinity];
 const tableRadius = 1.8;
+export const CLUB_CAGE = { x: -5, z: -25, width: 2.5, depth: 2.7, height: 5.6, deck: .72 };
 export const CLUB_OBSTACLES: FilmObstacle[] = [
   { x: 17.8, z: -8, width: 3.2, depth: 21, height: 2.65 },
   ...[-12, 12].flatMap(x => [-18, 0, 18].map(z => ({ x, z, width: 1.3, depth: 1.3, height: 11 }))),
-  ...[-14, -5, 5, 14].map(x => ({ x, z: -25, width: 2.5, depth: 2.7, height: 5.6 })),
+  ...[-14, -5, 5, 14].map(x => x === CLUB_CAGE.x ? CLUB_CAGE : { x, z: -25, width: 2.5, depth: 2.7, height: 5.6 }),
   ...[-16.5, 16.5].map(x => ({ x, z: 12, width: tableRadius * 2, depth: tableRadius * 2, height: 2.3, circleRadius: tableRadius })),
 ];
 // Leave the entrance aisle, conversation and Trinity's approach free of dancers.
 export const CLUB_DANCERS = [
-  [-6.4, 11.3], [-3.43, 13.2], [3.35, 13.1], [6.7, 11.05], [10.3, -16.2], [-3.5, -1.5], [13.5, -6.7], [10.25, -8.8],
-  [-.4, -10.8], [3.85, -8.7], [-8.4, -8.65], [10, -21], [12, -13.3], [14.55, -20.5], [-5.05, -21.6], [-1.8, -20.5],
-].map(([x, z], i) => ({ x, z, yaw: i * 2.31, scale: .88 + i % 4 * .05 }));
+  ...[
+    [-6.4, 11.3], [-3.43, 13.2], [3.35, 13.1], [6.7, 11.05], [10.3, -16.2], [-3.5, -1.5], [13.5, -6.7], [10.25, -8.8],
+    [-.4, -10.8], [3.85, -8.7], [-8.4, -8.65], [10, -21], [12, -13.3], [14.55, -20.5], [-5.05, -21.6],
+  ].map(([x, z], i) => ({ x, y: 0, z, yaw: i * 2.31, scale: .88 + i % 4 * .05 })),
+  { x: CLUB_CAGE.x, y: CLUB_CAGE.deck, z: CLUB_CAGE.z, yaw: .2, scale: .88 },
+];
 const smooth = (value: number) => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
 
 export function clubLocked(journey: FilmJourney): boolean {

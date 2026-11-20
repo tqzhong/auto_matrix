@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { CLUB_DANCERS, CLUB_OBSTACLES } from '@auto_matrix/shared';
+import { CLUB_CAGE, CLUB_DANCERS, CLUB_OBSTACLES } from '@auto_matrix/shared';
 import { reach } from '../agents/SpoonPerformance.js';
 
 interface DanceFoot { thigh: THREE.Bone; shin: THREE.Bone; ankle: THREE.Bone; mark: THREE.Vector3 }
@@ -115,7 +115,7 @@ export class ClubSetRenderer {
       for (const offset of [-.45, .45]) this.cylinder(bronze, table.x + offset, 2.5, table.z, .14, .42);
     }
     // PA stacks: inset cones and guards, not luminous blocks.
-    for (const speaker of CLUB_OBSTACLES.filter(o => o.height === 5.6)) {
+    for (const speaker of CLUB_OBSTACLES.filter(o => o.height === 5.6 && o !== CLUB_CAGE)) {
       this.box(dark, speaker.x, 2.8, speaker.z, speaker.width, speaker.height, speaker.depth);
       for (const y of [1.2, 3.3]) {
         const cone = this.mesh(new THREE.ConeGeometry(.9, .28, 24, 1, true), metal, speaker.x, y, -23.57); cone.rotation.x = -Math.PI / 2;
@@ -125,9 +125,22 @@ export class ClubSetRenderer {
       }
       this.box(metal, speaker.x, 4.88, -23.59, 1.7, .5, .1);
     }
+    const { x: cageX, z: cageZ, width, depth, height, deck } = CLUB_CAGE;
+    this.box(dark, cageX, deck / 2, cageZ, width, deck, depth);
+    for (const y of [deck + .035, height - .045]) {
+      const rail = this.mesh(new THREE.TorusGeometry(width / 2 - .07, .045, 8, 32), metal, cageX, y, cageZ);
+      rail.rotation.x = Math.PI / 2; rail.scale.y = depth / width;
+    }
+    for (let i = 0; i < 12; i++) {
+      const angle = (i + .5) * Math.PI / 6;
+      this.cylinder(metal, cageX + Math.cos(angle) * (width / 2 - .07), (height + deck) / 2,
+        cageZ + Math.sin(angle) * (depth / 2 - .07), .045, height - deck);
+    }
     for (const x of [-7, 7]) {
-      this.box(metal, x, 9.4, -16, 4.3, .18, .5); this.box(glow, x, 9.28, -16, 3.9, .055, .12);
-      const lamp = new THREE.PointLight(0xc3cba9, 65, 27, 2); lamp.position.set(x, 8.8, -16); this.root.add(lamp);
+      const cage = x < 0, fixtureX = cage ? cageX : x, fixtureY = cage ? 6.2 : 9.4, fixtureZ = cage ? -27.25 : -16;
+      this.box(metal, fixtureX, fixtureY, fixtureZ, 4.3, .18, .5); this.box(glow, fixtureX, fixtureY - .12, fixtureZ, 3.9, .055, .12);
+      const lamp = new THREE.PointLight(cage ? 0x91c6a0 : 0xc3cba9, cage ? 50 : 65, 27, 2);
+      lamp.position.set(fixtureX, fixtureY - .6, fixtureZ); this.root.add(lamp);
     }
     const key = new THREE.SpotLight(0xa4cdb8, 125, 26, .58, .75, 2);
     key.name = 'club-conversation-light'; key.position.set(3.2, 6.6, -7.8); key.target.position.set(6.65, 3.65, -4.35);
@@ -228,12 +241,12 @@ export class ClubSetRenderer {
         const trousers = object.name === 'Tailored_trousers';
         if (trousers || object.name === 'Tailored_coat_upper' || object.name === 'Black_crew_neck') {
           const mat = (object.material as THREE.MeshStandardMaterial).clone();
-          mat.color.setHex(trousers ? trouserColor : topColor);
+          mat.color.setHex(trousers ? trouserColor : position.y ? 0xb2bba5 : topColor);
           if (trousers) mat.roughness = trouserRoughness;
           object.material = mat; this.materials.add(mat);
         }
       });
-      root.position.set(position.x, 0, position.z); root.rotation.y = position.yaw; root.scale.setScalar(position.scale); this.root.add(root);
+      root.position.set(position.x, position.y, position.z); root.rotation.y = position.yaw; root.scale.setScalar(position.scale); this.root.add(root);
       const feet = ['R', 'L'].map(side => {
         const thigh = bones.get('hip_' + side)!, shin = bones.get('knee_' + side)!, ankle = bones.get('ankle_' + side)!;
         return { thigh, shin, ankle, mark: root.worldToLocal(ankle.getWorldPosition(new THREE.Vector3())) };
@@ -251,7 +264,7 @@ export class ClubSetRenderer {
       bones.get('head')!.rotation.set(Math.sin(beat) * .04, Math.sin(beat * .24) * .17, weight * .3);
       for (const side of ['R', 'L']) {
         const sign = side === 'R' ? 1 : -1; const sway = Math.sin(beat + sign) * .12;
-        bones.get('shoulder_' + side)!.rotation.set(-.3 + sway, 0, -sign * (.1 + (i % 3 === 0 ? .7 : .08)));
+        bones.get('shoulder_' + side)!.rotation.set(-.3 + sway, 0, -sign * (.1 + (i % 3 === 0 && root.position.y === 0 ? .7 : .08)));
         bones.get('elbow_' + side)!.rotation.set(-.6 + sway, 0, 0);
       }
       root.getWorldQuaternion(this.dancerFacing);
