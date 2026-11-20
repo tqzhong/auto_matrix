@@ -5,6 +5,7 @@ import { logosShipPose, logosShipPoint, logosFlightSet } from '@auto_matrix/shar
 import { LOGOS_WRECK, LOGOS_COCKPIT } from '@auto_matrix/shared';
 import { MAGGIE_DISCOVERY, HAMMER_MEDICAL, maggieDiscoveryLocked, maggieDiscoveryRoot } from '@auto_matrix/shared';
 import { sourcePortalLocked } from '@auto_matrix/shared';
+import { ARCHITECT_ROOM } from '@auto_matrix/shared';
 import { ORACLE_LAST, oracleLastLocked } from '@auto_matrix/shared';
 import { baneInquiryLocked } from '@auto_matrix/shared';
 import { HAMMER_BRIEFING, hammerBriefingLocked } from '@auto_matrix/shared';
@@ -155,6 +156,7 @@ export class PlayerControls {
   hammerPreparation?: HammerHandover;
   openingHotel?: OpeningHotelEncounter;
   templeSpeech = false;
+  architectDialogue = false;
   private openingTracePlaying = false;
   hotelAlleyGuard?: Vector3;
   climbing = false;
@@ -3326,6 +3328,19 @@ export class PlayerControls {
       const { center } = FILM_SETS.film_zion_bedroom;
       const focus = new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z).lerp(this.cameraTarget, .24);
       const eye = new THREE.Vector3(this.position.x + (atDoor ? -4.2 : 5), this.position.y + 4.4, this.position.z - 3.6);
+      this.camera.position.lerp(eye, resetCamera ? 1 : 1 - Math.exp(-10 * delta));
+      this.camera.lookAt(focus);
+    } else if (this.architectDialogue && state.currentLocation === 'film_architect_room' && state.status === 'alive'
+      && !this.dragging && now - this.lastLook > 700 && this.motion.speed < .1 && this.motion.grounded
+      && !this.movementForward && !this.movementRight) {
+      const { center } = FILM_SETS.film_architect_room, { chair } = ARCHITECT_ROOM;
+      const x = center.x + chair.x, z = center.z + chair.z;
+      const focus = new THREE.Vector3(THREE.MathUtils.lerp(x, this.position.x, .48), center.y + 1.45,
+        THREE.MathUtils.lerp(z, this.position.z, .48));
+      // Look across both actors, with enough of a frontal angle to see the seated speaker.
+      const angle = THREE.MathUtils.clamp(Math.atan2(this.position.x - x, this.position.z - z) * .6, -.42, .42);
+      const distance = Math.max(6.6, 5.8 / this.camera.aspect);
+      const eye = new THREE.Vector3(focus.x + Math.cos(angle) * distance, center.y + 2.9, focus.z + 2.7 - Math.sin(angle) * distance);
       this.camera.position.lerp(eye, resetCamera ? 1 : 1 - Math.exp(-10 * delta));
       this.camera.lookAt(focus);
     } else if (this.templeSpeech && !this.dragging && now - this.lastLook > 700 && this.motion.speed < .1) {
