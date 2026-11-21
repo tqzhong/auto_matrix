@@ -3376,9 +3376,17 @@ export class PlayerControls {
       const lafayetteWalking = state.currentLocation === 'film_lafayette' && !this.performing;
       const dojoWalking = state.currentLocation === 'film_kungfu_dojo';
       const officeFollow = state.currentLocation === 'film_metacortex_floor';
+      const lobbyRearWall = METACORTEX.center.z + METACORTEX.depth / 2;
+      const metacortexLobby = state.isInMatrix && this.position.y < 8
+        && Math.abs(this.position.x - METACORTEX.center.x) < METACORTEX.width / 2
+        && Math.abs(this.position.z - lobbyRearWall) < 16;
+      const lobbyWallBlocksCamera = (point: THREE.Vector3) => metacortexLobby
+        && (this.position.z < lobbyRearWall
+          ? point.z >= lobbyRearWall - .5 : point.z <= lobbyRearWall + .5)
+        && Math.abs(point.x - METACORTEX.center.x) < METACORTEX.width / 2;
       const subwayCenter = state.currentLocation === 'film_subway_platform' ? FILM_SETS.film_subway_platform.center : undefined;
       const columnBlocks = (point: THREE.Vector3) => subwayCenter && subwayCameraBlocked(point.x - subwayCenter.x, point.y - subwayCenter.y + 1, point.z - subwayCenter.z, .5);
-      const closeFollow = lafayetteWalking || dojoWalking || officeFollow || subwayCenter !== undefined || Boolean(this.motion.mobilRefusal);
+      const closeFollow = lafayetteWalking || dojoWalking || officeFollow || metacortexLobby || subwayCenter !== undefined || Boolean(this.motion.mobilRefusal);
       if (closeFollow) for (let step = 0; step < 4 && (columnBlocks(pivot) || playerBlocked(pivot, state.isInMatrix, .5, this.structures)); step++) pivot.lerp(this.cameraTarget, .5);
       const followDistance = hotelPickup ? (this.camera.aspect < .8 ? 13 : 11.5) - 5.5 * pickupFraming
         : wreckCabin || doorwayView ? 4.2 : this.motion.engineering ? 6 : lafayetteWalking || state.currentLocation === 'film_zion_personnel' || state.currentLocation === 'film_zion_bedroom' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
@@ -3410,7 +3418,7 @@ export class PlayerControls {
           ? primaryCameraBlocked(point.x - center.x, point.y - center.y + 1, point.z - center.z, .5)
           // Hotel floor support is checked at a standing body's foot height.
           : playerBlocked(lafayetteWalking ? { ...point, y: Math.min(point.y, this.position.y + 2) } : point, state.isInMatrix, 0.5, this.structures);
-        if (blocked || columnBlocks(point) || point.y > cameraCeiling(point)) { cameraDistance = Math.max(.25, distance - .5); break; }
+        if (blocked || columnBlocks(point) || lobbyWallBlocksCamera(point) || point.y > cameraCeiling(point)) { cameraDistance = Math.max(.25, distance - .5); break; }
       }
       // A wall that shortens the follow distance also raises the camera above the player's silhouette.
       if (closeFollow) pivot.y += 2.1 * (1 - THREE.MathUtils.smoothstep(cameraDistance, 1.5, 4.5));
@@ -3430,7 +3438,7 @@ export class PlayerControls {
         const sweep = this.camera.position.clone().sub(pivot), length = sweep.length(); sweep.normalize();
         for (let distance = .25; distance <= length; distance += .25) {
           const point = pivot.clone().addScaledVector(sweep, distance); point.y = Math.min(point.y, this.position.y + 2);
-          if (columnBlocks(point) || playerBlocked(point, state.isInMatrix, .5, this.structures)) {
+          if (columnBlocks(point) || lobbyWallBlocksCamera(point) || playerBlocked(point, state.isInMatrix, .5, this.structures)) {
             this.camera.position.copy(pivot).addScaledVector(sweep, Math.max(0, distance - .5)); break;
           }
         }
