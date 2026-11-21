@@ -5262,7 +5262,7 @@ export class FilmStorySystem {
     if (dojo.dodged || threat.attackAt === undefined || threat.attackAt <= tick) return false;
     dojo.dodged = true; dojo.combo = 0; dojo.counterUntil = tick + DOJO_COUNTER_TICKS;
     threat.stunUntil = dojo.counterUntil;
-    state.lastText = '你看见了 Morpheus 的起手并闪到攻击线外。三秒内按 F 完成刺拳、直拳、正蹬三段反击。';
+    state.lastText = '你看见了 Morpheus 的起手并闪到攻击线外。八秒内按 F 完成刺拳、直拳、正蹬三段反击。';
     agent.currentAction = { type: 'defend', parameters: { player: true, resolved: true }, startedAt: tick, duration: 1, progress: 0 };
     return true;
   }
@@ -5325,7 +5325,7 @@ export class FilmStorySystem {
     if (threat) {
       threat.stunUntil = tick + 2; threat.lastStrike = tick - 5; delete threat.attackAt;
     }
-    state.lastText = '三秒反击窗口结束。Morpheus 收回脚步重新架势；观察下一次红色起手再闪避。';
+    state.lastText = '八秒反击窗口结束。Morpheus 收回脚步重新架势；观察下一次红色起手再闪避。';
   }
   seraphFailed(agent: AgentState): void {
     const state = this.state;

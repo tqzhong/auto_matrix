@@ -18,7 +18,7 @@ export const DOWNLOAD_OPERATOR = { x: 11.8, z: -8, yaw: Math.PI,
 export const DOWNLOAD_INVITATION = { from: { x: -1.8, z: -8.8 }, to: { x: 2.3, z: -5.1 }, start: 5.8, duration: 3.6 } as const;
 
 export const TRAINING_SECONDS = { download: 10, jump: 6, jump_fall: 6, jump_return: 12, red_dress: 12 } as const;
-export const DOJO_COMBO_WINDOW = 3;
+export const DOJO_COMBO_WINDOW = 8;
 export const DOWNLOAD_CHAIR = {
   neo: { x: 6.5, z: -5, yaw: -Math.PI / 2 },
   tank: DOWNLOAD_OPERATOR,
