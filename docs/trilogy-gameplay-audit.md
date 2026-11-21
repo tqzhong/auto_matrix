@@ -545,6 +545,10 @@ Choi 的髭须沿现有人脸蒙皮着色。Dujour 的多道银色颈圈按原�
 
 当前 **4/9 项通过**，其余五项不计部分通过，综合质量保持 **2/42 组**。只有九项全部达标才签收 1-03。
 
+### 2026-11-22 工作日签收截图版本核对
+
+复看了 `../auto_matrix-recovery-2026-11-18/quality-office-workday-follow-1121b/shots/office-workday-follow-1121b-parcel-signing-view.png`（1920×1080，SHA-256 `9e0fc1b5b495091645844268195791ce31dd6b7796783e7de5ddd0314f52ec8e`）。该历史实跑的 `FilmSetRenderer.ts` 与 `OfficeSetRenderer.ts` 哈希仍与当前源码一致，但截图对应的 `PlayerControls.ts` 是 `fc03ab3a…`，当前文件为 `08fe8ca3…`；生产记录也明确 `filmQualityAccepted=false`。因此此图可作签收交互的历史画面参考，不能验证最近的大堂相机修复，也不能单独证明美术或人物项达标。
+
 ### 第 543 刻返家到接听
 
 - **剧情覆盖**　本轮照明版第 543 刻返家档接续，实走就寝、09:15 闹钟、出门、步行通勤、乘梯、主管训话、回隔间签收和接听。第 992 刻接听档保留七个节点、2140 余额与 `care`。
