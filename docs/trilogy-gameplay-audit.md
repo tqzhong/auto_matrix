@@ -700,7 +700,7 @@ Neo 起身后按出门视角和四个街道点光源槽位，分帧准备可见�
 
 复核旧版检查点截图 `output/trilogy-club-cuts-1120ah/office-street-cast-clean-candidate-1121a/screenshots/office-lobby-view.png` 与同轮捕获数据后，确认相机朝向和 Neo 保存朝向一致，问题是第三人称跟随相机越过 Metacortex 后墙：检查点位于 `(1139.976, 851.362)`，旧相机 z 为 `862.560`，后墙 z 为 `860`。死亡重生朝向修复不覆盖这条正常冷恢复路径。
 
-在 `PlayerControls` 为地面入口附近增加相机专用后墙边界，并把同侧约束用于相机跟随距离和插值扫掠；玩家仍可正常穿过入口。约束按相对门面的空间距离生效，不依赖 `currentLocation`，因此从 `metacortex_office` 切至 `times_square` 时不会中断。新回归先复现相机越墙，再覆盖室内恢复和 `times_square` 室外恢复两种视角。修复后同一室内检查点相机 z 为 `859.166`，角色在室外时相机 z 为 `860.744`，均留在角色所在侧并距门面至少约 0.5 个单位。
+在 `PlayerControls` 为地面入口附近增加相机专用后墙边界，并把同侧约束用于相机跟随距离和插值扫掠；玩家仍可正常穿过入口。约束按相对门面的空间距离生效，不依赖 `currentLocation`，因此从 `metacortex_office` 切至 `times_square` 时不会中断。回归覆盖室内恢复、`times_square` 室外恢复，并以 `KeyW` 事件驱动本地移动预测连续走 72 帧穿过门面及场景切换，逐帧确认相机仍在 Neo 所在侧。修复后同一室内检查点相机 z 为 `859.166`，角色在室外时相机 z 为 `860.744`，均留在角色所在侧并距门面至少约 0.5 个单位；扩展后的门槛回归与重生镜头回归 **2/2 通过**。
 
 专项回归 `metacortex-camera-follow`、`player-respawn-camera` 与 `office-arrival`、`office-workday`、`office-window-ui`、`office-custody`、`office-custody-cold`、`interrogation`、`interrogation-preparation`、`office-interrogation-transition` 合计 **72/72 通过**；客户端 `tsc --noEmit` 与 `git diff --check` 通过。Desktop Commander 设备仍离线，本轮没有修复后的浏览器截图或真实操作；此为相机几何回归证据，不等同画面精修签收，1-03 九项未齐，综合质量仍为 **2/42 组**。
 
