@@ -694,7 +694,7 @@ Neo 起身后按出门视角和四个街道点光源槽位，分帧准备可见�
 
 ### 2026-11-21 1-03/1-04 代码级路线回归复核
 
-在当前 `0df1d9c7` 源码上重跑 `office-arrival`、`office-workday`、`office-window-ui`、`office-custody`、`office-custody-cold`、`interrogation`、`interrogation-preparation`、`office-interrogation-transition` 八组专项测试，**70/70 通过**。覆盖办公室来客与工作日交互、窗台目标、被捕押送、轿车离场、审讯阶段，以及暂停/断线/冷恢复/重试状态。此轮只复核了共享逻辑与模拟状态，没有浏览器操作或生产画面/声音/帧时样本；不替代成功与失败分支的现场体验，也不增加 1-03、1-04 或 42 组综合签收数。
+在当前 `0df1d9c7` 源码上重跑 `office-arrival`、`office-workday`、`office-window-ui`、`office-custody`、`office-custody-cold`、`interrogation`、`interrogation-preparation`、`office-interrogation-transition` 八组专项测试，**70/70 通过**；追加 `player-respawn-camera`，验证同场景死亡/重生后恢复镜头和移动朝向，**1/1 通过**。覆盖办公室来客与工作日交互、窗台目标、被捕押送、轿车离场、审讯阶段，以及暂停/断线/冷恢复/重试状态。旧大堂遮挡截图所用的 `PlayerControls` 与当前源码哈希不同，早于该镜头修复；当前版本仍缺大堂实机画面复查。此轮只复核了共享逻辑与模拟状态，没有浏览器操作或生产画面/声音/帧时样本；不替代成功与失败分支的现场体验，也不增加 1-03、1-04 或 42 组综合签收数。
 
 ## 1-04 审讯与第二次来电复验
 
