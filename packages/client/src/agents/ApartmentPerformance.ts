@@ -198,7 +198,14 @@ export class ApartmentPerformance {
     const ownsDisk = cartridge && (role === 'neo' && (phase === 'retrieving' && t >= APARTMENT_BOOK.pickup || phase === 'disk' || phase === 'handover' && t < 2.3)
       || role === 'choi' && (phase === 'handover' && t >= 2.3 || apartmentAfter(gesture, 'invitation')));
     const diskSide = role === 'choi' ? 'L' : 'R', cashSide = role === 'choi' ? 'R' : 'L';
-    if (ownsDisk && phase !== 'retrieving') this.hand(diskSide, new THREE.Vector3(diskSide === 'R' ? -.5 : .5, 2.5, .38), 1, true);
+    if (ownsDisk && phase !== 'retrieving') {
+      this.hand(diskSide, new THREE.Vector3(diskSide === 'R' ? -.5 : .5, 2.5, .38), 1, true);
+      for (let segment = 1; segment <= 3; segment++) {
+        this.bone(`finger3-${segment}_${diskSide}`).rotation.x = .55;
+        this.bone(`finger4-${segment}_${diskSide}`).rotation.x = .85;
+        this.bone(`finger5-${segment}_${diskSide}`).rotation.x = .85;
+      }
+    }
     if (role === 'neo' && apartmentAtComputer(phase)) {
       const pose = apartmentComputerPose(gesture), { seated, walking } = pose;
       const sleep = apartmentSleepWeight(gesture);

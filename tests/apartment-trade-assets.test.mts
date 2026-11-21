@@ -195,6 +195,42 @@ test('the actual Neo carries the collected cartridge into the handover and the d
     assert.equal(before[0].role, 'neo'); assert.equal(after[0].role, 'choi');
     assert.ok(before[0].position.distanceTo(after[0].position) < .015, `the receiver must take the same physical cartridge without a position jump: ${before[0].position.toArray()} -> ${after[0].position.toArray()}`);
     assert.ok(before[0].rotation.angleTo(after[0].rotation) < .03, 'handing over the cartridge cannot flip its orientation');
+    const fingertipGaps = (role: 'neo' | 'choi', side: 'R' | 'L') => {
+      const rig = rigs[role], prop = rig.root.getObjectByName('apartment-held-disc')!;
+      const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+      rig.root.updateWorldMatrix(true, true); skin.skeleton.update(); prop.updateWorldMatrix(true, true);
+      const triangles: THREE.Triangle[] = [], point = new THREE.Vector3(), nearest = new THREE.Vector3();
+      prop.traverse(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        const position = object.geometry.getAttribute('position'), index = object.geometry.index;
+        for (let i = 0; i < (index?.count ?? position.count); i += 3) {
+          const vertex = (j: number) => new THREE.Vector3().fromBufferAttribute(position, index?.getX(j) ?? j).applyMatrix4(object.matrixWorld);
+          triangles.push(new THREE.Triangle(vertex(i), vertex(i + 1), vertex(i + 2)));
+        }
+      });
+      const { position, skinIndex, skinWeight } = skin.geometry.attributes;
+      return [1, 2, 3, 4, 5].map(finger => {
+        const distal = rig.bones.get(`finger${finger}-3_${side}`)!, proximal = rig.bones.get(`finger${finger}-2_${side}`)!;
+        const joint = skin.skeleton.bones.indexOf(distal), origin = distal.getWorldPosition(new THREE.Vector3());
+        const axis = origin.clone().sub(proximal.getWorldPosition(new THREE.Vector3())).normalize(), tip = new THREE.Vector3();
+        let furthest = -Infinity;
+        for (let i = 0; i < position.count; i++) {
+          for (let k = 0; k < 4; k++) {
+            if (skinIndex.getComponent(i, k) !== joint || skinWeight.getComponent(i, k) < .8) continue;
+            skin.getVertexPosition(i, point).applyMatrix4(skin.matrixWorld);
+            const alongFinger = point.clone().sub(origin).dot(axis);
+            if (alongFinger > furthest) { furthest = alongFinger; tip.copy(point); }
+            break;
+          }
+        }
+        return triangles.reduce((gap, triangle) => Math.min(gap, triangle.closestPointToPoint(tip, nearest).distanceTo(tip)), Infinity);
+      });
+    };
+    for (const [role, side] of [['neo', 'R'], ['choi', 'L']] as const) {
+      frame('handover', role === 'neo' ? 2.299 : 2.301);
+      const gaps = fingertipGaps(role, side);
+      assert.ok(gaps.slice(2).every(gap => gap < .005), `${role}'s actual middle, ring and little fingertips should contact the cartridge within 5 mm during the handoff: ${gaps}`);
+    }
     const cashBefore = beforeFrame.filter(prop => prop.kind === 'cash'), cashAfter = afterFrame.filter(prop => prop.kind === 'cash');
     assert.equal(cashBefore.length, 1); assert.equal(cashAfter.length, 1);
     assert.equal(cashBefore[0].role, 'choi'); assert.equal(cashAfter[0].role, 'neo');
