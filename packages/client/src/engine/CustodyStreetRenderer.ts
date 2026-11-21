@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { ARREST_CAR, ARREST_BIKE, ARREST_WHEEL, arrestCarPose, arrestCarPoint, arrestDoor, arrestMirrorShot, type OfficeCustody } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
+import { sedanFenderGeometry, sedanPanelGeometry, sedanWindshieldPoints } from './SedanSurfaceGeometry.js';
 
 /** The sedan moves through the existing city; four hinged doors leave a real cabin. */
 export class CustodyStreetRenderer {
@@ -22,16 +23,19 @@ export class CustodyStreetRenderer {
     this.bike.name = 'office-arrest-motorcycle'; this.bike.position.set(ARREST_BIKE.x, 0, ARREST_BIKE.z); this.bike.rotation.y = ARREST_BIKE.yaw;
     this.root.add(this.car, this.bike);
     const paint = this.mat(0x0c1013, .22, .7), chrome = this.mat(0x8a9598, .26, .9), rubber = this.mat(0x141719, .83), leather = this.mat(0x232626, .75);
-    const glass = this.mat(0x667f84, .12, .15); glass.transparent = true; glass.opacity = .22; glass.depthWrite = false;
+    const glass = new THREE.MeshPhysicalMaterial({ color: 0x829c92, roughness: .16, metalness: .05, transparent: true, opacity: .17, depthWrite: false, side: THREE.DoubleSide }); this.materials.add(glass);
     const light = this.mat(0xe7ddd0, .23), red = this.mat(0x7c1d16, .28), black = this.mat(0x172022, .54);
     const box = (x: number, y: number, z: number, w: number, h: number, d: number, material: THREE.Material, radius = .05, parent = this.car) => this.box(parent, x, y, z, w, h, d, material, radius);
     box(0, .2, 0, 5.5, .2, 13.6, black).name = 'office-arrest-car-floor';
-    box(0, 1.75, -5.17, 5.65, 1.55, 3.35, paint, .2); box(0, 1.78, 5.35, 5.65, 1.55, 3.1, paint, .18);
+    box(0, 1.75, -5.17, 4.6, 1.55, 3.35, paint, .2); box(0, 1.78, 5.35, 4.6, 1.55, 3.1, paint, .18);
     box(0, 2.52, -5.22, 5.45, .12, 3.15, paint); box(0, 2.56, 5.34, 5.45, .1, 2.98, paint);
     box(0, 4, -.13, 5.52, .2, 6.72, paint, .09).name = 'office-arrest-car-roof';
-    box(0, 3.4, -3.5, 5.2, .9, .075, glass).rotation.x = .25;
-    box(0, 3.4, 3.38, 5.2, .9, .075, glass).rotation.x = -.25;
-    for (const z of [-3.5, 3.38]) box(0, 3, z, 5.48, .15, .12, chrome);
+    const windshieldPoints = sedanWindshieldPoints(5.2, 4.85, 2.56, 3.9, -4.05, -3.12);
+    const windshield = this.mesh(this.car, sedanPanelGeometry(windshieldPoints), glass, 0, 0, 0);
+    windshield.name = 'office-arrest-windshield'; this.trim(this.car, windshieldPoints, chrome, .035);
+    const rearGlassPoints = sedanWindshieldPoints(5.2, 4.85, 2.56, 3.9, 3.82, 2.98, true);
+    const rearGlass = this.mesh(this.car, sedanPanelGeometry(rearGlassPoints), glass, 0, 0, 0);
+    rearGlass.name = 'office-arrest-rear-glass'; this.trim(this.car, rearGlassPoints, chrome, .035);
     for (const side of [-1, 1]) {
       for (const z of [-3.6, -.36, 3.47]) box(side * 2.73, 3.43, z, .14, 1.08, .18, paint);
       box(side * 2.72, .65, 0, .2, .75, 6.85, paint); box(side * 2.85, .57, 0, .16, .15, 7.1, chrome);
@@ -65,6 +69,12 @@ export class CustodyStreetRenderer {
         box(side * 1.3, 3.58, z + 1, .85, .48, .26, leather, .08);
         for (const offset of [-.56, 0, .56]) box(side * 1.3 + offset, 2.42, z + .71, .025, 1.7, .02, black, .005);
       }
+    }
+    const fenders = new THREE.Group(); fenders.name = 'office-arrest-fenders'; this.car.add(fenders);
+    for (const side of [-1, 1]) for (const wheel of [-4.9, 4.8]) {
+      const front = wheel < 0, surface = sedanFenderGeometry(side, front ? -6.12 : 3.58, front ? -3.68 : 6.03, wheel, 2.58);
+      this.mesh(fenders, surface.geometry, paint, 0, 0, 0);
+      this.trim(fenders, surface.edge, chrome, .025);
     }
     for (const z of [-6.97, 6.98]) box(0, 1.23, z, 5.75, .32, .23, chrome, .07);
     box(0, 2.1, -6.96, 2.46, .59, .06, chrome); box(0, 2.1, -7, 2.28, .4, .03, black);
@@ -117,6 +127,13 @@ export class CustodyStreetRenderer {
   }
   private cylinder(parent: THREE.Group, x: number, y: number, z: number, radius: number, height: number, material: THREE.Material): THREE.Mesh {
     return this.mesh(parent, new THREE.CylinderGeometry(radius, radius, height, 24), material, x, y, z);
+  }
+  private trim(parent: THREE.Object3D, points: readonly THREE.Vector3[] | readonly number[][], material: THREE.Material, radius: number): void {
+    const vertices = points.map(point => Array.isArray(point) ? new THREE.Vector3(point[0], point[1], point[2]) : point as THREE.Vector3);
+    for (let i = 0; i < vertices.length; i++) {
+      const curve = new THREE.LineCurve3(vertices[i], vertices[(i + 1) % vertices.length]);
+      this.mesh(parent, new THREE.TubeGeometry(curve, 1, radius, 6, false), material, 0, 0, 0);
+    }
   }
   update(custody?: OfficeCustody, subject?: THREE.Object3D): void {
     this.root.visible = Boolean(custody?.lift); this.bike.visible = Boolean(custody?.watcher);

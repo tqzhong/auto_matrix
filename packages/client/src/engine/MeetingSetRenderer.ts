@@ -4,6 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { MEETING_CAR, MEETING_DESTINATION, MEETING_ROAD_SAMPLES, MEETING_ROAD_WIDTH, bridgeArrivalPose, meetingCarPose, meetingPose, type FilmJourney, type MeetingGesture } from '@auto_matrix/shared';
 import { LafayetteApproachRenderer } from './LafayetteApproachRenderer.js';
+import { sedanFenderGeometry, sedanPanelGeometry, sedanWindshieldPoints } from './SedanSurfaceGeometry.js';
 
 // The occupants and vehicle share the server's saved route. The street and
 // car body are separate material batches, so no scenery moves with the car.
@@ -220,8 +221,8 @@ export class MeetingSetRenderer {
     this.crownedPanel(car, paint, [[-2.72, 2.21, 4.22], [-2.6, 2.27, 4.31], [-1.8, 2.3, 4.35], [0, 2.31, 4.35], [1.9, 2.28, 4.33], [2.7, 2.22, 4.27], [2.89, 2.1, 4.22]], .09);
     this.box(0, 4.12, .1, 4.25, .09, 5.44, leather, car);
     for (const window of [
-      [[-2.47, 2.67, -3.49], [-2.2, 4.17, -2.6], [2.2, 4.17, -2.6], [2.47, 2.67, -3.49]],
-      [[-2.18, 2.68, 3.63], [2.18, 2.68, 3.63], [1.96, 4.17, 2.89], [-1.96, 4.17, 2.89]],
+      sedanWindshieldPoints(4.94, 4.4, 2.67, 4.17, -3.49, -2.6),
+      sedanWindshieldPoints(4.36, 3.92, 2.68, 4.17, 3.63, 2.89, true),
     ]) {
       this.panel(car, glass, window); this.trim(car, black, [...window, window[0]], .07); this.trim(car, chrome, [...window, window[0]], .032);
     }
@@ -262,11 +263,7 @@ export class MeetingSetRenderer {
     this.batch(car);
   }
   private panel(parent: THREE.Object3D, material: THREE.Material, points: number[][]): THREE.Mesh {
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(points.flat(), 3));
-    geometry.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
-    geometry.setIndex([0, 1, 2, 0, 2, 3]); geometry.computeVertexNormals();
-    return this.mesh(parent, geometry, material);
+    return this.mesh(parent, sedanPanelGeometry(points), material);
   }
   private trim(parent: THREE.Object3D, material: THREE.Material, points: number[][], radius: number): void {
     for (let i = 1; i < points.length; i++) {
@@ -286,15 +283,9 @@ export class MeetingSetRenderer {
     this.mesh(parent, geometry, material);
   }
   private fender(parent: THREE.Object3D, side: number, from: number, to: number, wheel: number, material: THREE.Material, chrome: THREE.Material): void {
-    const left = side > 0 ? -to : from; const right = side > 0 ? -from : to; const center = -side * wheel;
-    const shape = new THREE.Shape();
-    shape.moveTo(left, .85); shape.lineTo(center - 1.12, .85); shape.lineTo(center - 1.12, 1);
-    shape.absarc(center, 1, 1.12, Math.PI, 0, true);
-    shape.lineTo(center + 1.12, .85); shape.lineTo(right, .85); shape.lineTo(right, 2.45); shape.lineTo(left, 2.45); shape.closePath();
-    const geometry = new THREE.ExtrudeGeometry(shape, { depth: .105, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: .025, bevelThickness: .025, curveSegments: 24 });
-    geometry.rotateY(side * Math.PI / 2); geometry.translate(side * 2.51, 0, 0); this.mesh(parent, geometry, material);
-    const edge = Array.from({ length: 33 }, (_, i) => { const a = Math.PI - i / 32 * Math.PI; return [side * 2.648, 1 + Math.sin(a) * 1.14, wheel + Math.cos(a) * 1.14]; });
-    this.trim(parent, chrome, edge, .025);
+    const fender = sedanFenderGeometry(side, from, to, wheel, 2.51);
+    this.mesh(parent, fender.geometry, material);
+    this.trim(parent, chrome, fender.edge.map(point => [point.x, point.y, point.z]), .025);
   }
   private surfaceMaps(material: THREE.MeshStandardMaterial, id: string): void {
     let ready = 0;

@@ -5,6 +5,38 @@ import { METACORTEX, ARREST_CAR, ARREST_BIKE, ARREST_DRIVE_SECONDS, arrestDriveS
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { CustodyStreetRenderer } from '../packages/client/src/engine/CustodyStreetRenderer.js';
 
+test('the custody sedan keeps the shared formed windshield and wheel arches', () => {
+  const root = new THREE.Group();
+  const renderer = new CustodyStreetRenderer(root), car = root.getObjectByName('office-arrest-sedan')!;
+  const windshield = car.getObjectByName('office-arrest-windshield') as THREE.Mesh;
+  const rearGlass = car.getObjectByName('office-arrest-rear-glass') as THREE.Mesh;
+  const fenders = car.getObjectByName('office-arrest-fenders') as THREE.Group;
+  try {
+    car.visible = true; root.updateMatrixWorld(true);
+    assert.ok(windshield?.material instanceof THREE.MeshPhysicalMaterial && windshield.material.transparent,
+      'the windshield must close the sedan cabin with the same reflective glass as the bridge sedan');
+    assert.ok(rearGlass?.material instanceof THREE.MeshPhysicalMaterial && rearGlass.material.transparent,
+      'the rear glass must meet the cabin roof and trunk');
+    const body = fenders.children.find(object => object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial) as THREE.Mesh;
+    assert.ok(body, 'the shared arch surfaces must remain batched in the car');
+    body.geometry.computeBoundingBox(); const bounds = body.geometry.boundingBox!;
+    assert.ok(bounds.min.x >= -2.75 && bounds.max.x <= 2.75, 'formed arches must remain inside the saved car collider width');
+    const ray = new THREE.Raycaster();
+    const chassis = car.children.filter(object => !object.name.startsWith('office-arrest-wheel-') && !object.name.startsWith('office-arrest-door-'));
+    for (const side of [-1, 1]) for (const wheel of [-4.9, 4.8]) {
+      ray.set(car.localToWorld(new THREE.Vector3(side * 3, 1.55, wheel)), new THREE.Vector3(-side, 0, 0).transformDirection(car.matrixWorld));
+      assert.equal(ray.intersectObject(body, false).length, 0, 'each formed arch leaves a real tire opening');
+      const hullHits = ray.intersectObjects(chassis, true);
+      assert.ok(hullHits.every(hit => side * car.worldToLocal(hit.point.clone()).x <= 2.32), 'the bonnet and trunk must stop inside the tire sidewall');
+      const nearest = ray.intersectObjects(car.children, true)[0]; let owner = nearest?.object;
+      while (owner && owner !== car && !owner.name.startsWith('office-arrest-wheel-')) owner = owner.parent;
+      assert.equal(owner?.name, `office-arrest-wheel-${side}-${wheel < 0 ? 'front' : 'rear'}`, 'the tire face must be the visible surface inside its arch');
+      ray.set(car.localToWorld(new THREE.Vector3(side * 3, 1.55, wheel + 1.05)), new THREE.Vector3(-side, 0, 0).transformDirection(car.matrixWorld));
+      assert.ok(ray.intersectObject(body, false).length, 'the body remains continuous just past each wheel opening');
+    }
+  } finally { renderer.dispose(); }
+});
+
 test('the sedan opens a physical rear doorway, closes continuously and releases its real mirror target', () => {
   const root = new THREE.Group(); root.position.set(METACORTEX.center.x, 0, METACORTEX.center.z);
   const renderer = new CustodyStreetRenderer(root), custody = { phase: 'street', elapsed: 3.2, lift: { floor: 0, phase: 'idle', target: 0, elapsed: 0 }, watcher: {}, street: { phase: 'opening', elapsed: 0 } } as OfficeCustody;
