@@ -38,4 +38,18 @@ test('the third-person camera stays on Neo\'s side of the Metacortex entrance af
   controls.update(0, outside, new THREE.Group(), false);
   assert.ok(camera.position.z > rearWall + .5,
     `the camera crossed into the lobby from outside at z=${rearWall}: ${camera.position.z}`);
+
+  const transition = { ...neo, currentLocation: 'metacortex_office', position: { ...neo.position, z: rearWall - 2 }, rotation: 0 };
+  const transitionGroup = new THREE.Group();
+  controls.possess(transition);
+  controls.update(0, transition, transitionGroup, false);
+  window.dispatchEvent(Object.assign(new Event('keydown'), { code: 'KeyW', repeat: false }));
+  for (let step = 0; step < 72; step++) {
+    controls.update(.05, transition, transitionGroup, false);
+    transition.position = { x: transitionGroup.position.x, y: transitionGroup.position.y, z: transitionGroup.position.z };
+    transition.currentLocation = transition.position.z < rearWall + 9 ? 'metacortex_office' : 'times_square';
+    assert.ok(transition.position.z < rearWall ? camera.position.z < rearWall : camera.position.z > rearWall,
+      `the camera crossed the rear wall while Neo was at z=${transition.position.z}: ${camera.position.z}`);
+  }
+  window.dispatchEvent(Object.assign(new Event('keyup'), { code: 'KeyW' }));
 });
