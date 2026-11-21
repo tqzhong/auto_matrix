@@ -774,7 +774,8 @@ test('the commute prepares the three first-draw street programs with the live li
     },
   };
   lighting.minimumPointSlots = 4;
-  const prepare = (root = actor) => film.prepareOfficeStreetColors?.(gpu as unknown as THREE.WebGLRenderer, camera, lighting, root);
+  const prepare = (root = actor) => film.prepareOfficeStreetColors(gpu as unknown as THREE.WebGLRenderer, camera, lighting,
+    id => id === 'citizen_2' ? root : undefined);
   prepare(); assert.deepEqual(tasks, [], 'leave unsupported contexts on the ordinary draw path');
   parallel = true;
   prepare(new THREE.Group()); assert.deepEqual(tasks, [], 'wait for the actual meshes');
@@ -793,7 +794,7 @@ test('the commute prepares the three first-draw street programs with the live li
   prepare(); assert.equal(tasks.at(-1), 'compile Red_dress_satin', 'rebuild the queue after the graphics context changes');
 });
 
-test('street preparation includes the driver LOD and both shared-material skinning variants', t => {
+test('street preparation includes the driver LOD and the near guards without joining their links in one frame', t => {
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
   const camera = new THREE.PerspectiveCamera(), driver = new THREE.Group(), actor = new THREE.Group();
   const environment = new THREE.Texture(); scene.environment = environment; scene.fog = new THREE.FogExp2(0x071410, .00125);
@@ -807,10 +808,14 @@ test('street preparation includes the driver LOD and both shared-material skinni
   const red = ['Red_dress_satin', 'Red_dress_hair', 'Red_dress_eyes'].map(name => {
     const mesh = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial()); mesh.name = name; return mesh;
   });
+  const streetCast = new Map<string, THREE.Group>();
+  const guards = ['smith-glasses-lens--1', 'short04', 'office-uniform-cap', 'Anatomical_head_and_hands'].map(name => {
+    const mesh = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial()); mesh.name = name; return mesh;
+  });
   t.after(() => {
     film.dispose(); lighting.dispose(); environment.dispose();
-    for (const mesh of [skin, rigid, skinned, duplicate, hiddenMesh, ...red]) mesh.geometry.dispose();
-    for (const material of new Set([skin.material, shared, hiddenMesh.material, ...red.map(mesh => mesh.material)])) material.dispose();
+    for (const mesh of [skin, rigid, skinned, duplicate, hiddenMesh, ...red, ...guards]) mesh.geometry.dispose();
+    for (const material of new Set([skin.material, shared, hiddenMesh.material, ...[...red, ...guards].map(mesh => mesh.material)])) material.dispose();
   });
   const tasks: string[] = [], debug = { checkShaderErrors: true };
   let ready = false, target: THREE.WebGLRenderTarget | null = null;
@@ -841,7 +846,8 @@ test('street preparation includes the driver LOD and both shared-material skinni
     },
   };
   lighting.minimumPointSlots = 4;
-  const prepare = () => film.prepareOfficeStreetColors(gpu as unknown as THREE.WebGLRenderer, camera, lighting, actor, driver);
+  const prepare = () => film.prepareOfficeStreetColors(gpu as unknown as THREE.WebGLRenderer, camera, lighting,
+    id => id === 'citizen_2' ? actor : id === 'citizen_11' ? driver : streetCast.get(id));
   prepare(); assert.deepEqual(tasks, ['compile driver skin'], 'the procedural driver need not wait for the red dress asset');
   actor.add(...red);
   for (const mesh of [...red, rigid, skinned]) {
@@ -860,6 +866,14 @@ test('street preparation includes the driver LOD and both shared-material skinni
   assert.equal(target, null); assert.equal(debug.checkShaderErrors, true);
   gpu.properties = { ...gpu.properties };
   ready = false; prepare(); assert.equal(tasks.at(-1), 'compile Red_dress_satin', 'a new context prepares both actors again');
+  streetCast.set('agent_jackson', new THREE.Group().add(guards[0], guards[1]));
+  for (const mesh of guards.slice(0, 2)) {
+    const before = tasks.length; prepare(); assert.deepEqual(tasks.slice(before), ['compile ' + mesh.name]);
+  }
+  streetCast.set('citizen_4', new THREE.Group().add(guards[2], guards[3]));
+  for (const mesh of guards.slice(2)) {
+    const before = tasks.length; prepare(); assert.deepEqual(tasks.slice(before), ['compile ' + mesh.name]);
+  }
 });
 
 test('street preparation caches the existing Matrix phone accent before the lift reveals it', t => {

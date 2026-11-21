@@ -324,11 +324,10 @@ type OpeningPreparation = {
     layouts: { lighting: LightCulling; eye: THREE.Camera; meshes: THREE.Mesh[] }[];
   };
 };
-const OFFICE_STREET_COLOR_MESHES = ['Red_dress_satin', 'Red_dress_hair', 'Red_dress_eyes'] as const;
 const BRIDGE_APPROACH_MESHES = new Set(['Anatomical_head_and_hands', 'Anatomical_wrist_skin', 'short04', 'high-poly',
   'Tailored_coat_upper', 'Tailored_trousers', 'Black_crew_neck', 'Fitted_leather_jacket', 'shoes01']);
-const OFFICE_DESCENT_ACTORS = [
-  ['citizen_2', OFFICE_STREET_COLOR_MESHES],
+const OFFICE_STREET_ACTORS = [
+  ['citizen_2', ['Red_dress_satin', 'Red_dress_hair', 'Red_dress_eyes']],
   ['agent_jackson', ['smith-glasses-lens--1', 'short04']],
   ['citizen_4', ['office-uniform-cap', 'Anatomical_head_and_hands']],
 ] as const;
@@ -412,7 +411,7 @@ export class FilmSetRenderer {
   private commuteOutfit?: ColorPreparation & { actor: THREE.Group; gpu: THREE.WebGLRenderer['properties']; textureUpload?: Generator<void, boolean> };
   private preparedOfficeStreetPhone?: { phone: THREE.Mesh; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
   private preparedOfficeStreet?: {
-    actor?: THREE.Group; driver?: THREE.Group; gpu: THREE.WebGLRenderer['properties'];
+    actors: WeakSet<THREE.Group>; driver?: THREE.Group; gpu: THREE.WebGLRenderer['properties'];
     meshes: ColorMesh[]; programs: ColorProgram[]; warmed: Set<ColorProgram>;
   };
   private preparedOfficePhone?: { smith: THREE.Group; gpu: THREE.WebGLRenderer['properties']; depth: THREE.MeshDepthMaterial; programs: ColorProgram[] };
@@ -3387,19 +3386,22 @@ export class FilmSetRenderer {
     this.preparedOfficeStreetPhone = { phone, gpu, program: currentProgram };
     return true;
   }
-  prepareOfficeStreetColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, actor?: THREE.Group, driver?: THREE.Group): void {
-    if ((!actor && !driver) || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+  prepareOfficeStreetColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, actor: (id: string) => THREE.Group | undefined): void {
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     const gpu = renderer.properties;
     let prepared = this.preparedOfficeStreet;
     if (!prepared || prepared.gpu !== gpu)
-      this.preparedOfficeStreet = prepared = { gpu, meshes: [], programs: [], warmed: new Set() };
-    if (actor && prepared.actor !== actor) {
-      const meshes = this.colorMeshes([actor]).filter(mesh => OFFICE_STREET_COLOR_MESHES.some(name => mesh.name === name));
-      if (meshes.length === OFFICE_STREET_COLOR_MESHES.length) {
-        prepared.actor = actor;
+      this.preparedOfficeStreet = prepared = { gpu, actors: new WeakSet(), meshes: [], programs: [], warmed: new Set() };
+    for (const [id, names] of OFFICE_STREET_ACTORS) {
+      const root = actor(id);
+      if (!root || prepared.actors.has(root)) continue;
+      const meshes = this.colorMeshes([root]).filter(mesh => names.some(name => name === mesh.name));
+      if (meshes.length === names.length) {
+        prepared.actors.add(root);
         prepared.meshes.unshift(...meshes);
       }
     }
+    const driver = actor('citizen_11');
     if (driver && prepared.driver !== driver) {
       // Prepare the near model before its LOD root is visible, preserving hidden parts.
       const meshes = this.colorMeshes(driver.children);
@@ -3510,7 +3512,7 @@ export class FilmSetRenderer {
         meshes: sign ? [sign] : [], programs: [], textures: new Set() };
     }
     // Prepare the color variants that enter view as the camera lowers past the ledge.
-    for (const [id, names] of OFFICE_DESCENT_ACTORS) {
+    for (const [id, names] of OFFICE_STREET_ACTORS) {
       const root = actor(id);
       if (!root || prepared.actors.has(root)) continue;
       const meshes = this.colorMeshes([root]).filter(mesh => names.some(name => name === mesh.name));
