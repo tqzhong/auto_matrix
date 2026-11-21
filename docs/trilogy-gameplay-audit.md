@@ -692,6 +692,10 @@ Neo 起身后按出门视角和四个街道点光源槽位，分帧准备可见�
 
 生产入口仍为 `index-BFh38kMI.js`，SHA-256 `36efac2e35fa5fef9a4e8369adbc9118f71c363076010d78444852911cc6e324`。本轮证明办公室逃脱成功分支、维修梯完成、冷恢复和向第二次来电场景的续接；没有完成 1-03 九项整组验收，综合质量仍为 **2/42 组**。压缩世界及机器可读摘要见本机 `output/gameplay/trilogy-office-failure-retry-2026-11-21/`。
 
+### 2026-11-21 1-03/1-04 代码级路线回归复核
+
+在当前 `0df1d9c7` 源码上重跑 `office-arrival`、`office-workday`、`office-window-ui`、`office-custody`、`office-custody-cold`、`interrogation`、`interrogation-preparation`、`office-interrogation-transition` 八组专项测试，**70/70 通过**。覆盖办公室来客与工作日交互、窗台目标、被捕押送、轿车离场、审讯阶段，以及暂停/断线/冷恢复/重试状态。此轮只复核了共享逻辑与模拟状态，没有浏览器操作或生产画面/声音/帧时样本；不替代成功与失败分支的现场体验，也不增加 1-03、1-04 或 42 组综合签收数。
+
 ## 1-04 审讯与第二次来电复验
 
 ### 2026-11-21 成功逃脱分支从冷恢复续接至桥口
