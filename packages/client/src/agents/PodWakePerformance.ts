@@ -75,18 +75,21 @@ export function posePodWake(rig: HeroRig, elapsed: number | undefined, breather?
     const release = rescue === undefined ? smooth(disconnect!, 3.8, 4.5) : 1;
     const water = rescue === undefined ? smooth(disconnect!, 6.55, 8.6) : 1;
     const held = rescue === undefined ? 0 : podRescuePose(rescue).grip;
+    const guard = disconnect === undefined ? 0 : smooth(disconnect, 4.6, 5.35) * (1 - smooth(disconnect, 6.35, 7.35));
     const mix = THREE.MathUtils.lerp;
     pelvis.rotation.x = mix(pelvis.rotation.x, .35 * (1 - water), release);
-    bone('spine').rotation.set(mix(bone('spine').rotation.x, .2 * (1 - water), release), 0, 0);
-    bone('chest').rotation.set(mix(bone('chest').rotation.x, .18 * (1 - water), release), 0, 0);
-    bone('head').rotation.set(mix(bone('head').rotation.x, .22 * (1 - water), release), 0, 0);
+    bone('spine').rotation.set(mix(bone('spine').rotation.x, .2 * (1 - water), release) + .08 * guard, 0, 0);
+    bone('chest').rotation.set(mix(bone('chest').rotation.x, .18 * (1 - water), release) + .04 * guard, 0, 0);
+    bone('head').rotation.set(mix(bone('head').rotation.x, .22 * (1 - water), release) + .28 * guard, 0, 0);
     for (const [i, side] of ['R', 'L'].entries()) {
       const sign = i ? 1 : -1;
       bone(`hip_${side}`).rotation.x = mix(bone(`hip_${side}`).rotation.x, mix(-1.05, mix(-.2, i ? -.08 : .12, held), water), release);
       bone(`knee_${side}`).rotation.x = mix(bone(`knee_${side}`).rotation.x, mix(1.85, mix(.45, i ? .3 : .18, held), water), release);
       bone(`ankle_${side}`).rotation.x = mix(bone(`ankle_${side}`).rotation.x, -.2 * (1 - water), release);
-      bone(`shoulder_${side}`).rotation.set(mix(-.5, -1.6 + 1.1 * water, release), 0, sign * mix(.25, .25 + .182 * water, release));
-      bone(`elbow_${side}`).rotation.x = mix(-.7, mix(-1.4, mix(-.7, -.18, held), water), release);
+      // Fold the forearms above the head on their native elbow axes; open again at the outlet.
+      bone(`shoulder_${side}`).rotation.set(mix(mix(-.5, -1.6 + 1.1 * water, release), -2.5, guard), 0,
+        sign * mix(mix(.25, .25 + .182 * water, release), -.25, guard));
+      bone(`elbow_${side}`).rotation.x = mix(mix(-.7, mix(-1.4, mix(-.7, -.18, held), water), release), i ? -.9 : -1.5, guard);
     }
     rig.root.updateWorldMatrix(true, true);
     if (disconnect !== undefined) placeRunoffBody(rig, disconnect);
