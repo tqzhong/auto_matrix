@@ -929,7 +929,9 @@ export class PlayerControls {
     if (phoneExit) this.performing = true;
     const bridgeCaught = state.currentAction?.parameters.bridgeCaught as { x: number; z: number } | undefined;
     const bridgeCaptureStarting = Boolean(bridgeCaught && !this.bridgeCaught);
-    if (this.bridgeCaught && !bridgeCaught) this.performing = false;
+    const bridgeCaptureReleased = Boolean(this.bridgeCaught && !bridgeCaught);
+    if (bridgeCaptureStarting) { this.keys.clear(); this.movementForward = this.movementRight = 0; }
+    if (bridgeCaptureReleased) this.performing = false;
     if (bridgeCaught) this.performing = true;
     this.bridgeCaught = bridgeCaught;
     const inOfficeLift = Boolean(state.currentAction?.parameters.metacortexLift);
@@ -1313,12 +1315,13 @@ export class PlayerControls {
     if (state !== this.authoritative) {
       const respawned = this.authoritative?.status === 'dead' && state.status === 'alive';
       const difference = Math.hypot(state.position.x - this.position.x, state.position.z - this.position.z);
-      if (difference > 12 || state.isInMatrix !== this.authoritative?.isInMatrix || state.status === 'dead' || respawned) {
+      if (difference > 12 || state.isInMatrix !== this.authoritative?.isInMatrix || state.status === 'dead' || respawned || bridgeCaptureReleased) {
         this.position = { ...state.position }; this.restoreMomentum(state); this.cameraReady = false;
-        if ((state.currentLocation !== this.authoritative?.currentLocation || respawned) && (FILM_SETS[state.currentLocation] || FILM_SETS[this.authoritative?.currentLocation ?? ''])) {
+        if ((state.currentLocation !== this.authoritative?.currentLocation || respawned || bridgeCaptureReleased) && (FILM_SETS[state.currentLocation] || FILM_SETS[this.authoritative?.currentLocation ?? ''])) {
           this.yaw = this.facing = this.movementYaw = state.rotation;
           if (state.currentLocation === 'film_agent_interrogation') this.pitch = .12;
-          this.keys.clear(); this.movementForward = this.movementRight = 0; this.lastLook = -1000;
+          if (!bridgeCaptureReleased) this.keys.clear();
+          this.movementForward = this.movementRight = 0; this.lastLook = -1000;
           this.lastAttack = -1000; this.attackQueuedUntil = 0; this.localJump = this.networkJump = false; this.impulse = undefined;
         }
       } else {
