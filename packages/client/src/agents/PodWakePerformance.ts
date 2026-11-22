@@ -4,6 +4,7 @@ import type { HeroRig } from './HeroModel.js';
 import { reach } from './SpoonPerformance.js';
 
 const runoffContacts = new WeakMap<HeroRig, { elapsed: number; frame: THREE.Matrix4; meshes: THREE.SkinnedMesh[]; correction: number }>();
+const runoffSamples = new WeakMap<THREE.BufferGeometry, number[]>();
 
 function placeRunoffBody(rig: HeroRig, elapsed: number): void {
   const weight = THREE.MathUtils.smoothstep(elapsed, 4.25, 4.5) * (1 - THREE.MathUtils.smoothstep(elapsed, 7, 8.4));
@@ -17,7 +18,13 @@ function placeRunoffBody(rig: HeroRig, elapsed: number): void {
     for (const mesh of meshes) {
       mesh.updateMatrixWorld(true); mesh.skeleton.update();
       const positions = mesh.geometry.getAttribute('position');
-      for (let i = 0; i < positions.count; i++) {
+      let samples = runoffSamples.get(mesh.geometry);
+      if (!samples) {
+        samples = [];
+        for (let i = 0; i < positions.count; i += 6) samples.push(i);
+        runoffSamples.set(mesh.geometry, samples);
+      }
+      for (const i of samples) {
         mesh.getVertexPosition(i, point); mesh.localToWorld(point);
         const height = podRunoffHeight(point.x - center.x, point.z - center.z);
         if (height !== undefined) minimum = Math.min(minimum, point.y - (center.y - 1 + height));
