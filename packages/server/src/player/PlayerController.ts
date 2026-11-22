@@ -2,7 +2,7 @@ import { OPENING_ESCAPE, WELLS_AFTERMATH, bookDoorLocked, savedApartmentIdle } f
 import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteKnocking, lafayetteWelcomeLocked } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, PLAYER_WALK_SPEED, officeCustodyActive, windowOpening, windowCrossing } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK, type CatchGesture } from '@auto_matrix/shared';
-import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId, type WorldStructure } from '@auto_matrix/shared';
+import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, DOJO_BODY_CLEARANCE, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId, type WorldStructure } from '@auto_matrix/shared';
 import type { SandboxSystem } from './SandboxSystem.js';
 import type { WorldState } from '../world/WorldState.js';
 import type { ConversationEngine } from '../agents/ConversationEngine.js';
@@ -798,6 +798,19 @@ export class PlayerController {
       if (officeStep && officeStep !== agent.position) { agent.position = officeStep; session.planar = { x: 0, z: 0 }; session.vy = 0; }
       const escorted = this.sandbox?.life.film.custody.constrain(agent, previous, agent.position);
       if (escorted && escorted !== agent.position) { agent.position = escorted; session.planar = { x: 0, z: 0 }; session.vy = 0; }
+      const dojoOpponent = lesson?.scene === 'm1_dojo' && lesson.step === 0 && lesson.fighting && lesson.actor === agent.id
+        ? this.sandbox?.state.threats.find(threat => threat.scene === 'm1_dojo' && threat.character === 'morpheus') : undefined;
+      if (dojoOpponent) {
+        const dx = agent.position.x - dojoOpponent.position.x, dz = agent.position.z - dojoOpponent.position.z;
+        const separation = Math.hypot(dx, dz);
+        if (separation < DOJO_BODY_CLEARANCE) {
+          const nx = separation > .001 ? dx / separation : 0, nz = separation > .001 ? dz / separation : 1;
+          agent.position = { ...agent.position, x: dojoOpponent.position.x + nx * DOJO_BODY_CLEARANCE,
+            z: dojoOpponent.position.z + nz * DOJO_BODY_CLEARANCE };
+          const inward = session.planar.x * nx + session.planar.z * nz;
+          if (inward < 0) { session.planar.x -= inward * nx; session.planar.z -= inward * nz; }
+        }
+      }
       agent.velocity = { x: (agent.position.x - previous.x) / dt, y: session.vy, z: (agent.position.z - previous.z) / dt };
       if (session.palm) {
         session.palm.remaining -= dt;

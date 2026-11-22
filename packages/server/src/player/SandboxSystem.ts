@@ -1,4 +1,4 @@
-import { FILM_SETS, ITEMS, RECIPES, SKILLS, MISSIONS, NEO_MISSIONS, LOCATIONS, MELEE_COMBO, meleeReach, combatDisplace, distance, locationEntrance, missionPosition, nearTransit, playerBlocked, groundHeight, skillPoints,
+import { FILM_SETS, ITEMS, RECIPES, SKILLS, MISSIONS, NEO_MISSIONS, LOCATIONS, MELEE_COMBO, DOJO_BODY_CLEARANCE, meleeReach, combatDisplace, distance, locationEntrance, missionPosition, nearTransit, playerBlocked, groundHeight, skillPoints,
   type AgentState, type ItemId, type SkillId, type SandboxState, type SandboxCommand, type SandboxThreat, type Vector3, type MissionDef, type CombatImpact, type CombatSkillId } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import type { WorldDynamics } from '../story/WorldDynamics.js';
@@ -576,12 +576,13 @@ export class SandboxSystem {
         continue;
       }
       const step = threat.scene === 'm2_chateau' ? 1.5 : threat.character === 'seraph' ? 3.4 : threat.kind === 'smith' ? 4.5 : threat.kind === 'training' ? 2 : 3;
-      const approach = Math.min(step, Math.max(0, length - 2.7));
+      const stopDistance = threat.scene === 'm1_dojo' ? DOJO_BODY_CLEARANCE : 2.7;
+      const approach = Math.min(step, Math.max(0, length - stopDistance));
       const next = { ...threat.position, x: threat.position.x + dx / Math.max(1, length) * approach, z: threat.position.z + dz / Math.max(1, length) * approach };
       if (threat.scene === 'm2_chateau') next.y = groundHeight(next, true);
       const barrier = this.state.structures.find(s => s.kind === 'barricade' && !s.film && s.matrix === threat.matrix && distance(s.position, next) < 8);
       if (barrier) { if (tick % 4 === 0) barrier.health -= 8; }
-      else if (length > 2.7) {
+      else if (length > stopDistance) {
         if (threat.scene === 'm2_burly') threat.position = approachBurlyCopy(threat, target, approach, this.state.threats, this.state.structures);
         else if (Math.abs(next.y - threat.position.y) <= (threat.scene === 'm2_chateau' ? 1.2 : Infinity) && !playerBlocked(next, threat.matrix, 1.1, this.state.structures)) threat.position = next;
         else {

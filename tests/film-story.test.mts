@@ -39,6 +39,7 @@ import { BANE_INQUIRY, baneInquiryLines } from '@auto_matrix/shared';
 import { ORACLE_ABSORPTION } from '@auto_matrix/shared';
 import { SENTINEL_POWER, SENTINEL_TIMING } from '@auto_matrix/shared';
 import { OFFICE_RETREAT_WINDOW } from '@auto_matrix/shared';
+import { DOJO_BODY_CLEARANCE, DOJO_COMBO_WINDOW } from '@auto_matrix/shared';
 import { exitOfficeCustody, boardOfficeArrest, departOfficeArrest } from './helpers/office-custody-route.mts';
 import type { PlayerInput } from '@auto_matrix/shared';
 
@@ -2809,14 +2810,16 @@ test('the dojo can be completed through natural windups, a backstep and walking 
   assert.ok(distance(h.actor().position, threat.position) > 5, 'an idle X backstep leaves jab range');
   h.players.act('film-player', 'attack', h.tick()); frames(10);
   assert.equal(state.dojo?.hits, 0, 'pressing F from the backstep position must not deal remote damage');
-  frames(60);
+  frames(170);
   assert.equal(state.dojo?.dodged, false, 'a missed counter expires and permits another attempt');
 
   waitForWindup(); h.players.act('film-player', 'dodge', h.tick()); frames(6);
   const health = h.actor().health;
-  for (let i = 0; i < 40 && distance(h.actor().position, threat.position) > 2.6; i++) frames(1, true);
+  for (let i = 0; i < 40 && distance(h.actor().position, threat.position) > DOJO_BODY_CLEARANCE + .01; i++) frames(1, true);
   frames(2);
-  assert.ok(distance(h.actor().position, threat.position) < 3, 'walking closes the gap without moving either actor in the fixture');
+  const counterGap = distance(h.actor().position, threat.position);
+  assert.ok(counterGap >= DOJO_BODY_CLEARANCE - .01 && counterGap <= DOJO_BODY_CLEARANCE + .01,
+    'walking reaches strike range and stops at the measured body-clearance distance');
   assert.equal(state.dojo?.dodged, true, 'normal walking reaches the opening before it expires');
   for (let combo = 0; combo < 3; combo++) {
     h.players.act('film-player', 'attack', h.tick()); frames(10);
@@ -2828,7 +2831,7 @@ test('the dojo can be completed through natural windups, a backstep and walking 
   assert.ok(h.actor().health >= health, 'Morpheus cannot hit during a successful counter');
 });
 
-test('the dojo preserves a timed counter opening, then returns Morpheus to guard instead of freezing him forever', () => {
+test('the dojo preserves its eight-second counter opening, then returns Morpheus to guard', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   const download = FILM_SCENE_BY_ID.m1_download;
   Object.assign(state, { scene: download.id, actor: 'neo', step: download.steps.length, training: undefined });
@@ -2839,7 +2842,7 @@ test('the dojo preserves a timed counter opening, then returns Morpheus to guard
   threat.stunUntil = h.tick(); threat.attackAt = h.tick() + 2; threat.lastStrike = h.tick();
   h.players.act('film-player', 'dodge', h.tick());
   const opening = state.dojo as { counterUntil?: number };
-  assert.equal(opening.counterUntil, h.tick() + 6, 'a successful dodge opens a three-second counter window');
+  assert.equal(opening.counterUntil, h.tick() + DOJO_COMBO_WINDOW * 2, 'a successful dodge opens the authored eight-second counter window');
   const saved = JSON.parse(JSON.stringify(h.sandbox.state));
   h.players.release('film-player', h.tick()); h.advance(20);
   assert.equal(h.sandbox.life.film.state!.dojo?.dodged, true, 'the opening does not expire while its player is disconnected');
@@ -2859,8 +2862,9 @@ test('older dojo saves migrate a frozen counter into a finite counter window', (
   assert.equal(h.sandbox.life.film.trainingDodge(h.actor(), threat, h.tick()), true);
   const saved = JSON.parse(JSON.stringify(h.sandbox.state)); delete saved.neoLife.journey.dojo.counterUntil;
   h.sandbox.restore(saved);
-  assert.equal(h.sandbox.life.film.state!.dojo?.counterUntil, h.world.simulationTick + 6, 'an old permanent guard save receives one finite counter window');
-  h.advance(7);
+  assert.equal(h.sandbox.life.film.state!.dojo?.counterUntil, h.world.simulationTick + DOJO_COMBO_WINDOW * 2,
+    'an old permanent guard save receives one authored finite counter window');
+  h.advance(DOJO_COMBO_WINDOW * 2 + 1);
   assert.equal(h.sandbox.life.film.state!.dojo?.dodged, false, 'the migrated counter returns to a readable retry instead of remaining frozen');
 });
 
