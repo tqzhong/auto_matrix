@@ -722,6 +722,16 @@ Neo 起身后按出门视角和四个街道点光源槽位，分帧准备可见�
 
 专项回归 `metacortex-camera-follow`、`player-respawn-camera` 与 `office-arrival`、`office-workday`、`office-window-ui`、`office-custody`、`office-custody-cold`、`interrogation`、`interrogation-preparation`、`office-interrogation-transition` 合计 **72/72 通过**；客户端 `tsc --noEmit` 与 `git diff --check` 通过。Desktop Commander 设备仍离线，本轮没有修复后的浏览器截图或真实操作；此为相机几何回归证据，不等同画面精修签收，1-03 九项未齐，综合质量仍为 **2/42 组**。
 
+### 2026-11-22 1-03 被捕押送上车、驶离与页面恢复
+
+- **剧情覆盖**　从隔离存档的 `m1_office_escape` 被捕押送 `street/approaching` 续走。Neo 到达公司外轿车后排车门，特工依次上车、关门并驶离，进入 `m1_interrogation` 第 0 步；捕获结果保留，`street.phase="departed"`、`blocked=false`、`observed=true`。这是既有捕获分支的续验，不增加剧情节点覆盖。
+- **可玩验收**　通过隔离 Chrome 的真实键鼠操作靠近车门，落盘距离为 0.0508 m；按 `G` 上车，等待后排特工入座及关门，再按 `G` 驶离。页面进入审讯，HUD 显示“无法开口”1/2、Smith 档案 9 m、85 名角色、Neo 生命 100、余额 $2140。
+- **保存恢复**　审讯入口预恢复快照为第 31920 刻，SHA-256 `63bcd07e0d9d03b24708f14b71a8b28c54130661946d6459f93a5914416c123d`。浏览器重新载入遇到同步延迟提示后，按页面“重新连接”，再选 Neo“继续上次进度”，回到 `m1_interrogation` 第 0 步；恢复快照第 32880 刻原世界 SHA-256 `7660e154020b87b475653f7ceb92275f32a3394710eea4eefc37269e2aa9393d`，压缩档 `captured-interrogation-reconnect-world-2026-11-22.json.gz` SHA-256 `71032c3382c6ac39001921a2ca9110966a0d70796b83857bb1100deb2d7247e5`。恢复前后场景、步骤、健康和余额一致；模拟继续期间能量从 0.953 降至 0、饥饿为 0，需与存档恢复差异分开观察。
+- **画面精修**　保留的 [审讯恢复现场图](../output/gameplay/trilogy-office-failure-retry-2026-11-21/interrogation-restored-2026-11-22.jpg) 为 1600×1040。可见白色审讯室、长桌档案、Smith 与两名特工；顶端深色天花占据较大视野。原片人物、空间比例、动作和镜头仍未对照签收。
+- **声音与性能**　隔离 Chrome 全程静音。1-03 渲染进程采样约 100% CPU，页面出现操作同步延迟提示；恢复后的 HUD RTT 为 90 ms。没有 1920×1080 路线 FPS/P95 或完整资源曲线，不作性能通过结论。
+
+本轮完成捕获路线的车门、驶离、审讯接续和浏览器存档恢复；没有重演逃脱成功重试，也未满足 1-03 九项整组标准。人物、画面、混音及正式性能仍未签收，综合质量仍为 **2/42 组**。
+
 ## 1-04 审讯与第二次来电复验
 
 ### 2026-11-21 第二次来电与桥下续程代码回归
