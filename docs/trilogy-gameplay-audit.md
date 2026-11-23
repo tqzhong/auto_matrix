@@ -1280,11 +1280,13 @@ Desktop Commander 的 `Blue_PineApple` 当前离线，故上表本地证据不�
 
 本轮从红衣冻结后进入 `m1_sentinels`，实走前舱停机、EMP 风险说明和静默扫描成功路线。隔离后端在扫描确认阶段冷重启，浏览器画面恢复到相同的 `verify` 检查点（启动 tick 227041）；实际按 G 后到 `done`，API 保存快照显示 `m1_sentinels` 第 2 步、28 个完成节点、84 名世界信号、Neo 生命 100、`noise=0`、`attempt=0`、`empBriefed=true`。之后再次实际按 G 进入 `m1_cypher_console` 第 0 步。冷恢复画面、成功态 API 摘要和世界总览帧率截图分别见[冷恢复画面](../output/gameplay/trilogy-sentinel-cold-restore-2026-11-24/after-cold-verify.jpg)、[成功态 API 摘要](../output/gameplay/trilogy-sentinel-cold-restore-2026-11-24/state-after-success.json)和[世界总览 21 FPS 情境图](../output/gameplay/trilogy-sentinel-cold-restore-2026-11-24/world-overview-21fps-context.jpg)。本轮没有重做失败路线；失败暴露、失败重试及静默通过沿用[既有实机记录](#哨兵失败重试)。
 
+值班台入口画面与状态快照：[实机画面](../output/gameplay/trilogy-cypher-console-entry-2026-11-24/m1-cypher-console-step-0.jpg)、[入口状态](../output/gameplay/trilogy-cypher-console-entry-2026-11-24/state.json)。入口时 Neo 生命 100，距 Cypher 约 17 米，HUD 延迟读数 697 ms；取景右侧有大型暗色前景结构遮住部分场景。此单帧不能证明碰撞净空或完成电影机位比对，故地图/美术仍待复核，也不是剧情场景的帧时证据。
+
 | 九项标准 | 本轮证据 | 结论 |
 | --- | --- | --- |
 | 剧情覆盖 | 1-09 的四段连续覆盖已有 11-12 记录；本轮重新实走哨兵段至完成，并衔接值班台第 0 步。 | 分项覆盖通过 |
 | 可玩验收 | 本轮真实移动、距离门槛、停机、EMP 说明和静默成功可操作；本轮未重做失败路线，失败重试沿用 11-21 哨兵实机记录。 | 分项通过，失败证据沿用 |
-| 地图 | 冷恢复取景中前景中柱遮挡 Neo 与场景中心；未做双视角碰撞/净空复核。 | 待复核 |
+| 地图 | 冷恢复取景中前景中柱遮挡 Neo 与场景中心；值班台入口画面还显示右侧暗色前景遮挡。未做双视角碰撞/净空复核。 | 待复核 |
 | 美术 | 留有实机画面，尚无对应原片机位、灯色、布景材质的逐镜比较。 | 待精修 |
 | 人物 | 可见 Neo、Trinity 与船员；未完成演员外形、衣着和动作接触对照。 | 待验 |
 | 声音 | 操作全程保持静音；本轮不做听感、对白或混音判断。 | 待验 |
