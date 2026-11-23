@@ -77,6 +77,40 @@ test('the console journal and live G button expose taking and tasting as separat
   }
 });
 
+test('interlude subtitles reserve the item bar area through waiting and choices, then release it on a visit', async t => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { SandboxUI } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const elements = new Map(), element = (id: string) => {
+    if (!elements.has(id)) {
+      const classes = new Set<string>();
+      elements.set(id, { textContent: '', innerHTML: '', style: {}, classes, classList: {
+        add(...names: string[]) { names.forEach(name => classes.add(name)); },
+        remove(...names: string[]) { names.forEach(name => classes.delete(name)); },
+        toggle(name: string, active: boolean) { if (active) classes.add(name); else classes.delete(name); },
+      } });
+    }
+    return elements.get(id);
+  };
+  const previous = globalThis.document; t.after(() => { globalThis.document = previous; });
+  globalThis.document = { getElementById: element } as unknown as Document;
+  const ui = Object.assign(Object.create(SandboxUI.prototype), { root: { querySelector: element }, tick: 0 });
+  for (const [id, kind, actor] of [['m1_cypher_console', 'console', 'neo'], ['m1_steak', 'steak', 'smith'], ['m1_meal', 'meal', 'neo']] as const) {
+    const scene = FILM_SCENE_BY_ID[id], player = { id: actor, status: 'alive', isInMatrix: id === 'm1_steak', position: filmStepPosition(scene, scene.steps[0]) } as AgentState;
+    const sandbox = { threats: [], neoLife: { journey: { scene: id, actor, step: 0, completed: [], reflections: {}, lastText: '等待你的回应。',
+      interlude: { kind, phase: 'ready', elapsed: 0 } } } } as SandboxState;
+    for (const phase of ['ready', 'choice', 'done'] as const) {
+      sandbox.neoLife!.journey!.interlude!.phase = phase;
+      ui.updateFilm(player, sandbox);
+      assert.equal(element('#film-sequence').classes.has('interlude'), true, `${kind} ${phase} keeps subtitles clear of the item bar`);
+      assert.equal(element('#film-sequence').classes.has('hidden'), false);
+    }
+    sandbox.neoLife!.journey!.visiting = id;
+    ui.updateFilm(player, sandbox);
+    assert.equal(element('#film-sequence').classes.has('interlude'), false, 'visiting restores the ordinary layout');
+  }
+});
+
 test('the EMP briefing journal and live waypoint require the actual inspection position', async t => {
   const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts', 'packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
     platform: 'node', format: 'esm', write: false, outdir: 'test-output', loader: { '.css': 'empty' }, logLevel: 'silent' });

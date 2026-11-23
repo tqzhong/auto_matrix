@@ -345,6 +345,7 @@ export class SandboxUI {
 
   private updateFilm(player: AgentState, state: SandboxState): void {
     const journey = state.neoLife!.journey!; const scene = filmSceneForJourney(journey)!; const step = scene.steps[journey.step];
+    this.el('film-sequence').classList.toggle('interlude', Boolean(!journey.visiting && journey.interlude && ['m1_cypher_console', 'm1_steak', 'm1_meal'].includes(scene.id)));
     if (!journey.visiting && ['m1_dejavu', 'm1_wetwall'].includes(scene.id)) this.el('film-sequence').classList.add('ambush-company');
     this.el('film-sequence').classList.toggle('ambush-observing', Boolean(!journey.visiting && scene.id === 'm1_dejavu'
       && journey.step === 0 && journey.ambushApproach?.stairCat && journey.ambush));
