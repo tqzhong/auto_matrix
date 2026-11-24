@@ -9,6 +9,7 @@ import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
+import { poseConsoleOperator } from '../packages/client/src/agents/ConsoleOperatorPerformance.js';
 
 async function fixture(t: TestContext) {
   const pending: Promise<unknown>[] = [], assets = new Map<string, Promise<any>>();
@@ -143,6 +144,22 @@ test('cold models reconstruct saved jug and own-mug contacts at the same world p
     const a = h.rig.root.getObjectByName(name)!, b = fresh.root.getObjectByName(name)!;
     assert.ok(a.getWorldPosition(new THREE.Vector3()).distanceTo(b.getWorldPosition(new THREE.Vector3())) < 1e-5, `${name} jumps on cold reconstruction`);
   }
+});
+
+test('Cypher skips keyboard skin queries after withdrawing his hands and restores contact when typing', async t => {
+  const h = await fixture(t); h.draw('done', 10.8);
+  const skin = h.rig.hero!.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+  const original = skin.getVertexPosition.bind(skin); let samples = 0;
+  t.mock.method(skin, 'getVertexPosition', (index: number, target: THREE.Vector3) => { samples++; return original(index, target); });
+  for (const [phase, elapsed] of [['performing', .8], ['accept_ready', 0], ['accepting', .67], ['sip_ready', 0], ['sipping', 2], ['returning', 3], ['choice', 0], ['responding', 4], ['done', 10.8]] as const) {
+    const gesture: InterludeGesture = { kind: 'console', phase, elapsed, role: 'cypher', physicalConsole: true, physicalPour: true };
+    h.draw(phase, elapsed); samples = 0;
+    poseConsoleOperator(h.rig.hero!, gesture);
+    assert.equal(samples, 0, `${phase} must not sample unused keyboard contacts`);
+  }
+  h.draw('ready', 0); samples = 0;
+  poseConsoleOperator(h.rig.hero!, { kind: 'console', phase: 'ready', elapsed: 0, role: 'cypher', physicalConsole: true, physicalPour: true });
+  assert.ok(samples > 0, 'returning to the keyboard must still solve the actual finger surface');
 });
 
 test('Cypher’s full right hand stays outside his mug throughout taking, sipping and returning', async t => {

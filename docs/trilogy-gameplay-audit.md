@@ -1306,6 +1306,16 @@ Desktop Commander 的 `Blue_PineApple` 当前离线，故上表本地证据不�
 
 本轮仅验证实际界面的隔离 DOM 布局和无渲染的连接传输，未操作存档推进剧情，未核验三维身体/布景接触、原片画面或 1080p 渲染性能。系统锁定标志仍为开启，前台 Chrome 的同步延迟根因仍待解锁后复现。声音保持静音，1-09 的九项仍未齐，综合签收继续 **2/42**。
 
+### 2026-11-24 值班台接杯冷恢复与人物降耗
+
+上午解锁后重新接管 Neo，用真实键鼠走近值班台并开始夜班演出。倒酒结束后主动按 G 接杯，在 `accepting` 0.67 秒处暂停，正常停止并冷重启隔离后端。启动恢复第 289150 刻，仍为暂停；剧情状态及 Neo、Cypher 的位置、朝向、生命、所在场景和完整动作参数逐字段相同。浏览器恢复同一接杯画面，继续后到 `sip_ready`，再次按 G 品尝、归还，再从手记选择 `agency` 回应。回应结束到 `done`，完成节点从 28 增至 29，agency 从 7 增至 8，生命 100。[冷恢复比较](../output/gameplay/trilogy-nightwatch-cold-restore-2026-11-24/cold-restore-comparison.json)、[恢复画面](../output/gameplay/trilogy-nightwatch-cold-restore-2026-11-24/cup-after-cold.jpg)及[品尝画面](../output/gameplay/trilogy-nightwatch-cold-restore-2026-11-24/console-sipping.jpg)保留本段证据；未据此增加整组签收。
+
+原生独立 Chrome 窗口已确认 1280×720、像素比 1.5、实际画布 1920×1080、精致画质，Apple M3 Metal 硬件渲染和 GPU 合成启用，页面可见且有焦点，音乐/音效静音、无录制。运行中的值班台短样本 19.1 FPS、P95 66.5 ms。函数级 CPU 栈指向 `poseConsoleOperator`：手已离开键盘时，每帧仍采样 2292 个蒙皮指端顶点，最终目标却不使用这些接触点。新增回归在原版准确失败；现在只在打字权重大于零时计算键盘接触，保留坐姿、指节姿势、手臂 IK 和全部模型。倒酒、握杯、杯口、指尖、第一人称、冷模型和剧情相关回归 **38/38**、客户端类型检查、生产构建及 `git diff --check` 通过。
+
+同一第 290832 刻暂停态、相同分辨率和投影，机位位置最大差约 1.42e-14，绘制均为 565 次/帧。Cypher 人物更新由 8.86 降到 0.76 ms，人物总更新由 12.91 降到 4.18 ms；首次前后帧率为 19.88/19.87 FPS，没有同步提升。后续重新聚焦测试页的 CPU 重采样为 44.6 FPS、P95 32.8 ms；GPU 整帧采样为 44.2 FPS、P95 33.9 ms，GPU 区间均值 28.0 ms，未丢弃计时且 GL 错误为 0。完整数据见[前后比较](../output/gameplay/trilogy-nightwatch-cold-restore-2026-11-24/performance-comparison.json)、[后续 CPU 样本](../output/gameplay/trilogy-nightwatch-cold-restore-2026-11-24/console-paused-repeat-no-window-change.json)和[GPU 样本](../output/gameplay/trilogy-nightwatch-cold-restore-2026-11-24/console-gpu-frame.json)。这确认了局部 CPU 降耗，帧率波动原因和整组连续路线性能仍未验收。
+
+本段已补齐实际接杯、品尝、回应与动作中冷恢复；1-09 的餐厅和用餐本轮尚未续走，地图、美术、人物、声音、完整稳定性及连续性能仍须逐项核验，综合签收保持 **2/42**。
+
 ### Cypher 值班台切场
 
 在哨兵退场与复电期间分帧构建飞船，并从复电存档的登录页继续准备同一间舱室。舱壁和床铺贴图解码后加入准备队列。提前链接格栅的颜色、阴影和法线程序，并分帧上传实际入镜船员的皮肤及顶点数据。Neo 的准备材质保留实际针织衫的着色程序及局部蒙皮。
