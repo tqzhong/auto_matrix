@@ -162,6 +162,41 @@ test('the Oracle departure journal requires the hostess, privacy, bite and physi
   assert.match(renderFilmJourney(player, sandbox), /data-target="film:next" >继续返回路线/);
 });
 
+test('the Oracle consultation replaces the vase waypoint and keeps its subtitles clear of the item bar', async t => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { SandboxUI } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const elements = new Map(), element = (id: string) => {
+    if (!elements.has(id)) {
+      const classes = new Set<string>();
+      elements.set(id, { textContent: '', innerHTML: '', style: {}, classes, classList: {
+        add(...names: string[]) { names.forEach(name => classes.add(name)); },
+        remove(...names: string[]) { names.forEach(name => classes.delete(name)); },
+        toggle(name: string, active: boolean) { if (active) classes.add(name); else classes.delete(name); },
+      } });
+    }
+    return elements.get(id);
+  };
+  const previous = globalThis.document; t.after(() => { globalThis.document = previous; });
+  globalThis.document = { getElementById: element } as unknown as Document;
+  const ui = Object.assign(Object.create(SandboxUI.prototype), { root: { querySelector: element }, tick: 0 });
+  const player = { id: 'neo', status: 'alive', isInMatrix: true, rotation: 0, position: filmPosition('film_oracle_home', 8, -18) } as AgentState;
+  const sandbox = { threats: [], neoLife: { journey: { scene: 'm1_oracle', actor: 'neo', step: 1, completed: [], reflections: {}, lastText: '请到先知身边。',
+    oracle: { vase: 4.5, consultation: { phase: 'waiting', elapsed: 0 } } } } } as SandboxState;
+  element('#sandbox-waypoint').innerHTML = '听见提醒，回头看花瓶';
+  ui.updateFilm(player, sandbox);
+  assert.match(element('#sandbox-waypoint').innerHTML, /先知身边.*14 m/);
+  assert.doesNotMatch(element('#sandbox-waypoint').innerHTML, /花瓶/);
+  for (const phase of ['waiting', 'examining', 'question', 'responding', 'done'] as const) {
+    sandbox.neoLife!.journey!.oracle!.consultation!.phase = phase;
+    ui.updateFilm(player, sandbox);
+    assert.equal(element('#film-sequence').classes.has('oracle-visit'), true, `${phase} reserves the subtitle area`);
+    if (phase !== 'waiting') assert.equal(element('#sandbox-waypoint').textContent, '');
+  }
+  sandbox.neoLife!.journey!.visiting = 'm1_oracle'; ui.updateFilm(player, sandbox);
+  assert.equal(element('#film-sequence').classes.has('oracle-visit'), false);
+});
+
 test('Oracle departure navigation follows the returning hostess and only offers local interactions', async t => {
   const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
     platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });

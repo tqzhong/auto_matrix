@@ -346,6 +346,7 @@ export class SandboxUI {
   private updateFilm(player: AgentState, state: SandboxState): void {
     const journey = state.neoLife!.journey!; const scene = filmSceneForJourney(journey)!; const step = scene.steps[journey.step];
     this.el('film-sequence').classList.toggle('interlude', Boolean(!journey.visiting && journey.interlude && ['m1_cypher_console', 'm1_steak', 'm1_meal'].includes(scene.id)));
+    this.el('film-sequence').classList.toggle('oracle-visit', !journey.visiting && scene.id === 'm1_oracle');
     if (!journey.visiting && ['m1_dejavu', 'm1_wetwall'].includes(scene.id)) this.el('film-sequence').classList.add('ambush-company');
     this.el('film-sequence').classList.toggle('ambush-observing', Boolean(!journey.visiting && scene.id === 'm1_dejavu'
       && journey.step === 0 && journey.ambushApproach?.stairCat && journey.ambush));
@@ -1804,7 +1805,11 @@ export class SandboxUI {
       this.el('sandbox-nearby').textContent = encounter.phase === 'done' ? '继续返回路线' : '接受先知的检查与谈话';
       this.el('sandbox-job').style.width = oracleVisitLocked(journey) && encounter.phase !== 'question'
         ? `${Math.min(100, encounter.elapsed / oracleVisitDuration(encounter) * 100)}%` : '0';
-      if (oracleVisitLocked(journey)) this.el('sandbox-waypoint').textContent = '';
+      if (encounter.phase === 'waiting' && step) {
+        const target = filmStepPosition(scene, step), gap = distance(player.position, target);
+        const direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
+        this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>先知身边 <b>${Math.round(gap)} m</b>`;
+      } else this.el('sandbox-waypoint').textContent = '';
       if (encounter.phase === 'question' && document.pointerLockElement) document.exitPointerLock();
       document.getElementById('game-objective-copy')!.textContent = encounter.phase === 'question' ? '先知正在等待你的回答；打开手记，决定如何面对预言与 Morpheus。'
         : encounter.phase === 'done' ? '检查与饼干交接已记下；这个回答会改变后续营救准备。' : journey.lastText;
