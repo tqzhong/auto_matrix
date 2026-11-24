@@ -62,3 +62,68 @@ test('basement preparation accepts late delivered cast and rebuilds its cache fo
   const count = h.work.length; h.newGpu(); h.drain(); assert.ok(h.work.length > count);
   h.film.update(undefined, undefined, 0); const after = h.work.length; h.prepare(); assert.equal(h.work.length, after);
 });
+
+test('the bathroom prepares and hands off the same basement without adding it to the live room', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene), camera = new THREE.PerspectiveCamera();
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const player = world.agents.get('morpheus')!, center = FILM_SETS.film_ambush_house.center;
+  player.position = { x: center.x - 15.5, y: center.y - 61.2, z: center.z - 32.2 }; player.isInMatrix = true;
+  const journey = { scene: 'm1_bathroom', actor: 'morpheus', step: 0, completed: [] } as unknown as FilmJourney;
+  film.update(player, { neoLife: { journey } } as SandboxState, 0, player.position);
+  const rooms = new Set<THREE.Object3D>(), batches: THREE.Object3D[][] = [], programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  const hero = new THREE.Group(), mesh = new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+  hero.visible = false; hero.add(mesh); scene.add(hero);
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(), new THREE.MeshBasicMaterial()); shadow.visible = false; scene.add(shadow);
+  const late = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+  let target: THREE.WebGLRenderTarget | null = null, bindings = 0;
+  const gpu = {
+    properties: { get: () => ({}) }, info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
+    compile(subject: THREE.Object3D, eye: THREE.Camera, colors: THREE.Scene) {
+      assert.equal(eye, camera); assert.notEqual(colors, scene); assert.equal(target?.width, 1);
+      const visible: THREE.Object3D[] = []; colors.traverseVisible(object => visible.push(object));
+      assert.equal(visible.filter(object => object instanceof THREE.PointLight).length, 7);
+      const room = visible.find(object => object.name === 'basement-mechanical-room');
+      assert.ok(room); assert.equal(scene.getObjectByName(room.name), undefined); rooms.add(room);
+      const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object));
+      assert.ok(batch.length && batch.length <= 4); batches.push(batch);
+      programs.push({ program: {}, isReady: () => true, getUniforms: () => { bindings++; } });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const prepare = () => {
+    const before = batches.length + bindings;
+    film.prepareBasement(gpu, camera, lighting, journey, () => undefined, id => id === 'neo' ? hero : undefined, id => id === 'neo' ? shadow : undefined);
+    assert.ok(batches.length + bindings - before <= 1);
+    assert.equal(hero.visible, false); assert.equal(mesh.parent, hero); assert.equal(target, null);
+  };
+  t.after(() => {
+    film.dispose(); lighting.dispose();
+    for (const object of [mesh, shadow, late]) { object.geometry.dispose(); object.material.dispose(); }
+  });
+  for (let i = 0; i < 600; i++) prepare();
+  assert.equal(rooms.size, 1, 'prepare the destination before the first basement draw');
+  assert.ok(batches.flat().includes(mesh), 'Neo must be ready before the viewpoint returns to him');
+  hero.add(late);
+  for (let i = 0; i < 100; i++) prepare();
+  assert.ok(batches.flat().includes(late), 'a detailed head arriving in an already seen character group must still prepare');
+  assert.ok(batches.flat().includes(shadow), 'the first exposed ground shadow needs the destination light layout');
+  assert.equal(shadow.visible, false);
+  const before = batches.length;
+  gpu.properties = { get: () => ({}) } as THREE.WebGLRenderer['properties'];
+  for (let i = 0; i < 600; i++) prepare();
+  assert.ok(batches.length > before); assert.equal(rooms.size, 1, 'a new GPU must reuse the prepared room');
+  const first = [...rooms][0], surface = first.getObjectByProperty('isMesh', true) as THREE.Mesh;
+  let abandoned = 0; surface.geometry.addEventListener('dispose', () => abandoned++);
+  journey.visiting = 'm1_bathroom'; prepare(); assert.equal(abandoned, 1);
+  delete journey.visiting;
+  for (let i = 0; i < 600; i++) prepare();
+  const room = [...rooms][1], next = room.getObjectByProperty('isMesh', true) as THREE.Mesh;
+  let disposed = 0; next.geometry.addEventListener('dispose', () => disposed++);
+  journey.scene = 'm1_basement'; journey.basement = { phase: 'ready', gas: 0, hatch: 0 } as FilmJourney['basement'];
+  film.update(player, { neoLife: { journey } } as SandboxState, 0, player.position);
+  assert.equal(film.root.getObjectByName(room.name), room); assert.equal(disposed, 0);
+  film.update(undefined, undefined, 0); assert.equal(disposed, 1);
+  film.dispose(); assert.equal(disposed, 1);
+});

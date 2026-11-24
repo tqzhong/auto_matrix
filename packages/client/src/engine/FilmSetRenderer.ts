@@ -510,6 +510,7 @@ export class FilmSetRenderer {
   private basement?: BasementSetRenderer;
   private basementFrame?: number;
   private basementColors?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties'] };
+  private preparedBasement?: EntryPreparation & { renderer: BasementSetRenderer; colors?: ColorPreparation & { seen: Set<ColorMesh> } };
   private tvRepair?: TvRepairRenderer;
   private preparedTvExit?: { renderer: TvRepairRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private preparedCrosscutDeck?: DeckEntryPreparation;
@@ -862,7 +863,11 @@ export class FilmSetRenderer {
     this.prepareStagedEntry(renderer, camera, prepared, colors, atOracle ? sourceLights : undefined, 2, Boolean(first && priority(first)));
   }
   prepareBasement(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney | undefined,
-    body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined): void {
+    body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadow?: (id: string) => THREE.Mesh | undefined): void {
+    if (journey?.scene === 'm1_bathroom' && !journey.visiting) {
+      this.prepareBasementEntry(renderer, camera, lighting, body, hero, shadow); return;
+    }
+    this.cancelBasementPreparation();
     if (!this.basement || journey?.scene !== 'm1_basement' || journey.visiting) { this.basementColors = undefined; return; }
     // The camera first exposes the other cast below the ceiling; give the fall its frame budget.
     if (!['ready', 'descending'].includes(journey.basement?.phase ?? '') || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
@@ -887,6 +892,51 @@ export class FilmSetRenderer {
     }
     colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     if (!this.prepareColorTexture(renderer, colors.textures)) this.prepareColorFrame(renderer, camera, colors, lighting, 'isolated');
+  }
+  private prepareBasementEntry(renderer: THREE.WebGLRenderer, camera: THREE.Camera, sourceLights: LightCulling,
+    body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadow?: (id: string) => THREE.Mesh | undefined): void {
+    if (!this.preparedBasement) {
+      const room = new BasementSetRenderer(new THREE.Group());
+      this.preparedBasement = { root: room.root, renderer: room, liveMeshes: [] };
+      return;
+    }
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    const prepared = this.preparedBasement;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      this.releaseEntryPreparation(prepared);
+      const colors = prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true }), seen: new Set<ColorMesh>() };
+      // The intact ceiling and falling fragments are hidden before the descent.
+      const meshes: ColorMesh[] = [];
+      prepared.root.traverse(object => {
+        if (object instanceof THREE.Mesh && (object.material instanceof THREE.MeshStandardMaterial || object.material instanceof THREE.MeshBasicMaterial)) meshes.push(object);
+      });
+      colors.meshes = meshes; this.queueColorTextures(colors.textures, meshes);
+      prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
+      prepared.gpu = renderer.properties;
+      if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+        prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
+        this.queueEntryShadows(prepared, colors.meshes);
+      }
+    }
+    const colors = prepared.colors, meshes = new Set<ColorMesh>();
+    for (const id of ['neo', ...FILM_SCENE_BY_ID.m1_basement.cast, 'morpheus', 'smith', 'mouse']) {
+      const detailed = hero(id);
+      for (const group of [body(id), detailed]) {
+        if (!group) continue;
+        const collected: ColorMesh[] = [];
+        if (group === detailed) group.traverse(object => {
+          if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) collected.push(object);
+        });
+        else collected.push(...this.colorMeshes([group]));
+        collected.forEach(mesh => meshes.add(mesh));
+      }
+      const ground = shadow?.(id);
+      if (ground && (ground.material instanceof THREE.MeshStandardMaterial || ground.material instanceof THREE.MeshBasicMaterial)) meshes.add(ground as ColorMesh);
+    }
+    for (const mesh of meshes) if (colors.seen.has(mesh)) meshes.delete(mesh); else colors.seen.add(mesh);
+    colors.meshes.unshift(...meshes); prepared.liveMeshes.push(...meshes);
+    this.queueColorTextures(colors.textures, meshes); this.queueEntryShadows(prepared, meshes);
+    this.prepareStagedEntry(renderer, camera, prepared, colors, sourceLights, 2);
   }
   prepareTvExit(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
@@ -4013,6 +4063,8 @@ export class FilmSetRenderer {
       }
       const preparedAmbush = set?.id === 'film_ambush_house' && sceneId === 'm1_dejavu' && !journey?.visiting ? this.preparedAmbush : undefined;
       if (preparedAmbush) { this.preparedAmbush = undefined; this.releaseEntryPreparation(preparedAmbush, true); }
+      const preparedBasement = set?.id === 'film_ambush_house' && sceneId === 'm1_basement' && !journey?.visiting ? this.preparedBasement : undefined;
+      if (preparedBasement) { this.preparedBasement = undefined; this.releaseEntryPreparation(preparedBasement, true); }
       const preparedTvExit = set?.id === 'film_tv_repair' && sceneId === 'm1_tv_exit' && !journey?.visiting ? this.preparedTvExit : undefined;
       if (preparedTvExit) { this.preparedTvExit = undefined; preparedTvExit.lighting?.dispose(); }
       const preparedLobby = set?.id === 'film_government_lobby' && sceneId === 'm1_lobby' && !journey?.visiting ? this.preparedLobby : undefined;
@@ -4339,7 +4391,13 @@ export class FilmSetRenderer {
             }
           }
         }
-        else if (set.id === 'film_ambush_house' && sceneId === 'm1_basement') this.basement = new BasementSetRenderer(this.root);
+        else if (set.id === 'film_ambush_house' && sceneId === 'm1_basement') {
+          this.basement = preparedBasement?.renderer ?? new BasementSetRenderer(this.root);
+          if (preparedBasement) {
+            this.root.add(preparedBasement.root);
+            for (const material of preparedBasement.shadows?.materials ?? []) this.materials.add(material);
+          }
+        }
         else if (set.id === 'film_ambush_house') {
           this.ambush = preparedAmbush?.renderer ?? new AmbushSetRenderer();
           this.ambush.attach(this.root);
@@ -7401,6 +7459,10 @@ export class FilmSetRenderer {
     const prepared = this.preparedTvExit; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.renderer.dispose(); this.preparedTvExit = undefined;
   }
+  private cancelBasementPreparation(): void {
+    const prepared = this.preparedBasement; if (!prepared) return;
+    this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedBasement = undefined;
+  }
   private cancelCrosscutDeckPreparation(): void {
     const prepared = this.preparedCrosscutDeck; if (!prepared) return;
     this.releaseEntryPreparation(prepared); prepared.deck.dispose(); this.preparedCrosscutDeck = undefined;
@@ -7498,6 +7560,7 @@ export class FilmSetRenderer {
     this.cancelConsolePreparation();
     this.cancelRestaurantPreparation();
     this.cancelMealPreparation();
+    this.cancelBasementPreparation();
     this.cancelTvExitPreparation();
     this.cancelCrosscutDeckPreparation();
     this.cancelLobbyPreparation();
