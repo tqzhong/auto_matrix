@@ -57,6 +57,44 @@ test('stable shop slots preserve the original contributing energy, restore the r
   h.film.update(undefined, undefined, 0); assert.equal(h.film.stablePointSlots, false);
 });
 
+test('a restored shop shaft prepares the street and hidden cast before they emerge', t => {
+  const h = fixture(t); h.view(0, 0, 0);
+  const lighting = new LightCulling(h.scene), camera = new THREE.PerspectiveCamera(), sun = new THREE.DirectionalLight();
+  lighting.stablePointSlots = true;
+  const beforeRender = h.scene.onBeforeRender, hero = new THREE.Group(); hero.visible = false;
+  const skin = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial()); hero.add(skin); h.scene.add(hero);
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(), new THREE.MeshBasicMaterial()); shadow.visible = false; h.scene.add(shadow);
+  const late = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+  const batches: THREE.Object3D[][] = [], programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  let target: THREE.WebGLRenderTarget | null = null, bindings = 0;
+  const gpu = { properties: { get: () => ({}) }, info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
+    compile(subject: THREE.Object3D, eye: THREE.Camera, layout: THREE.Scene) {
+      assert.equal(eye, camera); assert.notEqual(layout, h.scene); assert.equal(target?.width, 1);
+      let points = 0; layout.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; }); assert.equal(points, 7);
+      const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object));
+      assert.ok(batch.length && batch.length <= 4); batches.push(batch);
+      programs.push({ program: {}, isReady: () => true, getUniforms: () => { bindings++; } });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const prepare = () => {
+    const before = batches.length + bindings;
+    h.film.prepareTvExit(gpu, camera, h.journey, id => id === 'neo' ? hero : undefined, sun, lighting, id => id === 'neo' ? shadow : undefined);
+    assert.ok(batches.length + bindings - before <= 1);
+    assert.equal(target, null); assert.equal(hero.visible, false); assert.equal(shadow.visible, false); assert.equal(skin.parent, hero);
+  };
+  t.after(() => { lighting.dispose(); for (const mesh of [skin, shadow, late]) { mesh.geometry.dispose(); mesh.material.dispose(); } });
+  for (let i = 0; i < 500; i++) prepare();
+  assert.ok(batches.length, 'cold shaft resumes must prepare the destination before Neo reaches the curb');
+  assert.ok(batches[0].includes(shadow), 'the first exposed ground shadow gets priority');
+  assert.ok(batches.flat().includes(skin));
+  hero.add(late); for (let i = 0; i < 100; i++) prepare(); assert.ok(batches.flat().includes(late));
+  const before = batches.length; gpu.properties = { get: () => ({}) } as THREE.WebGLRenderer['properties'];
+  for (let i = 0; i < 500; i++) prepare(); assert.ok(batches.length > before);
+  h.journey.visiting = 'm1_tv_exit'; prepare(); assert.equal(h.scene.onBeforeRender, beforeRender, 'canceling preparation must keep the live light culler');
+});
+
 function tunnelFixture(t: TestContext) {
   const h = fixture(t);
   Object.assign(h.film, { current: FILM_SETS.film_ambush_house, currentScene: 'm1_basement' });

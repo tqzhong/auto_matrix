@@ -373,7 +373,8 @@ export class Engine {
     this.filmSets.prepareBasement(this.renderer, this.camera, this.lightCulling, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), id => this.agentRenderer.getAgentShadow(id));
     this.filmSets.prepareTvExit(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
-      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
+      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight,
+      this.lightCulling, id => this.agentRenderer.getAgentShadow(id));
     this.filmSets.prepareCrosscutDeck(this.renderer, this.camera, meeting,
       id => this.agentRenderer.getShipEntryCast(id), this.lightingSystem.directionalLight, this.lightCulling, onLanding);
     // Give the newly entered armoury its first frame before building the lobby.

@@ -513,6 +513,9 @@ export class FilmSetRenderer {
   private preparedBasement?: EntryPreparation & { renderer: BasementSetRenderer; colors?: ColorPreparation & { seen: Set<ColorMesh> } };
   private tvRepair?: TvRepairRenderer;
   private preparedTvExit?: { renderer: TvRepairRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
+  private tvExitControls?: ColorPreparation & Pick<EntryPreparation, 'lighting' | 'shadows' | 'textureUpload' | 'liveMeshes'> & {
+    root: THREE.Group; gpu: THREE.WebGLRenderer['properties']; seen: Set<ColorMesh>;
+  };
   private preparedCrosscutDeck?: DeckEntryPreparation;
   private crosscutTv?: TvRepairRenderer;
   private crosscutDeck?: { root: THREE.Group; renderer: NebDeckRenderer };
@@ -939,7 +942,11 @@ export class FilmSetRenderer {
     this.prepareStagedEntry(renderer, camera, prepared, colors, sourceLights, 2);
   }
   prepareTvExit(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
-    actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
+    actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight, lighting?: LightCulling, shadow?: (id: string) => THREE.Mesh | undefined): void {
+    if (this.current?.id === 'film_tv_repair' && this.tvRepair && journey?.scene === 'm1_tv_exit' && !journey.visiting && lighting) {
+      this.prepareTvExitControls(renderer, camera, lighting, actor, shadow); return;
+    }
+    this.cancelTvExitControls();
     if (this.current?.id !== 'film_ambush_house' || this.currentScene !== 'm1_basement' || journey?.scene !== 'm1_basement' || journey.visiting
       || !['tunnel', 'done'].includes(journey.basement?.phase ?? '')) {
       this.cancelTvExitPreparation(); return;
@@ -968,6 +975,44 @@ export class FilmSetRenderer {
       }
     }
     this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+  }
+  private prepareTvExitControls(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
+    actor: (id: string) => THREE.Group | undefined, shadow?: (id: string) => THREE.Mesh | undefined): void {
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    const root = this.tvRepair!.root;
+    if (this.tvExitControls?.gpu !== renderer.properties || this.tvExitControls.root !== root) {
+      this.cancelTvExitControls();
+      const meshes: ColorMesh[] = [this.marker];
+      root.traverse(object => {
+        if (object instanceof THREE.Mesh && (object.material instanceof THREE.MeshStandardMaterial || object.material instanceof THREE.MeshBasicMaterial)) meshes.push(object);
+      });
+      this.tvExitControls = { scene: this.scene, root, gpu: renderer.properties, meshes, programs: [], textures: new Set<THREE.Texture>(),
+        lighting, liveMeshes: [...meshes], seen: new Set(meshes) };
+      const prepared = this.tvExitControls;
+      this.queueColorTextures(prepared.textures, meshes);
+      if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+        prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
+        this.queueEntryShadows(prepared, meshes);
+      }
+    }
+    const prepared = this.tvExitControls, meshes = new Set<ColorMesh>(), grounds = new Set<ColorMesh>();
+    for (const id of CONNECTED_ROLES) {
+      actor(id)?.traverse(object => {
+        if (object instanceof THREE.Mesh && (object.material instanceof THREE.MeshStandardMaterial || object.material instanceof THREE.MeshBasicMaterial)
+          && !object.userData.reloadedHidden) meshes.add(object);
+      });
+      const ground = shadow?.(id);
+      if (ground && (ground.material instanceof THREE.MeshStandardMaterial || ground.material instanceof THREE.MeshBasicMaterial)) {
+        meshes.add(ground as ColorMesh); grounds.add(ground as ColorMesh);
+      }
+    }
+    for (const mesh of meshes) if (prepared.seen.has(mesh)) meshes.delete(mesh); else prepared.seen.add(mesh);
+    prepared.meshes.unshift(...[...meshes].filter(mesh => grounds.has(mesh)));
+    prepared.meshes.push(...[...meshes].filter(mesh => !grounds.has(mesh))); prepared.liveMeshes.push(...meshes);
+    this.queueColorTextures(prepared.textures, meshes); this.queueEntryShadows(prepared, meshes);
+    // The live shaft and the street share their light layout.
+    if (prepared.shadows) prepared.shadows.source.length = 0;
+    this.prepareStagedEntry(renderer, camera, prepared, prepared);
   }
   prepareCrosscutDeck(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => ShipEntryCast, shadowSun: THREE.DirectionalLight, sourceLights?: LightCulling, resume = false): void {
@@ -7459,6 +7504,12 @@ export class FilmSetRenderer {
     const prepared = this.preparedTvExit; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.renderer.dispose(); this.preparedTvExit = undefined;
   }
+  private cancelTvExitControls(): void {
+    const prepared = this.tvExitControls; if (!prepared) return;
+    prepared.textureUpload?.return(false); prepared.shadows?.materials.forEach(material => material.dispose());
+    // The root and light culler belong to the live scene.
+    this.tvExitControls = undefined;
+  }
   private cancelBasementPreparation(): void {
     const prepared = this.preparedBasement; if (!prepared) return;
     this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedBasement = undefined;
@@ -7561,6 +7612,7 @@ export class FilmSetRenderer {
     this.cancelRestaurantPreparation();
     this.cancelMealPreparation();
     this.cancelBasementPreparation();
+    this.cancelTvExitControls();
     this.cancelTvExitPreparation();
     this.cancelCrosscutDeckPreparation();
     this.cancelLobbyPreparation();
