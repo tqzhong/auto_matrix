@@ -12,6 +12,7 @@ import { wetwallLocked, sixthLocked, SIXTH } from '@auto_matrix/shared';
 import { reloadedLocked, zionTempleSpeechActive } from '@auto_matrix/shared';
 import { trainmanChaseActive, trainmanChaseLocked, helGarageActive, helGarageLocked } from '@auto_matrix/shared';
 import { morningLocked } from '@auto_matrix/shared';
+import { crewMealAge } from '@auto_matrix/shared';
 import { OPENING_HOTEL, openingHotelAlleyGuard, openingHotelHallTime, openingHotelTraceTime } from '@auto_matrix/shared';
 import { PRIMARY_DEMOLITION } from '@auto_matrix/shared';
 import * as THREE from 'three';
@@ -715,6 +716,12 @@ export class Engine {
       if (current.phase !== previous?.phase && (current.phase === 'performing' || current.phase === 'responding')) {
         this.audio.dialogue();
         this.audio.interludeSound(current.kind === 'console' ? 'keys' : current.kind === 'steak' ? 'cutlery' : 'bowl');
+      } else if (previous && current.kind === 'meal' && current.physicalMeal) {
+        if (current.phase === 'accepting') {
+          if (previous.phase !== 'accepting') this.audio.dialogue();
+          const from = crewMealAge(previous), to = crewMealAge(current);
+          for (const beat of [3.4, 8.2]) if (from < beat && to >= beat) this.audio.interludeSound('cutlery');
+        }
       } else if (previous?.phase === current.phase && current.phase === 'performing') {
         const beat = current.kind === 'console' ? 4.6 : current.kind === 'steak' ? 3.2 : 8.5;
         if (previous.elapsed < beat && current.elapsed >= beat) this.audio.interludeSound(current.kind === 'console' ? 'glass' : 'cutlery');

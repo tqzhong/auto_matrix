@@ -105,6 +105,12 @@ test('interlude subtitles reserve the item bar area through waiting and choices,
       assert.equal(element('#film-sequence').classes.has('interlude'), true, `${kind} ${phase} keeps subtitles clear of the item bar`);
       assert.equal(element('#film-sequence').classes.has('hidden'), false);
     }
+    if (kind !== 'steak') {
+      Object.assign(sandbox.neoLife!.journey!.interlude!, { phase: 'accept_ready', physicalMeal: kind === 'meal' });
+      ui.updateFilm(player, sandbox);
+      assert.match(element('#film-sequence-hint').textContent, kind === 'meal' ? /G 拿起碗勺/ : /G 接过金属杯/);
+      assert.match(element('#sandbox-nearby').textContent, kind === 'meal' ? /拿起碗勺/ : /接过金属杯/);
+    }
     sandbox.neoLife!.journey!.visiting = id;
     ui.updateFilm(player, sandbox);
     assert.equal(element('#film-sequence').classes.has('interlude'), false, 'visiting restores the ordinary layout');
