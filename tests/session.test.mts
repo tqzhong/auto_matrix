@@ -3,6 +3,7 @@ import { test, type TestContext } from 'node:test';
 import { createServer } from 'node:http';
 import { gzipSync } from 'node:zlib';
 import { Server, type Socket } from 'socket.io';
+import type { AgentState } from '@auto_matrix/shared';
 import { SocketClient, type SocketCallbacks } from '../packages/client/src/network/SocketClient.js';
 import { SocketServer } from '../packages/server/src/network/SocketServer.js';
 
@@ -20,7 +21,7 @@ async function setup(t: TestContext, replyToPing = true, deferSnapshot = false, 
   const previousLocation = Object.getOwnPropertyDescriptor(globalThis, 'location');
   Object.assign(globalThis, { location: new URL(`http://127.0.0.1:${address.port}`) });
   const messages: { type: string; data: { agentId?: string; takeover?: boolean } }[] = [];
-  const states: { agentId?: string | null; message?: string }[] = [];
+  const states: { agentId?: string | null; message?: string; error?: string }[] = [];
   const health: string[] = [];
   const wires: Socket[] = [], applied: string[] = []; let snapshots = 0;
   const callbacks: SocketCallbacks = {
@@ -105,6 +106,28 @@ test('a temporary disconnect resumes the last confirmed character after the new 
     { type: 'play_as', data: { agentId: 'neo', takeover: true } },
     { type: 'play_as', data: { agentId: 'neo' } },
   ], 'automatic reconnect must not take a character back from another page');
+});
+
+for (const compressed of [false, true]) test(`a ${compressed ? 'compressed' : 'plain'} reconnect preserves a dead role until the player explicitly retries`, async t => {
+  const game = await setup(t, true, true, compressed);
+  const world = { agents: { neo: { id: 'neo', status: 'alive', health: 100 } as AgentState }, chunks: {}, locations: {}, phase: 'phase1_normal' as const, timeOfDay: 7500 };
+  const snapshot = (wire: Socket, tick: number) => {
+    if (game.transport) game.transport.sendFullState(wire.id, world, tick);
+    else wire.emit('message', { type: 'world_state_full', data: world, tick });
+  };
+  snapshot(game.wires[0], 1); await waitFor(() => game.snapshots() === 1);
+  game.client.send('play_as', { agentId: 'neo', takeover: true }); await waitFor(() => game.states.length === 1);
+  game.wires[0].conn.close(); await waitFor(() => game.wires.length === 2);
+  world.agents.neo.status = 'dead'; world.agents.neo.health = 0;
+  snapshot(game.wires[1], 42); await waitFor(() => game.snapshots() === 2); await waitFor(() => game.states.length === 2);
+  game.client.requestFullState(); await waitFor(() => game.messages.some(message => message.type === 'request_full_state'));
+  assert.equal(game.messages.filter(message => message.type === 'play_as').length, 1, 'automatic possession would rebuild the dead role and advance the retry counter');
+  assert.match(game.states[1].error!, /主动.*重试/);
+  game.client.send('play_as', { agentId: 'neo', takeover: true }); await waitFor(() => game.states.length === 3);
+  assert.deepEqual(game.messages.filter(message => message.type === 'play_as'), [
+    { type: 'play_as', data: { agentId: 'neo', takeover: true } },
+    { type: 'play_as', data: { agentId: 'neo', takeover: true } },
+  ], 'the explicit retry still uses the normal authoritative possession path');
 });
 
 test('a replaced page stops resuming its old character, including after a reconnect', async t => {

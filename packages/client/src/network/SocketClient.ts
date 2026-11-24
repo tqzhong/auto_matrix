@@ -143,7 +143,11 @@ export class SocketClient {
         this.callbacks.onWorldStateFull(data as WorldStateFull, tick);
         if (this.restoreOnSnapshot) {
           this.restoreOnSnapshot = false;
-          if (this.resumeAgent) this.send('play_as', { agentId: this.resumeAgent });
+          if (this.resumeAgent) {
+            const agent = (data as WorldStateFull).agents[this.resumeAgent];
+            if (agent?.status === 'dead') this.callbacks.onPlayerState?.({ error: '连接已恢复。角色的死亡状态已保留，请主动选择角色重试或重建。' });
+            else this.send('play_as', { agentId: this.resumeAgent });
+          }
           this.checkHealth();
         }
         break;
