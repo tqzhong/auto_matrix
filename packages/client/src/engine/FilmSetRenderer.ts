@@ -355,6 +355,8 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m2_library: { scene: 'm2_chateau', step: 4 },
   m2_mountain: { scene: 'm2_garage', step: 2 },
   m2_trucks: { scene: 'm2_plan', step: 2 },
+  m2_power: { scene: 'm2_vigilant', step: 1 },
+  m2_blackout: { scene: 'm2_relay', step: 0 },
   m2_backup: { scene: 'm2_key_door', step: 1 },
   m2_key_door: { scene: 'm2_architect', step: 4 },
   m2_architect: { scene: 'm2_catch', step: 3 },
@@ -705,7 +707,7 @@ export class FilmSetRenderer {
     if (this.current?.id === 'film_trinity_roof' && this.currentScene === 'm2_dream') return TRINITY_ROOF_POINT_SLOTS;
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_jump_return') return 16;
     // Keep the console lamp and objective slots when turning toward Cypher.
-    if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_cypher_console') return 17;
+    if (this.current?.id === 'film_neb_deck' && ['m1_cypher_console', 'm2_vigilant', 'm2_relay'].includes(this.currentScene ?? '')) return 17;
     // Reserve the full layout used while the blast lamp and intact hull overlap.
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm2_ship_lost') return SHIP_LOSS_POINT_SLOTS;
     if (this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_recovery' || this.currentScene === 'm1_cabin'))
@@ -2777,6 +2779,7 @@ export class FilmSetRenderer {
       || journey?.scene === 'm2_burly' || journey?.scene === 'm2_persephone' || journey?.scene === 'm2_mountain'
       || journey?.scene === 'm2_key_door' || journey?.scene === 'm2_ship_lost' || journey?.scene === 'm2_stop_sentinels' || journey?.scene === 'm2_medical'
       || trucks && afterCollision
+      || journey?.scene === 'm2_power' || journey?.scene === 'm2_blackout'
       || journey?.scene === 'm3_trainman_chase'
       || journey?.scene === 'm3_hel_garage' || journey?.scene === 'm3_maggie_discovery' || journey?.scene === 'm3_bane');
     if (!journey || !cut || journey.visiting || journey.step < cut.step || (!atSource && !savedCut) || !approachingGarage || trucks && !afterCollision
@@ -2788,9 +2791,10 @@ export class FilmSetRenderer {
     const teaEntry = next.id === 'm2_seraph', courtyardEntry = next.id === 'm2_bench', leVraiEntry = next.id === 'm2_merovingian';
     const libraryEntry = next.id === 'm2_library', chateauEntry = next.id === 'm2_chateau';
     const garageEntry = next.id === 'm2_garage', briefingEntry = next.id === 'm2_plan';
+    const relayEntry = next.id === 'm2_vigilant' || next.id === 'm2_relay';
     const architectEntry = next.id === 'm2_architect', catchEntry = next.id === 'm2_catch', medicalEntry = next.id === 'm2_medical';
     const finaleEntry = next.id === 'm2_stop_sentinels' || medicalEntry || next.id === 'm3_mobil' || next.id === 'm3_mobil_release';
-    const preparePasses = teaEntry || courtyardEntry || leVraiEntry || briefingEntry || architectEntry || catchEntry;
+    const preparePasses = teaEntry || courtyardEntry || leVraiEntry || briefingEntry || relayEntry || architectEntry || catchEntry;
     const helGarageEntry = next.id === 'm3_hel_garage';
     if (helGarageEntry && !helGarageTemplate) return;
     const helElevatorEntry = next.id === 'm3_hel_entry';
@@ -2821,8 +2825,9 @@ export class FilmSetRenderer {
       // PBR maps are attached after decoding. Compile the mapped variants.
       for (const texture of prepared.room.textures) if (!texture.image) return;
       const room = prepared.room;
+      if (relayEntry) room.neb?.update({ ...journey, scene: next.id, actor: next.actor, step: 0, trinityRelay: undefined }, 0);
       const colors = this.colorPreparation(room.root, [], {
-        includeBasic: teaEntry || courtyardEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || briefingEntry || finaleEntry || helEntry || shipEntry
+        includeBasic: teaEntry || courtyardEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || briefingEntry || relayEntry || finaleEntry || helEntry || shipEntry
           || Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
         playerView: savedCut,
         shadowSun: teaEntry ? shadowSun : undefined,
@@ -2835,12 +2840,12 @@ export class FilmSetRenderer {
         if (room.chateauVolley) colors.meshes.push(...this.colorMeshes(room.chateauVolley.children));
         prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
         if (preparePasses || finaleEntry || shipEntry) prepared.liveMeshes = [this.marker];
-        const shadow = shipEntry || teaEntry || courtyardEntry || leVraiEntry || briefingEntry ? shipCast?.(next.actor).shadow : undefined;
+        const shadow = shipEntry || teaEntry || courtyardEntry || leVraiEntry || briefingEntry || relayEntry ? shipCast?.(next.actor).shadow : undefined;
         if (shadow) { colors.meshes.unshift(shadow); prepared.liveMeshes?.push(shadow); }
       }
       if (preparePasses) {
-        const display = colors.meshes.find(mesh => mesh.name === (architectEntry ? 'CRT-wall-cases' : 'catch-lit-window-grid'));
-        prepared.normalMeshes = display instanceof THREE.InstancedMesh ? [display] : [];
+        const display = colors.meshes.find(mesh => mesh.name === (relayEntry ? 'neb-cabin-grating' : architectEntry ? 'CRT-wall-cases' : 'catch-lit-window-grid'));
+        prepared.normalMeshes = display instanceof THREE.InstancedMesh || relayEntry && display instanceof THREE.Mesh ? [display] : [];
         if (renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
           prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
           this.queueEntryShadows(prepared, colors.meshes);
@@ -2883,7 +2888,7 @@ export class FilmSetRenderer {
               if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
             });
           }
-          const hasShipGarments = logosEntry && (id === 'neo' || id === 'trinity') || hammerEntry && id === 'morpheus';
+          const hasShipGarments = logosEntry && (id === 'neo' || id === 'trinity') || hammerEntry && id === 'morpheus' || relayEntry && id === 'trinity';
           const garments = hasShipGarments ? shipCast?.(id).garments?.() ?? [] : [];
           if (garments.length) {
             const names = new Set(garments.map(mesh => mesh.name));
@@ -3919,6 +3924,12 @@ export class FilmSetRenderer {
     this.preparedLafayetteEntryShadow = { actor: morpheus, gpu: renderer.properties, programs: (programs?.slice(start) ?? []) as ColorProgram[] };
   }
   private *prepareRoomSteps(set: FilmSet, lights?: LafayetteRoomLights, helGarageTemplate?: AgentState): Generator<void> {
+    if (set.id === 'film_neb_deck' && (this.currentScene === 'm2_vigilant' || this.currentScene === 'm2_relay')) {
+      const root = new THREE.Group(); this.root.add(root);
+      this.neb = new NebDeckRenderer(root, true);
+      while (!this.neb.prepareStep()) yield;
+      return;
+    }
     if (set.id === 'film_operation_room') {
       this.sourceBriefing = new SourceBriefingRenderer(this.root);
       return;
@@ -4004,6 +4015,7 @@ export class FilmSetRenderer {
   }
   private adoptSecondOracleRoom(room: FilmSetRenderer): void {
     this.adoptRoomGeometry(room);
+    this.neb = room.neb; room.neb = undefined;
     this.portalDoor = room.portalDoor;
     this.oracleLetter = room.oracleLetter;
     this.courtyardStaff = room.courtyardStaff;
@@ -4567,7 +4579,7 @@ export class FilmSetRenderer {
           this.pods = preparedPods ?? new PodSetRenderer();
           this.pods.attach(this.root);
         }
-        else if (set.id === 'film_neb_deck') {
+        else if (set.id === 'film_neb_deck' && !preparedSecondOracle) {
           if (preparedAwakening?.deck) {
             preparedAwakening.deck.finishPreparation(); this.root.add(preparedAwakening.root); this.neb = preparedAwakening.deck;
           } else if (preparedTruthReturn) {

@@ -476,6 +476,7 @@ export class Engine {
       || resumeOnLanding && (meeting?.scene === 'm2_burly' || meeting?.scene === 'm2_persephone' || meeting?.scene === 'm2_mountain'
       || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_freeway' || meeting?.scene === 'm2_ship_lost' || meeting?.scene === 'm2_stop_sentinels' || meeting?.scene === 'm2_medical'
       || meeting?.scene === 'm2_trucks' && (meeting.trucks?.phase === 'rescue' || meeting.trucks?.phase === 'rescued')
+      || meeting?.scene === 'm2_power' || meeting?.scene === 'm2_blackout'
       || meeting?.scene === 'm3_trainman' || meeting?.scene === 'm3_oracle_request' || meeting?.scene === 'm3_trainman_chase'
       || meeting?.scene === 'm3_hel_garage' || meeting?.scene === 'm3_hel_bargain' || fromMobilReunion
       || meeting?.scene === 'm3_maggie_discovery' || meeting?.scene === 'm3_bane');
@@ -486,7 +487,8 @@ export class Engine {
         || id === 'trainman' && meeting?.scene === 'm3_oracle_request'
         || id === 'sati' && meeting?.scene === 'm2_medical'
         || id === 'bane' && meeting?.scene === 'm3_maggie_discovery'
-        || (id === 'niobe' || id === 'roland') && meeting?.scene === 'm3_bane')
+        || (id === 'niobe' || id === 'roland') && meeting?.scene === 'm3_bane'
+        || id === 'link' && (meeting?.scene === 'm2_power' || meeting?.scene === 'm2_blackout'))
         ? this.agentRenderer.getAgentDetail(id)
         : this.agentRenderer.getAgentHero(id) ?? (meeting?.scene === 'm2_burly' || meeting?.scene === 'm2_persephone'
           || meeting?.scene === 'm2_mountain' || meeting?.scene === 'm2_trucks' || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_stop_sentinels'
