@@ -6663,7 +6663,6 @@ export class FilmSetRenderer {
       const trigger = new THREE.Group(), b = BOOK_DOOR.book; trigger.name='library-book-trigger';trigger.position.set(b.x,b.y,b.z);bookDoor.add(trigger);
       const spine = this.box(this.mat(0x69513c),0,b.height/2,0,b.width,b.height,b.depth);spine.name='library-trigger-book';trigger.add(spine);this.bookDoor=bookDoor;
       for (const x of [-15, 15]) { this.loungeChair(x, 6, x < 0 ? Math.PI / 2 : -Math.PI / 2); this.lamp(x, 7, 6, true); }
-      this.box(this.black, 0, 5, 8, 9, 6, .35); this.box(this.glass, 0, 5, 8.21, 8.6, 5.6, .04);
       this.label('PRIVATE LIBRARY', 0, 11.5, -17.3, 13, '#c4b38c', '#27382f'); this.door(0, d / 2 - .5);
     } else if (a === 'power') {
       const main = set.id === 'film_power_station';
