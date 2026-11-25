@@ -1,12 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SETS, RELOADED, newReloaded, reloadedRoot, filmPosition, playerBlocked, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { ReloadedOpeningRenderer } from '../packages/client/src/engine/ReloadedOpeningRenderer.js';
 import { reloadedCamera } from '../packages/client/src/player/ReloadedCamera.js';
+import { EpilogueHeads } from '../packages/client/src/agents/EpilogueHeads.js';
+import type { CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
@@ -367,11 +370,13 @@ test('leaving the captains hall prepares Kid at the next real-world dock without
   const neo = world.agents.get('neo')!, kid = world.agents.get('kid')!;
   neo.position = filmPosition('film_captains_meeting', 0, -24); neo.currentLocation = 'film_captains_meeting'; neo.isInMatrix = true;
   kid.position = filmPosition('film_zion_hangar', -5, -28); kid.currentLocation = 'film_zion_hangar'; kid.isInMatrix = false;
-  for (const actor of [neo, kid]) renderer.updateAgent(actor.id, actor);
+  const lock = world.agents.get('lock')!, niobe = world.agents.get('niobe')!;
+  for (const actor of [neo, kid, lock, niobe]) renderer.updateAgent(actor.id, actor);
   renderer.setPlayer('neo'); renderer.setWorld(true);
-  const body = renderer.getAgentBody(kid.id), prepared: boolean[] = [];
+  const body = renderer.getAgentBody(kid.id), prepared: boolean[] = [], council: Record<string, boolean[]> = { lock: [], niobe: [] };
   t.mock.method(renderer['models'], 'animate', (rig, _delta, input) => {
     if (rig.root === body) prepared.push(Boolean(input.prepareDetailedCast));
+    for (const id of ['lock', 'niobe']) if (rig.root === renderer.getAgentBody(id)) council[id].push(Boolean(input.prepareDetailedCast));
   });
   const state = journey('meeting'), camera = new THREE.PerspectiveCamera(); camera.position.copy(neo.position);
   state.step = 3; renderer.update(.02, camera, 1, 0, state);
@@ -380,6 +385,27 @@ test('leaving the captains hall prepares Kid at the next real-world dock without
   state.visiting = 'm2_meeting'; renderer.update(.02, camera, 1, 0, state);
   delete state.visiting; renderer.setPlayer('kid'); renderer.update(.02, camera, 1, 0, state);
   assert.deepEqual(prepared, [false, true, false, false]);
+  renderer.setPlayer('neo'); renderer.setWorld(false); neo.isInMatrix = false;
+  neo.position = filmPosition('film_zion_hangar', 11, -15); neo.currentLocation = 'film_zion_hangar'; renderer.updateAgent('neo', neo);
+  Object.assign(state, { scene: 'm2_dock', step: 1 });
+  for (const id of ['lock', 'niobe']) council[id] = [];
+  renderer.update(.02, camera, 1, 0, state);
+  state.step = 2; renderer.update(.02, camera, 1, 0, state);
+  state.visiting = 'm2_dock'; renderer.update(.02, camera, 1, 0, state);
+  delete state.visiting; renderer.setPlayer('kid'); renderer.update(.02, camera, 1, 0, state);
+  for (const id of ['lock', 'niobe']) assert.deepEqual(council[id], [false, true, false, false], `${id} must prepare before entering the council`);
+});
+
+test('Niobe can request her next real-world head while her saved body is still in the Matrix', t => {
+  const requested: string[] = [];
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', url => { requested.push(String(url)); return new Promise(() => {}); });
+  const heads = new EpilogueHeads(), root = new THREE.Group(), head = new THREE.Group(); root.add(head);
+  const rig = { root, head } as CharacterRig; heads.track(rig, 'niobe'); t.after(() => heads.dispose());
+  const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: false };
+  heads.update(rig, input); assert.deepEqual(requested, []);
+  heads.update(rig, { ...input, prepareDetailedCast: true });
+  assert.deepEqual(requested, ['/assets/characters/niobe-head.glb']);
+  heads.update(rig, input); assert.equal(requested.length, 1, 'the saved Matrix body cannot request a duplicate head');
 });
 
 test('the château garage renders local riders and Twins while keeping other sets out of the draw', t => {

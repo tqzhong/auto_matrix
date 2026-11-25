@@ -179,3 +179,42 @@ test('the arrival dock keeps thirteen light slots while approaching Kid, turning
       }
     }
 });
+
+test('the last dock action prepares council shadows, late heads and shared ground shadows before adoption', t => {
+  const h = setup(t), lighting = new LightCulling(h.scene), sun = new THREE.DirectionalLight(); sun.castShadow = true; h.scene.add(sun);
+  Object.assign(h.journey, { scene: 'm2_dock', step: 2 }); delete h.journey.reloaded;
+  h.neo.position = filmPosition('film_zion_hangar', 11, -15); h.neo.currentLocation = 'film_zion_hangar'; h.neo.isInMatrix = false; h.update();
+  lighting.minimumPointSlots = 13; lighting.stablePointSlots = true;
+  const actor = new THREE.Group(), niobe = new THREE.Group(), geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial();
+  const skin = new THREE.SkinnedMesh(geometry, material); skin.name = 'Anatomical_head_and_hands'; skin.castShadow = true; actor.add(skin);
+  const shadowMaterial = new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false }), shadow = new THREE.Mesh(geometry, shadowMaterial);
+  const compiled = new Set<THREE.Object3D>(), depths = new Set<THREE.MeshDepthMaterial>(), slots = new Set<number>();
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, properties: { get: () => ({}) },
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }, getRenderTarget: () => null, setRenderTarget() {},
+    compile(subject: THREE.Object3D, _camera: THREE.Camera, target: THREE.Scene) {
+      let points = 0; target.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
+      subject.traverse(object => {
+        compiled.add(object);
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial) { depths.add(object.material); slots.add(points); }
+      });
+    } } as unknown as THREE.WebGLRenderer;
+  const prepare = () => h.sets.prepareZionHomecoming(graphics, h.camera, h.journey, id => id === 'morpheus' ? actor : id === 'niobe' ? niobe : undefined, false, lighting, sun, shadow);
+  t.after(() => { lighting.dispose(); geometry.dispose(); material.dispose(); shadowMaterial.dispose(); });
+  for (let frame = 0; frame < 100; frame++) prepare();
+  assert.ok(depths.size, 'the council must not wait for its first real depth draw');
+  assert.deepEqual([...slots].sort((a, b) => a - b), [5, 13]);
+  assert.ok(compiled.has(shadow)); assert.ok(compiled.has(h.sets.goalMarker));
+  const normals = h.sets.zionEntryNormalMeshes;
+  const head = new THREE.Group(); head.name = 'niobe-detailed-head'; head.visible = false; niobe.add(head);
+  const late = new THREE.Mesh(geometry, material); late.name = 'niobe-anatomical-head'; late.castShadow = true; head.add(late);
+  for (let frame = 0; frame < 20; frame++) prepare();
+  assert.ok(compiled.has(late)); assert.ok(h.sets.zionEntryNormalMeshes?.includes(late));
+  assert.notEqual(h.sets.zionEntryNormalMeshes, normals); assert.equal(h.journey.step, 2);
+  assert.equal(head.visible, false, 'preparing the next world cannot reveal the hidden source variant');
+  let released = 0; for (const depth of depths) depth.addEventListener('dispose', () => released++);
+  Object.assign(h.journey, { scene: 'm2_lock', actor: 'morpheus', step: 0 });
+  const morpheus = { ...h.neo, id: 'morpheus', position: filmEntry(FILM_SCENE_BY_ID.m2_lock), currentLocation: 'film_zion_council' };
+  h.sets.update(morpheus, { neoLife: { journey: h.journey } } as SandboxState, 0);
+  assert.equal(released, 0);
+  h.sets.update(undefined, undefined, 1); assert.equal(released, depths.size);
+});

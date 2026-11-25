@@ -1292,6 +1292,7 @@ export class AgentRenderer {
       input.prepareDetailedCast = (prepareOracleRequest || prepareOracleLast) && (id === 'oracle' || id === 'seraph')
         || prepareOracleLast && id === 'sati' || prepareTrainmanChase && id === 'trainman'
         || prepareRequestCast && id === 'kid' && journey?.scene === 'm2_meeting' && journey.step >= 4
+        || prepareRequestCast && (id === 'lock' || id === 'niobe') && journey?.scene === 'm2_dock' && journey.step >= 2
         || !journey?.visiting && (this.playerId === journey?.actor
         && (id === 'hamann' && journey?.scene === 'm2_bane_copy' && (journey.step > 2 || journey.step === 2 && (journey.baneCopy?.progress ?? 0) >= .2)
           || id === 'seraph' && journey?.scene === 'm2_departure' && journey.step >= 4

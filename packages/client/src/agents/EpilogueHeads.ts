@@ -74,7 +74,7 @@ export class EpilogueHeads {
     entry.evacuation = input.dockEvacuation?.role === 'colt';
     entry.firstPerson = entry.role === 'cypher' && Boolean(input.firstPerson); entry.matrix = !input.realWorld;
     if (entry.role === 'cypher') entry.jawOpen = steakJawOpen(input.interlude);
-    entry.active = entry.role === 'cypher' ? true : entry.role === 'bane' ? Boolean(input.logosBane) : entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery || entry.role === 'colt' && input.dockEvacuation?.role === 'colt') : entry.role === 'niobe' ? Boolean(input.realWorld) : true;
+    entry.active = entry.role === 'cypher' ? true : entry.role === 'bane' ? Boolean(input.logosBane) : entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery || entry.role === 'colt' && input.dockEvacuation?.role === 'colt') : entry.role === 'niobe' ? Boolean(input.realWorld || input.prepareDetailedCast) : true;
     entry.closed.value = input.oracleRestored ? 1 : entry.role === 'sati' && input.epilogue?.kind === 'reset' ? streetResetPose(input.epilogue).closedEyes
       : entry.role === 'mifune' && input.dockLastStand ? dockLastStandPose(input.dockLastStand).dead : entry.role === 'charra' && input.upperDigger ? upperDiggerFall(input.upperDigger) : entry.role === 'maggie' && input.maggieDiscovery?.incident ? 1 : 0;
     if (entry.active && !entry.loading) {
