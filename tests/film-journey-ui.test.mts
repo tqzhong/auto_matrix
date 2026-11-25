@@ -43,6 +43,13 @@ test('the interrogation offers a seated decision and leaves G available for resi
     const markup = renderFilmJourney(player, state);
     assert.ok(/data-target="film:reflect:care" >/.test(markup), 'the answer button is enabled at the interrogation chair');
   });
+  await t.test('holding G before the answer acknowledgment cannot reopen the journal and cancel resistance', () => {
+    const opened: string[] = [], sent: unknown[] = [];
+    const ui = Object.assign(Object.create(SandboxUI.prototype), { player, state, open: (panel: string) => opened.push(panel), send: (command: unknown) => sent.push(command) });
+    ui.interact();
+    assert.deepEqual(opened, [], 'the visible J decision must leave G available while the answer is in flight');
+    assert.deepEqual(sent, []);
+  });
   await t.test('G during the monologue never opens the journal or sends a discrete action', () => {
     const opened: string[] = [], sent: unknown[] = [];
     const ui = Object.assign(Object.create(SandboxUI.prototype), { player, state, open: (panel: string) => opened.push(panel), send: (command: unknown) => sent.push(command) });

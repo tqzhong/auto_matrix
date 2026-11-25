@@ -204,7 +204,8 @@ export class SandboxUI {
     }
     if (journey && journey.actor === this.player?.id) {
       const step = filmSceneForJourney(journey)!.steps[journey.step];
-      if (!journey.visiting && journey.scene === 'm1_smith_question' && journey.government?.phase === 'monologue') return;
+      // Keep held G available while the answer is waiting for the next world update.
+      if (!journey.visiting && journey.scene === 'm1_smith_question' && ['ready', 'monologue'].includes(journey.government?.phase ?? '')) return;
       if (pillLocked(journey) && journey.pills?.phase === 'taking') return;
       if (!journey.visiting && journey.scene === 'm1_room303' && (journey.openingHotel?.phase === 'answering'
         || openingHotelTraceTime(journey.openingHotel) !== undefined)) return;
