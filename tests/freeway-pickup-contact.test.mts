@@ -13,9 +13,9 @@ import { FreewayPickupSystem } from '../packages/server/src/story/FreewayPickupS
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { freewayRideRoot, type FreewayRide } from '@auto_matrix/shared';
 
-async function setup(t: test.TestContext, driver = false) {
+async function setup(t: test.TestContext, driver = false, detailedKeymaker = false) {
   const assets = new Map();
-  for (const id of ['trinity', 'trinity-club', ...(driver ? ['smith'] : [])]) {
+  for (const id of ['trinity', 'trinity-club', ...(driver ? ['smith'] : []), ...(detailedKeymaker ? ['keymaker-head', 'keymaker-body'] : [])]) {
     const glb = await readFile(new URL(`../packages/client/public/assets/characters/${id}.glb`, import.meta.url));
     const length = glb.readUInt32LE(12), source = JSON.parse(glb.subarray(20, 20 + length).toString());
     for (const material of source.materials) { delete material.pbrMetallicRoughness.baseColorTexture; delete material.normalTexture; }
@@ -24,7 +24,9 @@ async function setup(t: test.TestContext, driver = false) {
     const bin = glb.subarray(20 + length), buffer = Buffer.alloc(20 + padded.length + bin.length);
     buffer.writeUInt32LE(0x46546c67, 0); buffer.writeUInt32LE(2, 4); buffer.writeUInt32LE(buffer.length, 8);
     buffer.writeUInt32LE(padded.length, 12); buffer.writeUInt32LE(0x4e4f534a, 16); padded.copy(buffer, 20); bin.copy(buffer, 20 + padded.length);
-    assets.set(id, await new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), ''));
+    const asset = await new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
+    if (id === 'keymaker-head') asset.scene.traverse(object => { if (object instanceof THREE.Mesh) (object.material as THREE.MeshStandardMaterial).map = new THREE.Texture(); });
+    assets.set(id, asset);
   }
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async (url: string) => assets.get(url.split('/').pop()!.replace('.glb', '')));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
@@ -302,6 +304,48 @@ test('the Keymaker holds the delivered Trinity waist rather than reaching into e
     const palm = elbow.localToWorld(new THREE.Vector3(0, -.75, .005));
     const distance = Math.min(...garment.map(point => point.distanceTo(palm)));
     assert.ok(distance < .07, `passenger palm is ${distance} away from the actual leather waist`);
+  }
+});
+
+test('the delivered Keymaker stays outside the solid cargo bikes while following and exchanging the key', async t => {
+  const h = await setup(t, false, true), base = { ...newFreewayPickup(), phase: 'keyhandoff' as const, total: 10.404, elapsed: .537, x: 14, z: 5.786857710640235 };
+  h.draw(base); await new Promise(resolve => setImmediate(resolve)); h.draw(base);
+  assert.ok(h.rigs.keymaker.root.getObjectByName('keymaker-detailed-body'), 'check the delivered body rather than the fallback');
+  const cargo: THREE.Object3D[] = [];
+  h.scenery.traverse(object => { if (object.name === 'matrix-carrier-cargo-bike') cargo.push(object); });
+  assert.equal(cargo.length, 3, 'retain the parked cargo and clear its central aisle');
+  const failures: { phase: string; z: number; elapsed: number; inside: number }[] = [];
+  let sampled = 0;
+  const poses: FreewayPickup[] = [
+    ...[-5, 0, 5.8].map(z => ({ ...base, phase: 'deck' as const, elapsed: 0, z })),
+    { ...base, phase: 'key', elapsed: 1.3 }, base,
+    { ...base, elapsed: .849 }, { ...base, elapsed: .85, key: true }, { ...base, elapsed: 1.2, key: true },
+  ];
+  for (const state of poses) {
+    h.draw(state); let inside = 0;
+    h.rigs.keymaker.root.traverseVisible(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+        const world = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())); sampled++;
+        for (const bike of cargo) {
+          const point = bike.worldToLocal(world.clone());
+          // These are inner boxes of the actual rounded seat and rear body, excluding their bevels.
+          if (Math.abs(point.x) < .55 && Math.abs(point.y - 2.05) < .05 && Math.abs(point.z - 1.2) < 1
+            || Math.abs(point.x) < .62 && Math.abs(point.y - 1.6) < .27 && Math.abs(point.z - 2.6) < .445) inside++;
+        }
+      }
+    });
+    if (inside) failures.push({ phase: state.phase, z: state.z, elapsed: state.elapsed, inside });
+  }
+  assert.ok(sampled > 10000); assert.deepEqual(failures, [], 'the visible clothing cannot enter the seat or rear body of a parked cargo bike');
+  h.draw({ ...base, elapsed: .85, key: true });
+  const key = h.rigs.trinity.root.getObjectByName('freeway-ignition-key')!.getWorldPosition(new THREE.Vector3());
+  for (const [role, side] of [['trinity', 'L'], ['keymaker', 'R']] as const)
+    assert.ok(Math.min(...palmVertices(h.rigs[role], side).map(point => point.distanceTo(key))) < .08, 'both real palms still meet the physical key');
+  const mounting = { ...base, phase: 'mounting' as const, elapsed: 0, start: { x: base.x, z: base.z, yaw: freewayPickupRoot(base, 'trinity').yaw } };
+  for (const role of ['trinity', 'keymaker'] as const) {
+    const before = freewayPickupRoot(base, role), after = freewayPickupRoot(mounting, role);
+    assert.deepEqual({ x: after.x, y: after.y, z: after.z }, { x: before.x, y: before.y, z: before.z }, 'mounting starts at the actual clear standing pose');
   }
 });
 

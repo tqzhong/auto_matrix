@@ -338,3 +338,26 @@ test('a lateral truck impact freezes the last clear vehicle frame instead of pus
   assert.equal(failed.total, state.total, 'all rendered traffic must freeze on the same last clear frame');
   assert.ok(Math.abs(failed.failedBike!.x - failed.chase!.truck.x) > 3.8);
 });
+
+test('a legacy side-by-side cargo pose moves into the clear aisle without resetting its saved motion or key clock', () => {
+  const h = setup(), state = h.state(), center = filmPosition('film_freeway_101');
+  const pickup = state.freewayPickup = { ...newFreewayPickup(), phase: 'keyhandoff', elapsed: .537, total: 10.404, x: 14, z: 5.8, startedAt: 100 };
+  const before = structuredClone(pickup);
+  for (const role of ['trinity', 'keymaker'] as const) {
+    const passenger = role === 'keymaker', actor = h.world.agents.get(role)!;
+    actor.position = { x: center.x + pickup.x + (passenger ? 1.05 : 0), y: center.y + FREEWAY_PICKUP.carrier.deck,
+      z: center.z + FREEWAY_PICKUP.carrier.start + pickup.total * FREEWAY_PICKUP.carrier.speed + pickup.z - (passenger ? 1.8 : 0) };
+    actor.rotation = passenger ? Math.atan2(-1.05, 1.8) : Math.atan2(1.05, -1.8);
+    actor.currentLocation = 'film_freeway_101'; actor.isInMatrix = true;
+    actor.velocity = { x: .2, y: 0, z: 18 }; actor.health = passenger ? 40 : 73;
+    actor.currentAction = { type: 'idle', parameters: { resolved: true, player: !passenger, freewayPickup: { ...pickup, role, walking: 0 } }, startedAt: 100, duration: 1e9, progress: 0 };
+  }
+  h.sandbox.life.film.freewayPickup.frame(h.actor(), {}, 0, 200);
+  assert.deepEqual(h.state().freewayPickup, before);
+  assert.equal(h.world.agents.get('keymaker')!.position.x, center.x + pickup.x, 'the follower stays in the central cargo aisle');
+  for (const role of ['trinity', 'keymaker'] as const) {
+    const actor = h.world.agents.get(role)!;
+    assert.deepEqual(actor.velocity, { x: .2, y: 0, z: 18 });
+    assert.equal(actor.currentAction?.startedAt, 100); assert.equal(actor.health, role === 'keymaker' ? 40 : 73);
+  }
+});

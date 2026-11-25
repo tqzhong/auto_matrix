@@ -36,13 +36,14 @@ export class FreewayPickupSystem {
       if (!member || member.status !== 'alive' || role !== actor.id && member.controller) continue;
       const root = freewayPickupRoot(next, role), previous = member.position;
       // A zero-time restore must retain the saved motion at the same carrier pose.
-      if (dt <= 0 && member.currentAction?.type === 'idle' && member.currentAction.parameters.resolved === true
+      const savedMotion = dt <= 0 && member.currentAction?.type === 'idle' && member.currentAction.parameters.resolved === true
         && member.currentAction.parameters.player === (role === actor.id)
         && isDeepStrictEqual(member.currentAction.parameters.freewayPickup, { ...next, role, walking: next.paused || next.unavailable ? 0 : next.walking })
-        && member.currentLocation === 'film_freeway_101' && member.isInMatrix && member.rotation === root.yaw
+        && member.currentLocation === 'film_freeway_101' && member.isInMatrix;
+      if (savedMotion && member.rotation === root.yaw
         && Math.hypot(previous.x - center.x - root.x, previous.y - center.y - root.y, previous.z - center.z - root.z) < 1e-8) continue;
       member.position = { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z }; member.rotation = root.yaw;
-      member.velocity = elapsed > 0 ? { x: (member.position.x - previous.x) / elapsed, y: (member.position.y - previous.y) / elapsed, z: (member.position.z - previous.z) / elapsed } : { x: 0, y: 0, z: 0 };
+      member.velocity = elapsed > 0 ? { x: (member.position.x - previous.x) / elapsed, y: (member.position.y - previous.y) / elapsed, z: (member.position.z - previous.z) / elapsed } : savedMotion ? member.velocity : { x: 0, y: 0, z: 0 };
       member.currentLocation = 'film_freeway_101'; member.isInMatrix = true; member.targetPosition = null; member.currentPath = [];
       member.currentAction = { type: 'idle', parameters: { resolved: true, player: role === actor.id,
         freewayPickup: { ...next, role, walking: next.paused || next.unavailable ? 0 : next.walking } }, startedAt: next.startedAt ?? tick, duration: 1e9, progress: 0 };

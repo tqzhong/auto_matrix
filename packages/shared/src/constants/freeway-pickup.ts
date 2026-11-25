@@ -8,6 +8,7 @@ export const FREEWAY_PICKUP = {
   bike: { x: -1.75, z: 6, rider: FREEWAY_BIKE.rider },
   leap: { speed: 14, lift: 11.4, gravity: 18.5, clearRail: .4 },
   landing: { halfWidth: 1.7, rear: -11, front: -2 },
+  companion: { x: 0, z: -1.8 },
   callSeconds: 1.3,
   handoffSeconds: 1.65,
   keyContact: .85,
@@ -79,7 +80,7 @@ export function freewayPickupBike(state: FreewayPickup): { x: number; y: number;
 }
 export function freewayPickupRoot(state: FreewayPickup, role: 'trinity' | 'keymaker') {
   if (state.phase === 'failed' && state.failedRoots) return state.failedRoots[role];
-  const c = FREEWAY_PICKUP.carrier, passenger = role === 'keymaker';
+  const c = FREEWAY_PICKUP.carrier, companion = FREEWAY_PICKUP.companion, passenger = role === 'keymaker';
   let x = state.x, z = state.z, y: number = FREEWAY_PICKUP.bridge.height, yaw = state.heading;
   if (state.phase === 'jumping') {
     const t = state.elapsed;
@@ -87,7 +88,7 @@ export function freewayPickupRoot(state: FreewayPickup, role: 'trinity' | 'keyma
     y += FREEWAY_PICKUP.leap.lift * t - .5 * FREEWAY_PICKUP.leap.gravity * t * t;
   } else if (['deck', 'key', 'keyhandoff'].includes(state.phase)) {
     z += freewayCarrierZ(state); y = c.deck;
-    if (state.phase !== 'deck') yaw = passenger ? Math.atan2(-1.05, 1.8) : Math.atan2(1.05, -1.8);
+    if (state.phase !== 'deck') yaw = passenger ? Math.atan2(0 - companion.x, 0 - companion.z) : Math.atan2(companion.x, companion.z);
   }
   else if (['mounting', 'mounted', 'shooting', 'launching', 'merging', 'done'].includes(state.phase)) {
     const bike = freewayPickupBike(state), seat = FREEWAY_PICKUP.bike.rider - (passenger ? 1.25 : 0);
@@ -95,11 +96,11 @@ export function freewayPickupRoot(state: FreewayPickup, role: 'trinity' | 'keyma
     if (state.phase !== 'mounting') return seated;
     const t = smooth(state.elapsed / FREEWAY_PICKUP.mountSeconds);
     const start = state.start!;
-    return { x: start.x + (passenger ? 1.05 : 0) + (seated.x - start.x - (passenger ? 1.05 : 0)) * t,
-      z: freewayCarrierZ(state) + start.z - (passenger ? 1.8 : 0) + (seated.z - freewayCarrierZ(state) - start.z + (passenger ? 1.8 : 0)) * t,
+    return { x: start.x + (passenger ? companion.x : 0) + (seated.x - start.x - (passenger ? companion.x : 0)) * t,
+      z: freewayCarrierZ(state) + start.z + (passenger ? companion.z : 0) + (seated.z - freewayCarrierZ(state) - start.z - (passenger ? companion.z : 0)) * t,
       y: c.deck + .9 * t + Math.sin(t * Math.PI) * .75, yaw: start.yaw * (1 - t) };
   }
-  if (passenger) { x += 1.05; z -= 1.8; }
+  if (passenger) { x += companion.x; z += companion.z; }
   return { x, y, z, yaw };
 }
 export function freewayPickupText(state: FreewayPickup): string {
