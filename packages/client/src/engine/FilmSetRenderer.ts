@@ -538,7 +538,8 @@ export class FilmSetRenderer {
   private preparedGovernment?: EntryPreparation & { scene: 'm1_smith_question' | 'm1_bullet_dodge' | 'm1_helicopter' | 'm1_rooftop_rescue';
     renderer: GovernmentSetRenderer; colors?: CastColorPreparation; normalMeshes?: THREE.Mesh[] };
   private matrixEscape?: MatrixEscapeRenderer;
-  private preparedMatrixEscape?: EntryPreparation & { renderer: MatrixEscapeRenderer | TheOneRenderer; colors?: CastColorPreparation };
+  private preparedMatrixEscape?: EntryPreparation & { renderer: MatrixEscapeRenderer | TheOneRenderer; colors?: CastColorPreparation;
+    sourceEffects?: ColorPreparation & { seen: WeakSet<THREE.Mesh> } };
   private subwayReturnColors?: Omit<ColorPreparation, 'meshes'> & { gpu: THREE.WebGLRenderer['properties']; seen: WeakSet<THREE.Mesh>; meshes: ColorMesh[] };
   private preparedOneDeck?: { root: THREE.Group; deck: NebDeckRenderer; overlay: TheOneRenderer; colors?: CastColorPreparation;
     gpu?: THREE.WebGLRenderer['properties']; textureUpload?: Generator<void, boolean>; pendingCabin: Set<THREE.MeshStandardMaterial> };
@@ -1354,6 +1355,7 @@ export class FilmSetRenderer {
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       this.releaseEntryPreparation(prepared);
+      prepared.sourceEffects = undefined;
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun, playerView: !this.current }), actors: new Set() };
       if (subway) {
         const debris: ColorMesh[] = [];
@@ -1377,6 +1379,15 @@ export class FilmSetRenderer {
         this.queueEntryShadows(prepared, prepared.colors.meshes);
       }
       prepared.gpu = renderer.properties;
+    }
+    if (subway && this.government && sourceLights) {
+      const effects = prepared.sourceEffects ??= { scene: this.scene, meshes: [], programs: [], textures: new Set(), seen: new WeakSet() };
+      // These surfaces stay hidden until the crash, but need the current roof's programs.
+      for (const name of ['air-rescue-crash-fire', 'air-rescue-impact-ripples']) this.root.getObjectByName(name)?.traverse(object => {
+        if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial) || effects.seen.has(object)) return;
+        effects.seen.add(object); effects.meshes.push(object);
+      });
+      if (this.prepareColorProgram(renderer, camera, effects, sourceLights, 'isolated', true)) return;
     }
     const colors = prepared.colors, meshes = new Set<ColorMesh>();
     // Prepare Neo's entry under the hotel's eight stable point-light slots.

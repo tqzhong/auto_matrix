@@ -5,6 +5,7 @@ import { FILM_SETS, filmPosition, type FilmJourney, type SandboxState } from '@a
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
+import { GovernmentSetRenderer } from '../packages/client/src/engine/GovernmentSetRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
@@ -69,7 +70,7 @@ function fixture(t: TestContext, mode: keyof typeof cases, withShadows = false) 
         depthBatches.push({ points, meshes: depth });
       } else {
         assert.equal(colors.environment, scene.environment); assert.equal(colors.fog, scene.fog);
-        if (!root && city && withShadows) assert.equal(points, 12, 'body-swap return colours use the current platform lights');
+        if (!root && withShadows && (city || mode === 'subway')) assert.equal(points, city ? 12 : 4, 'live source colours use their current light layout');
         else {
           assert.equal(points, plan.points); assert.equal(shadows, plan.shadows); assert.ok(root); roots.add(root);
           assert.equal(scene.children.includes(root), false, 'the future set must stay offstage');
@@ -93,6 +94,20 @@ function fixture(t: TestContext, mode: keyof typeof cases, withShadows = false) 
   return { target: plan.to, landmark, film, journey, gpu, sun, heroes, bodies, geometry, material, skin, coarse, later, texture, work, batches, depthBatches, roots, prepare, drain,
     ready: () => { ready = true; }, newGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
+
+test('the roof prepares hidden crash fire and ripples before they become visible', t => {
+  const h = fixture(t, 'subway', true), roof = new GovernmentSetRenderer(h.film.root, 'film_government_roof');
+  Object.assign(h.film, { government: roof }); roof.update(h.journey, 0);
+  const fire = h.film.root.getObjectByName('air-rescue-crash-fire')!, ripples = h.film.root.getObjectByName('air-rescue-impact-ripples')!;
+  const needed: THREE.Mesh[] = [];
+  for (const group of [fire, ripples]) group.traverse(object => { if (object instanceof THREE.Mesh) needed.push(object); });
+  assert(needed.length > 20); assert.equal(fire.visible, false); assert.equal(ripples.visible, false);
+  h.ready(); h.drain();
+  assert(needed.every(mesh => h.batches.some(batch => batch.includes(mesh))), 'every hidden crash surface must have its actual source-light program prepared');
+  assert.equal(fire.visible, false); assert.equal(ripples.visible, false); assert.equal(h.journey.airRescue!.elapsed, 0);
+  const before = h.batches.length; h.newGpu(); h.drain();
+  assert(needed.every(mesh => h.batches.slice(before).some(batch => batch.includes(mesh))), 'a new context must prepare the hidden effects again');
+});
 
 for (const mode of ['subway', 'city', 'hotel'] as const) test(`${mode} prepares both depth layouts and releases replaced or cancelled materials`, t => {
   const h = fixture(t, mode, true); h.skin.castShadow = h.coarse.castShadow = true; h.ready(); h.drain();
