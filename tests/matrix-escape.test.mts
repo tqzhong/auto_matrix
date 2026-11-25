@@ -85,6 +85,35 @@ test('the subway escape starts with the destroyed phone and requires real hits p
   assert.ok(h.impacts.filter(impact => impact.source === 'neo').length >= MATRIX_ESCAPE.subway.requiredHits);
 });
 
+test('a subway duel retry keeps the broken phone and resumes the stance instead of repeating the shot', () => {
+  const h = setup('m1_subway'), state = h.sandbox.life.film.state!;
+  h.command('act'); h.frames(MATRIX_ESCAPE.subway.phoneShot + MATRIX_ESCAPE.subway.stance + .3);
+  const crewExit = { roles: ['morpheus', 'trinity'] as ('morpheus' | 'trinity')[], index: 2, elapsed: 0 };
+  state.matrixEscape!.crewExit = crewExit;
+  h.sandbox.life.film.matrixEscapeDefeated(h.actor);
+  const shots = h.impacts.filter(impact => impact.target === 'subway-phone').length;
+  h.command('retry');
+  assert.equal(state.matrixEscape!.phase, 'stance', 'the destroyed exit phone cannot be answered again');
+  assert.equal(state.matrixEscape!.phoneBroken, true); assert.deepEqual(state.matrixEscape!.crewExit, crewExit);
+  assert.equal(state.matrixEscape!.attempt, 1); assert.equal(h.actor.health, h.actor.maxHealth);
+  assert.equal(state.matrixEscape!.hits, 0); assert.equal(state.matrixEscape!.dodges, 0);
+  h.frames(MATRIX_ESCAPE.subway.stance + .2);
+  assert.equal(state.matrixEscape!.phase, 'duel');
+  assert.equal(h.impacts.filter(impact => impact.target === 'subway-phone').length, shots);
+  const threat = h.sandbox.state.threats.find(threat => threat.scene === 'm1_subway')!;
+  assert.ok(threat && (threat.position.z - h.actor.position.z) * Math.cos(h.actor.rotation) > 0);
+});
+
+test('an existing ready subway retry with a broken phone restores the stance', () => {
+  const h = setup('m1_subway'), state = h.sandbox.life.film.state!;
+  state.matrixEscape!.phoneBroken = true; state.matrixEscape!.attempt = 1;
+  h.frames(.1);
+  assert.equal(state.matrixEscape!.phase, 'stance');
+  assert.equal(state.matrixEscape!.attempt, 1); assert.equal(state.matrixEscape!.phoneBroken, true);
+  assert.doesNotMatch(state.lastText, /接听/);
+  assert.equal(h.impacts.filter(impact => impact.target === 'subway-phone').length, 0);
+});
+
 test('train timing fails explicitly, then retry resumes at the tracks and Smith changes bodies after impact', () => {
   const h = setup('m1_subway'); const state = h.sandbox.life.film.state!;
   h.command('act'); h.frames(MATRIX_ESCAPE.subway.phoneShot + MATRIX_ESCAPE.subway.stance + .3); finishSubwayDuel(h);

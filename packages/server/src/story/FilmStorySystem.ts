@@ -3841,6 +3841,8 @@ export class FilmStorySystem {
     encounter.checkpoint ??= encounter.kind === 'subway' && state.step > 0 ? 'tracks' : encounter.kind === 'subway' ? 'duel' : 'street';
     encounter.hits ??= 0; encounter.dodges ??= 0; encounter.pursuit ??= 0; encounter.segment ??= state.step;
     encounter.possessions ??= 0; encounter.resolved ??= [];
+    // Earlier duel retries kept the destroyed phone but asked Neo to answer it again.
+    if (kind === 'subway' && encounter.phase === 'ready' && encounter.phoneBroken) { encounter.phase = 'stance'; encounter.elapsed = 0; }
     // Old ready saves also need the missing physical exits. Later fight saves
     // retain their checkpoint; the corrected route starts before the phone.
     if (kind === 'subway' && encounter.phase === 'ready' && !encounter.crewExit && state.step === 0) {
@@ -4100,7 +4102,7 @@ export class FilmStorySystem {
     agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
     if (previous.kind === 'subway') {
       const tracks = previous.checkpoint === 'tracks' || state.step > 0; state.step = tracks ? 1 : 0;
-      state.matrixEscape = { kind: 'subway', phase: tracks ? 'tracks' : 'ready', elapsed: 0, attempt, checkpoint: tracks ? 'tracks' : 'duel',
+      state.matrixEscape = { kind: 'subway', phase: tracks ? 'tracks' : previous.phoneBroken ? 'stance' : 'ready', elapsed: 0, attempt, checkpoint: tracks ? 'tracks' : 'duel',
         hits: 0, dodges: 0, pursuit: 0, segment: state.step, possessions: tracks ? previous.possessions : 0, resolved: [], phoneBroken: tracks || previous.phoneBroken, wallBroken: tracks,
         crewExit: previous.crewExit };
       if (previous.crewExit && previous.crewExit.index < previous.crewExit.roles.length) state.matrixEscape.phase = 'crew_exit';
@@ -4110,7 +4112,7 @@ export class FilmStorySystem {
       this.spawnMatrixEscapeThreat(agent, tick);
     }
     this.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick);
-    return previous.kind === 'subway' ? state.step ? '已从轨道挣扎前重试；列车仍会按保存的时序接近。' : '已从出口电话前重试；重新面对 Smith。'
+    return previous.kind === 'subway' ? state.step ? '已从轨道挣扎前重试；列车仍会按保存的时序接近。' : '已从站台交锋前重试；重新面对 Smith。'
       : '已从最近的街巷检查点重试；继续沿 Tank 的路线奔跑。';
   }
   private matrixEscapeAct(agent: AgentState, target: string, tick: number): string {

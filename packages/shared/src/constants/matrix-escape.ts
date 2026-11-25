@@ -129,7 +129,7 @@ export function matrixEscapeText(encounter: MatrixEscapeEncounter): string {
     if (encounter.phase === 'body_swap') return '人群中的身体被矩阵代码覆盖，Smith 再次抬头。击中一具身体并不能删除程序。';
     if (encounter.phase === 'failed') return encounter.checkpoint === 'tracks'
       ? 'Neo 没能脱离铁轨。按 G 从列车接近前的检查点重试。'
-      : 'Smith 在站台上压倒了 Neo。按 G 从出口电话前重试。';
+      : 'Smith 在站台上压倒了 Neo。按 G 从站台交锋前重试。';
     return 'Neo 冲出站台；Smith 已经通过新的身体继续追踪。';
   }
   if (encounter.phase === 'ready') return 'Tank 已接通耳机。按 G 接收市场、后巷与旅馆 303 房间的撤离路线。';
