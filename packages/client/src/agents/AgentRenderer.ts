@@ -716,6 +716,7 @@ export class AgentRenderer {
           || scene === 'm2_seraph' && player.currentLocation === 'film_seraph_teahouse'
           || scene === 'm2_backdoors' && player.currentLocation === 'film_backdoor_hall'
           || (scene === 'm2_bench' || scene === 'm2_burly') && player.currentLocation === 'film_oracle_courtyard'
+          || (scene === 'm2_merovingian' || scene === 'm2_persephone') && player.currentLocation === 'film_le_vrai'
           || scene === 'm2_library' && player.currentLocation === 'film_keymaker_workshop'
           || scene === 'm2_garage' && player.currentLocation === 'film_chateau_garage') && this.matrix)
       ? filmSetAt(player.position, this.matrix)?.id : undefined;
@@ -725,7 +726,7 @@ export class AgentRenderer {
     const isolatedSet = playerSet === 'film_power_plant_pods' || playerSet === 'film_white_construct' || playerSet === 'film_agent_interrogation'
       || playerSet === 'film_jump_roofs' || playerSet === 'film_red_dress_plaza' || playerSet === 'film_service_tunnels'
       || playerSet === 'film_government_roof' || playerSet === 'film_captains_meeting' || playerSet === 'film_seraph_teahouse'
-      || playerSet === 'film_backdoor_hall' || playerSet === 'film_oracle_courtyard'
+      || playerSet === 'film_backdoor_hall' || playerSet === 'film_oracle_courtyard' || playerSet === 'film_le_vrai'
       || playerSet === 'film_keymaker_workshop' || playerSet === 'film_chateau_garage' ? playerSet : zionSet;
     const roof = journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     const roofExit = player?.currentAction?.parameters.roofExit as MotionInput['roofExit'];
