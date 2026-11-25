@@ -3543,7 +3543,7 @@ export class FilmStorySystem {
       if (encounter.kind === 'rooftop') this.stageGovernmentRooftopBody(encounter, tick);
       state.checkpoint = { ...agent.position }; state.lastText = governmentText(encounter); return true;
     }
-    if (encounter.phase === 'failed' || encounter.phase === 'alarm_ready' || encounter.phase === 'download_ready') {
+    if (encounter.phase === 'failed' || encounter.phase === 'download_ready') {
       this.clearGovernmentActions();
       if (encounter.kind === 'rooftop') this.stageGovernmentRooftopBody(encounter, tick);
       state.lastText = governmentText(encounter); return false;
@@ -3560,9 +3560,8 @@ export class FilmStorySystem {
         encounter.resolve = Math.max(0, Math.min(1, (encounter.resolve ?? 1) + delta * (focus ? .12 : -1 / GOVERNMENT_RESCUE.questioning.failure)));
         if ((encounter.resolve ?? 0) <= 0) { this.governmentFailure(agent, encounter); return false; }
         if (encounter.elapsed >= GOVERNMENT_RESCUE.questioning.monologue) {
-          encounter.phase = 'alarm_ready'; encounter.elapsed = 0; this.clearGovernmentActions();
+          encounter.phase = 'alarm_ready'; encounter.elapsed = 0;
           this.advance('Morpheus 没有交出锡安接入密码。远处的枪声打断了 Smith 的逼问。', agent, tick);
-          state.lastText = governmentText(encounter); return false;
         }
       } else if (encounter.phase === 'alarm') {
         encounter.elapsed = Math.min(GOVERNMENT_RESCUE.questioning.alarm, encounter.elapsed + delta);

@@ -57,7 +57,7 @@ const pulse = (time: number, center: number, radius: number): number => smooth(1
 export function governmentLocked(journey: FilmJourney): boolean {
   const encounter = journey.government;
   if (!encounter || journey.visiting) return false;
-  if (encounter.kind === 'questioning') return ['ready', 'monologue', 'alarm'].includes(encounter.phase);
+  if (encounter.kind === 'questioning') return ['ready', 'monologue', 'alarm_ready', 'alarm'].includes(encounter.phase);
   return ['ready', 'opening', 'bullet_time', 'trinity', 'downloading'].includes(encounter.phase);
 }
 
@@ -96,7 +96,7 @@ export function governmentText(encounter: GovernmentRescueEncounter): string {
       return `Smith 摘下耳机，隔绝同伴后逼问锡安主机密码。按住 G 对抗药物与压迫；意志 ${resolve}%。`;
     }
     if (encounter.phase === 'failed') return '药物和压迫让 Morpheus 失去意识。按 G 或在手记中选择重试，从审讯检查点恢复。';
-    if (encounter.phase === 'alarm_ready') return '大堂枪声已经传到楼上。走近落地窗，按 G 见证警报、喷淋和特工回到房间。';
+    if (encounter.phase === 'alarm_ready') return '大堂枪声已经传到楼上。Morpheus 仍被束缚在椅中，按 G 见证警报、喷淋和特工回到房间。';
     if (encounter.phase === 'alarm') return encounter.elapsed < 2.1
       ? '远处爆炸震动玻璃，火警灯亮起，喷淋从天花板落下。'
       : encounter.elapsed < 4.8

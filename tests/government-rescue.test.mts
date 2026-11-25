@@ -65,8 +65,27 @@ test('Smith questioning is a saved resistance performance, not an instant reflec
   assert.equal(h.sandbox.life.film.state!.government!.elapsed, elapsed, 'disconnecting cannot finish the interrogation');
   h.players.possess('film-player', 'morpheus', h.tick()); h.frames(GOVERNMENT_RESCUE.questioning.monologue, true);
   assert.equal(h.sandbox.life.film.state!.step, 1); assert.equal(h.sandbox.life.film.state!.government!.phase, 'alarm_ready');
-  assert.equal(Boolean(h.world.agents.get('morpheus')!.currentAction?.parameters.government), false,
-    'the locked interrogation performance is released between the two authored objectives');
+  assert.equal(h.world.agents.get('morpheus')!.currentAction?.parameters.government?.phase, 'alarm_ready',
+    'Morpheus remains restrained while waiting for the rescue alarm');
+});
+
+test('resistance success keeps Morpheus in the chair through movement, reconnect and the alarm decision', () => {
+  const h = setup('m1_smith_question');
+  h.command('reflect:care'); h.frames(GOVERNMENT_RESCUE.questioning.monologue + .2, true);
+  const chair = filmPosition(h.scene.set, GOVERNMENT_RESCUE.questioning.roots.morpheus.x, GOVERNMENT_RESCUE.questioning.roots.morpheus.z);
+  const saved = structuredClone(h.sandbox.state);
+  h.players.release('film-player', h.tick()); h.sandbox.restore(saved); h.players.possess('film-player', 'morpheus', h.tick());
+  for (let i = 0; i < 10; i++) {
+    h.players.receiveInput('film-player', { x: 0, z: 1, yaw: Math.PI, jump: true, sprint: true, sequence: i + 1000 });
+    h.players.step(.1, true, h.tick() + i + 1);
+  }
+  const state = h.sandbox.life.film.state!;
+  assert.deepEqual(h.actor.position, chair, 'a successful prisoner cannot walk out before the helicopter rescue');
+  assert.equal(state.government!.phase, 'alarm_ready'); assert.equal(state.government!.elapsed, 0);
+  assert.equal(governmentLocked(state), true);
+  assert.equal(governmentPose(h.actor.currentAction!.parameters.government!).restrained, 1);
+  assert.match(h.players.possess('other', 'smith', h.tick()).error!, /审讯|片段/);
+  h.command('act'); assert.equal(state.government!.phase, 'alarm', 'the seated player can witness the alarm without walking to the window');
 });
 
 test('letting Morpheus resistance collapse fails explicitly and retry restores the same checkpoint', () => {
@@ -83,10 +102,7 @@ test('alarm, sprinklers and returning agents finish the interrogation only after
   const h = setup('m1_smith_question'); const state = h.sandbox.life.film.state!;
   h.command('reflect:trust'); h.frames(GOVERNMENT_RESCUE.questioning.monologue + .2, true);
   h.frames(10, true); assert.equal(state.step, 1); assert.equal(state.government!.phase, 'alarm_ready');
-  const waiting = structuredClone(state.government);
-  h.command('act'); assert.deepEqual(state.government, waiting, 'the chair is too far from the window to start the alarm');
-  assert.match(h.command('act'), /走近落地窗/); assert.equal(state.step, 1);
-  h.actor.position = filmStepPosition(h.scene, h.scene.steps[1]); h.command('act');
+  h.command('act');
   assert.equal(state.government!.phase, 'alarm'); assert.equal(governmentLocked(state), true);
   h.frames(GOVERNMENT_RESCUE.questioning.alarm + .2);
   assert.equal(state.step, h.scene.steps.length); assert.ok(state.completed.includes(h.scene.id)); assert.equal(state.government!.phase, 'done');

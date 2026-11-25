@@ -1915,7 +1915,7 @@ export class SandboxUI {
       this.el('film-sequence-line').textContent = governmentText(encounter);
       this.el('film-sequence-hint').textContent = phase === 'ready' && questioning ? 'J 打开手记，选择 Morpheus 如何守住锡安密码 · 等待不会替你回答'
         : phase === 'monologue' ? `按住 G 保持清醒 · 意志 ${Math.round((encounter.resolve ?? 0) * 100)}% · 松开会持续下降`
-        : phase === 'alarm_ready' ? close ? 'G 见证警报 · 暂停或重连会保留审讯结果' : '走到落地窗前 · 暂停或重连会保留审讯结果'
+        : phase === 'alarm_ready' ? '留在椅中，G 见证警报 · 暂停或重连会保留审讯结果'
         : phase === 'ready' ? 'G 举枪开火 · V 切换视角 · 当前检查点自动保存'
         : phase === 'opening' ? 'Jones 正在闪过 Neo 的弹道 · 准备按 X'
         : phase === 'bullet_time' ? '弹道贴近时按 X · 可以承受一次擦伤，第二次会从屋顶检查点重试'
