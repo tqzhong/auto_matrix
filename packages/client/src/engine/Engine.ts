@@ -54,6 +54,7 @@ export interface FrameProfile {
 
 export function rideForPlayer(journey: FilmJourney | undefined, playerId: string | null | undefined) {
   if (!journey || !playerId || journey.actor !== playerId || journey.visiting) return undefined;
+  if (journey.scene === 'm2_garage' && journey.garage?.phase === 'arrived') return journey.garage;
   if (journey.scene === 'm3_hammer_tunnels' && journey.hammer?.phase === 'arrived') return journey.hammer;
   if (journey.scene === 'm3_hammer_tunnels' && playerId === 'ghost' && journey.hammer?.gunnery) return undefined;
   if (journey.logos) return journey.logos;

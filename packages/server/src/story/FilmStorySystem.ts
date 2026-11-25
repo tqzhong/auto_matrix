@@ -5781,7 +5781,7 @@ export class FilmStorySystem {
     }
     return true;
   }
-  driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && ((this.state?.scene === 'm2_freeway' && this.state.ride?.phase === 'riding') || (this.state?.scene === 'm2_garage' && this.state.garage?.phase === 'riding') || (this.state?.scene === 'm3_hammer_tunnels' && this.state.hammer?.phase === 'riding') || (['m3_defense', 'm3_sun'].includes(this.state?.scene ?? '') && this.state?.logos?.phase === 'riding') || (this.state?.scene === 'm3_gate' && this.state.apu?.phase === 'riding')); }
+  driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && ((this.state?.scene === 'm2_freeway' && this.state.ride?.phase === 'riding') || (this.state?.scene === 'm2_garage' && (this.state.garage?.phase === 'riding' || this.state.garage?.phase === 'arrived')) || (this.state?.scene === 'm3_hammer_tunnels' && this.state.hammer?.phase === 'riding') || (['m3_defense', 'm3_sun'].includes(this.state?.scene ?? '') && this.state?.logos?.phase === 'riding') || (this.state?.scene === 'm3_gate' && this.state.apu?.phase === 'riding')); }
 
   private placeGarageDriver(agent: AgentState, car: GarageCarPose, tick: number): void {
     const seat = garageRiderPose(car, 'trinity');
@@ -6175,7 +6175,7 @@ export class FilmStorySystem {
       }
       for (let index = 0; index < 2; index++) {
         const twin = this.world.agents.get(`twin${index + 1}`);
-        if (twin && !twin.controller) twin.currentAction = { type: 'idle', parameters: { ghostPhase: escape.elapsed < escape.ghostUntil[index] }, startedAt: tick, duration: 1, progress: 0 };
+        if (twin && !twin.controller) twin.currentAction = { type: 'idle', parameters: { ghostPhase: escape.phase === 'riding' && escape.elapsed < escape.ghostUntil[index] }, startedAt: tick, duration: 1, progress: 0 };
       }
       if (escape.twins !== before.twins) state.lastText = escape.hits === before.hits ? '双子在车头前化为白色残影，轿车直接穿过。保持速度，冲向出口。' : '车速太慢，双子的剃刀擦过车厢。加速或者绕开下一个拦截点。';
       else if (escape.hits > before.hits) state.lastText = '车身擦上混凝土护栏。稳住方向，别让钥匙匠受到第二次冲击。';
@@ -9058,9 +9058,11 @@ export class FilmStorySystem {
         return;
       }
       if (state.scene === 'm2_garage' && state.garage?.phase === 'arrived') {
-        actor.position.y = FILM_SETS[this.scene.set].center.y; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
+        actor.position.y = FILM_SETS[this.scene.set].center.y; actor.velocity = { x: 0, y: 0, z: 0 };
         for (const id of ['morpheus', 'keymaker', 'twin1', 'twin2']) {
-          const passenger = this.world.agents.get(id); if (passenger && !passenger.controller) { passenger.velocity = { x: 0, y: 0, z: 0 }; passenger.currentAction = null; }
+          const passenger = this.world.agents.get(id); if (passenger && !passenger.controller) {
+            passenger.velocity = { x: 0, y: 0, z: 0 }; if (id.startsWith('twin')) passenger.currentAction = null;
+          }
         }
         this.advance('轿车冲出车库。双子转身抢另一辆车追来；Link 只能在高速公路外侧接应，Trinity 必须继续护送钥匙匠。', actor, tick);
         return;
