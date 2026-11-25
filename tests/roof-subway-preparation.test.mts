@@ -125,6 +125,17 @@ test('a cold subway pickup prepares both cast models and hidden phone debris bef
   const uploaded = h.batches.length; h.newGpu(); h.drain(); assert(h.batches.slice(uploaded).some(batch => batch.includes(first)));
 });
 
+test('a cold rail checkpoint prepares the train glazing before its timing window', t => {
+  const h = fixture(t, 'city', true), station = new MatrixEscapeRenderer(h.film.root, 'film_subway_platform');
+  Object.assign(h.film, { matrixEscape: station }); h.journey.matrixEscape!.phase = 'tracks';
+  const train = h.film.root.getObjectByName('matrix-subway-train')!, needed: THREE.Mesh[] = [];
+  train.traverse(object => { if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial) needed.push(object); });
+  assert(needed.some(mesh => mesh.material instanceof THREE.MeshPhysicalMaterial));
+  h.ready(); h.drain();
+  assert(needed.every(mesh => h.batches.some(batch => batch.includes(mesh))), 'the cold rail checkpoint must prepare the actual train surfaces before they enter view');
+  assert.equal(train.visible, false); assert.equal(h.journey.matrixEscape!.phase, 'tracks'); assert.equal(h.journey.matrixEscape!.elapsed, 1);
+});
+
 for (const mode of ['subway', 'city', 'hotel'] as const) test(`${mode} prepares both depth layouts and releases replaced or cancelled materials`, t => {
   const h = fixture(t, mode, true); h.skin.castShadow = h.coarse.castShadow = true; h.ready(); h.drain();
   const source = mode === 'subway' ? 4 : mode === 'city' ? 12 : 2;

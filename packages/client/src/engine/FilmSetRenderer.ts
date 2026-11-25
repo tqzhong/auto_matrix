@@ -1335,7 +1335,7 @@ export class FilmSetRenderer {
       && (phase === 'pulling' || phase === 'done');
     const escape = journey.matrixEscape;
     if (!journey.visiting && atSource && this.current?.id === 'film_subway_platform' && escape?.kind === 'subway'
-      && ['crew_exit', 'ready', 'phone_shot', 'stance', 'body_swap'].includes(escape.phase) && sourceLights) {
+      && ['crew_exit', 'ready', 'phone_shot', 'stance', 'wall_break', 'tracks', 'body_swap'].includes(escape.phase) && sourceLights) {
       if (this.prepareSubwayCurrentColors(renderer, camera, sourceLights, body, hero)) return;
     } else this.subwayCurrentColors = undefined;
     const city = journey.scene === 'm1_subway' && (landing || atSource && this.current?.id === 'film_subway_platform')
@@ -1424,9 +1424,9 @@ export class FilmSetRenderer {
         || object.userData.reloadedHidden || prepared.seen.has(object)) return;
       prepared.seen.add(object); prepared.meshes.push(object as ColorMesh);
     };
-    // Cold pickup saves must prepare the cast and broken receiver before Smith fires.
+    // Cold pickup and rail saves also need surfaces that have not entered the camera yet.
     for (const id of ['neo', 'smith', 'citizen_13']) for (const group of [body(id), hero(id)]) group?.traverse(include);
-    this.root.getObjectByName('matrix-subway-phone-debris')?.traverse(include);
+    for (const name of ['matrix-subway-phone-debris', 'matrix-subway-train']) this.root.getObjectByName(name)?.traverse(include);
     return this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true, prepared.meshes.slice(0, 4));
   }
   prepareOneDeck(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined, position: Vector3): void {
