@@ -354,6 +354,34 @@ test('the meeting defers offscreen skin shading and resumes it when the camera t
   assert.equal(renderer.getAgent(persephone.id)?.visible, true, 'other routes recover the normal Matrix view');
 });
 
+test('leaving the captains hall prepares Kid at the next real-world dock without revealing him', t => {
+  const originalDocument = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new AgentRenderer(new THREE.Scene());
+  t.after(() => { renderer.dispose(); globalThis.document = originalDocument; });
+  t.mock.method(renderer['models'], 'requestHero', () => {});
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, kid = world.agents.get('kid')!;
+  neo.position = filmPosition('film_captains_meeting', 0, -24); neo.currentLocation = 'film_captains_meeting'; neo.isInMatrix = true;
+  kid.position = filmPosition('film_zion_hangar', -5, -28); kid.currentLocation = 'film_zion_hangar'; kid.isInMatrix = false;
+  for (const actor of [neo, kid]) renderer.updateAgent(actor.id, actor);
+  renderer.setPlayer('neo'); renderer.setWorld(true);
+  const body = renderer.getAgentBody(kid.id), prepared: boolean[] = [];
+  t.mock.method(renderer['models'], 'animate', (rig, _delta, input) => {
+    if (rig.root === body) prepared.push(Boolean(input.prepareDetailedCast));
+  });
+  const state = journey('meeting'), camera = new THREE.PerspectiveCamera(); camera.position.copy(neo.position);
+  state.step = 3; renderer.update(.02, camera, 1, 0, state);
+  state.step = 4; renderer.update(.02, camera, 1, 0, state);
+  assert.equal(renderer.getAgent('kid')?.visible, false, 'the next world must remain hidden during the Matrix escape');
+  state.visiting = 'm2_meeting'; renderer.update(.02, camera, 1, 0, state);
+  delete state.visiting; renderer.setPlayer('kid'); renderer.update(.02, camera, 1, 0, state);
+  assert.deepEqual(prepared, [false, true, false, false]);
+});
+
 test('the château garage renders local riders and Twins while keeping other sets out of the draw', t => {
   const originalDocument = globalThis.document;
   const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
