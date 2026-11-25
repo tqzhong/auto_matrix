@@ -254,3 +254,34 @@ test('the council readies resident depth, normals and fitted Trinity knit withou
   assert.equal(releasedCloth, 0, 'adoption must keep the warmed program until the live resident scene has used it');
   h.sets.update(undefined, undefined, 1); assert.equal(releasedCloth, 1);
 });
+
+test('the infected exit phone readies engineering depth, both actor normals and the shared ground shadow', t => {
+  const h = setup(t), lighting = new LightCulling(h.scene), sun = new THREE.DirectionalLight(); sun.castShadow = true; h.scene.add(sun);
+  Object.assign(h.journey, { scene: 'm2_bane_copy', actor: 'bane', step: 3, baneCopy: { progress: 1 } }); delete h.journey.reloaded;
+  const bane = { ...h.neo, id: 'bane', position: filmEntry(FILM_SCENE_BY_ID.m2_bane_copy), currentLocation: 'film_industrial_loft', isInMatrix: true };
+  h.sets.update(bane, { neoLife: { journey: h.journey } } as SandboxState, 0);
+  lighting.stablePointSlots = true; lighting.minimumPointSlots = 7;
+  const geometry = new THREE.BoxGeometry(), neoHead = new THREE.SkinnedMesh(geometry, h.material), hamannHead = new THREE.SkinnedMesh(geometry, h.material);
+  neoHead.name = 'Anatomical_head_and_hands'; hamannHead.name = 'hamann-anatomical-head'; neoHead.castShadow = hamannHead.castShadow = true;
+  h.cast.get('neo')!.add(neoHead); const hamann = new THREE.Group(); hamann.add(hamannHead); hamann.visible = false; h.cast.set('hamann', hamann);
+  const shadowMaterial = new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false }), shadow = new THREE.Mesh(geometry, shadowMaterial);
+  const compiled = new Set<THREE.Object3D>(), depths = new Set<THREE.MeshDepthMaterial>(), slots = new Set<number>(), passes: string[] = [];
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, properties: { get: () => ({}) },
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }, getRenderTarget: () => null, setRenderTarget() {},
+    compile(subject: THREE.Object3D, _camera: THREE.Camera, target: THREE.Scene) {
+      let points = 0; target.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
+      subject.traverse(object => { compiled.add(object); if (object instanceof THREE.Mesh) passes.push(object.material.type); if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial) { depths.add(object.material); slots.add(points); } });
+    } } as unknown as THREE.WebGLRenderer;
+  const before = JSON.stringify(h.journey), costumes = h.costumes.map(mesh => mesh.visible);
+  t.after(() => { lighting.dispose(); geometry.dispose(); shadowMaterial.dispose(); });
+  for (let frame = 0; frame < 180; frame++) h.sets.prepareZionHomecoming(graphics, h.camera, h.journey, id => h.cast.get(id), false, lighting, sun, shadow);
+  assert.ok(depths.size > 0, 'the phone lead time must prepare engineering shadow programs');
+  assert.ok(passes.indexOf('MeshStandardMaterial') < passes.indexOf('MeshDepthMaterial'), 'the short phone handoff must give visible colors the first preparation frames');
+  assert.deepEqual([...slots].sort((a, b) => a - b), [4, 7]);
+  assert.ok(compiled.has(shadow)); assert.ok(h.sets.zionEntryNormalMeshes?.includes(neoHead)); assert.ok(h.sets.zionEntryNormalMeshes?.includes(hamannHead));
+  assert.equal(JSON.stringify(h.journey), before); assert.equal(hamann.visible, false); assert.deepEqual(h.costumes.map(mesh => mesh.visible), costumes);
+  let released = 0; for (const depth of depths) depth.addEventListener('dispose', () => released++);
+  Object.assign(h.journey, { scene: 'm2_hamann', actor: 'neo', step: 0 });
+  Object.assign(h.neo, { position: filmEntry(FILM_SCENE_BY_ID.m2_hamann), currentLocation: 'film_zion_engineering', isInMatrix: false }); h.update();
+  assert.equal(released, 0); h.sets.update(undefined, undefined, 1); assert.equal(released, depths.size);
+});

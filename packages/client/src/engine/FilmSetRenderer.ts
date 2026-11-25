@@ -2505,7 +2505,7 @@ export class FilmSetRenderer {
       this.cancelZionPreparation(); return;
     }
     const next = FILM_SCENE_BY_ID[cut.scene], defense = next.id === 'm3_temple_defense', council = next.id === 'm2_lock';
-    const temple = next.id === 'm2_temple', entryPasses = council || temple || next.id === 'm2_residents' || next.id === 'm2_room';
+    const temple = next.id === 'm2_temple', entryPasses = council || temple || next.id === 'm2_residents' || next.id === 'm2_room' || next.id === 'm2_hamann';
     if (!this.preparedZion) {
       const target = new ZionHomecomingRenderer(new THREE.Group(), next.set, next.id, defense);
       this.preparedZion = { scene: next.id, renderer: target, root: target.group, liveMeshes: [] };
@@ -2579,7 +2579,8 @@ export class FilmSetRenderer {
         }
       }
     }
-    if (defense || entryPasses) this.prepareStagedEntry(renderer, camera, prepared, colors, atSource ? sourceLights : undefined, 2);
+    if (defense || entryPasses) this.prepareStagedEntry(renderer, camera, prepared, colors, atSource ? sourceLights : undefined, 2,
+      next.id === 'm2_hamann' ? 'bindings' : false);
     else if (next.id === 'm2_dock' || next.id === 'm2_departure') {
       this.prepareColorProgram(renderer, camera, colors, undefined, 'live');
       this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2);
