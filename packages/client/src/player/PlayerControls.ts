@@ -3381,6 +3381,8 @@ export class PlayerControls {
       const lafayetteWalking = state.currentLocation === 'film_lafayette' && !this.performing;
       const dojoWalking = state.currentLocation === 'film_kungfu_dojo';
       const chateauWalking = state.currentLocation === 'film_chateau_hall';
+      const garageDriving = state.currentLocation === 'film_chateau_garage' && Boolean(this.ride);
+      const garageWalking = state.currentLocation === 'film_chateau_garage' && !this.ride;
       const officeFollow = state.currentLocation === 'film_metacortex_floor';
       const lobbyRearWall = METACORTEX.center.z + METACORTEX.depth / 2;
       const metacortexLobby = state.isInMatrix && this.position.y < 8
@@ -3392,8 +3394,8 @@ export class PlayerControls {
         && Math.abs(point.x - METACORTEX.center.x) < METACORTEX.width / 2;
       const subwayCenter = state.currentLocation === 'film_subway_platform' ? FILM_SETS.film_subway_platform.center : undefined;
       const columnBlocks = (point: THREE.Vector3) => subwayCenter && subwayCameraBlocked(point.x - subwayCenter.x, point.y - subwayCenter.y + 1, point.z - subwayCenter.z, .5);
-      const closeFollow = lafayetteWalking || dojoWalking || chateauWalking || officeFollow || metacortexLobby || subwayCenter !== undefined || Boolean(this.motion.mobilRefusal);
-      if (closeFollow) for (let step = 0; step < 4 && (columnBlocks(pivot) || playerBlocked(pivot, state.isInMatrix, .5, this.structures)); step++) pivot.lerp(this.cameraTarget, .5);
+      const closeFollow = lafayetteWalking || dojoWalking || chateauWalking || garageWalking || officeFollow || metacortexLobby || subwayCenter !== undefined || Boolean(this.motion.mobilRefusal);
+      if (closeFollow) for (let step = 0; step < 4 && (columnBlocks(pivot) || playerBlocked(pivot, state.isInMatrix, .5, this.structures, garageDriving)); step++) pivot.lerp(this.cameraTarget, .5);
       const followDistance = hotelPickup ? (this.camera.aspect < .8 ? 13 : 11.5) - 5.5 * pickupFraming
         : wreckCabin || doorwayView ? 4.2 : this.motion.engineering ? 6 : lafayetteWalking || state.currentLocation === 'film_zion_personnel' || state.currentLocation === 'film_zion_bedroom' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
       const cabinCenter = state.currentLocation === 'film_neb_deck' ? FILM_SETS.film_neb_deck.center : undefined;
@@ -3423,7 +3425,7 @@ export class PlayerControls {
         const blocked = state.currentLocation === 'film_power_station'
           ? primaryCameraBlocked(point.x - center.x, point.y - center.y + 1, point.z - center.z, .5)
           // Hotel floor support is checked at a standing body's foot height.
-          : playerBlocked(lafayetteWalking ? { ...point, y: Math.min(point.y, this.position.y + 2) } : point, state.isInMatrix, 0.5, this.structures);
+          : playerBlocked(lafayetteWalking ? { ...point, y: Math.min(point.y, this.position.y + 2) } : point, state.isInMatrix, 0.5, this.structures, garageDriving);
         if (blocked || columnBlocks(point) || lobbyWallBlocksCamera(point) || point.y > cameraCeiling(point)) { cameraDistance = Math.max(.25, distance - .5); break; }
       }
       // A wall that shortens the follow distance also raises the camera above the player's silhouette.
@@ -3444,14 +3446,14 @@ export class PlayerControls {
         const sweep = this.camera.position.clone().sub(pivot), length = sweep.length(); sweep.normalize();
         for (let distance = .25; distance <= length; distance += .25) {
           const point = pivot.clone().addScaledVector(sweep, distance); point.y = Math.min(point.y, this.position.y + 2);
-          if (columnBlocks(point) || lobbyWallBlocksCamera(point) || playerBlocked(point, state.isInMatrix, .5, this.structures)) {
+          if (columnBlocks(point) || lobbyWallBlocksCamera(point) || playerBlocked(point, state.isInMatrix, .5, this.structures, garageDriving)) {
             this.camera.position.copy(pivot).addScaledVector(sweep, Math.max(0, distance - .5)); break;
           }
         }
         if (cameraDistance < 4.5 || this.camera.position.distanceTo(pivot) < 4.5) { this.camera.near = .1; this.camera.updateProjectionMatrix(); }
-        // A compressed dojo or weapon-rack view must clear the body during V transitions
+        // A compressed walking view must clear the body during V transitions
         // and jumps, before the follow interpolation has reached its new height.
-        if ((dojoWalking || chateauWalking) && Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z) < 1.5)
+        if ((dojoWalking || chateauWalking || garageWalking) && Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z) < 1.5)
           this.camera.position.y = Math.max(this.camera.position.y, this.position.y + 4.15);
         // The window can compress either walking view into Neo and nearby people.
         if (officeFollow && Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z) < 4.5)
@@ -3470,8 +3472,8 @@ export class PlayerControls {
           : low < depth / 2 && high > depth / 2 ? exitHeight : Infinity;
         this.camera.position.y = Math.min(this.camera.position.y, home.y - 1 + headroom - lens - .05);
       }
-      const lookAhead = officeFollow || chateauWalking ? 2 * THREE.MathUtils.smoothstep(Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z), 1.5, 4.5) : 2;
-      const focus = (wreckCabin || officeFollow || chateauWalking ? this.cameraTarget.clone() : sixthBathroom || doorwayView ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone())
+      const lookAhead = officeFollow || chateauWalking || garageWalking ? 2 * THREE.MathUtils.smoothstep(Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z), 1.5, 4.5) : 2;
+      const focus = (wreckCabin || officeFollow || chateauWalking || garageWalking ? this.cameraTarget.clone() : sixthBathroom || doorwayView ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone())
         .add(new THREE.Vector3(Math.sin(this.yaw) * lookAhead, -.08 - 1.2 * alleyView, Math.cos(this.yaw) * lookAhead));
       if (this.motion.hotel303?.phase === 'pickup') focus.lerp(openingHotelPistolRest(this.motion.hotel303.fallen).add(new THREE.Vector3(0, 1.05, 0)), .78 * pickupFraming);
       this.camera.lookAt(focus);

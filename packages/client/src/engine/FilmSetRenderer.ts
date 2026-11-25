@@ -5737,7 +5737,7 @@ export class FilmSetRenderer {
   private car(x: number, z: number, color = 0x182622, truck = false): THREE.Group {
     const start = this.root.children.length; const paint = this.mat(color, .26, .62);
     const { chassis, windshield, roof, wheels } = WELLS_TRUCK;
-    this.box(paint, chassis.x, chassis.y, chassis.z, chassis.width, chassis.height, truck ? chassis.depth : 9, .5);
+    this.box(paint, chassis.x, chassis.y, chassis.z, chassis.width, chassis.height, truck ? chassis.depth : GARAGE.car.depth, .5);
     this.box(this.glass, windshield.x, windshield.y, windshield.z, windshield.width, windshield.height, truck ? windshield.depth : 4.7, .45);
     this.box(paint, roof.x, roof.y, roof.z, roof.width, roof.height, truck ? roof.depth : 4.8, .1);
     if (truck) this.box(this.white, 0, 4.3, 7, 5.6, 7, 13, .15);
@@ -5816,6 +5816,8 @@ export class FilmSetRenderer {
     for (const o of filmObstacles(set)) {
       if (['film_hel_garage', 'film_club_hel'].includes(set.id)) continue;
       if (['oracle', 'teahouse', 'power'].includes(set.architecture) || ['film_le_vrai', 'film_keymaker_workshop'].includes(set.id)) continue;
+      // Cars and weapon stands have their own meshes; only the full-height columns belong here.
+      if (['film_chateau_garage', 'film_chateau_hall'].includes(set.id) && o.height !== h) continue;
       const column = set.architecture === 'lobby' ? this.mat(0x2d4038, .28, .08) : lavish ? this.marble : this.metal;
       this.box(column, o.x, h / 2, o.z, o.width, h, o.depth, .08);
       for (const y of [.35, h - .5]) this.box(lavish ? this.marble : this.metal, o.x, y, o.z, 2.5, .7, 2.5, .06);
@@ -7208,7 +7210,7 @@ export class FilmSetRenderer {
         }
         for (const x of [-5.5, 5.5]) this.box(paint, x, .12, -35, .25, .04, 6);
         this.box(paint, 0, .12, -35, 11, .04, .27);
-        this.car(-17, -14, 0x343f3c); this.car(17, 22, 0x626a65);
+        this.car(GARAGE.parked[0].x, GARAGE.parked[0].z, 0x343f3c); this.car(GARAGE.parked[1].x, GARAGE.parked[1].z, 0x626a65);
         this.garageCar = this.car(GARAGE.start.x, GARAGE.start.z, 0x303b3a);
         this.garageCar.name = 'garage-chase-car';
         this.garageCar.userData.dynamic = true;

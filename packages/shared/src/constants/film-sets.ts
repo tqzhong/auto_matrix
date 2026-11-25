@@ -1,5 +1,6 @@
 import { METACORTEX, METACORTEX_SHAFT, metacortexPosition } from './metacortex.js';
 import { CHATEAU, chateauRailBlocked, chateauStairTread } from './chateau.js';
+import { GARAGE } from './garage.js';
 import { JUMP_TOWERS, jumpStreetHeight } from './jump-impact.js';
 import { ZION_DEPLOYMENT } from './zion-deployment.js';
 import { PRIMARY_DEMOLITION, primaryFloor } from './primary-demolition.js';
@@ -208,7 +209,7 @@ export const ORACLE_OPEN_DOOR: FilmObstacle = { x: ORACLE_ENTRANCE.door.x, z: OR
 const wellsLamps = streetLamps(FILM_SETS.film_wells_phone.width, FILM_SETS.film_wells_phone.depth).map(lamp => ({
   ...lamp, width: 2 * WELLS_STREET.poleRadius, depth: 2 * WELLS_STREET.poleRadius, height: WELLS_STREET.poleHeight,
 }));
-export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOracleDoor = false, oracleLastKitchen = false): FilmObstacle[] {
+export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOracleDoor = false, oracleLastKitchen = false, movingGarageCar = false): FilmObstacle[] {
   if (set.id === 'film_wells_phone') return wellsLamps;
   if (set.id === 'film_final_phone') {
     const z = THE_ONE.flight.boothZ, height = THE_ONE.flight.boothHeight;
@@ -337,10 +338,11 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
     for (const side of [-1, 1]) columns.push({ x: side * x, z, width: 1.8, depth: 1.8, height: set.height });
   }
   if (set.id === 'film_chateau_hall') columns.push(...Object.values(CHATEAU.racks).map(rack => ({ ...rack, ...CHATEAU.rackStand })));
+  if (set.id === 'film_chateau_garage') columns.push(...[...GARAGE.parked, ...(movingGarageCar ? [] : [GARAGE.start])].map(car => ({ ...car, ...GARAGE.car })));
   return columns;
 }
 
-export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false, craterDepth = 0, oracleLastKitchen = false): boolean {
+export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false, craterDepth = 0, oracleLastKitchen = false, movingGarageCar = false): boolean {
   if (set.id === 'film_wells_phone') radius = Math.min(radius, WELLS_STREET.bodyRadius);
   const x = position.x - set.center.x; const z = position.z - set.center.z;
   if (set.id === 'film_chateau_hall' && chateauRailBlocked(x, position.y - set.center.y, z, radius)) return true;
@@ -378,7 +380,7 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number, mov
     if (fromImpact > SMITH_FINALE.crater.floorRadius - radius && fromImpact < SMITH_FINALE.crater.radius + radius) return true;
   }
   if (position.y < filmGroundHeight(position, set, craterDepth) - .8) return true;
-  return filmObstacles(set, movingMeetingCar, movingOracleDoor, oracleLastKitchen).some(o => position.y < set.center.y + o.height
+  return filmObstacles(set, movingMeetingCar, movingOracleDoor, oracleLastKitchen, movingGarageCar).some(o => position.y < set.center.y + o.height
     && (o.circleRadius === undefined
       ? Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius
       : Math.hypot(x - o.x, z - o.z) < o.circleRadius + radius));

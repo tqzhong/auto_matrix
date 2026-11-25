@@ -5792,7 +5792,22 @@ export class FilmStorySystem {
   }
   restoreGaragePose(agent: AgentState, tick: number): boolean {
     const state = this.state;
-    if (state?.scene !== 'm2_garage' || !state.garage || agent.status !== 'alive' || !this.driving(agent)) return false;
+    if (state?.scene !== 'm2_garage' || state.visiting || agent.status !== 'alive' || !this.controls(agent)) return false;
+    if (!state.garage) {
+      const { center } = FILM_SETS.film_chateau_garage, body = GARAGE.car;
+      const clear = (position: AgentState['position']): AgentState['position'] => {
+        const x = position.x - center.x, z = position.z - center.z;
+        const car = [GARAGE.start, ...GARAGE.parked].find(car => Math.abs(x - car.x) < body.width / 2 + 1.1
+          && Math.abs(z - car.z) < body.depth / 2 + 1.1 && position.y < center.y + body.height);
+        if (!car) return position;
+        const side = x > car.x ? 1 : -1;
+        const next = { ...position, x: center.x + car.x + side * (body.width / 2 + 1.1 + .05) };
+        return playerBlocked(next, true, 1.1, this.sandbox().structures) ? position : next;
+      };
+      agent.position = clear(agent.position); state.checkpoint = clear(state.checkpoint);
+      return false;
+    }
+    if (!this.driving(agent)) return false;
     this.placeGarageDriver(agent, garageCarPose(state.garage), savedGarageDriveTick(agent.currentAction) ?? tick);
     return true;
   }

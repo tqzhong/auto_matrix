@@ -1,7 +1,10 @@
 import type { DriveInput } from './freeway.js';
+import { WELLS_TRUCK } from './wells-street.js';
 
 export const GARAGE = {
   start: { x: 0, z: 14 }, finish: -40, limit: 13.5,
+  car: { width: WELLS_TRUCK.chassis.width, depth: 9, height: WELLS_TRUCK.roof.y + WELLS_TRUCK.roof.height / 2 },
+  parked: [{ x: -17, z: -14 }, { x: 17, z: 22 }],
   twins: [{ x: 0, z: -9 }, { x: 2.5, z: -23 }],
   seats: { trinity: { x: -1.05, z: 0 }, morpheus: { x: 1, z: .2 }, keymaker: { x: -.95, z: 1.7 } },
 } as const;

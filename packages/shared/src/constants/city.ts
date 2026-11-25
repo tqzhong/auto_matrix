@@ -173,7 +173,7 @@ export function groundHeight(position: Vector3, matrix: boolean, structures: Wor
   return floor;
 }
 
-export function playerBlocked(position: Vector3, matrix: boolean, radius = 1.1, structures: WorldStructure[] = []): boolean {
+export function playerBlocked(position: Vector3, matrix: boolean, radius = 1.1, structures: WorldStructure[] = [], movingGarageCar = false): boolean {
   if (structures.some(s => {
     if (s.film?.scene === 'm1_phone_escape') return false;
     if (!(s.kind === 'barricade' && s.matrix === matrix && s.health > 0 && position.y < s.position.y + (s.film?.height ?? 3) && position.y > s.position.y - 3)) return false;
@@ -198,7 +198,7 @@ export function playerBlocked(position: Vector3, matrix: boolean, radius = 1.1, 
   }
   if (set?.id === 'film_escape_streets' && structures.some(s => s.id === 'film:reset:facade'))
     return Math.abs(position.x - set.center.x) > set.width / 2 - radius - .6 || Math.abs(position.z - set.center.z) > set.depth / 2 - radius - .6;
-  if (set) return filmBlocked(position, set, radius, structures.some(s => s.id === 'film:bridge:car'), structures.some(s => s.id === 'film:oracle:door'), structures.find(s => s.id === 'film:smith:crater' && s.kind === 'crater')?.film?.height, structures.some(s => s.id === 'film:oracle-last:table'));
+  if (set) return filmBlocked(position, set, radius, structures.some(s => s.id === 'film:bridge:car'), structures.some(s => s.id === 'film:oracle:door'), structures.find(s => s.id === 'film:smith:crater' && s.kind === 'crater')?.film?.height, structures.some(s => s.id === 'film:oracle-last:table'), movingGarageCar);
   if (!matrix) return Math.hypot(position.x - 2170, position.z - 2390) > 440;
   if (position.x < 0 || position.x > 2560 || position.z < 0 || position.z > 2560) return true;
   return CITY_BUILDINGS.some(building => {
