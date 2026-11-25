@@ -270,7 +270,7 @@ export class AgentRenderer {
   prepareStoryCast(journey: FilmJourney): void {
     const index = FILM_SCENES.findIndex(scene => scene.id === (journey.visiting ?? journey.scene));
     if (index < 0) return;
-    for (const scene of FILM_SCENES.slice(index, index + 2)) for (const id of [scene.actor, ...scene.cast]) {
+    for (const scene of FILM_SCENES.slice(index, index + 2)) for (const id of [scene.actor, ...scene.cast, ...(scene.id === 'm2_freeway' ? ['agent_jackson'] : [])]) {
       const entry = this.agents.get(id);
       if (entry) this.models.requestHero(entry.rig);
     }

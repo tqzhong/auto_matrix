@@ -474,7 +474,7 @@ export class Engine {
     const fromMobilReunion = meeting?.scene === 'm3_mobil_release';
     const resumeSecondOracle = onLanding && (meeting?.scene === 'm1_meal' || meeting?.scene === 'm2_departure')
       || resumeOnLanding && (meeting?.scene === 'm2_burly' || meeting?.scene === 'm2_persephone' || meeting?.scene === 'm2_mountain'
-      || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_ship_lost' || meeting?.scene === 'm2_stop_sentinels' || meeting?.scene === 'm2_medical'
+      || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_freeway' || meeting?.scene === 'm2_ship_lost' || meeting?.scene === 'm2_stop_sentinels' || meeting?.scene === 'm2_medical'
       || meeting?.scene === 'm3_trainman' || meeting?.scene === 'm3_oracle_request' || meeting?.scene === 'm3_trainman_chase'
       || meeting?.scene === 'm3_hel_garage' || meeting?.scene === 'm3_hel_bargain' || fromMobilReunion
       || meeting?.scene === 'm3_maggie_discovery' || meeting?.scene === 'm3_bane');
