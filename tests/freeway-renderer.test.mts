@@ -140,7 +140,9 @@ test('the garage chase prepares the same freeway and carrier used on arrival', t
   assert.equal(preview, undefined, 'wait until Trinity reaches the car');
   state.step = 1; state.garage = newGarageEscape();
   for (let frame = 0; frame < 120; frame++) prepare();
-  const carrierName = 'matrix-motorcycle-carrier', carrier = preview?.getObjectByName(carrierName);
+  const carrierName = 'matrix-motorcycle-carrier';
+  let carrier: THREE.Object3D | undefined;
+  preview?.traverseVisible(object => { if (object.name === carrierName) carrier = object; });
   assert.ok(carrier?.visible, 'the road and its arrival carrier are prepared before the cut');
   assert.ok(!scene.getObjectByName(carrierName), 'the prepared road stays out of the garage');
   state.scene = 'm2_freeway'; state.step = 0; state.freewayPickup = newFreewayPickup();

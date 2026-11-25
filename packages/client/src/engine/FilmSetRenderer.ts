@@ -442,7 +442,7 @@ export class FilmSetRenderer {
   private preparedClub?: ClubPreparation;
   private clubExitColors?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; queued: Set<THREE.Mesh> };
   private freeway?: FreewaySetRenderer;
-  private preparedFreeway?: { renderer: FreewaySetRenderer; colors?: CastColorPreparation };
+  private preparedFreeway?: EntryPreparation & { renderer: FreewaySetRenderer; colors?: CastColorPreparation; normalMeshes?: THREE.Mesh[] };
   private pods?: PodSetRenderer;
   private preparedPods?: PodSetRenderer;
   private preparedPodInspection?: Pick<EntryPreparation, 'gpu' | 'lighting' | 'shadows' | 'buffers' | 'textureUpload'> & { colors: ColorPreparation };
@@ -665,7 +665,7 @@ export class FilmSetRenderer {
   get oneHotelNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.oneHotelColors?.normalMeshes; }
   get meetingEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedMeetingHall?.normalMeshes; }
   get zionEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedZion?.normalMeshes; }
-  get secondOracleEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedSecondOracle?.normalMeshes; }
+  get secondOracleEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedSecondOracle?.normalMeshes ?? this.preparedFreeway?.normalMeshes; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
     if (this.neb && this.crosscutDeck?.renderer === this.neb) return CROSSCUT_DECK_POINT_SLOTS;
@@ -2673,14 +2673,41 @@ export class FilmSetRenderer {
       && (!journey || !journey.visiting && journey.scene === waiting.scene)) return;
     if (this.current?.id === 'film_chateau_garage' && journey?.scene === 'm2_garage' && !journey.visiting && journey.step >= 1) {
       if (journey.garage?.phase === 'wrecked') return;
-      const prepared = this.preparedFreeway ??= { renderer: new FreewaySetRenderer(undefined, FILM_SETS.film_freeway_101) };
+      if (!this.preparedFreeway) {
+        const freeway = new FreewaySetRenderer(undefined, FILM_SETS.film_freeway_101);
+        this.preparedFreeway = { root: freeway.root, renderer: freeway, liveMeshes: [this.marker] };
+      }
+      const prepared = this.preparedFreeway;
       if (!prepared.renderer.prepareStep()) return;
       const next = FILM_SCENE_BY_ID.m2_freeway;
+      if (prepared.gpu !== renderer.properties) {
+        this.releaseEntryPreparation(prepared); prepared.colors = undefined; prepared.gpu = renderer.properties;
+      }
       if (!prepared.colors && renderer.extensions.has('KHR_parallel_shader_compile')) {
         prepared.renderer.update({ ...journey, scene: next.id, step: 0, freewayPickup: newFreewayPickup() }, 0);
-        prepared.colors = { ...this.colorPreparation(prepared.renderer.root, []), actors: new Set() };
+        const colors = this.colorPreparation(prepared.root, [], { includeBasic: true });
+        prepared.colors = { ...colors, actors: new Set() };
+        prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
+        const plain = colors.meshes.find(mesh => mesh instanceof THREE.Mesh && !(mesh instanceof THREE.InstancedMesh));
+        const instanced = colors.meshes.find(mesh => mesh instanceof THREE.InstancedMesh);
+        prepared.normalMeshes = [plain, instanced].filter((mesh): mesh is ColorMesh => mesh instanceof THREE.Mesh);
+        colors.meshes.unshift(this.marker);
+        if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+          prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
+          this.queueEntryShadows(prepared, colors.meshes);
+        }
       }
-      if (prepared.colors) this.prepareCastColors(renderer, camera, prepared.colors, [next.actor, ...next.cast], actor);
+      if (prepared.colors) {
+        const colors = prepared.colors;
+        for (const id of [next.actor, ...next.cast]) {
+          const group = actor(id); if (!group || colors.actors.has(group)) continue;
+          const meshes = this.colorMeshes(group.children, true); if (!meshes.length) continue;
+          colors.actors.add(group); colors.meshes.unshift(...meshes);
+          this.queueColorTextures(colors.textures, meshes); this.queueEntryShadows(prepared, meshes);
+          prepared.normalMeshes = [...(prepared.normalMeshes ?? []), ...meshes.filter(mesh => mesh instanceof THREE.SkinnedMesh || Object.keys(mesh.geometry.morphAttributes).length > 0)];
+        }
+        this.prepareStagedEntry(renderer, camera, prepared, colors, sourceLights, 2, 'bindings');
+      }
       return;
     }
     this.cancelFreewayPreparation();
@@ -4388,8 +4415,8 @@ export class FilmSetRenderer {
       }
       const preparedMountain = set?.id === 'film_mountain_range' && sceneId === 'm2_mountain' && !journey?.visiting ? this.preparedMountain : undefined;
       if (preparedMountain) this.preparedMountain = undefined;
-      const preparedFreeway = set?.id === 'film_freeway_101' && sceneId === 'm2_freeway' && !journey?.visiting ? this.preparedFreeway?.renderer : undefined;
-      if (preparedFreeway) this.preparedFreeway = undefined;
+      const preparedFreeway = set?.id === 'film_freeway_101' && sceneId === 'm2_freeway' && !journey?.visiting ? this.preparedFreeway : undefined;
+      if (preparedFreeway) { this.preparedFreeway = undefined; this.releaseEntryPreparation(preparedFreeway, true); }
       const previewDesert = set?.id === 'film_real_desert' && sceneId === 'm1_desert' && !journey?.visiting ? this.construct?.takePreviewDesert() : undefined;
       const desertShadows = previewDesert && this.cancelDesertPreparation(true);
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
@@ -4499,8 +4526,9 @@ export class FilmSetRenderer {
           }
         }
         else if (set.architecture === 'freeway') {
-          this.freeway = preparedFreeway ?? new FreewaySetRenderer(this.root, set);
-          preparedFreeway?.attach(this.root);
+          this.freeway = preparedFreeway?.renderer ?? new FreewaySetRenderer(this.root, set);
+          preparedFreeway?.renderer.attach(this.root);
+          for (const material of preparedFreeway?.shadows?.materials ?? []) this.materials.add(material);
         }
         else if (set.architecture === 'pods') {
           this.pods = preparedPods ?? new PodSetRenderer();
@@ -7714,7 +7742,8 @@ export class FilmSetRenderer {
     this.preparedSecondOracle?.room.dispose(); this.preparedSecondOracle = undefined;
   }
   private cancelFreewayPreparation(): void {
-    this.preparedFreeway?.renderer.dispose(); this.preparedFreeway = undefined;
+    const prepared = this.preparedFreeway; if (!prepared) return;
+    this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedFreeway = undefined;
   }
   private cancelMountainPreparation(): void {
     const prepared = this.preparedMountain;
