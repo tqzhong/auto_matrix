@@ -143,7 +143,7 @@ test('the possession shot prepares the returning cast under the live subway ligh
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const neo = world.agents.get('neo')!;
   neo.position = filmPosition('film_subway_platform'); neo.isInMatrix = true;
-  const subway = journey('m1_subway');
+  const subway = journey('m1_subway'); subway.matrixEscape!.phase = 'duel';
   const sandbox = { neoLife: { journey: subway } } as SandboxState;
   sets.update(neo, sandbox, 0);
   lights.stablePointSlots = sets.stablePointSlots; lights.minimumPointSlots = 12;

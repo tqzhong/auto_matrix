@@ -540,7 +540,7 @@ export class FilmSetRenderer {
   private matrixEscape?: MatrixEscapeRenderer;
   private preparedMatrixEscape?: EntryPreparation & { renderer: MatrixEscapeRenderer | TheOneRenderer; colors?: CastColorPreparation;
     sourceEffects?: ColorPreparation & { seen: WeakSet<THREE.Mesh> } };
-  private subwayReturnColors?: Omit<ColorPreparation, 'meshes'> & { gpu: THREE.WebGLRenderer['properties']; seen: WeakSet<THREE.Mesh>; meshes: ColorMesh[] };
+  private subwayCurrentColors?: Omit<ColorPreparation, 'meshes'> & { gpu: THREE.WebGLRenderer['properties']; seen: WeakSet<THREE.Mesh>; meshes: ColorMesh[] };
   private preparedOneDeck?: { root: THREE.Group; deck: NebDeckRenderer; overlay: TheOneRenderer; colors?: CastColorPreparation;
     gpu?: THREE.WebGLRenderer['properties']; textureUpload?: Generator<void, boolean>; pendingCabin: Set<THREE.MeshStandardMaterial> };
   private theOne?: TheOneRenderer;
@@ -1334,9 +1334,10 @@ export class FilmSetRenderer {
     const subway = journey.scene === 'm1_rooftop_rescue' && (landing || atSource && this.current?.id === 'film_government_roof')
       && (phase === 'pulling' || phase === 'done');
     const escape = journey.matrixEscape;
-    if (!journey.visiting && atSource && this.current?.id === 'film_subway_platform' && escape?.phase === 'body_swap' && sourceLights) {
-      if (this.prepareSubwayReturnColors(renderer, camera, sourceLights, id => hero(id) ?? body(id))) return;
-    } else this.subwayReturnColors = undefined;
+    if (!journey.visiting && atSource && this.current?.id === 'film_subway_platform' && escape?.kind === 'subway'
+      && ['crew_exit', 'ready', 'phone_shot', 'stance', 'body_swap'].includes(escape.phase) && sourceLights) {
+      if (this.prepareSubwayCurrentColors(renderer, camera, sourceLights, body, hero)) return;
+    } else this.subwayCurrentColors = undefined;
     const city = journey.scene === 'm1_subway' && (landing || atSource && this.current?.id === 'film_subway_platform')
       && (escape?.phase === 'done' || escape?.phase === 'body_swap' && escape.elapsed >= .6);
     const hotel = journey.scene === 'm1_city_chase' && (landing || atSource && this.current?.id === 'film_escape_streets')
@@ -1411,19 +1412,21 @@ export class FilmSetRenderer {
       || this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.destination }, lighting, 'depth'))) return;
     this.prepareColorProgram(renderer, camera, colors, lighting, 'isolated');
   }
-  private prepareSubwayReturnColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
-    model: (id: string) => THREE.Group | undefined): boolean {
+  private prepareSubwayCurrentColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
+    body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined): boolean {
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return false;
-    if (this.subwayReturnColors?.gpu !== renderer.properties) this.subwayReturnColors = {
+    if (this.subwayCurrentColors?.gpu !== renderer.properties) this.subwayCurrentColors = {
       gpu: renderer.properties, scene: this.scene, seen: new WeakSet(), meshes: [], programs: [], textures: new Set(),
     };
-    const prepared = this.subwayReturnColors;
-    // The possession shot looks down the platform. Neo and Smith return to view at the cut.
-    for (const id of ['neo', 'smith', 'citizen_13']) model(id)?.traverse(object => {
+    const prepared = this.subwayCurrentColors;
+    const include = (object: THREE.Object3D) => {
       if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)
         || object.userData.reloadedHidden || prepared.seen.has(object)) return;
       prepared.seen.add(object); prepared.meshes.push(object as ColorMesh);
-    });
+    };
+    // Cold pickup saves must prepare the cast and broken receiver before Smith fires.
+    for (const id of ['neo', 'smith', 'citizen_13']) for (const group of [body(id), hero(id)]) group?.traverse(include);
+    this.root.getObjectByName('matrix-subway-phone-debris')?.traverse(include);
     return this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true, prepared.meshes.slice(0, 4));
   }
   prepareOneDeck(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined, position: Vector3): void {
@@ -7625,7 +7628,7 @@ export class FilmSetRenderer {
     this.preparedWellsGlass = undefined;
     this.cancelWellsCastPrograms();
     this.cancelPodPreparation();
-    this.subwayReturnColors = undefined;
+    this.subwayCurrentColors = undefined;
     this.cancelMatrixEscapePreparation();
     this.cancelOneDeckPreparation();
     this.cancelDreamPreparation();

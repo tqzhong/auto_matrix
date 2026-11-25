@@ -6,6 +6,7 @@ import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { GovernmentSetRenderer } from '../packages/client/src/engine/GovernmentSetRenderer.js';
+import { MatrixEscapeRenderer } from '../packages/client/src/engine/MatrixEscapeRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
@@ -107,6 +108,21 @@ test('the roof prepares hidden crash fire and ripples before they become visible
   assert.equal(fire.visible, false); assert.equal(ripples.visible, false); assert.equal(h.journey.airRescue!.elapsed, 0);
   const before = h.batches.length; h.newGpu(); h.drain();
   assert(needed.every(mesh => h.batches.slice(before).some(batch => batch.includes(mesh))), 'a new context must prepare the hidden effects again');
+});
+
+test('a cold subway pickup prepares both cast models and hidden phone debris before the shot', t => {
+  const h = fixture(t, 'city', true), station = new MatrixEscapeRenderer(h.film.root, 'film_subway_platform');
+  Object.assign(h.film, { matrixEscape: station }); h.journey.matrixEscape!.phase = 'crew_exit';
+  const smith = new THREE.Group(), first = new THREE.Mesh(h.geometry, h.material); first.visible = false; smith.add(first); h.heroes.set('smith', smith);
+  const debris = h.film.root.getObjectByName('matrix-subway-phone-debris')!, needed: THREE.Mesh[] = [];
+  debris.traverse(object => { if (object instanceof THREE.Mesh) needed.push(object); });
+  h.ready(); h.drain();
+  for (const mesh of [h.skin, h.coarse, first, ...needed]) assert(h.batches.some(batch => batch.includes(mesh)), 'the current platform needs every arriving actor and phone-fragment program');
+  assert.equal(debris.visible, false); assert.equal(h.journey.matrixEscape!.phase, 'crew_exit');
+  const count = h.work.length; h.drain(); assert.equal(h.work.length, count);
+  const late = new THREE.Mesh(h.geometry, h.material); late.visible = false; smith.add(late);
+  const before = h.batches.length; h.drain(); assert(h.batches.slice(before).some(batch => batch.includes(late)), 'later delivery inside the same Smith group must still prepare');
+  const uploaded = h.batches.length; h.newGpu(); h.drain(); assert(h.batches.slice(uploaded).some(batch => batch.includes(first)));
 });
 
 for (const mode of ['subway', 'city', 'hotel'] as const) test(`${mode} prepares both depth layouts and releases replaced or cancelled materials`, t => {
