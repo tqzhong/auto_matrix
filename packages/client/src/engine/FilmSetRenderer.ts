@@ -2505,7 +2505,7 @@ export class FilmSetRenderer {
       this.cancelZionPreparation(); return;
     }
     const next = FILM_SCENE_BY_ID[cut.scene], defense = next.id === 'm3_temple_defense', council = next.id === 'm2_lock';
-    const entryPasses = council || next.id === 'm2_residents';
+    const temple = next.id === 'm2_temple', entryPasses = council || temple || next.id === 'm2_residents' || next.id === 'm2_room';
     if (!this.preparedZion) {
       const target = new ZionHomecomingRenderer(new THREE.Group(), next.set, next.id, defense);
       this.preparedZion = { scene: next.id, renderer: target, root: target.group, liveMeshes: [] };
@@ -2530,9 +2530,13 @@ export class FilmSetRenderer {
         if (entryPasses && shadow) { colors.meshes.unshift(shadow); prepared.liveMeshes.push(shadow); }
       }
       const crowdLoaded = () => {
-        if (this.preparedZion?.renderer !== target) return;
+        if (this.preparedZion?.renderer !== target || this.preparedZion.colors !== colors) return;
         const meshes = this.colorMeshes([target.group]).filter(mesh => !initial.has(mesh));
         colors.meshes.push(...meshes); this.queueColorTextures(colors.textures, meshes);
+        if (entryPasses) {
+          prepared.liveMeshes.push(...meshes); this.queueEntryShadows(prepared, meshes);
+          prepared.normalMeshes = [...prepared.normalMeshes!, ...meshes.filter(mesh => mesh instanceof THREE.InstancedMesh)];
+        }
       };
       void target.crowdReady?.then(crowdLoaded, crowdLoaded);
     }
@@ -2548,7 +2552,7 @@ export class FilmSetRenderer {
           && (object.userData.logosCostume || object.userData.hammerBriefingCostume) && !meshes.includes(object)) meshes.push(object);
       });
       // Niobe's Matrix variant hides her real head/body under this same detail root.
-      if (council) for (const part of ['detailed-head', 'detailed-body']) group.getObjectByName(`${id}-${part}`)?.traverse(object => {
+      if (council || temple) for (const part of ['detailed-head', 'detailed-body']) group.getObjectByName(`${id}-${part}`)?.traverse(object => {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !meshes.includes(object)) meshes.push(object);
       });
       meshes = meshes.filter(mesh => !colors.seen.has(mesh));

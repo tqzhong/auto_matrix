@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SCENE_BY_ID, filmEntry, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { ZionHomecomingRenderer } from '../packages/client/src/engine/ZionHomecomingRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -53,7 +54,7 @@ async function setup(t: test.TestContext) {
   const finish = async () => { pending.splice(0).forEach(resolve => resolve()); await new Promise(resolve => setImmediate(resolve)); };
   update();
   t.after(async () => { sets.dispose(); await finish(); });
-  return { scene, sets, world, journey, compiled, batches, uploaded, assets, update, prepare, target, finish,
+  return { scene, sets, camera, graphics, world, journey, compiled, batches, uploaded, assets, update, prepare, target, finish,
     get preview() { return preview; } };
 }
 
@@ -104,6 +105,39 @@ test('abandoning temple preparation releases late assets without queuing or reat
   assert.equal(h.target(), undefined); assert.equal(audience(target.group).length, 0); assert.equal(h.batches.length, batches);
   assert.equal(releases.size, resources.size); assert.ok([...releases.values()].every(count => count === 1));
   assert.equal(h.scene.getObjectByName('zion-assembly-rostrum'), undefined); assert.equal(h.sets.active?.id, 'film_zion_residences');
+});
+
+test('the last resident request readies hidden temple heads, both depth layouts and late crowd normals', async t => {
+  const h = await setup(t), lighting = new LightCulling(h.scene), sun = new THREE.DirectionalLight(); sun.castShadow = true; h.scene.add(sun);
+  lighting.stablePointSlots = true; lighting.minimumPointSlots = 15;
+  const geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial(), shadowMaterial = new THREE.MeshBasicMaterial();
+  const shadow = new THREE.Mesh(geometry, shadowMaterial), cast = new Map<string, THREE.Group>(), heads: THREE.Mesh[] = [];
+  for (const id of ['morpheus', 'niobe', 'lock', 'hamann']) {
+    const actor = new THREE.Group(), hidden = new THREE.Group(); hidden.name = id + '-detailed-head'; hidden.visible = false;
+    const head = new THREE.SkinnedMesh(geometry, material); head.name = id + '-anatomical-head'; head.castShadow = true;
+    hidden.add(head); actor.add(hidden); actor.visible = false; cast.set(id, actor); heads.push(head);
+  }
+  Object.assign(h.journey, { step: 3 }); h.update();
+  const depths = new Set<THREE.MeshDepthMaterial>(), slots = new Set<number>(), compile = h.graphics.compile.bind(h.graphics);
+  Object.assign(h.graphics, { shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }, compile(subject: THREE.Object3D, camera: THREE.Camera, target: THREE.Scene) {
+    let points = 0; target.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
+    subject.traverse(object => { if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial) { depths.add(object.material); slots.add(points); } });
+    compile(subject, camera, target);
+  } });
+  const before = JSON.stringify(h.journey), prepare = () => h.sets.prepareZionHomecoming(h.graphics, h.camera, h.journey, id => cast.get(id), false, lighting, sun, shadow);
+  t.after(() => { lighting.dispose(); geometry.dispose(); material.dispose(); shadowMaterial.dispose(); });
+  for (let frame = 0; frame < 180; frame++) prepare();
+  await h.finish(); for (let frame = 0; frame < 100; frame++) prepare();
+  assert.ok(heads.every(mesh => h.compiled.has(mesh)), 'future real heads remain hidden but must compile before temple arrival');
+  assert.deepEqual([...slots].sort((a, b) => a - b), [15, 21]);
+  assert.ok(h.compiled.has(shadow));
+  assert.ok(heads.every(mesh => h.sets.zionEntryNormalMeshes?.includes(mesh)));
+  const crowd = audience(h.target()!.group); assert.equal(crowd.length, 12);
+  assert.ok(crowd.every(mesh => h.sets.zionEntryNormalMeshes?.includes(mesh)), 'late instanced morph bodies need their actual normal programs');
+  assert.equal(JSON.stringify(h.journey), before); assert.ok([...cast.values()].every(actor => !actor.visible && !actor.children[0].visible));
+  let disposed = 0; for (const depth of depths) depth.addEventListener('dispose', () => disposed++);
+  Object.assign(h.journey, { scene: 'm2_temple', actor: 'morpheus', step: 0 }); h.update(); assert.equal(disposed, 0);
+  h.sets.update(undefined, undefined, 1); assert.equal(disposed, depths.size);
 });
 
 for (const resume of [false, true]) test(resume ? 'a completed shaft save readies the defense before taking control'

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SCENE_BY_ID, ZION_HOMECOMING, filmEntry, filmPosition, type FilmJourney } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -36,4 +37,36 @@ for (const id of [...ZION_HOMECOMING, 'm2_oracle_message', 'm2_departure']) test
   renderer.update(.02, camera, 1, 0);
   assert.equal(renderer.getAgent('cypher')?.visible, true, 'leaving the story view restores the ordinary world view');
   assert.equal(renderer.getAgent('tank')?.visible, true);
+});
+
+test('the last resident request loads the future temple cast without showing them in the residential room', t => {
+  const originalDocument = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const renderer = new AgentRenderer(new THREE.Scene());
+  t.after(() => { renderer.dispose(); globalThis.document = originalDocument; });
+  t.mock.method(renderer['models'], 'requestHero', () => {});
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, flags: Record<string, boolean[]> = { lock: [], niobe: [], hamann: [] };
+  Object.assign(neo, { position: filmPosition('film_zion_residences', 0, -29), currentLocation: 'film_zion_residences', isInMatrix: false });
+  renderer.updateAgent('neo', neo);
+  for (const id of Object.keys(flags)) {
+    const actor = world.agents.get(id)!; Object.assign(actor, { position: filmEntry(FILM_SCENE_BY_ID.m2_temple), currentLocation: 'film_zion_temple', isInMatrix: false });
+    renderer.updateAgent(id, actor);
+  }
+  t.mock.method(renderer['models'], 'animate', (rig, _delta, input) => {
+    for (const id of Object.keys(flags)) if (rig.root === renderer.getAgentBody(id)) flags[id].push(Boolean(input.prepareDetailedCast));
+  });
+  renderer.setPlayer('neo'); renderer.setWorld(false);
+  const journey: FilmJourney = { version: 1, scene: 'm2_residents', actor: 'neo', step: 2, completed: [], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: { ...neo.position } };
+  const camera = new THREE.PerspectiveCamera(); camera.position.copy(neo.position);
+  renderer.update(.02, camera, 1, 0, journey); journey.step = 3; renderer.update(.02, camera, 1, 0, journey);
+  for (const id of Object.keys(flags)) assert.equal(renderer.getAgent(id)?.visible, false);
+  journey.visiting = 'm2_residents'; renderer.update(.02, camera, 1, 0, journey);
+  delete journey.visiting; renderer.setPlayer('hamann'); renderer.update(.02, camera, 1, 0, journey);
+  for (const id of Object.keys(flags)) assert.deepEqual(flags[id], [false, true, false, false], `${id} must prepare only during the current local handoff`);
 });

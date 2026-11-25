@@ -8,6 +8,12 @@ import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
+function preparedObject(preview: THREE.Scene | undefined, name: string) {
+  let found: THREE.Object3D | undefined;
+  preview?.traverseVisible(object => { if (object.name === name) found = object; });
+  return found;
+}
+
 function setup(t: test.TestContext) {
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => ({ scene: new THREE.Group(), parser: { json: { extras: { height: 4 } } } }));
   const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene), camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
@@ -41,7 +47,7 @@ function setup(t: test.TestContext) {
 test('the final temple handoff prepares the existing bedroom and adopts the exact set without changing story state', t => {
   const h = setup(t); h.prepare(); assert.equal(h.preview, undefined, 'the speech cannot allocate the next bedroom');
   h.journey.step = 2; h.update(); const before = JSON.stringify(h.journey); h.prepare();
-  const door = h.preview?.getObjectByName('zion-bedroom-door');
+  const door = preparedObject(h.preview, 'zion-bedroom-door');
   assert.ok(door instanceof THREE.Mesh, 'the drum handoff must prepare its next bedroom before first use');
   assert.equal(h.scene.getObjectByName(door.name), undefined); assert.equal(JSON.stringify(h.journey), before);
   let disposed = 0; door.geometry.addEventListener('dispose', () => disposed++);
@@ -53,7 +59,7 @@ test('the final temple handoff prepares the existing bedroom and adopts the exac
 test('bedroom preparation includes both real-world outfits and a late Trinity while cancellation releases the detached room once', t => {
   const h = setup(t), trinity = h.cast.get('trinity')!; trinity.visible = false; h.cast.delete('trinity'); h.journey.step = 2; h.update();
   for (let frame = 0; frame < 40; frame++) h.prepare();
-  const door = h.preview?.getObjectByName('zion-bedroom-door'); assert.ok(door instanceof THREE.Mesh, 'the actual handoff must create the detached room');
+  const door = preparedObject(h.preview, 'zion-bedroom-door'); assert.ok(door instanceof THREE.Mesh, 'the actual handoff must create the detached room');
   h.cast.set('trinity', trinity); for (let frame = 0; frame < 20; frame++) h.prepare();
   assert.ok(h.costumes.every(mesh => h.compiled.has(mesh)), 'both future outfits must compile, including the late detailed body');
   assert.ok(h.compiled.has(trinity.children[0] as THREE.Mesh)); assert.equal(trinity.visible, false);
@@ -89,4 +95,31 @@ test('the dream conversation retains three bedroom light slots while walking and
       } finally { h.scene.onAfterRender(graphics, h.scene, h.camera); }
       for (const item of lights) { assert.equal(item.light.visible, item.visible); assert.equal(item.light.intensity, item.intensity); assert.ok(item.light.getWorldPosition(new THREE.Vector3()).equals(item.position)); }
     }
+});
+
+test('the drum handoff prepares bedroom depth, normals and Trinity knit without changing the temple outfits', t => {
+  const h = setup(t), lighting = new LightCulling(h.scene), sun = new THREE.DirectionalLight(); sun.castShadow = true; h.scene.add(sun);
+  lighting.stablePointSlots = true; lighting.minimumPointSlots = 21;
+  h.journey.step = 2; h.update();
+  const geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial(), cloth = new THREE.MeshStandardMaterial();
+  const head = new THREE.SkinnedMesh(geometry, material); head.name = 'Anatomical_head_and_hands'; head.castShadow = true; h.cast.get('neo')!.add(head);
+  const garment = new THREE.SkinnedMesh(geometry, cloth); garment.name = 'trinity-logos-sweater'; garment.castShadow = true;
+  const compiled = new Set<THREE.Object3D>(), slots = new Set<number>();
+  let wardrobeCalls = 0, released = 0; cloth.addEventListener('dispose', () => released++);
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, properties: { get: () => ({}) },
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }, getRenderTarget: () => null, setRenderTarget() {},
+    compile(subject: THREE.Object3D, _camera: THREE.Camera, target: THREE.Scene) {
+      let points = 0; target.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
+      subject.traverse(object => { compiled.add(object); if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial) slots.add(points); });
+    } } as unknown as THREE.WebGLRenderer;
+  const before = JSON.stringify(h.journey), visible = h.costumes.map(mesh => mesh.visible);
+  for (let frame = 0; frame < 160; frame++) h.sets.prepareZionHomecoming(graphics, h.camera, h.journey, id => h.cast.get(id), false, lighting, sun, undefined,
+    id => id === 'trinity' ? { model: h.cast.get(id), garments: () => { wardrobeCalls++; return [garment]; } } : {});
+  t.after(() => { lighting.dispose(); geometry.dispose(); material.dispose(); });
+  assert.ok(compiled.has(garment), 'the fitted target knit must be compiled before leaving the temple');
+  assert.equal(wardrobeCalls, 1); assert.deepEqual([...slots].sort((a, b) => a - b), [3, 21]);
+  assert.ok(h.sets.zionEntryNormalMeshes?.includes(head)); assert.equal(JSON.stringify(h.journey), before);
+  assert.deepEqual(h.costumes.map(mesh => mesh.visible), visible); assert.equal(garment.parent, null);
+  Object.assign(h.journey, { scene: 'm2_room', actor: 'neo', step: 0 }); h.update(); assert.equal(released, 0);
+  h.sets.update(undefined, undefined, 1); assert.equal(released, 1);
 });
