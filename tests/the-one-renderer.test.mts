@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { THE_ONE, filmPosition, theOneRoot, type FilmJourney, type SandboxState, type TheOneKind, type TheOnePhase } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { TheOneRenderer } from '../packages/client/src/engine/TheOneRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
@@ -168,6 +169,48 @@ test('the hardline prepares a detached deck and uses it for the live EMP', t => 
   sets.update(undefined, undefined, 2);
   assert.equal(released, 1);
   assert.ok(!scene.getObjectByName('neb-interior-deck'));
+});
+
+test('the 303 approach prepares the hidden agents with the current hotel lights before opening the door', t => {
+  const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  lighting.stablePointSlots = true;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!; neo.position = filmPosition('film_heart_hotel', 0, -16); neo.isInMatrix = true;
+  const state = journey('death', 'ready');
+  sets.update(neo, { neoLife: { journey: state } } as SandboxState, 0);
+  const actor = new THREE.Group(), geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial();
+  const skin = new THREE.SkinnedMesh(geometry, material); skin.name = 'Anatomical_head_and_hands'; skin.castShadow = true;
+  skin.visible = actor.visible = false; actor.add(skin);
+  const batches: THREE.Object3D[][] = [], depths: THREE.MeshDepthMaterial[] = [];
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, properties: { get: () => ({}) },
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }, getRenderTarget: () => null, setRenderTarget() {},
+    compile(subject: THREE.Object3D, _camera: THREE.Camera, target: THREE.Scene) {
+      const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object)); batches.push(batch);
+      assert.ok(batch.length <= 4); assert.notEqual(target, scene);
+      const points = (root: THREE.Scene) => { let count = 0; root.traverseVisible(o => { if (o instanceof THREE.PointLight) count++; }); return count; };
+      assert.equal(points(target), points(scene), 'prepare with the current eight-slot hotel layout');
+      for (const mesh of batch) if (mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshDepthMaterial) depths.push(mesh.material);
+    } } as unknown as THREE.WebGLRenderer;
+  const camera = new THREE.PerspectiveCamera(), prepare = () => sets.prepareOneHotel(graphics, camera, state,
+    id => id === 'smith' ? actor : undefined, neo.position, lighting);
+  t.after(() => { sets.dispose(); lighting.dispose(); geometry.dispose(); material.dispose(); });
+  for (let i = 0; i < 20; i++) prepare();
+  assert.ok(batches.some(batch => batch.includes(skin)), 'Smith must not wait for the first ambush draw');
+  assert.ok(depths.length, 'prepare the packed skin shadow too');
+  assert.ok(sets.oneHotelNormalMeshes?.includes(skin), 'the actual head also needs its occlusion program');
+  assert.equal(actor.visible, false); assert.equal(skin.visible, false); assert.equal(skin.parent, actor);
+  assert.equal(state.theOne!.phase, 'ready'); assert.equal(state.theOne!.elapsed, 0);
+  const count = batches.length; prepare(); assert.equal(batches.length, count);
+  const normals = sets.oneHotelNormalMeshes;
+  const late = new THREE.Mesh(geometry, material); late.name = 'Anatomical_head_and_hands'; late.visible = false; actor.add(late);
+  for (let i = 0; i < 10; i++) prepare();
+  assert.ok(batches.slice(count).some(batch => batch.includes(late)), 'late meshes in an existing actor must also prepare');
+  assert.notEqual(sets.oneHotelNormalMeshes, normals, 'late heads must restart the destination normal queue');
+  state.theOne!.phase = 'ambush'; const combatCount = batches.length;
+  prepare(); assert.equal(batches.length, combatCount, 'leave the actual ambush its render budget');
+  let released = 0; for (const depth of new Set(depths)) depth.addEventListener('dispose', () => released++);
+  state.visiting = state.scene; prepare(); assert.equal(released, new Set(depths).size);
+  assert.equal(sets.oneHotelNormalMeshes, undefined);
 });
 
 test('final daylight corner owns a phone booth, commuters, skyline and saved flight trail', () => {

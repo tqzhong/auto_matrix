@@ -541,6 +541,9 @@ export class FilmSetRenderer {
   private preparedMatrixEscape?: EntryPreparation & { renderer: MatrixEscapeRenderer | TheOneRenderer; colors?: CastColorPreparation;
     sourceEffects?: ColorPreparation & { seen: WeakSet<THREE.Mesh> } };
   private subwayCurrentColors?: Omit<ColorPreparation, 'meshes'> & { gpu: THREE.WebGLRenderer['properties']; seen: WeakSet<THREE.Mesh>; meshes: ColorMesh[] };
+  private oneHotelColors?: ColorPreparation & Pick<EntryPreparation, 'lighting' | 'shadows' | 'textureUpload' | 'liveMeshes'> & {
+    gpu: THREE.WebGLRenderer['properties']; seen: Set<ColorMesh>; normalMeshes: THREE.Mesh[];
+  };
   private preparedOneDeck?: { root: THREE.Group; deck: NebDeckRenderer; overlay: TheOneRenderer; colors?: CastColorPreparation;
     gpu?: THREE.WebGLRenderer['properties']; textureUpload?: Generator<void, boolean>; pendingCabin: Set<THREE.MeshStandardMaterial> };
   private theOne?: TheOneRenderer;
@@ -657,6 +660,7 @@ export class FilmSetRenderer {
   }
   get ambushEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedAmbush?.normalMeshes; }
   get governmentEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedGovernment?.normalMeshes; }
+  get oneHotelNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.oneHotelColors?.normalMeshes; }
   get secondOracleEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedSecondOracle?.normalMeshes; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
@@ -1428,6 +1432,38 @@ export class FilmSetRenderer {
     for (const id of ['neo', 'smith', 'citizen_13']) for (const group of [body(id), hero(id)]) group?.traverse(include);
     for (const name of ['matrix-subway-phone-debris', 'matrix-subway-train']) this.root.getObjectByName(name)?.traverse(include);
     return this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated', true, prepared.meshes.slice(0, 4));
+  }
+  prepareOneHotel(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney,
+    actor: (id: string) => THREE.Group | undefined, position: Vector3, lighting: LightCulling): boolean {
+    if (journey.visiting || this.current?.id !== 'film_heart_hotel' || !['m1_death', 'm1_return'].includes(journey.scene)) {
+      this.cancelOneHotelPreparation(); return false;
+    }
+    const center = FILM_SETS.film_heart_hotel.center, door = FILM_SCENE_BY_ID.m1_death.steps[0];
+    if (journey.theOne?.phase !== 'ready' || Math.hypot(position.x - center.x - door.x, position.z - center.z - door.z) >= 20
+      || !renderer.extensions.has('KHR_parallel_shader_compile')) return false;
+    if (this.oneHotelColors?.gpu !== renderer.properties) {
+      this.cancelOneHotelPreparation();
+      this.oneHotelColors = { scene: this.scene, gpu: renderer.properties, lighting, meshes: [], programs: [],
+        textures: new Set(), seen: new Set(), liveMeshes: [], normalMeshes: [] };
+      if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap)
+        this.oneHotelColors.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
+    }
+    const prepared = this.oneHotelColors, meshes = new Set<ColorMesh>();
+    // Smith is still hidden behind the door; do not wait for his first live draw.
+    for (const id of ['smith', 'agent_brown', 'agent_jones', 'neo']) actor(id)?.traverse(object => {
+      if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)
+        || object.userData.reloadedHidden || prepared.seen.has(object)) return;
+      prepared.seen.add(object); meshes.add(object);
+      if (object.name === 'Anatomical_head_and_hands') prepared.normalMeshes = [...prepared.normalMeshes, object];
+    });
+    prepared.meshes.push(...meshes); prepared.liveMeshes.push(...meshes);
+    this.queueColorTextures(prepared.textures, meshes); this.queueEntryShadows(prepared, meshes);
+    // These actors will draw in this scene, so only its existing depth layout is needed.
+    if (prepared.shadows) prepared.shadows.source.length = 0;
+    const busy = Boolean(prepared.meshes.length || prepared.programs.length || prepared.readyProgram
+      || prepared.textures.size || prepared.textureUpload || prepared.shadows?.destination.length);
+    this.prepareStagedEntry(renderer, camera, prepared, prepared, undefined, 1, 'bindings');
+    return busy;
   }
   prepareOneDeck(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined, position: Vector3): void {
     const encounter = journey.theOne;
@@ -7425,6 +7461,11 @@ export class FilmSetRenderer {
     const prepared = this.preparedMatrixEscape; if (!prepared) return;
     this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedMatrixEscape = undefined;
   }
+  private cancelOneHotelPreparation(): void {
+    this.oneHotelColors?.textureUpload?.return(false);
+    this.oneHotelColors?.shadows?.materials.forEach(material => material.dispose());
+    this.oneHotelColors = undefined;
+  }
   private cancelOneDeckPreparation(): void {
     const prepared = this.preparedOneDeck;
     if (!prepared) return;
@@ -7630,6 +7671,7 @@ export class FilmSetRenderer {
     this.cancelPodPreparation();
     this.subwayCurrentColors = undefined;
     this.cancelMatrixEscapePreparation();
+    this.cancelOneHotelPreparation();
     this.cancelOneDeckPreparation();
     this.cancelDreamPreparation();
     this.cancelMeetingDeckPreparation();
