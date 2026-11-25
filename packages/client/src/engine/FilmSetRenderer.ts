@@ -2729,7 +2729,7 @@ export class FilmSetRenderer {
     const garageEntry = next.id === 'm2_garage', briefingEntry = next.id === 'm2_plan';
     const architectEntry = next.id === 'm2_architect', catchEntry = next.id === 'm2_catch', medicalEntry = next.id === 'm2_medical';
     const finaleEntry = next.id === 'm2_stop_sentinels' || medicalEntry || next.id === 'm3_mobil' || next.id === 'm3_mobil_release';
-    const preparePasses = teaEntry || architectEntry || catchEntry;
+    const preparePasses = teaEntry || courtyardEntry || architectEntry || catchEntry;
     const helGarageEntry = next.id === 'm3_hel_garage';
     if (helGarageEntry && !helGarageTemplate) return;
     const helElevatorEntry = next.id === 'm3_hel_entry';
@@ -2774,7 +2774,7 @@ export class FilmSetRenderer {
         if (room.chateauVolley) colors.meshes.push(...this.colorMeshes(room.chateauVolley.children));
         prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
         if (preparePasses || finaleEntry || shipEntry) prepared.liveMeshes = [this.marker];
-        const shadow = shipEntry || teaEntry ? shipCast?.(next.actor).shadow : undefined;
+        const shadow = shipEntry || teaEntry || courtyardEntry ? shipCast?.(next.actor).shadow : undefined;
         if (shadow) { colors.meshes.unshift(shadow); prepared.liveMeshes?.push(shadow); }
       }
       if (preparePasses) {
