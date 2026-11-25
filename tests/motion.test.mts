@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { advanceMotion, footTrajectory, newMotion, solveLeg } from '../packages/client/src/agents/CharacterMotion.js';
-import { MELEE_COMBO, trainingRoot, redDressAttention } from '@auto_matrix/shared';
+import { MATRIX_ESCAPE, MELEE_COMBO, trainingRoot, redDressAttention } from '@auto_matrix/shared';
 
 test('red-dress walking and the exact frozen gun pose rebuild from the saved program frame', () => {
   for (const role of ['neo', 'morpheus', 'citizen_1', 'citizen_2', 'smith'] as const) for (const elapsed of [0, 2, 5.3, 6.2, 12]) {
@@ -330,8 +330,10 @@ test('city escape performances visibly roll through the truck gap and transform 
   const base = { kind: 'city' as const, attempt: 0, checkpoint: 'street' as const, hits: 0, dodges: 0, pursuit: .4, segment: 1, possessions: 1, resolved: [] };
   const roll = advanceMotion(newMotion(), { ...idle, matrixEscape: { ...base, phase: 'truck_window', elapsed: 2.15, role: 'neo' as const } }, 0);
   assert.ok(roll.hipHeight < 1.55 && Math.abs(roll.roll) > .8, 'Neo drops into a full side roll at the truck beat');
-  const host = advanceMotion(newMotion(), { ...idle, matrixEscape: { ...base, phase: 'possession', elapsed: 1.05, host: 'citizen_14' as const, role: 'citizen_14' as const } }, 0);
-  assert.ok(Math.abs(host.arms[0].outward) > .6 && Math.abs(host.arms[1].outward) > .6, 'the possessed host locks into a visible code rewrite silhouette');
+  const hosts = Array.from({ length: 9 }, (_, i) => advanceMotion(newMotion(), { ...idle, matrixEscape: { ...base,
+    phase: 'possession', elapsed: MATRIX_ESCAPE.city.possession * i / 8, host: 'citizen_14' as const, role: 'citizen_14' as const } }, 0));
+  assert.ok(hosts.some(host => Math.abs(host.arms[0].outward) > .6 && Math.abs(host.arms[1].outward) > .6), 'the possessed host locks into a visible code rewrite silhouette');
+  for (const host of [hosts[0], hosts.at(-1)!]) assert.ok(host.arms.every(arm => Math.abs(arm.outward) < .2), 'the code rewrite enters and leaves its silhouette within the saved performance');
 });
 
 test('the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight', () => {
