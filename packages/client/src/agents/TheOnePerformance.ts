@@ -25,7 +25,7 @@ export function poseTheOneBody(rig: CharacterRig, gesture?: TheOneGesture): void
   rig.root.updateWorldMatrix(true, true);
   const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
   for (const side of ['R', 'L'] as const) {
-    const sign = side === 'R' ? 1 : -1, hip = bone(`hip_${side}`), knee = bone(`knee_${side}`), ankle = bone(`ankle_${side}`);
+    const sign = side === 'R' ? -1 : 1, hip = bone(`hip_${side}`), knee = bone(`knee_${side}`), ankle = bone(`ankle_${side}`);
     const target = hero.root.localToWorld(pose.seated ? new THREE.Vector3(sign * .45, .25 + hero.footHeight, 1.45)
       : new THREE.Vector3(sign * .25, hero.footHeight + .05, sign * .16));
     reach(hip, knee, ankle.position, target, new THREE.Vector3(sign * .3, -.2, 1).applyQuaternion(rotation));

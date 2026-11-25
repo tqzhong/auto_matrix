@@ -10,7 +10,7 @@ export function crosscutPalm(rig: CharacterRig, side: 'R' | 'L', target: THREE.V
   const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion()), sign = side === 'R' ? 1 : -1;
   const aim = orientation ?? rotation.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2));
   const palm = new THREE.Vector3(0, -.19, .035).multiply(wrist.getWorldScale(new THREE.Vector3())).applyQuaternion(aim);
-  reach(shoulder, elbow, wrist.position, target.clone().sub(palm), new THREE.Vector3(sign, -.3, .5).applyQuaternion(rotation));
+  reach(shoulder, elbow, wrist.position, target.clone().sub(palm), new THREE.Vector3(-sign, -.3, .5).applyQuaternion(rotation));
   wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(aim));
   for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++)
     b.get(`finger${finger}-${segment}_${side}`)!.rotation.z = sign * (finger === 1 ? .2 : segment === 1 ? .5 : .7);

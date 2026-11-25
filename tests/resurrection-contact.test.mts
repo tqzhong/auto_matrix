@@ -105,6 +105,38 @@ test('Neo’s physical body rests on the cushion and both shoes stay on its foot
   }
 });
 
+test('resurrection keeps each hand and foot on its own side of the body', async t => {
+  const h = await setup(t);
+  for (const [phase, elapsed] of [['flatline', .5], ['listening', 0], ['kiss', 1.104], ['revive', .5]] as const) {
+    h.pose(phase, elapsed);
+    for (const role of ['neo', 'trinity']) {
+      const hero = h.renderer.getAgentHero(role)!;
+      for (const side of ['R', 'L']) {
+        const sign = side === 'R' ? -1 : 1;
+        const ankle = hero.worldToLocal(h.point(role, `ankle_${side}`));
+        assert.ok(sign * ankle.x > .1, `${phase}/${role}/${side}: the foot crosses the body's centre`);
+        if (role !== 'neo') continue;
+        for (const joint of ['elbow', 'wrist']) {
+          const point = hero.worldToLocal(h.point(role, `${joint}_${side}`));
+          assert.ok(sign * point.x > .1, `${phase}/${role}/${side}: the ${joint} crosses the torso instead of resting beside it`);
+        }
+      }
+    }
+  }
+});
+
+test('Trinity keeps each reaching elbow outside her torso during resurrection', async t => {
+  const h = await setup(t);
+  for (const elapsed of [.3, .6, .95, 1.104, 1.8, 2.3]) {
+    h.pose('kiss', elapsed);
+    const hero = h.renderer.getAgentHero('trinity')!;
+    for (const side of ['R', 'L']) {
+      const elbow = hero.worldToLocal(h.point('trinity', `elbow_${side}`));
+      assert.ok((side === 'R' ? -1 : 1) * elbow.x > .1, `${elapsed}/${side}: the upper arm folds across the chest at ${elbow.x}`);
+    }
+  }
+});
+
 test('a paused resurrection gives the same bone transforms after moving between earlier poses', async t => {
   const h = await setup(t);
   const bones = () => ['neo', 'trinity'].flatMap(role => {
