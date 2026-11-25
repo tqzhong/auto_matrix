@@ -76,6 +76,35 @@ test('the completed transfer keeps the truck visible and carries the same road i
   assert.equal(snapshot(truck.parent!), snapshot(coldScene.getObjectByName(truck.name)!.parent!));
 });
 
+test('the freeway transfer retains its light slot when G confirms the completed escort', t => {
+  const original = globalThis.document; globalThis.document = canvasDocument();
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  t.after(() => { lighting.dispose(); film.dispose(); globalThis.document = original; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const player = world.agents.get('trinity')!, handoff = newFreewayHandoff(newFreewayRide());
+  handoff.phase = 'done';
+  const state: FilmJourney = { ...journey(), scene: 'm2_freeway', actor: 'trinity', step: 2, freewayHandoff: handoff };
+  Object.assign(player, { currentLocation: 'film_freeway_101', isInMatrix: true, position: filmPosition('film_freeway_101', 18.1, -660) });
+  const sandbox = { neoLife: { journey: state } } as SandboxState;
+  const camera = new THREE.PerspectiveCamera(60, 16 / 9, .1, 300), gpu = {} as THREE.WebGLRenderer;
+  const draw = () => {
+    const before = JSON.stringify(state);
+    film.update(player, sandbox, 0, player.position);
+    lighting.stablePointSlots = film.stablePointSlots; lighting.minimumPointSlots = film.minimumPointSlots;
+    camera.position.copy(film.goalMarker.position).add(new THREE.Vector3(5, 5, 5)); camera.lookAt(film.goalMarker.position);
+    scene.updateMatrixWorld(); camera.updateMatrixWorld(); scene.onBeforeRender(gpu, scene, camera, null);
+    const lights: number[] = [];
+    scene.traverseVisible(object => { if (object instanceof THREE.PointLight) lights.push(object.intensity); });
+    scene.onAfterRender(gpu, scene, camera);
+    assert.equal(JSON.stringify(state), before, 'reserving a dark slot cannot alter the saved handoff');
+    return lights;
+  };
+  assert.deepEqual(draw(), [5]);
+  state.step = 3; state.completed.push('m2_freeway');
+  assert.deepEqual(draw(), [0], 'confirming the transfer must keep the same point-light program without adding light');
+  film.update(undefined, undefined, 0); assert.equal(film.minimumPointSlots, 0);
+});
+
 test('the truck rescue retains its light slot as the landing clears the objective marker', t => {
   const original = globalThis.document; globalThis.document = canvasDocument();
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
