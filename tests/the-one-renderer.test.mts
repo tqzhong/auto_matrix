@@ -213,6 +213,41 @@ test('the 303 approach prepares the hidden agents with the current hotel lights 
   assert.equal(sets.oneHotelNormalMeshes, undefined);
 });
 
+test('the saved EMP prepares and adopts the daylight phone booth with zero point lights', t => {
+  const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  const sun = new THREE.DirectionalLight(); sun.castShadow = true; scene.add(sun);
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!;
+  neo.position = filmPosition('film_neb_deck'); neo.isInMatrix = false;
+  const state = journey('return', 'emp', 1.5);
+  sets.update(neo, { neoLife: { journey: state } } as SandboxState, 0);
+  const actor = new THREE.Group(), geometry = new THREE.BoxGeometry(), material = new THREE.MeshPhysicalMaterial();
+  const skin = new THREE.SkinnedMesh(geometry, material); skin.visible = actor.visible = false; actor.add(skin);
+  let booth: THREE.Object3D | undefined, compiledActor = false;
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, properties: { get: () => ({}) },
+    getRenderTarget: () => null, setRenderTarget() {},
+    compile(subject: THREE.Object3D, _camera: THREE.Camera, target: THREE.Scene) {
+      let count = 0, points = 0; subject.traverse(object => { count++; if (object === skin) compiledActor = true; });
+      assert.ok(count <= 4); target.traverseVisible(object => {
+        if (object instanceof THREE.PointLight) points++;
+        if (object.name === 'one-final-phone-booth') booth = object;
+      });
+      assert.equal(points, 0, 'the daylight entry must not inherit the ship or objective point lamp');
+    } } as unknown as THREE.WebGLRenderer;
+  const camera = new THREE.PerspectiveCamera(), prepare = () => sets.prepareMatrixEscape(graphics, camera, state,
+    id => id === 'neo' ? actor : undefined, () => undefined, sun, lighting);
+  t.after(() => { sets.dispose(); lighting.dispose(); geometry.dispose(); material.dispose(); });
+  for (let i = 0; i < 160; i++) prepare();
+  assert.ok(booth && compiledActor, 'the real booth and hidden Matrix skin must prepare before leaving the ship');
+  assert.equal(scene.getObjectByName('one-final-phone-booth'), undefined); assert.equal(actor.visible, false);
+  assert.equal(state.scene, 'm1_return'); assert.equal(state.theOne!.phase, 'emp'); assert.equal(state.theOne!.elapsed, 1.5);
+  const pane = booth.children.find(object => object instanceof THREE.Mesh && object.material instanceof THREE.MeshPhysicalMaterial) as THREE.Mesh;
+  assert.ok(pane); let released = 0; pane.geometry.addEventListener('dispose', () => released++);
+  neo.position = filmPosition('film_final_phone'); neo.isInMatrix = true;
+  sets.update(neo, { neoLife: { journey: journey('flight', 'ready') } } as SandboxState, 0);
+  assert.equal(scene.getObjectByName('one-final-phone-booth'), booth); assert.equal(released, 0);
+  sets.update(undefined, undefined, 0); assert.equal(released, 1);
+});
+
 test('final daylight corner owns a phone booth, commuters, skyline and saved flight trail', () => {
   const root = new THREE.Group(); const renderer = new TheOneRenderer(root, 'film_final_phone');
   for (const name of ['one-final-street', 'one-final-phone-booth', 'one-final-commuters', 'one-final-skyline', 'one-flight-rings', 'one-flight-trail']) {

@@ -398,7 +398,7 @@ export class Engine {
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight,
       this.lightCulling, id => this.agentRenderer.getAgentShadow(id));
     if (meeting && (resumeOnLanding || player?.id === meeting.actor)
-      && (meeting.scene === 'm1_rooftop_rescue' || meeting.scene === 'm1_subway' || meeting.scene === 'm1_city_chase'))
+      && (meeting.scene === 'm1_rooftop_rescue' || meeting.scene === 'm1_subway' || meeting.scene === 'm1_city_chase' || meeting.scene === 'm1_return'))
       this.filmSets.prepareMatrixEscape(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id),
         id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight, this.lightCulling);
     this.agentRenderer.prepareSmithTextures(this.renderer, player?.id === meeting?.actor || onLanding ? meeting : undefined);

@@ -1346,15 +1346,18 @@ export class FilmSetRenderer {
       && (escape?.phase === 'done' || escape?.phase === 'body_swap' && escape.elapsed >= .6);
     const hotel = journey.scene === 'm1_city_chase' && (landing || atSource && this.current?.id === 'film_escape_streets')
       && (escape?.phase === 'door' || escape?.phase === 'done');
-    if (journey.visiting || !subway && !city && !hotel) {
+    const phone = journey.scene === 'm1_return' && (landing || atSource && this.current?.id === 'film_neb_deck')
+      && journey.theOne?.kind === 'return' && ['emp', 'done'].includes(journey.theOne.phase);
+    if (journey.visiting || !subway && !city && !hotel && !phone) {
       this.cancelMatrixEscapePreparation();
       return;
     }
-    const set = hotel ? 'film_heart_hotel' : subway ? 'film_subway_platform' : 'film_escape_streets';
+    const set = phone ? 'film_final_phone' : hotel ? 'film_heart_hotel' : subway ? 'film_subway_platform' : 'film_escape_streets';
     if (this.preparedMatrixEscape?.renderer.setId !== set) {
       this.cancelMatrixEscapePreparation();
       const root = new THREE.Group();
-      this.preparedMatrixEscape = { root, renderer: set === 'film_heart_hotel' ? new TheOneRenderer(root, set) : new MatrixEscapeRenderer(root, set), liveMeshes: [] };
+      this.preparedMatrixEscape = { root, renderer: set === 'film_heart_hotel' || set === 'film_final_phone'
+        ? new TheOneRenderer(root, set) : new MatrixEscapeRenderer(root, set), liveMeshes: [] };
     }
     const prepared = this.preparedMatrixEscape;
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
@@ -1369,8 +1372,8 @@ export class FilmSetRenderer {
         });
         prepared.colors.meshes.push(...debris, this.marker);
         this.queueColorTextures(prepared.colors.textures, debris);
-      } else if (city) {
-        // The chase uses its own lights without the cloned objective lamp.
+      } else if (city || phone) {
+        // The chase and daylight street use their own lights without the cloned objective lamp.
         for (const light of prepared.colors.scene.children) if (light instanceof THREE.PointLight) light.visible = false;
       }
       if (subway || city) {
@@ -4189,7 +4192,7 @@ export class FilmSetRenderer {
       if (preparedGovernment) {
         this.preparedGovernment = undefined; this.releaseEntryPreparation(preparedGovernment, true);
       }
-      const preparedEscape = (sceneId === 'm1_subway' || sceneId === 'm1_city_chase' || sceneId === 'm1_death')
+      const preparedEscape = (sceneId === 'm1_subway' || sceneId === 'm1_city_chase' || sceneId === 'm1_death' || sceneId === 'm1_final_call')
         && set?.id === this.preparedMatrixEscape?.renderer.setId && !journey?.visiting ? this.preparedMatrixEscape : undefined;
       if (preparedEscape) {
         this.preparedMatrixEscape = undefined; this.releaseEntryPreparation(preparedEscape, true);
@@ -4257,7 +4260,8 @@ export class FilmSetRenderer {
       const resumingMatrixEscape = resumingScene && journey?.actor === player?.id
         && (sceneId === 'm1_rooftop_rescue' && set?.id === 'film_government_roof' && escapeTarget === 'film_subway_platform'
           || sceneId === 'm1_subway' && set?.id === 'film_subway_platform' && escapeTarget === 'film_escape_streets'
-          || sceneId === 'm1_city_chase' && set?.id === 'film_escape_streets' && escapeTarget === 'film_heart_hotel')
+          || sceneId === 'm1_city_chase' && set?.id === 'film_escape_streets' && escapeTarget === 'film_heart_hotel'
+          || sceneId === 'm1_return' && set?.id === 'film_neb_deck' && escapeTarget === 'film_final_phone')
         ? this.preparedMatrixEscape : undefined;
       if (resumingAmbush) this.preparedAmbush = undefined;
       if (resumingJump) this.preparedJump = undefined;
