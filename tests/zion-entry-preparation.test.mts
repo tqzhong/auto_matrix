@@ -218,3 +218,39 @@ test('the last dock action prepares council shadows, late heads and shared groun
   assert.equal(released, 0);
   h.sets.update(undefined, undefined, 1); assert.equal(released, depths.size);
 });
+
+test('the council readies resident depth, normals and fitted Trinity knit without changing the current actors', t => {
+  const h = setup(t), lighting = new LightCulling(h.scene), sun = new THREE.DirectionalLight(); sun.castShadow = true; h.scene.add(sun);
+  Object.assign(h.journey, { scene: 'm2_lock', actor: 'morpheus', step: 1 }); delete h.journey.reloaded;
+  const morpheus = { ...h.neo, id: 'morpheus', position: filmEntry(FILM_SCENE_BY_ID.m2_lock), currentLocation: 'film_zion_council', isInMatrix: false };
+  const sandbox = { neoLife: { journey: h.journey } } as SandboxState;
+  h.sets.update(morpheus, sandbox, 0); lighting.minimumPointSlots = 5; lighting.stablePointSlots = true;
+  const geometry = new THREE.BoxGeometry(), skin = new THREE.SkinnedMesh(geometry, h.material); skin.name = 'Anatomical_head_and_hands'; skin.castShadow = true;
+  h.cast.get('neo')!.add(skin);
+  const cloth = new THREE.MeshStandardMaterial({ map: new THREE.Texture() }), garment = new THREE.SkinnedMesh(geometry, cloth);
+  garment.name = 'trinity-logos-sweater'; garment.castShadow = true;
+  const shadowMaterial = new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false }), shadow = new THREE.Mesh(geometry, shadowMaterial);
+  const compiled = new Set<THREE.Object3D>(), depths = new Set<THREE.MeshDepthMaterial>(), slots = new Set<number>();
+  let wardrobeCalls = 0, releasedCloth = 0; cloth.addEventListener('dispose', () => releasedCloth++);
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, properties: { get: () => ({}) },
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }, getRenderTarget: () => null, setRenderTarget() {},
+    compile(subject: THREE.Object3D, _camera: THREE.Camera, target: THREE.Scene) {
+      let points = 0; target.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
+      subject.traverse(object => { compiled.add(object); if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial) { depths.add(object.material); slots.add(points); } });
+    } } as unknown as THREE.WebGLRenderer;
+  const before = JSON.stringify(h.journey), visible = h.costumes.map(mesh => mesh.visible);
+  const prepare = () => h.sets.prepareZionHomecoming(graphics, h.camera, h.journey, id => h.cast.get(id), false, lighting, sun, shadow,
+    id => id === 'trinity' ? { model: h.cast.get(id), garments: () => { wardrobeCalls++; return [garment]; } } : {});
+  t.after(() => { lighting.dispose(); geometry.dispose(); shadowMaterial.dispose(); cloth.map!.dispose(); });
+  for (let frame = 0; frame < 150; frame++) prepare();
+  assert.ok(compiled.has(garment), 'the mapped target knit needs its prepared proxy rather than the current outfit');
+  assert.equal(wardrobeCalls, 1, 'each fitted proxy material must be created only once');
+  assert.deepEqual([...slots].sort((a, b) => a - b), [5, 15]);
+  assert.ok(compiled.has(shadow)); assert.ok(h.sets.zionEntryNormalMeshes?.includes(skin));
+  assert.deepEqual(h.costumes.map(mesh => mesh.visible), visible); assert.equal(JSON.stringify(h.journey), before);
+  assert.equal(garment.parent, null);
+  Object.assign(h.journey, { scene: 'm2_residents', actor: 'neo', step: 0 });
+  Object.assign(h.neo, { position: filmEntry(FILM_SCENE_BY_ID.m2_residents), currentLocation: 'film_zion_residences', isInMatrix: false }); h.update();
+  assert.equal(releasedCloth, 0, 'adoption must keep the warmed program until the live resident scene has used it');
+  h.sets.update(undefined, undefined, 1); assert.equal(releasedCloth, 1);
+});

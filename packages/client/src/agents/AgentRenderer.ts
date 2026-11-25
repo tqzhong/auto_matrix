@@ -5,7 +5,7 @@ import { poseHammerPatient } from './HammerPatientPerformance.js';
 import { poseHelProtection } from './HelCoatcheckPerformance.js';
 import type { HelCoatcheckEncounter } from '@auto_matrix/shared';
 import { AIR_RESCUE, HEL_DISARM, HEL_TRIO, OPENING_ESCAPE, OPENING_HOTEL, OPENING_ROOF_EXIT, WELLS_AFTERMATH, helDanceDoorDuration, helDanceDoorLocked, openingHotelAlleyGuard, openingHotelClimbed, openingHotelDiveMotion, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
-import { FILM_SCENES, FILM_SCENE_BY_ID, filmPosition, filmSetAt, lafayetteWelcomeRoot } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SCENE_BY_ID, ZION_CAST, filmPosition, filmSetAt, lafayetteWelcomeRoot } from '@auto_matrix/shared';
 import { contactMobilStrike } from './MobilRefusalPerformance.js';
 import { contactMobilFamily } from './MobilFamilyPerformance.js';
 import { poseFreewayTransferContact } from './FreewayPickupContact.js';
@@ -717,10 +717,13 @@ export class AgentRenderer {
           || scene === 'm2_library' && player.currentLocation === 'film_keymaker_workshop'
           || scene === 'm2_garage' && player.currentLocation === 'film_chateau_garage') && this.matrix)
       ? filmSetAt(player.position, this.matrix)?.id : undefined;
+    const zionSet = player && !player.isInMatrix && !this.matrix && this.playerId === journey?.actor && scene
+      && ZION_CAST[scene] && FILM_SETS[FILM_SCENE_BY_ID[scene].set].world === 'real'
+      ? filmSetAt(player.position, false)?.id : undefined;
     const isolatedSet = playerSet === 'film_power_plant_pods' || playerSet === 'film_white_construct' || playerSet === 'film_agent_interrogation'
       || playerSet === 'film_jump_roofs' || playerSet === 'film_red_dress_plaza' || playerSet === 'film_service_tunnels'
       || playerSet === 'film_government_roof' || playerSet === 'film_captains_meeting' || playerSet === 'film_seraph_teahouse'
-      || playerSet === 'film_keymaker_workshop' || playerSet === 'film_chateau_garage' ? playerSet : undefined;
+      || playerSet === 'film_keymaker_workshop' || playerSet === 'film_chateau_garage' ? playerSet : zionSet;
     const roof = journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     const roofExit = player?.currentAction?.parameters.roofExit as MotionInput['roofExit'];
     const rooftopRun = openingSet === 'film_hotel_roofs' && roof?.phase === 'running' && !roofExit

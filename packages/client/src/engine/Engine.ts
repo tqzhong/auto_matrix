@@ -426,7 +426,7 @@ export class Engine {
       || meeting?.scene === 'm2_temple' || meeting?.scene === 'm2_oracle_message' || meeting?.scene === 'm3_shaft_seal');
     this.filmSets.prepareZionHomecoming(this.renderer, this.camera, player?.id === meeting?.actor || resumeZionCut ? meeting : undefined,
       id => this.agentRenderer.getAgentDetail(id) ?? this.agentRenderer.getAgentHero(id), resumeZionCut, this.lightCulling,
-      this.lightingSystem.directionalLight, this.agentRenderer.getAgentShadow('neo'));
+      this.lightingSystem.directionalLight, this.agentRenderer.getAgentShadow('neo'), id => this.agentRenderer.getShipEntryCast(id));
     const resumeLogosDefense = onLanding && meeting?.scene === 'm3_temple_defense';
     this.filmSets.prepareLogosDefense(this.renderer, this.camera, player?.id === meeting?.actor || resumeLogosDefense ? meeting : undefined,
       id => this.agentRenderer.getShipEntryCast(id), this.lightCulling, resumeLogosDefense);

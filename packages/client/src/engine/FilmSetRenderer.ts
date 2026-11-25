@@ -204,7 +204,7 @@ type EntryPreparation = {
 };
 type TrainingPreparation = EntryPreparation & { renderer: TrainingSetRenderer; colors?: CastColorPreparation };
 type ZionPreparation = EntryPreparation & { scene: string; renderer: ZionHomecomingRenderer;
-  colors?: CastColorPreparation & { seen: Set<ColorMesh> }; normalMeshes?: THREE.Mesh[] };
+  colors?: CastColorPreparation & { seen: Set<ColorMesh> }; normalMeshes?: THREE.Mesh[]; outfit?: THREE.Group };
 type DeckEntryPreparation = EntryPreparation & {
   deck: NebDeckRenderer; colors?: CastColorPreparation; ready: boolean; pendingCabin: Map<THREE.Material, ColorMesh>; normalMeshes?: THREE.Mesh[];
   wakeRoom?: ReloadedOpeningRenderer;
@@ -2495,7 +2495,7 @@ export class FilmSetRenderer {
   }
   prepareZionHomecoming(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, resume = false, sourceLights?: LightCulling,
-    shadowSun?: THREE.DirectionalLight, shadow?: THREE.Mesh): void {
+    shadowSun?: THREE.DirectionalLight, shadow?: THREE.Mesh, shipCast?: (id: string) => ShipEntryCast): void {
     this.prepareBaneCopy(renderer, camera, journey, actor);
     const cut = journey && ZION_CUTS[journey.scene];
     const atSource = journey && cut && this.currentScene === journey.scene && this.current?.id === FILM_SCENE_BY_ID[journey.scene].set;
@@ -2505,28 +2505,29 @@ export class FilmSetRenderer {
       this.cancelZionPreparation(); return;
     }
     const next = FILM_SCENE_BY_ID[cut.scene], defense = next.id === 'm3_temple_defense', council = next.id === 'm2_lock';
+    const entryPasses = council || next.id === 'm2_residents';
     if (!this.preparedZion) {
       const target = new ZionHomecomingRenderer(new THREE.Group(), next.set, next.id, defense);
       this.preparedZion = { scene: next.id, renderer: target, root: target.group, liveMeshes: [] };
     }
     const prepared = this.preparedZion;
     if (!prepared.renderer.prepareStep() || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    if (!prepared.colors || council && prepared.gpu !== renderer.properties) {
-      if (council) { this.releaseEntryPreparation(prepared); prepared.gpu = renderer.properties; prepared.liveMeshes = []; prepared.normalMeshes = []; }
+    if (!prepared.colors || entryPasses && prepared.gpu !== renderer.properties) {
+      if (entryPasses) { this.releaseEntryPreparation(prepared); prepared.gpu = renderer.properties; prepared.liveMeshes = []; prepared.normalMeshes = []; prepared.outfit = undefined; }
       const target = prepared.renderer;
       target.update({ ...journey, scene: next.id, step: 0 }, 0);
       const colors = prepared.colors = {
-        ...this.colorPreparation(target.group, [], { playerView: savedCut, includeBasic: defense || council, shadowSun: council ? shadowSun : undefined }), actors: new Set<THREE.Group>(), seen: new Set<ColorMesh>(),
+        ...this.colorPreparation(target.group, [], { playerView: savedCut, includeBasic: defense || entryPasses, shadowSun: entryPasses ? shadowSun : undefined }), actors: new Set<THREE.Group>(), seen: new Set<ColorMesh>(),
       };
       const initial = new Set(colors.meshes);
-      if (defense || council) {
+      if (defense || entryPasses) {
         prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
         if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
           prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
           this.queueEntryShadows(prepared, colors.meshes);
         }
         colors.meshes.push(this.marker); prepared.liveMeshes.push(this.marker);
-        if (council && shadow) { colors.meshes.unshift(shadow); prepared.liveMeshes.push(shadow); }
+        if (entryPasses && shadow) { colors.meshes.unshift(shadow); prepared.liveMeshes.push(shadow); }
       }
       const crowdLoaded = () => {
         if (this.preparedZion?.renderer !== target) return;
@@ -2551,19 +2552,30 @@ export class FilmSetRenderer {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !meshes.includes(object)) meshes.push(object);
       });
       meshes = meshes.filter(mesh => !colors.seen.has(mesh));
+      if (entryPasses && id === 'trinity') {
+        const outfit = shipCast?.(id);
+        if (outfit?.model && outfit.garments && prepared.outfit !== outfit.model) {
+          const garments = outfit.garments();
+          if (garments.length) {
+            prepared.outfit = outfit.model;
+            const materials = prepared.materials ??= new Set(); garments.forEach(mesh => materials.add(mesh.material));
+            meshes.push(...garments);
+          }
+        }
+      }
       if (!meshes.length) continue;
       meshes.forEach(mesh => colors.seen.add(mesh));
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
-      if (defense || council) {
+      if (defense || entryPasses) {
         prepared.liveMeshes.push(...meshes);
         this.queueEntryShadows(prepared, meshes);
-        if (council) {
+        if (entryPasses) {
           const heads = meshes.filter(mesh => mesh.name === 'Anatomical_head_and_hands' || mesh.name.endsWith('-anatomical-head'));
           if (heads.length) prepared.normalMeshes = [...prepared.normalMeshes!, ...heads];
         }
       }
     }
-    if (defense || council) this.prepareStagedEntry(renderer, camera, prepared, colors, atSource ? sourceLights : undefined, 2);
+    if (defense || entryPasses) this.prepareStagedEntry(renderer, camera, prepared, colors, atSource ? sourceLights : undefined, 2);
     else if (next.id === 'm2_dock' || next.id === 'm2_departure') {
       this.prepareColorProgram(renderer, camera, colors, undefined, 'live');
       this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2);
@@ -4466,6 +4478,7 @@ export class FilmSetRenderer {
             while (!preparedZion.renderer.prepareStep()) { /* Finish the set if the player arrives early. */ }
             this.root.add(preparedZion.root);
             for (const material of preparedZion.shadows?.materials ?? []) this.materials.add(material);
+            for (const material of preparedZion.materials ?? []) this.materials.add(material);
           }
         }
         else if (set.architecture === 'lobby') {

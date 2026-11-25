@@ -177,11 +177,16 @@ test('Zion handoffs adopt the detached set and discard an abandoned preparation'
     let count = 0; root.traverseVisible(object => { if (object instanceof THREE.PointLight) count++; }); return count;
   };
   let preview: THREE.Scene | undefined;
+  const preparedObject = (name: string) => {
+    let found: THREE.Object3D | undefined;
+    preview?.traverseVisible(object => { if (object.name === name) found = object; });
+    return found;
+  };
   const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
     setRenderTarget() {}, properties: { get: () => ({}) }, compile(_subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) { preview = target; } } as unknown as THREE.WebGLRenderer;
   const prepare = () => sets.prepareZionHomecoming(graphics, camera, journey, () => undefined);
   for (let frame = 0; frame < 10; frame++) prepare();
-  const residences = preview?.getObjectByName('zion-homecoming-set');
+  const residences = preparedObject('zion-homecoming-set');
   assert.ok(residences && residences !== scene.getObjectByName(residences.name));
   const preparedSlots = lightSlots(preview!);
   Object.assign(journey, { scene: 'm2_residents', step: 0, actor: 'neo' });
@@ -194,7 +199,7 @@ test('Zion handoffs adopt the detached set and discard an abandoned preparation'
   neo.position = filmEntry(FILM_SCENE_BY_ID.m2_hamann); sets.update(neo, h.sandbox.state, 2);
   preview = undefined;
   for (let frame = 0; frame < 10; frame++) prepare();
-  const door = preview?.getObjectByName('zion-bedroom-door');
+  const door = preparedObject('zion-bedroom-door');
   assert.ok(door instanceof THREE.Mesh);
   let disposed = 0; door.geometry.addEventListener('dispose', () => disposed++);
   sets.update(undefined, h.sandbox.state, 3);
