@@ -3,10 +3,11 @@ import test, { type TestContext } from 'node:test';
 import * as THREE from 'three';
 import { FILM_SETS, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-function fixture(t: TestContext) {
+function fixture(t: TestContext, source = false) {
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({
     createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {},
@@ -23,6 +24,9 @@ function fixture(t: TestContext) {
   const material = new THREE.MeshStandardMaterial({ map: texture }), skin = new THREE.SkinnedMesh(geometry, material); skin.visible = false; hero.add(skin);
   const later = new THREE.Mesh(geometry, material); later.userData.reloadedHidden = true; later.visible = false; hero.add(later);
   const coarse = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true })); body.add(coarse);
+  const ground = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial()); ground.visible = false; parent.add(ground);
+  const lighting = source ? new LightCulling(scene) : undefined; if (lighting) lighting.enabled = false;
+  const depthLayouts = new Set<number>();
   const heroes = new Map([['neo', hero]]), bodies = new Map([['agent_jones', body]]), roots = new Set<THREE.Object3D>();
   const work: string[] = [], batches: THREE.Object3D[][] = [], programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   let ready = false, target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
@@ -30,29 +34,33 @@ function fixture(t: TestContext) {
   const gpu = { properties: properties(), info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }), getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
     compile(subject: THREE.Object3D, eye: THREE.Camera, colors: THREE.Scene) {
-      assert.notEqual(colors, scene); assert.equal(colors.environment, scene.environment); assert.equal(colors.fog, scene.fog); assert.equal(eye, camera); assert.equal(target?.width, 1);
+      const meshes: THREE.Object3D[] = []; subject.traverse(object => meshes.push(object)); assert.ok(meshes.length && meshes.length <= 4);
+      const depth = meshes.some(object => object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial);
+      assert.notEqual(colors, scene); assert.equal(colors.environment, depth ? null : scene.environment); assert.equal(colors.fog, depth ? null : scene.fog); assert.equal(eye, camera); assert.equal(target?.width, 1);
       let points = 0, shadows = 0; let root: THREE.Object3D | undefined;
       colors.traverseVisible(object => {
         if (object instanceof THREE.PointLight) points++;
         if (object instanceof THREE.DirectionalLight && object.castShadow) shadows++;
         if (object instanceof THREE.Group && object.parent instanceof THREE.Scene && object.getObjectByName('lobby-security-checkpoint')) root = object;
       });
-      assert.equal(points, 12); assert.equal(shadows, 1); assert.ok(root); roots.add(root);
-      assert.equal(scene.children.includes(root), false, 'the future lobby must stay offstage');
-      const meshes: THREE.Object3D[] = []; subject.traverse(object => meshes.push(object)); assert.ok(meshes.length && meshes.length <= 4);
+      assert.equal(points, depth && !root ? 1 : 12); assert.equal(shadows, 1);
+      if (root) { roots.add(root); assert.equal(scene.children.includes(root), false, 'the future lobby must stay offstage'); }
+      else assert.ok(source && depth, 'only the preceding shadow layout omits the offstage lobby');
+      if (depth) depthLayouts.add(points);
       if (meshes.includes(skin)) assert.match(material.customProgramCacheKey(), /actor-local-skin-v1$/);
       batches.push(meshes); work.push('compile'); programs.push({ program: {}, isReady: () => ready, getUniforms: () => { assert.equal(gpu.debug.checkShaderErrors, false); work.push('bindings'); } });
     },
     initTexture(map: THREE.Texture) { uploaded.set(map, map.version); work.push('texture'); },
   } as unknown as THREE.WebGLRenderer;
   const prepare = () => {
-    const count = work.length; film.prepareLobby(gpu, camera, journey, id => bodies.get(id), id => heroes.get(id), sun);
+    const count = work.length; film.prepareLobby(gpu, camera, journey, id => bodies.get(id), id => heroes.get(id), sun, lighting,
+      source ? id => id === 'neo' ? ground : undefined : undefined);
     assert.ok(work.length - count <= 1, 'prepare one small batch, ready binding or large texture per frame');
     assert.equal(parent.visible, false); assert.equal(hero.parent, parent); assert.equal(skin.parent, hero); assert.equal(skin.visible, false); assert.equal(later.visible, false); assert.equal(target, null);
   };
   const drain = () => { for (let i = 0; i < 1000; i++) prepare(); };
-  t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); (coarse.material as THREE.Material).dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
-  return { film, journey, gpu, heroes, bodies, geometry, material, skin, coarse, later, work, batches, roots, prepare, drain,
+  t.after(() => { film.dispose(); lighting?.dispose(); ground.material.dispose(); geometry.dispose(); material.dispose(); (coarse.material as THREE.Material).dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
+  return { film, journey, gpu, heroes, bodies, geometry, material, skin, coarse, later, ground, depthLayouts, work, batches, roots, prepare, drain,
     ready: () => { ready = true; }, newGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
 
@@ -63,7 +71,25 @@ test('weapon preparation queues the future lobby, hidden cast and large maps in 
   const count = h.work.length; h.drain(); assert.equal(h.work.length, count, 'finished preparation must stop producing GPU work');
   const late = new THREE.Group(), guard = new THREE.Mesh(h.geometry, h.material); guard.visible = false; late.add(guard); h.heroes.set('citizen_12', late);
   const before = h.batches.length; h.drain(); assert.ok(h.batches.slice(before).flat().includes(guard), 'late delivered security cast must be accepted');
+  h.later.userData.reloadedHidden = false; h.drain();
+  assert.ok(h.batches.flat().includes(h.later), 'new meshes in an already prepared actor must still prepare');
   const after = h.batches.length; h.newGpu(); h.drain(); assert.ok(h.batches.length > after); assert.equal(h.roots.size, 1, 'a new GPU reuses the same authored lobby');
+});
+
+test('weapon preparation finishes the lobby shadow programs before their first draw', t => {
+  const h = fixture(t, true);
+  h.gpu.shadowMap = { enabled: true, type: THREE.PCFSoftShadowMap } as THREE.WebGLShadowMap;
+  h.skin.castShadow = true; h.coarse.castShadow = true;
+  h.ready(); h.drain();
+  const depths = () => h.batches.flat().filter((object): object is THREE.Mesh => object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial);
+  assert.ok(depths().some(mesh => mesh.geometry === h.skin.geometry), 'the first lobby shadow pass must reuse prepared caster programs');
+  assert.deepEqual([...h.depthLayouts].sort((a, b) => a - b), [1, 12], 'prepare both the preceding and lobby light layouts');
+  assert.ok(h.batches.flat().includes(h.ground)); assert.equal(h.ground.visible, false);
+  const materials = new Set(depths().map(mesh => mesh.material as THREE.MeshDepthMaterial));
+  let disposed = 0; materials.forEach(material => material.addEventListener('dispose', () => disposed++));
+  const before = h.batches.length; h.newGpu(); h.drain();
+  assert.equal(disposed, materials.size, 'replacing the GPU releases the old preparation depth materials');
+  assert.ok(h.batches.slice(before).flat().some(object => object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial));
 });
 
 test('cancelling or visiting releases the offstage lobby once without changing the live scene', t => {
@@ -75,13 +101,19 @@ test('cancelling or visiting releases the offstage lobby once without changing t
 });
 
 test('entering the lobby adopts the prepared fixtures and releases them once on departure', t => {
-  const h = fixture(t); h.ready(); h.drain(); const root = [...h.roots][0], console = root.getObjectByName('lobby-security-console') as THREE.Mesh;
+  const h = fixture(t);
+  h.gpu.shadowMap = { enabled: true, type: THREE.PCFSoftShadowMap } as THREE.WebGLShadowMap; h.skin.castShadow = true;
+  h.ready(); h.drain(); const root = [...h.roots][0], console = root.getObjectByName('lobby-security-console') as THREE.Mesh;
+  const depths = new Set(h.batches.flat().filter((object): object is THREE.Mesh<THREE.BufferGeometry, THREE.MeshDepthMaterial> => object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial).map(mesh => mesh.material));
+  let depthDisposed = 0; depths.forEach(material => material.addEventListener('dispose', () => depthDisposed++));
   let disposed = 0; console.geometry.addEventListener('dispose', () => disposed++);
   const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!, center = FILM_SETS.film_government_lobby.center;
   neo.position = filmPosition('film_government_lobby', 0, 35); neo.currentLocation = 'film_government_lobby'; neo.isInMatrix = true;
   const journey = { ...h.journey, scene: 'm1_lobby', step: 0, completed: [], lobby: { phase: 'ready', columns: Array(10).fill(0) } } as FilmJourney;
   h.film.update(neo, { neoLife: { journey } } as SandboxState, 0); h.film.root.updateMatrixWorld(true);
   assert.equal(h.film.root.getObjectByName(console.name), console); assert.equal(root.parent, h.film.root); assert.equal(disposed, 0);
+  assert.equal(depthDisposed, 0);
   assert.deepEqual(root.getWorldPosition(new THREE.Vector3()).toArray(), [center.x, center.y - 1, center.z]);
-  h.film.update(undefined, undefined, 0); assert.equal(disposed, 1); h.film.dispose(); assert.equal(disposed, 1);
+  h.film.update(undefined, undefined, 0); assert.equal(disposed, 1); assert.equal(depthDisposed, depths.size);
+  h.film.dispose(); assert.equal(disposed, 1); assert.equal(depthDisposed, depths.size);
 });

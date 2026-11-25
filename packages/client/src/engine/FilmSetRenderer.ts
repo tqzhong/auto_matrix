@@ -399,7 +399,7 @@ export class FilmSetRenderer {
   private white!: THREE.MeshStandardMaterial;
   private glow!: THREE.MeshBasicMaterial;
   private lobby?: LobbySetRenderer;
-  private preparedLobby?: { root: THREE.Group; renderer: LobbySetRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
+  private preparedLobby?: EntryPreparation & { renderer: LobbySetRenderer; colors?: ColorPreparation & { seen: Set<ColorMesh> } };
   private office?: OfficeSetRenderer;
   private preparedOffice?: {
     renderer: OfficeSetRenderer; ready: boolean; programs: ColorProgram[];
@@ -1027,41 +1027,54 @@ export class FilmSetRenderer {
     this.prepareDeckEntry(renderer, camera, this.preparedCrosscutDeck, journey, 'crosscut', actor, shadowSun, atShop ? sourceLights : undefined, resume);
   }
   prepareLobby(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
-    body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
+    body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight,
+    sourceLights?: LightCulling, shadow?: (id: string) => THREE.Mesh | undefined): void {
     if (this.current?.id !== 'film_white_construct' || journey?.scene !== 'm1_guns' || journey.visiting
       || !['racks_ready', 'racks_arriving', 'selecting', 'equipping', 'equipped'].includes(journey.rescue?.phase ?? '')) {
       this.cancelLobbyPreparation(); return;
     }
     if (!this.preparedLobby) {
       const root = new THREE.Group();
-      this.preparedLobby = { root, renderer: new LobbySetRenderer(root, FILM_SETS.film_government_lobby) };
+      this.preparedLobby = { root, renderer: new LobbySetRenderer(root, FILM_SETS.film_government_lobby), liveMeshes: [] };
     }
     const prepared = this.preparedLobby;
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
-      prepared.lighting?.dispose();
-      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
+      this.releaseEntryPreparation(prepared);
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), seen: new Set<ColorMesh>() };
       let points = 0; prepared.colors.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
       for (; points < LOBBY_POINT_SLOTS; points++) prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
       prepared.colors.meshes.push(this.marker);
+      prepared.liveMeshes = [];
+      if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+        prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
+        this.queueEntryShadows(prepared, prepared.colors.meshes);
+      }
       prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
       prepared.gpu = renderer.properties;
     }
     const colors = prepared.colors, meshes = new Set<ColorMesh>();
     for (const id of ['neo', ...FILM_SCENE_BY_ID.m1_lobby.cast, 'agent_jones']) {
       for (const group of [body(id), hero(id)]) {
-        if (!group || colors.actors.has(group)) continue;
+        if (!group) continue;
         const collected: ColorMesh[] = [];
         // The security cast is offstage while the weapons are being selected.
         group.traverse(object => {
           if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) collected.push(object);
         });
         if (!collected.length) continue;
-        colors.actors.add(group); collected.forEach(mesh => meshes.add(mesh));
+        collected.forEach(mesh => meshes.add(mesh));
       }
+      const ground = shadow?.(id);
+      if (ground && (ground.material instanceof THREE.MeshStandardMaterial || ground.material instanceof THREE.MeshBasicMaterial)) meshes.add(ground as ColorMesh);
     }
-    colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
-    this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+    for (const mesh of meshes) if (colors.seen.has(mesh)) meshes.delete(mesh); else colors.seen.add(mesh);
+    colors.meshes.unshift(...meshes); prepared.liveMeshes.push(...meshes);
+    this.queueColorTextures(colors.textures, meshes); this.queueEntryShadows(prepared, meshes);
+    const shadows = prepared.shadows;
+    if (shadows && (sourceLights && this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.source }, sourceLights, 'depth')
+      || this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.destination }, prepared.lighting, 'depth'))) return;
+    if (!this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated', true, prepared.liveMeshes)) this.prepareColorTexture(renderer, colors.textures);
   }
   prepareGovernment(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight,
@@ -4113,7 +4126,7 @@ export class FilmSetRenderer {
       const preparedTvExit = set?.id === 'film_tv_repair' && sceneId === 'm1_tv_exit' && !journey?.visiting ? this.preparedTvExit : undefined;
       if (preparedTvExit) { this.preparedTvExit = undefined; preparedTvExit.lighting?.dispose(); }
       const preparedLobby = set?.id === 'film_government_lobby' && sceneId === 'm1_lobby' && !journey?.visiting ? this.preparedLobby : undefined;
-      if (preparedLobby) { this.preparedLobby = undefined; preparedLobby.lighting?.dispose(); preparedLobby.root.removeFromParent(); }
+      if (preparedLobby) { this.preparedLobby = undefined; this.releaseEntryPreparation(preparedLobby, true); }
       const preparedGovernment = set?.id === this.preparedGovernment?.renderer.setId && sceneId === this.preparedGovernment?.scene && !journey?.visiting ? this.preparedGovernment : undefined;
       if (preparedGovernment) {
         this.preparedGovernment = undefined; this.releaseEntryPreparation(preparedGovernment, true);
@@ -4349,7 +4362,10 @@ export class FilmSetRenderer {
         }
         else if (set.architecture === 'lobby') {
           this.lobby = preparedLobby?.renderer ?? new LobbySetRenderer(this.root, set);
-          if (preparedLobby) this.root.add(preparedLobby.root);
+          if (preparedLobby) {
+            this.root.add(preparedLobby.root);
+            for (const material of preparedLobby.shadows?.materials ?? []) this.materials.add(material);
+          }
         }
         else if (set.architecture === 'freeway') {
           this.freeway = preparedFreeway ?? new FreewaySetRenderer(this.root, set);
@@ -7520,7 +7536,7 @@ export class FilmSetRenderer {
   }
   private cancelLobbyPreparation(): void {
     const prepared = this.preparedLobby; if (!prepared) return;
-    prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedLobby = undefined;
+    this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedLobby = undefined;
   }
   private cancelGovernmentPreparation(): void {
     const prepared = this.preparedGovernment; if (!prepared) return;

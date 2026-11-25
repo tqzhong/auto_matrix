@@ -380,7 +380,8 @@ export class Engine {
     // Give the newly entered armoury its first frame before building the lobby.
     if (meeting?.scene !== 'm1_guns' || filmSet === previousSet)
       this.filmSets.prepareLobby(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
-        id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
+        id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight,
+        this.lightCulling, id => this.agentRenderer.getAgentShadow(id));
     this.filmSets.prepareInterrogation(this.renderer, this.camera, liveMatrixJourney,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), this.lightingSystem.directionalLight);
     const bridgeJourney = liveMatrixJourney ?? (resumeBridge || resumeBridgeReturn ? meeting : undefined);
