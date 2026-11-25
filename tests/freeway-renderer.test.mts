@@ -105,7 +105,7 @@ test('the freeway transfer retains its light slot when G confirms the completed 
   film.update(undefined, undefined, 0); assert.equal(film.minimumPointSlots, 0);
 });
 
-test('the truck rescue retains its light slot as the landing clears the objective marker', t => {
+test('the truck rescue retains its light slots as the landing clears the objective marker', t => {
   const original = globalThis.document; globalThis.document = canvasDocument();
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
   t.after(() => { lighting.dispose(); film.dispose(); globalThis.document = original; });
@@ -129,9 +129,9 @@ test('the truck rescue retains its light slot as the landing clears the objectiv
     return lights;
   };
   state.step = 2; trucks.phase = 'rescue'; trucks.rescueElapsed = 1;
-  assert.deepEqual(draw(), [5]);
+  assert.deepEqual(draw(), [5, 0]);
   state.step = 3; trucks.phase = 'rescued'; trucks.rescueElapsed = TRUCKS.rescueSeconds;
-  assert.deepEqual(draw(), [0], 'the landing should retain one dark slot for the finished objective');
+  assert.deepEqual(draw(), [0, 0], 'the landing should retain the objective and gunfire slots');
   film.update(undefined, undefined, 0);
   assert.equal(film.minimumPointSlots, 0);
 });
