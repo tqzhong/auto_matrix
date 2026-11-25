@@ -65,6 +65,11 @@ export class FreewaySetRenderer {
   private *build(): Generator<void> {
     yield* this.buildRoad();
     yield* this.batchSteps();
+    // Continue beyond both playable ends without duplicating buffers or moving traffic.
+    const scenery = [...this.root.children], length = Math.max(1600, this.set.depth);
+    for (const offset of [-length, length]) for (const source of scenery) {
+      const copy = source.clone(); copy.position.z += offset; this.root.add(copy);
+    }
     this.buildBike();
     yield;
     this.buildTraffic(false);

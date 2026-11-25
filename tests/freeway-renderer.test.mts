@@ -463,6 +463,31 @@ test('the actual chain splits and drops onto the deck after the saved shot rathe
   assert.equal(snapshot(root), stopped, 'the chain must use the saved clock when redrawing a paused/cold checkpoint');
 });
 
+test('the truck at the road limit and the oncoming lanes retain asphalt and scenery beyond the playable segment', t => {
+  const original = globalThis.document; globalThis.document = canvasDocument();
+  const root = new THREE.Group(), set = FILM_SETS.film_freeway_101, renderer = new FreewaySetRenderer(root, set);
+  t.after(() => { renderer.dispose(); globalThis.document = original; });
+  const state = { ...journey(), step: 0, trucks: { phase: 'duel', elapsed: 0, lastTick: 0, attempt: 4,
+    road: { ...newTruckRoad({ x: 14, z: set.depth / 2 - 35 }, { ...TRUCKS.morpheus, y: 6.6, yaw: 0 },
+      { ...TRUCKS.keymaker, y: 6.6, yaw: 0 }, 78.65), phase: 'ready' } } } as FilmJourney;
+  const saved = JSON.stringify(state); renderer.update(state, 0); root.updateMatrixWorld(true);
+  const asphalt: THREE.Mesh[] = []; root.traverse(o => {
+    if (o instanceof THREE.Mesh && (o.material as THREE.MeshStandardMaterial).name === 'freeway-asphalt') asphalt.push(o);
+  });
+  const oncoming = root.getObjectByName('matrix-freeway-oncoming-truck')!;
+  const bounds = new THREE.Box3().setFromObject(oncoming);
+  for (const z of [bounds.min.z, bounds.max.z, -set.depth / 2 - 800, set.depth / 2 + 800]) {
+    const hit = new THREE.Raycaster(new THREE.Vector3(14, 30, z), new THREE.Vector3(0, -1, 0)).intersectObjects(asphalt)[0];
+    assert.ok(hit && Math.abs(hit.point.y) < 1e-6, `the approaching truck and visible road need asphalt at ${z}`);
+  }
+  assert.equal(asphalt.length, 3); assert.equal(new Set(asphalt.map(o => o.geometry)).size, 1);
+  assert.equal(new Set(asphalt.map(o => o.material)).size, 1, 'road continuation reuses the existing buffers and maps');
+  for (const name of ['matrix-freeway-handoff-truck', 'matrix-freeway-oncoming-truck', 'matrix-freeway-niobe-car', 'matrix-motorcycle-carrier']) {
+    let count = 0; root.traverse(o => { if (o.name === name) count++; }); assert.equal(count, 1, `${name} cannot be tiled with the scenery`);
+  }
+  assert.equal(JSON.stringify(state), saved, 'extending the rendered road cannot move saved actors or clocks');
+});
+
 test('the pursuit vehicles, shoulder and extended asphalt use the saved physical coordinates on pause and cold load', t => {
   const original = globalThis.document; globalThis.document = canvasDocument();
   const root = new THREE.Group(), renderer = new FreewaySetRenderer(root, FILM_SETS.film_freeway_101);
