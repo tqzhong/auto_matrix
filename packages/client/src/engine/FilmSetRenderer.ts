@@ -220,6 +220,7 @@ const DOCK_BRIEFING_POINT_SLOTS = 7;
 const DOCK_BRIEFING_MORPHEUS_MESHES = new Set(['Anatomical_head_and_hands', 'morpheus-hammer-collar', 'shoes01']);
 const CITY_CHASE_POINT_SLOTS = 2;
 const TRINITY_ROOF_POINT_SLOTS = 7;
+const PRIMARY_DEMOLITION_POINT_SLOTS = 9;
 const MEETING_WAKE_POINT_SLOTS = 16;
 const CAPTAINS_ENTRY_MESHES = new Set(['Anatomical_head_and_hands', 'Tailored_coat_upper', 'Fitted_leather_jacket', 'Black_crew_neck', 'shoes01', 'high-poly', 'short04']);
 const SHIP_LOSS_POINT_SLOTS = 26;
@@ -678,6 +679,8 @@ export class FilmSetRenderer {
     if (this.logosBane) return LOGOS_CARGO_POINT_SLOTS;
     // Keep the cockpit program when the engine lamp goes dark in the clouds.
     if (this.logosFlight) return 2;
+    // Six hall lamps, the exterior, blast and objective keep one layout.
+    if (this.primaryDemolition) return PRIMARY_DEMOLITION_POINT_SLOTS;
     // Six corridor and lift lamps plus the objective.
     if (this.dockBriefing) return DOCK_BRIEFING_POINT_SLOTS;
     // Reuse the dock approach programs when the cockpit and reload views cull fixtures.
@@ -713,7 +716,7 @@ export class FilmSetRenderer {
   get stablePointSlots(): boolean {
     const id = this.current?.id;
     return id === 'film_wells_phone' || id === 'film_power_plant_pods' || id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.club || this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
-      || Boolean(this.basement || this.tvRepair || this.sourceBriefing || this.sourceDoor || this.architectRoom || this.catchSet || this.trainmanChase || this.helGarage || this.helLift)
+      || Boolean(this.basement || this.tvRepair || this.sourceBriefing || this.sourceDoor || this.architectRoom || this.catchSet || this.trainmanChase || this.helGarage || this.helLift || this.primaryDemolition)
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
       || id === 'film_white_construct' && (this.currentScene === 'm1_construct' || this.currentScene === 'm1_truth_exit')
       || id === 'film_heart_hotel' && this.currentScene === 'm1_room303'
