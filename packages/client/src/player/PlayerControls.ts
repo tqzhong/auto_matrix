@@ -958,7 +958,7 @@ export class PlayerControls {
     const pickup = state.currentAction?.parameters.freewayPickup as MotionInput['freewayPickup'];
     if (this.motion.freewayPickup && !pickup) { this.performing = false; this.cameraReady = false; }
     if (pickup) {
-      if (!this.motion.freewayPickup) { this.yaw = this.movementYaw = state.rotation; this.pitch = this.firstPerson ? .03 : .55; this.cameraReady = false; }
+      if (!this.motion.freewayPickup || this.motion.freewayPickup.attempts !== pickup.attempts) { this.yaw = this.movementYaw = state.rotation; this.pitch = this.firstPerson ? .03 : .55; this.cameraReady = false; }
       else if (this.motion.freewayPickup.attempts === pickup.attempts) {
         const turn = freewayPickupRoot(pickup, 'trinity').yaw - freewayPickupRoot(this.motion.freewayPickup, 'trinity').yaw;
         const change = Math.atan2(Math.sin(turn), Math.cos(turn)); this.yaw += change; this.movementYaw += change;
