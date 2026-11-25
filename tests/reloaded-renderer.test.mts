@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { FILM_SETS, RELOADED, newReloaded, reloadedRoot, filmPosition, playerBlocked, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { ReloadedOpeningRenderer } from '../packages/client/src/engine/ReloadedOpeningRenderer.js';
 import { reloadedCamera } from '../packages/client/src/player/ReloadedCamera.js';
@@ -245,7 +246,7 @@ test('the meeting adopts the prepared hall and warms the breach cast with the li
   const geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial();
   const actor = new THREE.Group(), enemy = new THREE.Mesh(geometry, material); actor.add(enemy);
   t.after(() => { sets.dispose(); geometry.dispose(); material.dispose(); });
-  let preview: THREE.Scene | undefined, enemySlots: number | undefined;
+  let preview: THREE.Scene | undefined, door: THREE.Object3D | undefined, enemySlots: number | undefined;
   const pointSlots = (root: THREE.Scene) => {
     let count = 0;
     root.traverseVisible(object => { if (object instanceof THREE.PointLight) count++; });
@@ -254,13 +255,12 @@ test('the meeting adopts the prepared hall and warms the breach cast with the li
   const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
     setRenderTarget() {}, properties: { get: () => ({}) },
     compile(subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) {
-      if (target.getObjectByName('captains-entry-door')) preview = target;
+      target.traverseVisible(object => { if (object.name === 'captains-entry-door') { preview = target; door = object; } });
       subject.traverse(object => { if (object === enemy) enemySlots = pointSlots(target); });
     } } as unknown as THREE.WebGLRenderer;
   const camera = new THREE.PerspectiveCamera();
   const prepare = () => sets.prepareCaptainsMeeting(graphics, camera, state, id => id === 'agent_thompson' ? actor : undefined);
   prepare();
-  const door = preview?.getObjectByName('captains-entry-door');
   assert.ok(door && !scene.getObjectByName(door.name));
   assert.equal(pointSlots(preview!), 9);
 
@@ -273,6 +273,53 @@ test('the meeting adopts the prepared hall and warms the breach cast with the li
   prepare(); assert.equal(enemySlots, 9);
   state.reloaded!.phase = 'combat'; sets.update(neo, sandbox, 2);
   assert.ok(door.rotation.y > 1);
+});
+
+test('the ship connection prepares hidden Matrix clothing, both depth layouts and late hall heads', t => {
+  const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  lighting.minimumPointSlots = 16;
+  const sun = new THREE.DirectionalLight(); sun.castShadow = true; scene.add(sun);
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, state = journey('meeting'); state.reloaded!.phase = 'connecting';
+  const sandbox = { neoLife: { journey: state } } as SandboxState;
+  neo.position = filmPosition('film_neb_deck', -7, 25.7); neo.isInMatrix = false; sets.update(neo, sandbox, 0);
+  const actor = new THREE.Group(), geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial();
+  const coat = new THREE.SkinnedMesh(geometry, material); coat.name = 'Tailored_coat_upper'; coat.castShadow = true;
+  const shadowMaterial = new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false });
+  const shadow = new THREE.Mesh(geometry, shadowMaterial);
+  actor.visible = coat.visible = false; actor.add(coat);
+  const compiled = new Set<THREE.Object3D>(), depths = new Set<THREE.MeshDepthMaterial>(), depthSlots = new Set<number>();
+  let marker = false;
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, properties: { get: () => ({}) },
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }, getRenderTarget: () => null, setRenderTarget() {},
+    compile(subject: THREE.Object3D, _camera: THREE.Camera, target: THREE.Scene) {
+      let slots = 0; target.traverseVisible(object => { if (object instanceof THREE.PointLight) slots++; });
+      subject.traverse(object => {
+        compiled.add(object); if (object === sets.goalMarker) marker = true;
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial) {
+          depths.add(object.material); depthSlots.add(slots);
+        }
+      });
+    } } as unknown as THREE.WebGLRenderer;
+  const camera = new THREE.PerspectiveCamera(), prepare = () => sets.prepareCaptainsMeeting(graphics, camera, state,
+    id => id === 'neo' ? actor : undefined, sun, lighting, false, shadow);
+  t.after(() => { sets.dispose(); lighting.dispose(); geometry.dispose(); material.dispose(); shadowMaterial.dispose(); });
+  for (let i = 0; i < 100; i++) prepare();
+  assert.ok(compiled.has(coat), 'the Matrix coat is hidden by the live ship costume');
+  assert.deepEqual([...depthSlots].sort((a, b) => a - b), [9, 16]);
+  assert.ok(marker, 'the goal marker must not wait until the hall entry');
+  assert.ok(compiled.has(shadow), 'the shared ground shadow has a different unlit program from the marker');
+  assert.equal(actor.visible, false); assert.equal(coat.visible, false); assert.equal(coat.parent, actor);
+  const normals = sets.meetingEntryNormalMeshes;
+  const late = new THREE.SkinnedMesh(geometry, material); late.name = 'Anatomical_head_and_hands'; actor.add(late);
+  for (let i = 0; i < 20; i++) prepare();
+  assert.ok(compiled.has(late), 'a head arriving in an already-seen actor still needs its program');
+  assert.ok(sets.meetingEntryNormalMeshes?.includes(late)); assert.notEqual(sets.meetingEntryNormalMeshes, normals);
+  assert.equal(state.reloaded!.phase, 'connecting'); assert.equal(state.reloaded!.elapsed, 0);
+  let released = 0; for (const depth of depths) depth.addEventListener('dispose', () => released++);
+  state.reloaded!.phase = 'report_ready'; neo.position = filmPosition('film_captains_meeting', 0, 31); neo.isInMatrix = true;
+  sets.update(neo, sandbox, 1); assert.ok(scene.getObjectByName('captains-entry-door')); assert.equal(released, 0);
+  sets.update(undefined, undefined, 2); assert.equal(released, depths.size);
 });
 
 test('the meeting defers offscreen skin shading and resumes it when the camera turns', t => {

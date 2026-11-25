@@ -221,6 +221,7 @@ const DOCK_BRIEFING_MORPHEUS_MESHES = new Set(['Anatomical_head_and_hands', 'mor
 const CITY_CHASE_POINT_SLOTS = 2;
 const TRINITY_ROOF_POINT_SLOTS = 7;
 const MEETING_WAKE_POINT_SLOTS = 16;
+const CAPTAINS_ENTRY_MESHES = new Set(['Anatomical_head_and_hands', 'Tailored_coat_upper', 'Fitted_leather_jacket', 'Black_crew_neck', 'shoes01', 'high-poly', 'short04']);
 const SHIP_LOSS_POINT_SLOTS = 26;
 const QUESTIONING_SMITH_MESHES = new Set(['Anatomical_head_and_hands', 'high-poly', 'short04', 'shoes01', 'Tailored_coat_upper', 'Tailored_trousers']);
 const SENTINEL_ENTRY_MESHES = new Set([
@@ -550,7 +551,8 @@ export class FilmSetRenderer {
   private reloaded?: ReloadedOpeningRenderer;
   private preparedDream?: EntryPreparation & { renderer: ReloadedOpeningRenderer; colors?: CastColorPreparation };
   private preparedMeetingDeck?: DeckEntryPreparation;
-  private preparedMeetingHall?: { renderer: ReloadedOpeningRenderer; colors?: CastColorPreparation };
+  private preparedMeetingHall?: EntryPreparation & { renderer: ReloadedOpeningRenderer;
+    colors?: ColorPreparation & { seen: Set<ColorMesh> }; normalMeshes?: THREE.Mesh[] };
   private preparedMeetingAgents?: CastColorPreparation;
   private catchSet?: ReloadedCatchRenderer;
   private preparedShipLoss?: DeckEntryPreparation;
@@ -661,6 +663,7 @@ export class FilmSetRenderer {
   get ambushEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedAmbush?.normalMeshes; }
   get governmentEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedGovernment?.normalMeshes; }
   get oneHotelNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.oneHotelColors?.normalMeshes; }
+  get meetingEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedMeetingHall?.normalMeshes; }
   get secondOracleEntryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedSecondOracle?.normalMeshes; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
@@ -2438,20 +2441,47 @@ export class FilmSetRenderer {
     }
     this.prepareDeckEntry(renderer, camera, this.preparedShipLoss, journey, 'loss', actor, shadowSun, this.current ? sourceLights : undefined, !this.current);
   }
-  prepareCaptainsMeeting(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined): void {
+  prepareCaptainsMeeting(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined,
+    shadowSun?: THREE.DirectionalLight, sourceLights?: LightCulling, resume = false, shadow?: THREE.Mesh): void {
     const encounter = journey.reloaded;
     if (journey.scene !== 'm2_meeting' || journey.visiting || encounter?.kind !== 'meeting') return;
     const { phase, elapsed } = encounter;
-    if (this.current?.id === 'film_neb_deck' && (phase === 'talking' && elapsed >= .5 || phase === 'connect_ready' || phase === 'connecting')) {
+    if ((this.current?.id === 'film_neb_deck' || resume && !this.current)
+      && (phase === 'talking' && elapsed >= .5 || phase === 'connect_ready' || phase === 'connecting')) {
       if (!this.preparedMeetingHall) {
         const hall = new ReloadedOpeningRenderer(new THREE.Group(), 'film_captains_meeting');
         hall.update({ ...journey, reloaded: { ...encounter, phase: 'report_ready', elapsed: 0 } });
-        this.preparedMeetingHall = { renderer: hall };
-        if (renderer.extensions.has('KHR_parallel_shader_compile'))
-          this.preparedMeetingHall.colors = { ...this.colorPreparation(hall.group, []), actors: new Set() };
+        this.preparedMeetingHall = { renderer: hall, root: hall.group, liveMeshes: [this.marker] };
       }
-      const colors = this.preparedMeetingHall.colors;
-      if (colors) this.prepareCastColors(renderer, camera, colors, ['neo', 'trinity', 'morpheus', 'niobe', 'ballard', 'ghost', 'soren'], actor);
+      if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+      const prepared = this.preparedMeetingHall;
+      let colors = prepared.colors;
+      if (!colors || prepared.gpu !== renderer.properties) {
+        this.releaseEntryPreparation(prepared);
+        colors = prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun, playerView: resume }), seen: new Set() };
+        colors.meshes.push(this.marker); prepared.liveMeshes = [this.marker]; prepared.normalMeshes = [];
+        prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
+        prepared.gpu = renderer.properties;
+        if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+          prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
+          this.queueEntryShadows(prepared, colors.meshes);
+        }
+      }
+      const meshes: ColorMesh[] = [];
+      for (const id of ['neo', 'trinity', 'morpheus', 'niobe', 'ballard', 'ghost', 'soren']) actor(id)?.traverse(object => {
+        // Matrix clothes are hidden by the live ship outfit; heads may arrive later.
+        if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)
+          || object.userData.reloadedHidden || object.userData.office || object.userData.patientBody || object.userData.tracking || object.userData.club
+          || colors.seen.has(object)) return;
+        colors.seen.add(object); meshes.push(object);
+        if (object.name === 'Anatomical_head_and_hands') prepared.normalMeshes = [...prepared.normalMeshes!, object];
+      });
+      colors.meshes.unshift(...meshes); prepared.liveMeshes.push(...meshes);
+      if (shadow && !prepared.liveMeshes.includes(shadow)) { colors.meshes.unshift(shadow); prepared.liveMeshes.push(shadow); }
+      colors.meshes.sort((a, b) => Number(b === this.marker || b === shadow || CAPTAINS_ENTRY_MESHES.has(b.name) || b.material instanceof THREE.MeshPhysicalMaterial)
+        - Number(a === this.marker || a === shadow || CAPTAINS_ENTRY_MESHES.has(a.name) || a.material instanceof THREE.MeshPhysicalMaterial));
+      this.queueColorTextures(colors.textures, meshes); this.queueEntryShadows(prepared, meshes);
+      this.prepareStagedEntry(renderer, camera, prepared, colors, this.current ? sourceLights : undefined, 2, 'bindings');
     } else if (this.reloaded?.set === 'film_captains_meeting' && ['earpiece_ready', 'earpiece', 'evacuate_ready', 'breach'].includes(phase)
       && renderer.extensions.has('KHR_parallel_shader_compile')) {
       if (!this.preparedMeetingAgents) {
@@ -4296,8 +4326,8 @@ export class FilmSetRenderer {
       const preparedDeck = preparedConsole ?? preparedMeal ?? preparedMeetingDeck ?? preparedShipLoss ?? preparedCrosscutDeck;
       const preparedDream = set?.id === 'film_trinity_roof' && sceneId === 'm2_dream' && !journey?.visiting ? this.preparedDream : undefined;
       if (preparedDream) { this.preparedDream = undefined; this.releaseEntryPreparation(preparedDream, true); }
-      const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall?.renderer : undefined;
-      if (preparedMeeting) this.preparedMeetingHall = undefined;
+      const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall : undefined;
+      if (preparedMeeting) { this.preparedMeetingHall = undefined; this.releaseEntryPreparation(preparedMeeting, true); }
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
         && sceneId === this.preparedZion.scene && !journey?.visiting ? this.preparedZion : undefined;
       if (preparedZion) {
@@ -4400,12 +4430,15 @@ export class FilmSetRenderer {
           } else this.theOne = new TheOneRenderer(this.root, set.id);
         }
         else if (['m2_dream', 'm2_meeting'].includes(sceneId ?? '') && (set.id === 'film_trinity_roof' || set.id === 'film_captains_meeting')) {
-          this.reloaded = preparedDream?.renderer ?? preparedMeeting ?? new ReloadedOpeningRenderer(this.root, set.id);
+          this.reloaded = preparedDream?.renderer ?? preparedMeeting?.renderer ?? new ReloadedOpeningRenderer(this.root, set.id);
           if (preparedDream) {
             this.root.add(preparedDream.root);
             for (const material of preparedDream.shadows?.materials ?? []) this.materials.add(material);
           }
-          if (preparedMeeting) this.root.add(preparedMeeting.group);
+          if (preparedMeeting) {
+            this.root.add(preparedMeeting.root);
+            for (const material of preparedMeeting.shadows?.materials ?? []) this.materials.add(material);
+          }
         }
         else if (sceneId === 'm2_catch' && set.id === 'film_trinity_roof' && !preparedSecondOracle) this.catchSet = new ReloadedCatchRenderer(this.root);
         else if (sceneId === 'm2_bane_copy' && set.id === 'film_industrial_loft') {
@@ -7710,7 +7743,9 @@ export class FilmSetRenderer {
     this.cancelFreewayPreparation();
     this.cancelMountainPreparation();
     this.courtyardCastColors = undefined;
-    this.preparedMeetingHall?.renderer.dispose(); this.preparedMeetingHall = undefined;
+    if (this.preparedMeetingHall) {
+      this.releaseEntryPreparation(this.preparedMeetingHall); this.preparedMeetingHall.renderer.dispose(); this.preparedMeetingHall = undefined;
+    }
     this.preparedMeetingAgents = undefined;
     this.preparedLafayetteGround = undefined;
     this.preparedLafayetteLanding = undefined;
