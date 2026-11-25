@@ -490,7 +490,7 @@ export class Engine {
           || meeting?.scene === 'm2_mountain' || meeting?.scene === 'm2_trucks' || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_stop_sentinels'
           || meeting?.scene === 'm3_trainman_chase' || meeting?.scene === 'm3_hel_garage' ? this.agentRenderer.getAgentDetail(id) : this.agentRenderer.getAgentBody(id)),
       resumeSecondOracle, meeting?.scene === 'm3_trainman_chase' ? this.agentRenderer.getAgentState('trinity') ?? undefined : undefined,
-      id => this.agentRenderer.getShipEntryCast(id), this.lightCulling);
+      id => this.agentRenderer.getShipEntryCast(id), this.lightCulling, this.lightingSystem.directionalLight);
     this.filmSets.prepareChateauUpperColors(this.renderer, this.camera, this.lightCulling,
       filmSet?.id === 'film_chateau_hall' && player?.id === meeting?.actor ? this.sandboxRenderer.chateauUpperCast : undefined);
     if (filmSet?.id === 'film_oracle_courtyard' && player?.id === meeting?.actor) this.sandboxRenderer.prepareBurlyCopies();

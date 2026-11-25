@@ -2666,7 +2666,7 @@ export class FilmSetRenderer {
   }
   prepareSecondOracle(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, resume = false, helGarageTemplate?: AgentState,
-    shipCast?: (id: string) => ShipEntryCast, sourceLights?: LightCulling): void {
+    shipCast?: (id: string) => ShipEntryCast, sourceLights?: LightCulling, shadowSun?: THREE.DirectionalLight): void {
     const waiting = this.preparedSecondOracle;
     if (waiting && this.currentScene && SECOND_ORACLE_ACTOR_CUTS.has(waiting.scene)
       && SECOND_ORACLE_CUTS[this.currentScene]?.scene === waiting.scene
@@ -2729,7 +2729,7 @@ export class FilmSetRenderer {
     const garageEntry = next.id === 'm2_garage', briefingEntry = next.id === 'm2_plan';
     const architectEntry = next.id === 'm2_architect', catchEntry = next.id === 'm2_catch', medicalEntry = next.id === 'm2_medical';
     const finaleEntry = next.id === 'm2_stop_sentinels' || medicalEntry || next.id === 'm3_mobil' || next.id === 'm3_mobil_release';
-    const preparePasses = architectEntry || catchEntry;
+    const preparePasses = teaEntry || architectEntry || catchEntry;
     const helGarageEntry = next.id === 'm3_hel_garage';
     if (helGarageEntry && !helGarageTemplate) return;
     const helElevatorEntry = next.id === 'm3_hel_entry';
@@ -2764,6 +2764,7 @@ export class FilmSetRenderer {
         includeBasic: teaEntry || courtyardEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || briefingEntry || finaleEntry || helEntry || shipEntry
           || Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
         playerView: savedCut,
+        shadowSun: teaEntry ? shadowSun : undefined,
       });
       for (const texture of room.architectRoom?.screenTextures ?? []) colors.textures.add(texture);
       prepared.colors = { ...colors, actors: new Set(), preserveStockSkinning: helElevatorEntry };
@@ -2773,7 +2774,7 @@ export class FilmSetRenderer {
         if (room.chateauVolley) colors.meshes.push(...this.colorMeshes(room.chateauVolley.children));
         prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
         if (preparePasses || finaleEntry || shipEntry) prepared.liveMeshes = [this.marker];
-        const shadow = shipEntry ? shipCast?.(next.actor).shadow : undefined;
+        const shadow = shipEntry || teaEntry ? shipCast?.(next.actor).shadow : undefined;
         if (shadow) { colors.meshes.unshift(shadow); prepared.liveMeshes?.push(shadow); }
       }
       if (preparePasses) {
@@ -2812,7 +2813,7 @@ export class FilmSetRenderer {
           if ((detailed || medicalEntry && id === 'maggie') && !group.getObjectByName(`${id}-detailed-head`)) continue;
           if (detailed && !group.getObjectByName(`${id}-detailed-body`)) continue;
           if (courtyardEntry && id === 'oracle' && !group.getObjectByName('oracle-first-detailed-head')) continue;
-          if (detailed || courtyardEntry || libraryEntry || garageEntry || briefingEntry || preparePasses || finaleEntry || helEntry || shipEntry) {
+          if (detailed || courtyardEntry || libraryEntry || garageEntry || briefingEntry || preparePasses && !teaEntry || finaleEntry || helEntry || shipEntry) {
             meshes = this.colorMeshes(group.children, true);
           } else {
             meshes = [];
