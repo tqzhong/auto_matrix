@@ -124,6 +124,9 @@ export class ReloadedOpeningSystem {
         if (state.phase === 'combat') this.combatFrame(actor, delta, tick);
         else if (reloadedLocked(journey)) this.stage('neo', delta, tick);
         if (state.phase === 'breach') for (const id of RELOADED.agents) this.stage(id, delta, tick);
+        if (['departure_ready', 'departing', 'done'].includes(state.phase)) for (const id of RELOADED.agents) {
+          this.stage(id, 0, tick, true); this.world.agents.get(id)!.velocity = { x: 0, y: 0, z: 0 };
+        }
         this.action(actor, tick);
       }
     }

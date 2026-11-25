@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, RELOADED, filmEntry, filmPosition, playerBlocked, reloadedLocked, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, RELOADED, filmEntry, filmPosition, playerBlocked, reloadedLocked, reloadedPose, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
+import { Agent } from '../packages/server/src/agents/Agent.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
@@ -170,4 +171,34 @@ test('combat wounds persist and flight starts only outside the open door', () =>
   assert.deepEqual(h.actor.position, launch);
   h.frames(.8);
   assert.ok(h.actor.position.y > launch.y && h.actor.position.z < launch.z);
+});
+
+test('defeated agents stay down through the escape and release their poses in Zion', () => {
+  const h = setup('m2_meeting'); combat(h);
+  Object.assign(h.state(), { phase: 'departure_ready', evacuated: true, hits: [2, 2, 2] }); h.journey().step = 4;
+  const agents = RELOADED.agents.map(id => {
+    const state = h.world.agents.get(id)!;
+    const agent = new Agent(state, ''); agent.state = state;
+    agent.update(10000); agent.update(10001);
+    assert.equal(state.currentAction, null, 'ordinary agent updates expire the previous combat action');
+    return { agent, position: { ...state.position } };
+  });
+  const down = () => {
+    for (const { agent, position } of agents) {
+      const gesture = agent.state.currentAction?.parameters.reloaded as Parameters<typeof reloadedPose>[0];
+      assert.ok(gesture, 'the completed fight must keep its authored defeated pose');
+      assert.equal(reloadedPose(gesture).down, 1);
+      assert.deepEqual(agent.state.position, position, 'a held pose must not reset the actual combat position');
+      assert.deepEqual(agent.state.velocity, { x: 0, y: 0, z: 0 });
+    }
+  };
+  h.frames(2); down();
+  const saved = structuredClone(h.sandbox.state);
+  for (const { agent } of agents) agent.state.currentAction = null;
+  h.sandbox.restore(saved); down();
+  h.actor.position = filmPosition(h.scene.set, 0, -24); h.command();
+  h.frames(.8); assert.equal(h.state().phase, 'departing'); down();
+  h.frames(RELOADED.departure); assert.equal(h.state().phase, 'done'); down();
+  h.command('next'); assert.equal(h.journey().scene, 'm2_dock');
+  for (const { agent } of agents) assert.equal(agent.state.currentAction?.parameters.reloaded, undefined);
 });
