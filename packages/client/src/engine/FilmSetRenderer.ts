@@ -2773,6 +2773,7 @@ export class FilmSetRenderer {
     const savedCut = resume && !this.current && (firstOracle || actorCut || journey?.scene === 'm2_departure' && journey.completed.includes(journey.scene)
       || journey?.scene === 'm2_burly' || journey?.scene === 'm2_persephone' || journey?.scene === 'm2_mountain'
       || journey?.scene === 'm2_key_door' || journey?.scene === 'm2_ship_lost' || journey?.scene === 'm2_stop_sentinels' || journey?.scene === 'm2_medical'
+      || trucks && afterCollision
       || journey?.scene === 'm3_trainman_chase'
       || journey?.scene === 'm3_hel_garage' || journey?.scene === 'm3_maggie_discovery' || journey?.scene === 'm3_bane');
     if (!journey || !cut || journey.visiting || journey.step < cut.step || (!atSource && !savedCut) || !approachingGarage || trucks && !afterCollision
@@ -2786,7 +2787,7 @@ export class FilmSetRenderer {
     const garageEntry = next.id === 'm2_garage', briefingEntry = next.id === 'm2_plan';
     const architectEntry = next.id === 'm2_architect', catchEntry = next.id === 'm2_catch', medicalEntry = next.id === 'm2_medical';
     const finaleEntry = next.id === 'm2_stop_sentinels' || medicalEntry || next.id === 'm3_mobil' || next.id === 'm3_mobil_release';
-    const preparePasses = teaEntry || courtyardEntry || leVraiEntry || architectEntry || catchEntry;
+    const preparePasses = teaEntry || courtyardEntry || leVraiEntry || briefingEntry || architectEntry || catchEntry;
     const helGarageEntry = next.id === 'm3_hel_garage';
     if (helGarageEntry && !helGarageTemplate) return;
     const helElevatorEntry = next.id === 'm3_hel_entry';
@@ -2831,7 +2832,7 @@ export class FilmSetRenderer {
         if (room.chateauVolley) colors.meshes.push(...this.colorMeshes(room.chateauVolley.children));
         prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
         if (preparePasses || finaleEntry || shipEntry) prepared.liveMeshes = [this.marker];
-        const shadow = shipEntry || teaEntry || courtyardEntry || leVraiEntry ? shipCast?.(next.actor).shadow : undefined;
+        const shadow = shipEntry || teaEntry || courtyardEntry || leVraiEntry || briefingEntry ? shipCast?.(next.actor).shadow : undefined;
         if (shadow) { colors.meshes.unshift(shadow); prepared.liveMeshes?.push(shadow); }
       }
       if (preparePasses) {
