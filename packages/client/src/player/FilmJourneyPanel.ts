@@ -120,9 +120,9 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const state = journey.primaryDemolition, step = scene.steps[journey.step], close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));
     const action = player.id !== journey.actor ? button('resume', '接回 Niobe 的行动视角') : state?.paused || state?.unavailable ? '<p>等待同行者信号，装置和撤离时钟已保留。</p>'
       : state?.phase === 'failed' || player.status !== 'alive' ? button('retry', '重试当前撤离检查点')
-        : state?.phase === 'done' ? button('next', '接回 Trinity，核对 Vigilant 的信号 →')
-          : primaryLocked(state) ? '<p>合上手记，按住 G 固定装置；松手保留进度。</p>'
-            : button('act', state?.phase === 'sync' ? '绿色窗口校准 · G' : state?.phase === 'retreat' ? '确认两人安全撤出 · G' : '安装当前同步装置 · G', !close);
+        : journey.step >= scene.steps.length ? button('next', scene.id === 'm2_blackout' ? '接回 Trinity，核对应急改线信号 →' : '接回 Trinity，核对 Vigilant 的信号 →')
+          : primaryLocked(state) ? scene.id === 'm2_blackout' ? '<p>合上手记，等待午夜爆破和应急供电变化；V 切换视角。</p>' : '<p>合上手记，按住 G 固定装置；松手保留进度。</p>'
+            : button('act', scene.id === 'm2_blackout' ? '核对午夜同步时刻 · G' : state?.phase === 'sync' ? '绿色窗口校准 · G' : state?.phase === 'retreat' ? '确认两人安全撤出 · G' : '安装当前同步装置 · G', !close);
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>Niobe · 主电网同步行动</h3><p>发电厂 · Logos 队伍</p></header><article class="film-now"><div><p>${primaryText(state)}</p><ol class="film-objectives">${PRIMARY_DEMOLITION.sites.map(site => `<li class="${state?.installed.includes(site.id) ? 'done' : ''}"><b>${state?.installed.includes(site.id) ? '✓' : '○'}</b><span>${site.name}</span></li>`).join('')}</ol><div class="film-controls">${action}</div><small>WASD 移动 · Shift 奔跑 · G 操作 · V 切换视角。换班同步和先撤离的顺序来自电影，三个安装点、观察桥路线与失败重试为游戏改编。</small></div></article></div>`;
   }
   if (maggieDiscoveryActive(journey)) {

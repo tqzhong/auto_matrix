@@ -41,3 +41,28 @@ test('the power station HUD follows installation, evacuation and midnight instea
   journey.primaryDemolition.phase = 'failed';
   ui.updateFilm(player, sandbox); assert.match(element('game-objective-copy').textContent, /按 J 重试当前撤离检查点/);
 });
+
+test('the completed midnight journal sends Trinity to the emergency grid rather than checking Vigilant again', async () => {
+  const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { renderFilmJourney } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const player = { id: 'niobe', status: 'alive', isInMatrix: true, position: { ...filmPosition('film_power_station', 0, 41), y: 4.2 } } as AgentState;
+  const sandbox = { neoLife: { journey: { scene: 'm2_power', actor: player.id, step: 2, completed: ['m2_power'], reflections: {},
+    primaryDemolition: { phase: 'done', installed: ['west', 'east', 'clock'], elapsed: 0, remaining: 19, attempts: 1 } } } } as SandboxState;
+  const next = () => /data-target="film:next"[^>]*>([^<]*)<\/button>/.exec(renderFilmJourney(player, sandbox))?.[1] ?? '';
+  assert.match(next(), /Vigilant/, 'the first return to the ship still checks the lost crew signal');
+  const journey = sandbox.neoLife!.journey!; journey.scene = 'm2_blackout'; journey.step = 0;
+  journey.primaryDemolition!.blast = { phase: 'ready', elapsed: 0 };
+  assert.equal(next(), '', 'the completed installation does not mean the midnight explosion has finished');
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act"[^>]*>[^<]*午夜/);
+  for (const phase of ['countdown', 'blast'] as const) {
+    journey.primaryDemolition!.blast = { phase, elapsed: 2 };
+    const html = renderFilmJourney(player, sandbox);
+    assert.doesNotMatch(html, /data-target="film:(?:act|next)"/, 'a committed clock must finish before handing back to Trinity');
+    assert.doesNotMatch(html, /按住 G/, 'the countdown is not an installation hold');
+  }
+  journey.step = 1; journey.completed.push('m2_blackout');
+  journey.primaryDemolition!.blast = { phase: 'done', elapsed: 8 };
+  assert.match(next(), /Trinity/); assert.match(next(), /应急|改线|补位/);
+  assert.doesNotMatch(next(), /Vigilant/, 'that signal was confirmed before the midnight explosion');
+});
