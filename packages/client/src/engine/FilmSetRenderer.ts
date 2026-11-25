@@ -538,7 +538,7 @@ export class FilmSetRenderer {
   private preparedGovernment?: EntryPreparation & { scene: 'm1_smith_question' | 'm1_bullet_dodge' | 'm1_helicopter' | 'm1_rooftop_rescue';
     renderer: GovernmentSetRenderer; colors?: CastColorPreparation; normalMeshes?: THREE.Mesh[] };
   private matrixEscape?: MatrixEscapeRenderer;
-  private preparedMatrixEscape?: { root: THREE.Group; renderer: MatrixEscapeRenderer | TheOneRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling; textureUpload?: Generator<void, boolean> };
+  private preparedMatrixEscape?: EntryPreparation & { renderer: MatrixEscapeRenderer | TheOneRenderer; colors?: CastColorPreparation };
   private subwayReturnColors?: Omit<ColorPreparation, 'meshes'> & { gpu: THREE.WebGLRenderer['properties']; seen: WeakSet<THREE.Mesh>; meshes: ColorMesh[] };
   private preparedOneDeck?: { root: THREE.Group; deck: NebDeckRenderer; overlay: TheOneRenderer; colors?: CastColorPreparation;
     gpu?: THREE.WebGLRenderer['properties']; textureUpload?: Generator<void, boolean>; pendingCabin: Set<THREE.MeshStandardMaterial> };
@@ -1348,13 +1348,12 @@ export class FilmSetRenderer {
     if (this.preparedMatrixEscape?.renderer.setId !== set) {
       this.cancelMatrixEscapePreparation();
       const root = new THREE.Group();
-      this.preparedMatrixEscape = { root, renderer: set === 'film_heart_hotel' ? new TheOneRenderer(root, set) : new MatrixEscapeRenderer(root, set) };
+      this.preparedMatrixEscape = { root, renderer: set === 'film_heart_hotel' ? new TheOneRenderer(root, set) : new MatrixEscapeRenderer(root, set), liveMeshes: [] };
     }
     const prepared = this.preparedMatrixEscape;
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
-      prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
-      prepared.lighting?.dispose();
+      this.releaseEntryPreparation(prepared);
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun, playerView: !this.current }), actors: new Set() };
       if (subway) {
         const debris: ColorMesh[] = [];
@@ -1373,6 +1372,10 @@ export class FilmSetRenderer {
         for (; points < slots; points++) prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
       }
       prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
+      if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+        prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
+        this.queueEntryShadows(prepared, prepared.colors.meshes);
+      }
       prepared.gpu = renderer.properties;
     }
     const colors = prepared.colors, meshes = new Set<ColorMesh>();
@@ -1390,7 +1393,12 @@ export class FilmSetRenderer {
       }
     }
     colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
-    if (!this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated');
+    this.queueEntryShadows(prepared, meshes);
+    if (this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)) return;
+    const { shadows, lighting } = prepared;
+    if (shadows && (this.current && sourceLights && this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.source }, sourceLights, 'depth')
+      || this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.destination }, lighting, 'depth'))) return;
+    this.prepareColorProgram(renderer, camera, colors, lighting, 'isolated');
   }
   private prepareSubwayReturnColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
     model: (id: string) => THREE.Group | undefined): boolean {
@@ -4134,8 +4142,7 @@ export class FilmSetRenderer {
       const preparedEscape = (sceneId === 'm1_subway' || sceneId === 'm1_city_chase' || sceneId === 'm1_death')
         && set?.id === this.preparedMatrixEscape?.renderer.setId && !journey?.visiting ? this.preparedMatrixEscape : undefined;
       if (preparedEscape) {
-        this.preparedMatrixEscape = undefined; preparedEscape.textureUpload?.return(false);
-        preparedEscape.lighting?.dispose(); preparedEscape.root.removeFromParent();
+        this.preparedMatrixEscape = undefined; this.releaseEntryPreparation(preparedEscape, true);
       }
       const preparedOneDeck = set?.id === 'film_neb_deck' && (sceneId === 'm1_death' || sceneId === 'm1_return') && !journey?.visiting ? this.preparedOneDeck : undefined;
       if (preparedOneDeck) {
@@ -4329,11 +4336,13 @@ export class FilmSetRenderer {
         else if (sceneId === 'm1_subway' && set.id === 'film_subway_platform' || sceneId === 'm1_city_chase' && set.id === 'film_escape_streets') {
           if (preparedEscape?.renderer instanceof MatrixEscapeRenderer) {
             this.matrixEscape = preparedEscape.renderer; this.matrixEscape.attach(this.root);
+            for (const material of preparedEscape.shadows?.materials ?? []) this.materials.add(material);
           } else this.matrixEscape = new MatrixEscapeRenderer(this.root, set.id);
         }
         else if (['m1_death', 'm1_return', 'm1_final_call'].includes(sceneId ?? '') && (set.id === 'film_heart_hotel' || set.id === 'film_final_phone')) {
           if (preparedEscape?.renderer instanceof TheOneRenderer) {
             this.theOne = preparedEscape.renderer; this.root.add(preparedEscape.root);
+            for (const material of preparedEscape.shadows?.materials ?? []) this.materials.add(material);
           } else this.theOne = new TheOneRenderer(this.root, set.id);
         }
         else if (['m2_dream', 'm2_meeting'].includes(sceneId ?? '') && (set.id === 'film_trinity_roof' || set.id === 'film_captains_meeting')) {
@@ -7400,8 +7409,7 @@ export class FilmSetRenderer {
   }
   private cancelMatrixEscapePreparation(): void {
     const prepared = this.preparedMatrixEscape; if (!prepared) return;
-    prepared.textureUpload?.return(false);
-    prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedMatrixEscape = undefined;
+    this.releaseEntryPreparation(prepared); prepared.renderer.dispose(); this.preparedMatrixEscape = undefined;
   }
   private cancelOneDeckPreparation(): void {
     const prepared = this.preparedOneDeck;

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { FILM_SETS, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
@@ -18,7 +19,7 @@ const cases = {
     landmark: 'one-room-303-door', points: 8, shadows: 1, body: 'neo', late: 'neo' },
 } as const;
 
-function fixture(t: TestContext, mode: keyof typeof cases) {
+function fixture(t: TestContext, mode: keyof typeof cases, withShadows = false) {
   const roof = mode === 'roof', city = mode === 'city', hotel = mode === 'hotel';
   const plan = cases[mode], { landmark } = plan;
   const previous = globalThis.document;
@@ -29,6 +30,8 @@ function fixture(t: TestContext, mode: keyof typeof cases) {
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), camera = new THREE.PerspectiveCamera();
   scene.environment = new THREE.Texture(); scene.fog = new THREE.FogExp2();
   const sun = new THREE.DirectionalLight(); sun.castShadow = true; scene.add(sun, new THREE.DirectionalLight(), new THREE.HemisphereLight());
+  const sourceLights = withShadows ? new LightCulling(scene) : undefined;
+  if (sourceLights) sourceLights.minimumPointSlots = mode === 'subway' ? 4 : mode === 'city' ? 12 : 2;
   Object.assign(film, { current: FILM_SETS[plan.from], currentScene: plan.scene });
   const journey = { scene: plan.scene, actor: 'neo', step: hotel ? 2 : 1,
     airRescue: roof || mode === 'subway' ? { kind: roof ? 'office' : 'roof', phase: roof ? 'catching' : 'pulling', elapsed: 0, attempt: 0 } : undefined,
@@ -45,40 +48,68 @@ function fixture(t: TestContext, mode: keyof typeof cases) {
   const coarse = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true })); body.add(coarse);
   const heroes = new Map([['neo', hero]]), bodies = new Map<string, THREE.Group>([[plan.body, body]]), roots = new Set<THREE.Object3D>();
   const work: string[] = [], batches: THREE.Object3D[][] = [], programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  const depthBatches: { points: number; meshes: THREE.Mesh<THREE.BufferGeometry, THREE.MeshDepthMaterial>[] }[] = [];
   let ready = false, target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
   const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
   const gpu = { properties: properties(), info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
+    shadowMap: withShadows ? { enabled: true, type: THREE.PCFSoftShadowMap } : undefined,
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }), getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
     compile(subject: THREE.Object3D, eye: THREE.Camera, colors: THREE.Scene) {
-      assert.notEqual(colors, scene); assert.equal(colors.environment, scene.environment); assert.equal(colors.fog, scene.fog); assert.equal(eye, camera); assert.equal(target?.width, 1);
+      assert.notEqual(colors, scene); assert.equal(eye, camera); assert.equal(target?.width, 1);
       let points = 0, shadows = 0; let root: THREE.Object3D | undefined;
       colors.traverseVisible(object => {
         if (object instanceof THREE.PointLight) points++;
         if (object instanceof THREE.DirectionalLight && object.castShadow) shadows++;
         if (object instanceof THREE.Group && object.parent instanceof THREE.Scene && object.getObjectByName(landmark)) root = object;
       });
-      assert.equal(points, plan.points); assert.equal(shadows, plan.shadows); assert.ok(root); roots.add(root);
-      assert.equal(scene.children.includes(root), false, 'the future set must stay offstage');
-
       const meshes: THREE.Object3D[] = []; subject.traverse(object => meshes.push(object)); assert.ok(meshes.length && meshes.length <= 4);
+      const depth = meshes.filter((mesh): mesh is THREE.Mesh<THREE.BufferGeometry, THREE.MeshDepthMaterial> => mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshDepthMaterial);
+      if (depth.length) {
+        assert.equal(depth.length, meshes.length); assert.equal(colors.environment, null); assert.equal(colors.fog, null);
+        depthBatches.push({ points, meshes: depth });
+      } else {
+        assert.equal(colors.environment, scene.environment); assert.equal(colors.fog, scene.fog);
+        if (!root && city && withShadows) assert.equal(points, 12, 'body-swap return colours use the current platform lights');
+        else {
+          assert.equal(points, plan.points); assert.equal(shadows, plan.shadows); assert.ok(root); roots.add(root);
+          assert.equal(scene.children.includes(root), false, 'the future set must stay offstage');
+        }
+      }
       if (meshes.includes(skin)) assert.match(material.customProgramCacheKey(), /actor-local-skin-v1$/);
       batches.push(meshes); work.push('compile'); programs.push({ program: {}, isReady: () => ready, getUniforms: () => { assert.equal(gpu.debug.checkShaderErrors, false); work.push('bindings'); } });
     },
     initTexture(map: THREE.Texture) { uploaded.set(map, map.version); work.push('texture'); },
   } as unknown as THREE.WebGLRenderer;
   const prepare = () => {
-    const count = work.length; if (roof) film.prepareGovernment(gpu, camera, journey, id => bodies.get(id), id => heroes.get(id), sun);
-    else film.prepareMatrixEscape(gpu, camera, journey, id => bodies.get(id), id => heroes.get(id), sun);
+    const count = work.length; if (roof) film.prepareGovernment(gpu, camera, journey, id => bodies.get(id), id => heroes.get(id), sun, sourceLights);
+    else film.prepareMatrixEscape(gpu, camera, journey, id => bodies.get(id), id => heroes.get(id), sun, sourceLights);
     const actions = work.slice(count);
     assert.ok(actions.length <= 1 || !roof && actions.length === 2 && actions.every(action => action === 'strip'),
       'prepare one small batch, one ready binding or at most two bitmap strips per frame');
     assert.equal(parent.visible, false); assert.equal(hero.parent, parent); assert.equal(skin.parent, hero); assert.equal(skin.visible, false); assert.equal(later.visible, false); assert.equal(target, null);
   };
   const drain = () => { for (let i = 0; i < 1000; i++) prepare(); };
-  t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); (coarse.material as THREE.Material).dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
-  return { target: plan.to, landmark, film, journey, gpu, sun, heroes, bodies, geometry, material, skin, coarse, later, texture, work, batches, roots, prepare, drain,
+  t.after(() => { film.dispose(); sourceLights?.dispose(); geometry.dispose(); material.dispose(); (coarse.material as THREE.Material).dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
+  return { target: plan.to, landmark, film, journey, gpu, sun, heroes, bodies, geometry, material, skin, coarse, later, texture, work, batches, depthBatches, roots, prepare, drain,
     ready: () => { ready = true; }, newGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
+
+for (const mode of ['subway', 'city', 'hotel'] as const) test(`${mode} prepares both depth layouts and releases replaced or cancelled materials`, t => {
+  const h = fixture(t, mode, true); h.skin.castShadow = h.coarse.castShadow = true; h.ready(); h.drain();
+  const source = mode === 'subway' ? 4 : mode === 'city' ? 12 : 2;
+  assert.deepEqual([...new Set(h.depthBatches.map(batch => batch.points))], [source, cases[mode].points]);
+  for (const points of [source, cases[mode].points]) {
+    const meshes = h.depthBatches.filter(batch => batch.points === points).flatMap(batch => batch.meshes);
+    assert(meshes.some(mesh => mesh instanceof THREE.SkinnedMesh && mesh.geometry === h.geometry));
+    assert(meshes.some(mesh => !(mesh instanceof THREE.SkinnedMesh)), 'equivalent rigid casters share one prepared depth variant');
+  }
+  const before = new Set(h.depthBatches.flatMap(batch => batch.meshes.map(mesh => mesh.material)));
+  let replaced = 0; for (const material of before) material.addEventListener('dispose', () => replaced++);
+  h.newGpu(); h.drain(); assert.equal(replaced, before.size);
+  const next = new Set(h.depthBatches.flatMap(batch => batch.meshes.map(mesh => mesh.material)).filter(material => !before.has(material)));
+  let cancelled = 0; for (const material of next) material.addEventListener('dispose', () => cancelled++);
+  h.journey.visiting = h.journey.scene; h.prepare(); assert.equal(cancelled, next.size);
+});
 
 for (const mode of ['roof', 'subway', 'city', 'hotel'] as const) {
   test(`${mode} preparation includes hidden and late cast in bounded batches with the next lighting`, t => {
@@ -108,8 +139,11 @@ for (const mode of ['roof', 'subway', 'city', 'hotel'] as const) {
     h.journey.scene = 'm1_guns'; h.prepare(); assert.ok(root.parent === null); assert.equal(disposed, 1); h.prepare(); assert.equal(disposed, 1);
   });
   test(`${mode} entry adopts the same geometry at its authored world position`, t => {
-    const h = fixture(t, mode); h.ready(); h.drain(); const root = [...h.roots][0]; assert.ok(root);
+    const h = fixture(t, mode, mode !== 'roof'); h.skin.castShadow = h.coarse.castShadow = true; h.ready(); h.drain(); const root = [...h.roots][0]; assert.ok(root);
     const mesh = root.getObjectByName(h.landmark) as THREE.Mesh;
+    const depth = new Set(h.depthBatches.flatMap(batch => batch.meshes.map(mesh => mesh.material)));
+    if (mode !== 'roof') assert(depth.size > 0);
+    let depthDisposed = 0; for (const material of depth) material.addEventListener('dispose', () => depthDisposed++);
     root.updateMatrixWorld(true); const local = mesh.getWorldPosition(new THREE.Vector3()), center = FILM_SETS[h.target].center;
     let disposed = 0; mesh.geometry.addEventListener('dispose', () => disposed++);
     const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!;
@@ -120,8 +154,9 @@ for (const mode of ['roof', 'subway', 'city', 'hotel'] as const) {
     } as FilmJourney;
     h.film.update(neo, { neoLife: { journey } } as SandboxState, 0); h.film.root.updateMatrixWorld(true);
     assert.ok(h.film.root.getObjectByName(h.landmark) === mesh); assert.equal(disposed, 0);
+    assert.equal(depthDisposed, 0, 'the first live frame retains the prepared depth programs');
     assert.deepEqual(mesh.getWorldPosition(new THREE.Vector3()).toArray(), [center.x + local.x, center.y - 1 + local.y, center.z + local.z]);
-    h.film.update(undefined, undefined, 0); assert.equal(disposed, 1); h.film.dispose(); assert.equal(disposed, 1);
+    h.film.update(undefined, undefined, 0); assert.equal(disposed, 1); assert.equal(depthDisposed, depth.size); h.film.dispose(); assert.equal(disposed, 1); assert.equal(depthDisposed, depth.size);
   });
 }
 
