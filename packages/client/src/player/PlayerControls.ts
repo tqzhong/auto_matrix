@@ -67,6 +67,7 @@ import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot,
 
 const HELD_INPUT_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyZ', 'KeyG', 'ShiftLeft', 'ShiftRight',
   'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+const FREEWAY_DRIVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
 export class PlayerControls {
   id: string | null = null;
@@ -317,8 +318,10 @@ export class PlayerControls {
     }
     if (HELD_INPUT_KEYS.has(event.code) || event.code === 'Space') {
       event.preventDefault();
+      const held = this.keys.has(event.code);
       if (!event.repeat) this.consumedOfficeClimbKeys.delete(event.code);
       if (!this.consumedOfficeClimbKeys.has(event.code)) this.keys.add(event.code);
+      if (!held && this.keys.has(event.code)) this.sendFreewayDriveInput(event.code);
     }
     if (!event.repeat) {
       if (event.code === 'Space') {
@@ -397,10 +400,16 @@ export class PlayerControls {
       }
     }
   };
+  private sendFreewayDriveInput(code: string): void {
+    if (!FREEWAY_DRIVE_KEYS.has(code) || !this.id || !this.enabled || !this.running
+      || !this.motion.freewayRide && this.motion.freewayPickup?.phase !== 'merging') return;
+    this.send(this.input(false)); this.lastSent = performance.now();
+  }
   private keyUp = (event: KeyboardEvent): void => {
     const released = this.keys.delete(event.code);
     this.consumedOfficeClimbKeys.delete(event.code);
     if (event.code === 'KeyT') this.firing = false;
+    if (released) this.sendFreewayDriveInput(event.code);
     // A held interaction must stop even when the next render frame takes a long time.
     if (event.code === 'KeyG' && released && this.id && this.enabled && this.running) this.send(this.input(false));
   };
