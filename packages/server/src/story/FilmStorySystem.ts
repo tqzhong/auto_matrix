@@ -6439,6 +6439,10 @@ export class FilmStorySystem {
     const captive = this.world.agents.get('keymaker');
     return Boolean(captive && !captive.controller && captive.status === 'alive' && captive.health > 0 && captive.currentLocation === this.scene?.set && captive.isInMatrix);
   }
+  private keymakerAtExit(): boolean {
+    return this.keymakerAvailable() && distance(this.world.agents.get('keymaker')!.position,
+      filmPosition(this.scene!.set, EXILES.escape.x, EXILES.escape.z)) <= EXILES.escapeRange;
+  }
   keymakerFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm2_library' || state.visiting || !this.controls(agent) || !state.keymaker) return;
@@ -7795,6 +7799,8 @@ export class FilmStorySystem {
       this.spawn(agent, step, tick); state.fighting = true;
       return state.scene === 'm2_seraph' ? 'Seraph 放下茶杯摆好架势。正面进攻会被挡开：先观察红色起手，再用 X 闪避。' : '行动开始。F 连击 / X 闪避 / 1 医疗包；完成后返回目标路线。';
     }
+    if (state.scene === 'm2_library' && !state.visiting && state.step === 4 && !this.keymakerAtExit())
+      return '钥匙匠还没有安全到达侧门。回去接应他，保持在能跟上的距离。';
     if (step.kind === 'reach') { this.advance(step.label, agent, tick); return '已抵达目标。'; }
     if (state.scene === 'm1_roofs' && state.step === 2) {
       if (agent.currentAction?.parameters.roofExit) return state.lastText;
@@ -8939,7 +8945,7 @@ export class FilmStorySystem {
     if (state.scene === 'm2_library' && state.step === 4) {
       if (!this.keymakerAvailable()) return;
       const escort = state.keymaker;
-      if (escort && this.near(actor, this.step!) && Math.hypot(escort.x - EXILES.escape.x, escort.z - EXILES.escape.z) <= EXILES.escapeRange)
+      if (escort && this.near(actor, this.step!) && this.keymakerAtExit())
         this.advance('钥匙匠跟上了。Morpheus 与 Trinity 接过护送，Neo 留在大厅挡住赶来的守卫。', actor, tick);
       else if (escort && this.near(actor, this.step!)) state.lastText = '钥匙匠仍在身后。回去接应他，保持在能跟上的距离。';
       return;

@@ -85,3 +85,32 @@ test('a released player-controlled companion resumes from his actual position an
   assert.ok(h.state.keymaker!.z>-20&&h.state.keymaker!.z<-19.5);assert.equal(h.state.keymaker!.x,-8);
   h.state.step=h.scene.steps.length;h.state.keymaker!.phase='escaped';h.command('next');assert.equal(h.state.scene,'m2_chateau');assert.equal(h.captive.health,23);
 });
+
+for (const unavailable of ['far','dead','remote','controller','matrix']) test(`the side-door interaction cannot claim a ${unavailable} Keymaker escaped`, () => {
+  const h=setup(23);h.follow();h.neo.position=filmStepPosition(h.scene,h.scene.steps[4]);
+  Object.assign(h.state.keymaker!,{x:EXILES.escape.x,z:EXILES.escape.z});h.captive.position={...h.neo.position};
+  if(unavailable==='far'){h.captive.position=filmPosition(h.scene.set,0,0);Object.assign(h.state.keymaker!,{x:0,z:0});}
+  else if(unavailable==='dead'){h.captive.status='dead';h.captive.health=0;}
+  else if(unavailable==='remote')h.captive.currentLocation='film_le_vrai';
+  else if(unavailable==='controller')h.captive.controller='another-player';else h.captive.isInMatrix=false;
+  const before=JSON.stringify(h.captive);h.command('act');
+  assert.equal(h.state.step,4);assert.equal(h.state.keymaker!.phase,'following');
+  assert.equal(h.sandbox.state.neoLife!.choices.keymaker_rescued,undefined);assert.equal(JSON.stringify(h.captive),before);
+});
+
+test('a stale escort coordinate cannot complete the side door while the actual companion remains behind', () => {
+  const h=setup();h.follow();h.neo.position=filmStepPosition(h.scene,h.scene.steps[4]);
+  Object.assign(h.state.keymaker!,{x:EXILES.escape.x,z:EXILES.escape.z});
+  const before=JSON.stringify(h.captive);h.sandbox.tick(999);
+  assert.equal(h.state.step,4);assert.equal(h.sandbox.state.neoLife!.choices.keymaker_rescued,undefined);
+  assert.equal(JSON.stringify(h.captive),before);
+});
+
+test('the side-door interaction accepts a wounded companion at the real five-metre boundary', () => {
+  const h=setup(23);h.follow();h.neo.position=filmStepPosition(h.scene,h.scene.steps[4]);
+  Object.assign(h.state.keymaker!,{x:EXILES.escape.x,z:EXILES.escape.z-EXILES.escapeRange});
+  h.captive.position=filmPosition(h.scene.set,EXILES.escape.x,EXILES.escape.z-EXILES.escapeRange);
+  h.world.agents.get('cain')!.status='dead';const position={...h.captive.position};h.command('act');
+  assert.equal(h.state.step,h.scene.steps.length);assert.equal(h.sandbox.state.neoLife!.choices.keymaker_rescued,'yes');
+  assert.deepEqual(h.captive.position,position);assert.equal(h.captive.health,23);assert.equal(h.world.agents.get('cain')!.status,'dead');
+});
