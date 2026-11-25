@@ -577,8 +577,10 @@ export class PlayerControls {
     if (forward !== this.movementForward || right !== this.movementRight) this.movementYaw = this.yaw;
     this.movementForward = forward; this.movementRight = right;
     const officeClimb = this.authoritative?.currentLocation === 'film_office_ledge' && (this.climbing || this.motion.officeLadder !== undefined);
-    let x = officeClimb ? 0 : Math.sin(this.movementYaw) * forward - Math.cos(this.movementYaw) * right;
-    let z = officeClimb ? 0 : Math.cos(this.movementYaw) * forward + Math.sin(this.movementYaw) * right;
+    // Both mountain cameras look south, including after a side-facing saved flight or retry.
+    const mountainFlight = ['takeoff', 'flying', 'arrived'].includes(this.motion.mountainFlight?.phase ?? '');
+    let x = officeClimb ? 0 : mountainFlight ? right : Math.sin(this.movementYaw) * forward - Math.cos(this.movementYaw) * right;
+    let z = officeClimb ? 0 : mountainFlight ? -forward : Math.cos(this.movementYaw) * forward + Math.sin(this.movementYaw) * right;
     const length = Math.hypot(x, z);
     if (length > 1) { x /= length; z /= length; }
     const attacking = (performance.now() - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
