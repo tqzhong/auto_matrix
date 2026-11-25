@@ -6766,7 +6766,8 @@ export class FilmSetRenderer {
       }
       for (const weapon of ['sword', 'spear'] as const) {
         const { x, z } = CHATEAU.racks[weapon]; const metal = this.mat(0xa9aaa0, .26, .72);
-        this.box(this.wood, x, 2.3, z, 2.6, 4.6, .55, .08);
+        const stand = CHATEAU.rackStand;
+        this.box(this.wood, x, stand.height / 2, z, stand.width, stand.height, stand.depth, .08);
         this.box(this.brass, x, 4.7, z, 2.8, .12, .66);
         if (weapon === 'sword') {
           this.box(metal, x, 2.9, z + .38, .12, 2.6, .09); this.box(this.brass, x, 1.65, z + .44, .8, .1, .18);

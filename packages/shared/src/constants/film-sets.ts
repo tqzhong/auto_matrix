@@ -336,6 +336,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
   for (let z = -set.depth / 2 + 12; z < set.depth / 2 - 10; z += 16) {
     for (const side of [-1, 1]) columns.push({ x: side * x, z, width: 1.8, depth: 1.8, height: set.height });
   }
+  if (set.id === 'film_chateau_hall') columns.push(...Object.values(CHATEAU.racks).map(rack => ({ ...rack, ...CHATEAU.rackStand })));
   return columns;
 }
 

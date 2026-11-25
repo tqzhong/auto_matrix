@@ -5511,6 +5511,20 @@ export class FilmStorySystem {
       if (!actor || state.visiting || actor.currentLocation !== 'film_chateau_hall') return;
       const { center } = FILM_SETS.film_chateau_hall;
       const x = actor.position.x - center.x, z = actor.position.z - center.z;
+      const stand = CHATEAU.rackStand;
+      const rack = Object.values(CHATEAU.racks).find(rack => Math.abs(x - rack.x) < stand.width / 2 + 1.1
+        && Math.abs(z - rack.z) < stand.depth / 2 + 1.1 && actor.position.y < center.y + stand.height);
+      if (rack) {
+        const before = actor.position, side = z < rack.z ? -1 : 1;
+        for (const direction of [side, -side]) {
+          const position = { ...before, z: center.z + rack.z + direction * (stand.depth / 2 + 1.1 + .05) };
+          if (playerBlocked(position, true, 1.1, this.sandbox().structures)) continue;
+          actor.position = position;
+          if (distance(state.checkpoint, before) < 1e-8) state.checkpoint = { ...position };
+          break;
+        }
+        return;
+      }
       if (!chateauRailBlocked(x, actor.position.y - center.y, z, 1.1)) return;
       // Keep older saves on the same tread when a newly solid baluster overlaps the player.
       const inward = Math.sign(x) * chateauStairTreadAt(z).x - x;

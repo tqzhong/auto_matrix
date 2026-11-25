@@ -15,6 +15,7 @@ export interface ChateauEncounter {
 
 export const CHATEAU = {
   racks: { sword: { x: -29, z: 17 }, spear: { x: 29, z: 17 } },
+  rackStand: { width: 2.6, height: 4.6, depth: .55 },
   landing: { x: 0, z: -35, height: 10, depth: 12 },
   stairs: { count: 18, x: 14, z: -4, dx: .65, dz: 1.45, rise: .55, width: 10, depth: 1.6, tread: .25,
     rail: { offset: 4.6, radius: .14, y: 1.7, height: 2.7, cap: .22, capY: 3.1 } },
