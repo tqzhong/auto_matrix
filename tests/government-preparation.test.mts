@@ -32,7 +32,7 @@ function fixture(t: TestContext, destination: 'office' | 'roof' | 'helicopter' =
   const coarse = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true })); body.add(coarse);
   const contact = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ depthWrite: false })); contact.visible = false; parent.add(contact);
   const sourceLights = withShadows ? new LightCulling(scene) : undefined;
-  if (sourceLights) sourceLights.minimumPointSlots = 9;
+  if (sourceLights) sourceLights.minimumPointSlots = roof ? 1 : helicopter ? 2 : 9;
   const heroes = new Map([[roof || helicopter ? 'neo' : 'morpheus', hero]]), bodies = new Map([[roof ? 'citizen_11' : 'smith', body]]), roots = new Set<THREE.Object3D>();
   const work: string[] = [], batches: THREE.Object3D[][] = [], programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   const depthBatches: { points: number; meshes: THREE.Mesh<THREE.BufferGeometry, THREE.MeshDepthMaterial>[] }[] = [];
@@ -119,10 +119,30 @@ test('the interrogation prepares its real depth, contact shadow and normal varia
   assert.equal(disposed, depth.size);
 });
 
+for (const destination of ['roof', 'helicopter'] as const) test(`${destination} prepares actor and set depth programs plus contact-occlusion normals before the cut`, t => {
+  const h = fixture(t, destination, true); h.skin.castShadow = true;
+  h.ready(); h.drain();
+  const source = destination === 'roof' ? 1 : 2, target = destination === 'roof' ? 2 : 5;
+  assert.deepEqual([...new Set(h.depthBatches.map(batch => batch.points))], [source, target]);
+  for (const points of [source, target]) {
+    const meshes = h.depthBatches.filter(batch => batch.points === points).flatMap(batch => batch.meshes);
+    assert(meshes.some(mesh => mesh instanceof THREE.SkinnedMesh && mesh.geometry === h.geometry), 'the arriving actor needs the depth variant too');
+    assert(meshes.some(mesh => !(mesh instanceof THREE.SkinnedMesh)), 'the future set needs its first depth draw prepared');
+  }
+  assert(h.film.governmentEntryNormalMeshes?.includes(h.skin), 'the arriving head must also prepare the contact-occlusion normal program');
+  const count = h.work.length; h.drain(); assert.equal(h.work.length, count);
+  const materials = new Set(h.depthBatches.flatMap(batch => batch.meshes.map(mesh => mesh.material)));
+  let released = 0; for (const material of materials) material.addEventListener('dispose', () => released++);
+  h.newGpu(); h.drain(); assert.equal(released, materials.size, 'changing GPU releases the previous depth materials once');
+  const replacement = new Set(h.depthBatches.flatMap(batch => batch.meshes.map(mesh => mesh.material)).filter(material => !materials.has(material)));
+  let cancelled = 0; for (const material of replacement) material.addEventListener('dispose', () => cancelled++);
+  h.journey.visiting = h.journey.scene; h.prepare(); assert.equal(cancelled, replacement.size, 'an interrupted preparation releases its replacement materials');
+});
+
 test('the interruption prepares the gun-line roof with its entrance lights and adopts the same set', t => {
   const h = fixture(t, 'roof'); h.journey.government!.phase = 'monologue'; h.prepare(); assert.equal(h.work.length, 0);
   h.journey.government!.phase = 'alarm_ready'; h.ready(); h.drain();
-  assert.equal(h.roots.size, 1, 'prepare the gun-line roof while Morpheus can approach the window');
+  assert.equal(h.roots.size, 1, 'prepare the gun-line roof while Morpheus remains in the interrogation chair');
   assert.ok(h.batches.flat().includes(h.skin)); assert.ok(h.batches.flat().includes(h.coarse)); assert.equal(h.batches.flat().includes(h.later), false);
   const root = [...h.roots][0], deck = root.getObjectByName('government-roof-deck') as THREE.Mesh;
   let disposed = 0; deck.geometry.addEventListener('dispose', () => disposed++);

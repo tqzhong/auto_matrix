@@ -1108,7 +1108,7 @@ export class FilmSetRenderer {
       // These entrances hide the objective light, unlike the preceding elevator or cockpit.
       for (const light of prepared.colors.scene.children) if (light instanceof THREE.PointLight) light.intensity = 0;
       prepared.liveMeshes = [this.marker]; prepared.normalMeshes = undefined;
-      if (questioning && renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
+      if (renderer.shadowMap?.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap) {
         prepared.shadows = { materials: new Set(), variants: new Set(), source: [], destination: [] };
         this.queueEntryShadows(prepared, prepared.colors.meshes);
       }
@@ -1140,11 +1140,11 @@ export class FilmSetRenderer {
       }
     }
     this.queueColorTextures(colors.textures, meshes);
+    this.queueEntryShadows(prepared, meshes);
+    const heads = [...meshes].filter(mesh => mesh.name === 'Anatomical_head_and_hands');
+    if (heads.length) prepared.normalMeshes = [...(prepared.normalMeshes ?? []), ...heads];
     if (questioning) {
       prepared.liveMeshes.push(...contacts, ...meshes);
-      this.queueEntryShadows(prepared, meshes);
-      const heads = [...meshes].filter(mesh => mesh.name === 'Anatomical_head_and_hands');
-      if (heads.length) prepared.normalMeshes = [...(prepared.normalMeshes ?? []), ...heads];
       colors.meshes.unshift(...contacts, ...firstSmith);
       for (const mesh of meshes) if (!firstSmith.has(mesh)) colors.meshes.push(mesh);
       // The shared glazing program and Smith's first view lead the queue.
@@ -1155,8 +1155,8 @@ export class FilmSetRenderer {
       : this.prepareColorTexture(renderer, colors.textures);
     if (preparingTexture) return;
     const { shadows, lighting } = prepared;
-    // The first depth draw still sees the lobby lights. The following one sees the office lights.
-    if (shadows && (inLobby && sourceLights && this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.source }, sourceLights, 'depth')
+    // The first depth draw still sees the preceding set's lights, then the destination's.
+    if (shadows && (this.current && sourceLights && this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.source }, sourceLights, 'depth')
       || this.linkColorBatch(renderer, camera, { ...colors, meshes: shadows.destination }, lighting, 'depth'))) return;
     this.prepareColorProgram(renderer, camera, colors, lighting, 'isolated', questioning, questioning ? prepared.liveMeshes : undefined);
   }
