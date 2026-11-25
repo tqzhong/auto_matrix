@@ -2691,8 +2691,12 @@ export class FilmSetRenderer {
         return;
       }
       const prepared = this.preparedMountain;
-      if (!prepared.colors && renderer.extensions.has('KHR_parallel_shader_compile'))
+      if (!prepared.colors && renderer.extensions.has('KHR_parallel_shader_compile')) {
         prepared.colors = { ...this.colorPreparation(prepared.root, []), actors: new Set() };
+        // The PBR mesh collection omits the snow's PointsMaterial.
+        const snow = prepared.root.getObjectByName('mountain-wind-snow');
+        if (snow instanceof THREE.Points) prepared.colors.meshes.unshift(snow);
+      }
       if (prepared.colors) this.prepareCastColors(renderer, camera, prepared.colors, [journey.actor], actor);
       return;
     }
