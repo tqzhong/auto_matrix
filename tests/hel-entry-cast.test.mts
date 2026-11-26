@@ -7,7 +7,7 @@ import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-test('the Hel elevator and coat check draw their room without redrawing earlier Matrix scenes or changing their saved actors', t => {
+test('the Hel elevator, coat check and confrontation draw their room without redrawing earlier Matrix scenes or changing their saved actors', t => {
   const previous = globalThis.document;
   const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {}, ellipse() {},
     createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }),
@@ -40,4 +40,19 @@ test('the Hel elevator and coat check draw their room without redrawing earlier 
   renderer.update(.02);
   for (const id of Object.keys(outside)) assert.equal(renderer.getAgent(id)!.visible, true, 'the world view keeps its other rooms');
   assert.equal(JSON.stringify([...world.agents]), saved);
+  const hosts = ['merovingian', 'persephone', 'trainman'];
+  for (const id of hosts) {
+    const actor = world.agents.get(id)!;
+    Object.assign(actor, { position: filmPosition(scene.set, 0, -35), currentLocation: scene.set, isInMatrix: true });
+    renderer.updateAgent(id, actor);
+  }
+  journey.scene = 'm3_hel_bargain'; journey.step = 0;
+  const confrontation = JSON.stringify([...world.agents]); renderer.update(.02, undefined, 1, 0, journey);
+  for (const id of Object.keys(outside).filter(id => !hosts.includes(id)))
+    assert.equal(renderer.getAgent(id)!.visible, false, `${id} stays in the earlier room during the confrontation`);
+  for (const id of [...crew, ...hosts]) assert.equal(renderer.getAgent(id)!.visible, true, `${id} is present at the VIP stairs`);
+  assert.equal(JSON.stringify([...world.agents]), confrontation);
+  renderer.update(.02);
+  for (const id of Object.keys(outside)) assert.equal(renderer.getAgent(id)!.visible, true);
+  assert.equal(JSON.stringify([...world.agents]), confrontation);
 });

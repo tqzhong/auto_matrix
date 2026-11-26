@@ -723,7 +723,7 @@ export class AgentRenderer {
           || (scene === 'm2_power' || scene === 'm2_blackout') && player.currentLocation === 'film_power_station'
           || scene === 'm2_backup' && player.currentLocation === 'film_backup_station'
           || scene === 'm2_architect' && player.currentLocation === 'film_architect_room'
-          || scene === 'm3_hel_entry' && player.currentLocation === 'film_club_hel'
+          || (scene === 'm3_hel_entry' || scene === 'm3_hel_bargain') && player.currentLocation === 'film_club_hel'
           || (scene === 'm2_freeway' || scene === 'm2_trucks') && ['film_freeway_101', 'film_freeway_trucks'].includes(player.currentLocation)) && this.matrix)
       ? filmSetAt(player.position, this.matrix)?.id : undefined;
     const zionSet = player && !player.isInMatrix && !this.matrix && this.playerId === journey?.actor && scene
