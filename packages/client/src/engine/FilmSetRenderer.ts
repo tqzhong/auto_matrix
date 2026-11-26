@@ -344,7 +344,7 @@ const ZION_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m2_oracle_message: { scene: 'm2_departure', step: 1 },
   m3_shaft_seal: { scene: 'm3_temple_defense', step: 1 },
 };
-const SECOND_ORACLE_ACTOR_CUTS = new Set(['m2_backup', 'm3_oracle_request', 'm3_trainman_chase', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_logos_plan']);
+const SECOND_ORACLE_ACTOR_CUTS = new Set(['m2_backup', 'm3_oracle_request', 'm3_trainman_chase', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare']);
 const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m1_meal: { scene: 'm1_spoon', step: 0 },
   m2_departure: { scene: 'm2_seraph', step: 4 },
@@ -373,6 +373,7 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m3_oracle_last: { scene: 'm3_oracle_absorbed', step: 4 },
   m3_oracle_absorbed: { scene: 'm3_bane_questions', step: 3 },
   m3_bane_questions: { scene: 'm3_logos_plan', step: 3 },
+  m3_logos_plan: { scene: 'm3_zion_prepare', step: 3 },
   m3_zion_prepare: { scene: 'm3_maggie_discovery', step: 3 },
   m3_maggie_discovery: { scene: 'm3_bane', step: 5 },
   m3_bane: { scene: 'm3_hammer_tunnels', step: 2 },
@@ -2809,7 +2810,8 @@ export class FilmSetRenderer {
     const finaleEntry = next.id === 'm2_stop_sentinels' || medicalEntry || next.id === 'm3_mobil' || next.id === 'm3_mobil_release';
     const absorptionEntry = next.id === 'm3_oracle_absorbed', inquiryEntry = next.id === 'm3_bane_questions';
     const routeMeetingEntry = next.id === 'm3_logos_plan';
-    const preparePasses = teaEntry || courtyardEntry || leVraiEntry || briefingEntry || relayEntry || backupEntry || architectEntry || catchEntry || absorptionEntry || inquiryEntry || routeMeetingEntry;
+    const deploymentEntry = next.id === 'm3_zion_prepare';
+    const preparePasses = teaEntry || courtyardEntry || leVraiEntry || briefingEntry || relayEntry || backupEntry || architectEntry || catchEntry || absorptionEntry || inquiryEntry || routeMeetingEntry || deploymentEntry;
     const helGarageEntry = next.id === 'm3_hel_garage';
     if (helGarageEntry && !helGarageTemplate) return;
     const helElevatorEntry = next.id === 'm3_hel_entry';
@@ -2842,7 +2844,7 @@ export class FilmSetRenderer {
       const room = prepared.room;
       if (relayEntry) room.neb?.update({ ...journey, scene: next.id, actor: next.actor, step: 0, trinityRelay: undefined }, 0);
       const colors = this.colorPreparation(room.root, [], {
-        includeBasic: teaEntry || courtyardEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || briefingEntry || relayEntry || backupEntry || finaleEntry || helEntry || shipEntry
+        includeBasic: teaEntry || courtyardEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || briefingEntry || relayEntry || backupEntry || finaleEntry || helEntry || shipEntry || deploymentEntry
           || Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
         playerView: savedCut,
         shadowSun: teaEntry || backupEntry ? shadowSun : undefined,
@@ -2855,7 +2857,7 @@ export class FilmSetRenderer {
         if (room.chateauVolley) colors.meshes.push(...this.colorMeshes(room.chateauVolley.children));
         prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
         if (preparePasses || finaleEntry || shipEntry) prepared.liveMeshes = [this.marker];
-        const shadow = shipEntry || teaEntry || courtyardEntry || leVraiEntry || briefingEntry || relayEntry || backupEntry ? shipCast?.(next.actor).shadow : undefined;
+        const shadow = shipEntry || teaEntry || courtyardEntry || leVraiEntry || briefingEntry || relayEntry || backupEntry || deploymentEntry ? shipCast?.(next.actor).shadow : undefined;
         if (shadow) { colors.meshes.unshift(shadow); prepared.liveMeshes?.push(shadow); }
       }
       if (preparePasses) {
@@ -2891,7 +2893,7 @@ export class FilmSetRenderer {
           const detailed = (teaEntry || helEntry || absorptionEntry) && id === 'seraph' || (libraryEntry || garageEntry || briefingEntry) && id === 'keymaker'
             || architectEntry && id === 'architect' || medicalEntry && id === 'roland' || logosEntry && id === 'bane'
             || inquiryEntry && (id === 'roland' || id === 'maggie')
-            || (hammerEntry || routeMeetingEntry) && (id === 'niobe' || id === 'roland');
+            || (hammerEntry || routeMeetingEntry) && (id === 'niobe' || id === 'roland') || deploymentEntry;
           if ((detailed || medicalEntry && id === 'maggie') && !group.getObjectByName(`${id}-detailed-head`)) continue;
           if (detailed && !group.getObjectByName(`${id}-detailed-body`)) continue;
           if (courtyardEntry && id === 'oracle' && !group.getObjectByName('oracle-first-detailed-head')) continue;
@@ -2940,7 +2942,7 @@ export class FilmSetRenderer {
           if (preparePasses) {
             const surfaces = routeMeetingEntry ? [...meshes, ...garments] : meshes;
             this.queueEntryShadows(prepared, surfaces);
-            const normals = surfaces.filter(mesh => mesh instanceof THREE.SkinnedMesh || (architectEntry && id === 'architect' || absorptionEntry || inquiryEntry || routeMeetingEntry) && Boolean(mesh.morphTargetInfluences?.length));
+            const normals = surfaces.filter(mesh => mesh instanceof THREE.SkinnedMesh || (architectEntry && id === 'architect' || absorptionEntry || inquiryEntry || routeMeetingEntry || deploymentEntry) && Boolean(mesh.morphTargetInfluences?.length));
             if (normals.length) prepared.normalMeshes = [...(prepared.normalMeshes ?? []), ...normals];
           }
         }
@@ -4024,6 +4026,10 @@ export class FilmSetRenderer {
       this.buildLogosBane().update(undefined, 0, 0);
       return;
     }
+    if (set.id === 'film_zion_defense_council') {
+      this.zionDeployment = new ZionDeploymentRenderer(this.root);
+      return;
+    }
     if (set.id === 'film_hammer_route') {
       this.hammerRoute = new HammerRouteRenderer(this.root);
       return;
@@ -4093,6 +4099,7 @@ export class FilmSetRenderer {
     this.oracleAbsorption = room.oracleAbsorption; room.oracleAbsorption = undefined;
     this.baneInquiry = room.baneInquiry; room.baneInquiry = undefined;
     this.hammerBriefing = room.hammerBriefing; room.hammerBriefing = undefined;
+    this.zionDeployment = room.zionDeployment; room.zionDeployment = undefined;
     this.revolutionsPrelude = room.revolutionsPrelude; room.revolutionsPrelude = undefined;
     this.trainmanChase = room.trainmanChase; room.trainmanChase = undefined;
     this.helGarage = room.helGarage; room.helGarage = undefined;
@@ -4579,7 +4586,7 @@ export class FilmSetRenderer {
         else if (sceneId === 'm3_bane_questions' && set.id === 'film_hammer_deck' && !preparedSecondOracle) this.baneInquiry = new BaneInquiryRenderer(this.root);
         else if (sceneId === 'm3_maggie_discovery' && set.id === 'film_hammer_deck' && !preparedSecondOracle) this.maggieDiscovery = new MaggieDiscoveryRenderer(this.root);
         else if (sceneId === 'm3_logos_plan' && set.id === 'film_hammer_deck' && !preparedSecondOracle) this.hammerBriefing = new HammerBriefingRenderer(this.root);
-        else if (set.id === 'film_zion_defense_council') this.zionDeployment = new ZionDeploymentRenderer(this.root);
+        else if (set.id === 'film_zion_defense_council' && !preparedSecondOracle) this.zionDeployment = new ZionDeploymentRenderer(this.root);
         else if (set.id === 'film_trainman_subway' && !preparedSecondOracle) this.trainmanChase = new TrainmanChaseRenderer(this.root);
         else if (set.id === 'film_hel_garage' && !preparedSecondOracle) this.helGarage = new HelGarageRenderer(this.root, player!);
         else if (sceneId === 'm1_subway' && set.id === 'film_subway_platform' || sceneId === 'm1_city_chase' && set.id === 'film_escape_streets') {

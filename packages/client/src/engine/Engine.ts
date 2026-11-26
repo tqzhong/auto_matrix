@@ -475,6 +475,7 @@ export class Engine {
     const fromLastOracle = meeting?.scene === 'm3_oracle_last';
     const fromOracleAbsorption = meeting?.scene === 'm3_oracle_absorbed';
     const fromBaneInquiry = meeting?.scene === 'm3_bane_questions';
+    const fromHammerBriefing = meeting?.scene === 'm3_logos_plan';
     const resumeSecondOracle = onLanding && (meeting?.scene === 'm1_meal' || meeting?.scene === 'm2_departure')
       || resumeOnLanding && (meeting?.scene === 'm2_burly' || meeting?.scene === 'm2_persephone' || meeting?.scene === 'm2_mountain'
       || meeting?.scene === 'm2_key_door' || meeting?.scene === 'm2_freeway' || meeting?.scene === 'm2_ship_lost' || meeting?.scene === 'm2_stop_sentinels' || meeting?.scene === 'm2_medical'
@@ -482,7 +483,7 @@ export class Engine {
       || meeting?.scene === 'm2_power' || meeting?.scene === 'm2_blackout'
       || meeting?.scene === 'm2_relay'
       || meeting?.scene === 'm3_trainman' || meeting?.scene === 'm3_oracle_request' || meeting?.scene === 'm3_trainman_chase'
-      || meeting?.scene === 'm3_hel_garage' || meeting?.scene === 'm3_hel_bargain' || fromMobilReunion || fromLastOracle || fromOracleAbsorption || fromBaneInquiry
+      || meeting?.scene === 'm3_hel_garage' || meeting?.scene === 'm3_hel_bargain' || fromMobilReunion || fromLastOracle || fromOracleAbsorption || fromBaneInquiry || fromHammerBriefing
       || meeting?.scene === 'm3_maggie_discovery' || meeting?.scene === 'm3_bane');
     this.filmSets.prepareSecondOracle(this.renderer, this.camera, player?.id === meeting?.actor || resumeSecondOracle ? meeting : undefined,
       id => (id === 'seraph' && (meeting?.scene === 'm2_departure' || meeting?.scene === 'm3_trainman' || meeting?.scene === 'm3_oracle_request')
@@ -490,6 +491,7 @@ export class Engine {
         || (fromMobilReunion || fromLastOracle) && (id === 'oracle' || id === 'seraph' || id === 'sati')
         || fromOracleAbsorption && (id === 'roland' || id === 'maggie' || id === 'bane')
         || fromBaneInquiry && (id === 'niobe' || id === 'roland')
+        || fromHammerBriefing && (id === 'lock' || id === 'hamann' || id === 'west' || id === 'dillard')
         || id === 'trainman' && meeting?.scene === 'm3_oracle_request'
         || id === 'sati' && meeting?.scene === 'm2_medical'
         || id === 'bane' && meeting?.scene === 'm3_maggie_discovery'
