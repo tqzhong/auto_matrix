@@ -723,6 +723,7 @@ export class AgentRenderer {
           || (scene === 'm2_power' || scene === 'm2_blackout') && player.currentLocation === 'film_power_station'
           || scene === 'm2_backup' && player.currentLocation === 'film_backup_station'
           || scene === 'm2_architect' && player.currentLocation === 'film_architect_room'
+          || scene === 'm3_hel_entry' && player.currentLocation === 'film_club_hel'
           || (scene === 'm2_freeway' || scene === 'm2_trucks') && ['film_freeway_101', 'film_freeway_trucks'].includes(player.currentLocation)) && this.matrix)
       ? filmSetAt(player.position, this.matrix)?.id : undefined;
     const zionSet = player && !player.isInMatrix && !this.matrix && this.playerId === journey?.actor && scene
@@ -734,6 +735,7 @@ export class AgentRenderer {
       || playerSet === 'film_backdoor_hall' || playerSet === 'film_oracle_courtyard' || playerSet === 'film_le_vrai'
       || playerSet === 'film_keymaker_workshop' || playerSet === 'film_chateau_garage' || playerSet === 'film_operation_room'
       || playerSet === 'film_power_station' || playerSet === 'film_backup_station' || playerSet === 'film_architect_room'
+      || playerSet === 'film_club_hel'
       || playerSet === 'film_freeway_101' || playerSet === 'film_freeway_trucks' ? playerSet : zionSet;
     const relayCast = this.playerId === journey?.actor && !this.matrix && !journey?.visiting
       && (scene === 'm2_vigilant' || scene === 'm2_relay' || scene === 'm2_ship_lost') ? FILM_SCENE_BY_ID[scene] : undefined;
