@@ -58,6 +58,30 @@ def normals(points, faces):
     return result / np.maximum(np.linalg.norm(result, axis=1, keepdims=True), 1e-10)
 
 
+def fit_cargo_pockets(pockets, trousers, faces, weights):
+    """Carry the existing pocket folds along the actual trouser surface."""
+    triangles = np.array([[f[0][0], f[i][0], f[i + 1][0]] for f in faces for i in range(1, len(f) - 1)])
+    surface = trousers[triangles]
+    origin = surface[:, 0, 1:]
+    ab, ac = surface[:, 1, 1:] - origin, surface[:, 2, 1:] - origin
+    determinant = ab[:, 0] * ac[:, 1] - ab[:, 1] * ac[:, 0]
+    valid = np.abs(determinant) > 1e-10
+    triangles, surface, origin, ab, ac, determinant = [a[valid] for a in [triangles, surface, origin, ab, ac, determinant]]
+    fitted, influence = pockets.copy(), np.zeros((len(pockets), weights.shape[1]))
+    for i, point in enumerate(pockets):
+        side = np.sign(point[0]); offset = point[1:] - origin
+        u = (offset[:, 0] * ac[:, 1] - offset[:, 1] * ac[:, 0]) / determinant
+        v = (ab[:, 0] * offset[:, 1] - ab[:, 1] * offset[:, 0]) / determinant
+        inside = np.flatnonzero((u >= -1e-7) & (v >= -1e-7) & (u + v <= 1 + 1e-7))
+        assert len(inside), f'Cargo pocket has no trouser surface at {point}'
+        barycentric = np.column_stack((1 - u[inside] - v[inside], u[inside], v[inside]))
+        depth = (surface[inside, :, 0] * barycentric).sum(axis=1)
+        nearest = np.argmax(depth * side); triangle = triangles[inside[nearest]]
+        fitted[i, 0] = depth[nearest] + side * (.004 + abs(point[0]) - .455)
+        influence[i] = (weights[triangle] * barycentric[nearest, :, None]).sum(axis=0)
+    return fitted, influence
+
+
 def cloth_sections(points, faces, arms, bottom=1.9, top=3.23):
     """Convex horizontal sections bridge the chest instead of tracing skin."""
     triangles = np.array([[f[0][0], f[i][0], f[i + 1][0]] for f in faces for i in range(1, len(f) - 1)])
@@ -781,6 +805,8 @@ def main(source, output, role):
                         ids = [a, a + 1, a + 8, a + 7]
                         if sign < 0: ids.reverse()
                         pocket_faces.append([(j, j) for j in ids])
+    if role == 'lock':
+        pocket_points, pocket_weights = fit_cargo_pockets(np.array(pocket_points), pp, pf, pw)
     if not program and not council and not child: export(role + '-cargo-pockets', np.array(pocket_points), np.array(pocket_uv), pocket_faces, np.array(pocket_weights), 2)
 
     # Built over a flat sole, with a rounded toe box instead of enlarged toes.

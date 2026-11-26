@@ -91,3 +91,35 @@ test('sampled council bodies avoid seat backs and armrests, and Lock stays outsi
     assert.equal(hits, 0, `${role} penetrates sampled furniture at ${elapsed}`);
   }
 });
+
+test('Lock’s delivered cargo pockets stay attached to the trousers during council poses and walking', async t => {
+  const h = await setup(t), rig = h.rigs.lock;
+  const pockets = rig.root.getObjectByName('lock-cargo-pockets') as THREE.SkinnedMesh;
+  const trousers = rig.root.getObjectByName('lock-work-trousers') as THREE.SkinnedMesh;
+  assert.ok(pockets.visible && pockets.geometry.attributes.position.count >= 196, 'keep both pockets and their folded flaps');
+  const check = (label: string) => {
+    const vertices = Array.from({ length: trousers.geometry.attributes.position.count }, (_, i) => trousers.localToWorld(trousers.getVertexPosition(i, new THREE.Vector3())));
+    const indices = trousers.geometry.index!, axis = new THREE.Vector3(1, 0, 0).transformDirection(rig.root.matrixWorld);
+    const ray = new THREE.Ray(), hit = new THREE.Vector3(), nearest = new THREE.Vector3();
+    for (let i = 0; i < pockets.geometry.attributes.position.count; i++) {
+      const point = pockets.localToWorld(pockets.getVertexPosition(i, new THREE.Vector3()));
+      const outward = axis.clone().multiplyScalar(pockets.geometry.attributes.position.getX(i) < 0 ? -1 : 1);
+      ray.origin.copy(point).addScaledVector(outward, 1); ray.direction.copy(outward).negate(); let distance = Infinity;
+      for (let j = 0; j < indices.count; j += 3) {
+        if (!ray.intersectTriangle(vertices[indices.getX(j)], vertices[indices.getX(j + 1)], vertices[indices.getX(j + 2)], false, hit)) continue;
+        const next = ray.origin.distanceToSquared(hit); if (next < distance) { distance = next; nearest.copy(hit); }
+      }
+      assert.ok(Number.isFinite(distance), `${label}: pocket ${i} has no trouser surface beneath it`);
+      const gap = point.sub(nearest).dot(outward);
+      assert.ok(gap >= -.002 && gap <= .045, `${label}: pocket ${i} is ${gap}m from the actual trousers`);
+    }
+  };
+  for (const phase of ['approach', 'reporting', 'allocating', 'leaving'] as const) {
+    h.pose('lock', phase, 4.2); check(phase);
+  }
+  for (let frame = 0; frame < 8; frame++) {
+    h.models.animate(rig, .12, { speed: 2.8, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+      zionDeployment: { ...newZionDeployment(4, 47), phase: 'leaving', role: 'lock', elapsed: frame * .12 } }, 0);
+    rig.root.updateMatrixWorld(true); rig.root.traverse(object => { if (object instanceof THREE.SkinnedMesh) object.skeleton.update(); }); check(`walk ${frame}`);
+  }
+});
