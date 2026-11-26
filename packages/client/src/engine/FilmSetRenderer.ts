@@ -344,7 +344,7 @@ const ZION_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m2_oracle_message: { scene: 'm2_departure', step: 1 },
   m3_shaft_seal: { scene: 'm3_temple_defense', step: 1 },
 };
-const SECOND_ORACLE_ACTOR_CUTS = new Set(['m2_backup', 'm3_oracle_request', 'm3_trainman_chase', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions']);
+const SECOND_ORACLE_ACTOR_CUTS = new Set(['m2_backup', 'm3_oracle_request', 'm3_trainman_chase', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_logos_plan']);
 const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m1_meal: { scene: 'm1_spoon', step: 0 },
   m2_departure: { scene: 'm2_seraph', step: 4 },
@@ -372,6 +372,7 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m3_mobil_release: { scene: 'm3_oracle_last', step: 1 },
   m3_oracle_last: { scene: 'm3_oracle_absorbed', step: 4 },
   m3_oracle_absorbed: { scene: 'm3_bane_questions', step: 3 },
+  m3_bane_questions: { scene: 'm3_logos_plan', step: 3 },
   m3_zion_prepare: { scene: 'm3_maggie_discovery', step: 3 },
   m3_maggie_discovery: { scene: 'm3_bane', step: 5 },
   m3_bane: { scene: 'm3_hammer_tunnels', step: 2 },
@@ -737,7 +738,7 @@ export class FilmSetRenderer {
       || (this.currentScene === 'm2_stop_sentinels' || this.currentScene === 'm2_medical') && Boolean(this.finale)
       || id === 'film_oracle_home' && (this.currentScene === 'm1_spoon' || this.currentScene === 'm1_oracle'
         || this.currentScene === 'm3_oracle_request' || this.currentScene === 'm3_oracle_last' || this.currentScene === 'm3_oracle_absorbed')
-      || Boolean(this.interrogation || this.baneInquiry || this.baneCopy || this.hammerRoute || this.smithFinale)
+      || Boolean(this.interrogation || this.baneInquiry || this.hammerBriefing || this.baneCopy || this.hammerRoute || this.smithFinale)
       || Boolean(this.zionDeployment || this.maggieDiscovery || this.logosBane)
       || id === 'film_chateau_hall' && this.currentScene === 'm2_chateau'
       || id === 'film_mountain_range' && this.currentScene === 'm2_mountain'
@@ -2807,13 +2808,14 @@ export class FilmSetRenderer {
     const architectEntry = next.id === 'm2_architect', catchEntry = next.id === 'm2_catch', medicalEntry = next.id === 'm2_medical';
     const finaleEntry = next.id === 'm2_stop_sentinels' || medicalEntry || next.id === 'm3_mobil' || next.id === 'm3_mobil_release';
     const absorptionEntry = next.id === 'm3_oracle_absorbed', inquiryEntry = next.id === 'm3_bane_questions';
-    const preparePasses = teaEntry || courtyardEntry || leVraiEntry || briefingEntry || relayEntry || backupEntry || architectEntry || catchEntry || absorptionEntry || inquiryEntry;
+    const routeMeetingEntry = next.id === 'm3_logos_plan';
+    const preparePasses = teaEntry || courtyardEntry || leVraiEntry || briefingEntry || relayEntry || backupEntry || architectEntry || catchEntry || absorptionEntry || inquiryEntry || routeMeetingEntry;
     const helGarageEntry = next.id === 'm3_hel_garage';
     if (helGarageEntry && !helGarageTemplate) return;
     const helElevatorEntry = next.id === 'm3_hel_entry';
     const helEntry = helGarageEntry || helElevatorEntry;
     const logosEntry = next.id === 'm3_bane', hammerEntry = next.id === 'm3_hammer_tunnels';
-    const shipEntry = logosEntry || hammerEntry || inquiryEntry;
+    const shipEntry = logosEntry || hammerEntry || inquiryEntry || routeMeetingEntry;
     const isolatedEntry = firstOracle || teaEntry || courtyardEntry || leVraiEntry || libraryEntry || chateauEntry || garageEntry || briefingEntry
       || preparePasses || finaleEntry || helEntry || shipEntry;
     if (!this.preparedSecondOracle) {
@@ -2889,7 +2891,7 @@ export class FilmSetRenderer {
           const detailed = (teaEntry || helEntry || absorptionEntry) && id === 'seraph' || (libraryEntry || garageEntry || briefingEntry) && id === 'keymaker'
             || architectEntry && id === 'architect' || medicalEntry && id === 'roland' || logosEntry && id === 'bane'
             || inquiryEntry && (id === 'roland' || id === 'maggie')
-            || hammerEntry && (id === 'niobe' || id === 'roland');
+            || (hammerEntry || routeMeetingEntry) && (id === 'niobe' || id === 'roland');
           if ((detailed || medicalEntry && id === 'maggie') && !group.getObjectByName(`${id}-detailed-head`)) continue;
           if (detailed && !group.getObjectByName(`${id}-detailed-body`)) continue;
           if (courtyardEntry && id === 'oracle' && !group.getObjectByName('oracle-first-detailed-head')) continue;
@@ -2911,7 +2913,17 @@ export class FilmSetRenderer {
               if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
             });
           }
-          const hasShipGarments = logosEntry && (id === 'neo' || id === 'trinity') || hammerEntry && id === 'morpheus' || relayEntry && id === 'trinity';
+          if (routeMeetingEntry && id === 'niobe') {
+            meshes = meshes.filter(mesh => mesh.userData.wardrobe !== 'dock');
+            // Her Matrix appearance hides the parent head group until the ship handoff.
+            const head = group.getObjectByName('niobe-detailed-head');
+            if (head) meshes.push(...this.colorMeshes([head], true).filter(mesh => !meshes.includes(mesh)));
+            group.traverse(object => {
+              if (object instanceof THREE.Mesh && object.userData.wardrobe === 'briefing' && object.material instanceof THREE.MeshStandardMaterial && !meshes.includes(object)) meshes.push(object);
+            });
+          }
+          const hasShipGarments = logosEntry && (id === 'neo' || id === 'trinity') || hammerEntry && id === 'morpheus' || relayEntry && id === 'trinity'
+            || routeMeetingEntry && (id === 'neo' || id === 'trinity' || id === 'morpheus');
           const garments = hasShipGarments ? shipCast?.(id).garments?.() ?? [] : [];
           if (garments.length) {
             const names = new Set(garments.map(mesh => mesh.name));
@@ -2926,8 +2938,9 @@ export class FilmSetRenderer {
           this.queueColorTextures(colors.textures, [...meshes, ...garments]);
           prepared.liveMeshes?.push(...meshes);
           if (preparePasses) {
-            this.queueEntryShadows(prepared, meshes);
-            const normals = meshes.filter(mesh => mesh instanceof THREE.SkinnedMesh || (architectEntry && id === 'architect' || absorptionEntry || inquiryEntry) && Boolean(mesh.morphTargetInfluences?.length));
+            const surfaces = routeMeetingEntry ? [...meshes, ...garments] : meshes;
+            this.queueEntryShadows(prepared, surfaces);
+            const normals = surfaces.filter(mesh => mesh instanceof THREE.SkinnedMesh || (architectEntry && id === 'architect' || absorptionEntry || inquiryEntry || routeMeetingEntry) && Boolean(mesh.morphTargetInfluences?.length));
             if (normals.length) prepared.normalMeshes = [...(prepared.normalMeshes ?? []), ...normals];
           }
         }
@@ -4002,6 +4015,11 @@ export class FilmSetRenderer {
       this.revolutionsPrelude = new RevolutionsPreludeRenderer(this.root, this.currentScene);
       return;
     }
+    if (set.id === 'film_hammer_deck' && this.currentScene === 'm3_logos_plan') {
+      this.hammerBriefing = new HammerBriefingRenderer(this.root);
+      this.revolutionsPrelude = new RevolutionsPreludeRenderer(this.root, this.currentScene);
+      return;
+    }
     if (set.id === 'film_logos_deck' && this.currentScene === 'm3_bane') {
       this.buildLogosBane().update(undefined, 0, 0);
       return;
@@ -4074,6 +4092,7 @@ export class FilmSetRenderer {
     this.oracleLast = room.oracleLast; room.oracleLast = undefined;
     this.oracleAbsorption = room.oracleAbsorption; room.oracleAbsorption = undefined;
     this.baneInquiry = room.baneInquiry; room.baneInquiry = undefined;
+    this.hammerBriefing = room.hammerBriefing; room.hammerBriefing = undefined;
     this.revolutionsPrelude = room.revolutionsPrelude; room.revolutionsPrelude = undefined;
     this.trainmanChase = room.trainmanChase; room.trainmanChase = undefined;
     this.helGarage = room.helGarage; room.helGarage = undefined;
@@ -4559,7 +4578,7 @@ export class FilmSetRenderer {
         else if (sceneId === 'm3_bane' && set.id === 'film_logos_deck' && !preparedSecondOracle) this.buildLogosBane();
         else if (sceneId === 'm3_bane_questions' && set.id === 'film_hammer_deck' && !preparedSecondOracle) this.baneInquiry = new BaneInquiryRenderer(this.root);
         else if (sceneId === 'm3_maggie_discovery' && set.id === 'film_hammer_deck' && !preparedSecondOracle) this.maggieDiscovery = new MaggieDiscoveryRenderer(this.root);
-        else if (sceneId === 'm3_logos_plan' && set.id === 'film_hammer_deck') this.hammerBriefing = new HammerBriefingRenderer(this.root);
+        else if (sceneId === 'm3_logos_plan' && set.id === 'film_hammer_deck' && !preparedSecondOracle) this.hammerBriefing = new HammerBriefingRenderer(this.root);
         else if (set.id === 'film_zion_defense_council') this.zionDeployment = new ZionDeploymentRenderer(this.root);
         else if (set.id === 'film_trainman_subway' && !preparedSecondOracle) this.trainmanChase = new TrainmanChaseRenderer(this.root);
         else if (set.id === 'film_hel_garage' && !preparedSecondOracle) this.helGarage = new HelGarageRenderer(this.root, player!);
