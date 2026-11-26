@@ -7,7 +7,9 @@ import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
-import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { MemoryManager } from '../packages/server/src/memory/MemoryManager.js';
+import { RelationshipGraph } from '../packages/server/src/agents/RelationshipGraph.js';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -42,6 +44,28 @@ test('the ship briefing reports Bane’s uncertain identity without inventing hi
   assert.doesNotMatch(h.state.lastText, /不知道.{0,6}在哪里|无法.{0,6}在哪里|没有证据能证明他现在在哪里/);
   assert.equal(h.world.agents.get('maggie')!.status, 'alive');
   assert.equal(h.sandbox.state.neoLife!.choices.bane_escape_route, undefined);
+});
+
+for (const id of ['m3_bane_questions', 'm3_logos_plan'] as const) test(`${id} preserves injured resting participants through ordinary world ticks without disabling recovery outside the meeting`, () => {
+  const h = setup(), scene = FILM_SCENE_BY_ID[id];
+  Object.assign(h.state, { scene: id, actor: scene.actor });
+  const dynamics = new WorldDynamics(h.world, new MemoryManager(), new RelationshipGraph(), () => {}); dynamics.neoStory = true;
+  const members = [scene.actor, ...scene.cast].map(id => h.world.agents.get(id)!);
+  members.forEach((member, i) => {
+    member.health = 20 + i; member.mind!.stress = 0; member.currentLocation = scene.set;
+    member.currentAction = { type: i % 2 ? 'hide' : 'idle', parameters: {}, startedAt: 0, duration: 999, progress: 0 };
+  });
+  const injuries = members.map(member => member.health), outsider = h.world.agents.get('tank')!;
+  outsider.health = 50; outsider.mind!.stress = 0; outsider.currentLocation = scene.set;
+  outsider.currentAction = { type: 'idle', parameters: {}, startedAt: 0, duration: 999, progress: 0 };
+  for (let tick = 1; tick <= 30; tick++) dynamics.tick(tick, h.state);
+  assert.deepEqual(members.map(member => member.health), injuries, 'waiting for the report or captains cannot erase earlier wounds');
+  assert.ok(outsider.health > 50, 'the meeting cannot suppress recovery for an unrelated resting crew member in the same set');
+  h.state.visiting = 'm1_wake_up'; dynamics.tick(31, h.state);
+  assert.deepEqual(members.map(member => member.health), injuries.map(health => health + .15));
+  delete h.state.visiting;
+  const absent = members[1]; absent.currentLocation = 'film_logos_deck'; const health = absent.health;
+  dynamics.tick(32, h.state); assert.equal(absent.health, health + .15, 'a participant elsewhere is outside the current meeting');
 });
 
 test('Roland’s objection cannot be skipped by the old short interaction timer', () => {

@@ -24,6 +24,8 @@ export class WorldDynamics {
     const mobilReunion = journey?.scene === 'm3_mobil_release' && !journey.visiting;
     const oracleVisit = (journey?.scene === 'm3_oracle_last' || journey?.scene === 'm3_oracle_absorbed') && !journey.visiting
       ? FILM_SCENE_BY_ID[journey.scene] : undefined;
+    const hammerMeeting = (journey?.scene === 'm3_bane_questions' || journey?.scene === 'm3_logos_plan') && !journey.visiting
+      ? FILM_SCENE_BY_ID[journey.scene] : undefined;
     for (const agent of this.world.agents.values()) {
       const mind = agent.mind;
       if (!mind || agent.status !== 'alive') continue;
@@ -41,7 +43,9 @@ export class WorldDynamics {
       const reuniting = mobilReunion && (agent.id === journey.actor || agent.id === 'trinity' && agent.currentLocation === 'film_mobil_station');
       const oracleGuest = oracleVisit && (agent.id === oracleVisit.actor
         || agent.currentLocation === oracleVisit.set && oracleVisit.cast.includes(agent.id));
-      if (resting && mind.stress < 20 && !jumpInjury && !tendingNeo && !helRescuer && !reuniting && !oracleGuest && agent.id !== rooftopInjuredActor && agent.id !== meetingFighter && !action.parameters.crosscut && !action.parameters.rescue
+      const hammerParticipant = hammerMeeting && (agent.id === hammerMeeting.actor
+        || agent.currentLocation === hammerMeeting.set && hammerMeeting.cast.includes(agent.id));
+      if (resting && mind.stress < 20 && !jumpInjury && !tendingNeo && !helRescuer && !reuniting && !oracleGuest && !hammerParticipant && agent.id !== rooftopInjuredActor && agent.id !== meetingFighter && !action.parameters.crosscut && !action.parameters.rescue
         && !action.parameters.government && !action.parameters.sourcePortal && !action.parameters.helGarage)
         agent.health = Math.min(agent.maxHealth, agent.health + 0.15);
       const destination = agent.currentAction?.parameters.location as string | undefined;
