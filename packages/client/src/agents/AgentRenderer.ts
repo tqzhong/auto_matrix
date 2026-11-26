@@ -736,7 +736,7 @@ export class AgentRenderer {
       || playerSet === 'film_power_station' || playerSet === 'film_backup_station' || playerSet === 'film_architect_room'
       || playerSet === 'film_freeway_101' || playerSet === 'film_freeway_trucks' ? playerSet : zionSet;
     const relayCast = this.playerId === journey?.actor && !this.matrix && !journey?.visiting
-      && (scene === 'm2_vigilant' || scene === 'm2_relay') ? FILM_SCENE_BY_ID[scene] : undefined;
+      && (scene === 'm2_vigilant' || scene === 'm2_relay' || scene === 'm2_ship_lost') ? FILM_SCENE_BY_ID[scene] : undefined;
     const roof = journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     const roofExit = player?.currentAction?.parameters.roofExit as MotionInput['roofExit'];
     const rooftopRun = openingSet === 'film_hotel_roofs' && roof?.phase === 'running' && !roofExit

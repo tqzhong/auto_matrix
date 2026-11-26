@@ -2226,6 +2226,10 @@ export class FilmSetRenderer {
     if (!colors || prepared.gpu !== renderer.properties) {
       this.releaseEntryPreparation(prepared);
       colors = prepared.colors = { ...this.colorPreparation(wake ? new THREE.Group() : prepared.root, [], { includeBasic: true, shadowSun, playerView: resume }), actors: new Set() };
+      if (loss) {
+        const radar = prepared.root.getObjectByName('neb-bomb-range-screen');
+        if (radar instanceof THREE.Mesh) colors.meshes.push(radar);
+      }
       if (wake) {
         // The waking camera selects sixteen point lights on the live deck.
         const deck = this.colorMeshes([prepared.root], true);

@@ -64,6 +64,8 @@ test('revival prepares the same evacuation deck before the cold rooftop handoff'
   for (let frame = 0; frame < 200; frame++) prepare();
   const hatch = deck?.getObjectByName('neb-cargo-hatch') as THREE.Mesh | undefined;
   assert.ok(hatch && compiled.has(hatch), 'the actual cargo hatch is prepared before the cut');
+  const radar = deck?.getObjectByName('neb-bomb-range-screen') as THREE.Mesh | undefined;
+  assert.ok(radar?.material instanceof THREE.ShaderMaterial && compiled.has(radar), 'the real bomb radar needs its custom shader before the evacuation cut');
   assert.equal(hatchLightSlots, 26, 'the briefing shader layout reserves a slot for the unlit blast lamp');
   assert.ok(!scene.getObjectByName('neb-cargo-hatch'));
   Object.assign(neo, { currentLocation: roof.set, isInMatrix: true, position: filmEntry(roof) });
@@ -73,6 +75,7 @@ test('revival prepares the same evacuation deck before the cold rooftop handoff'
   Object.assign(neo, { currentLocation: escape.set, isInMatrix: false, position: filmEntry(escape) });
   film.update(neo, sandbox, 0);
   assert.ok(scene.getObjectByName('neb-cargo-hatch') === hatch, 'the cut adopts the prepared hatch');
+  assert.equal(scene.getObjectByName('neb-bomb-range-screen'), radar);
   const shell = deck?.getObjectByName('neb-deck-floor') as THREE.Mesh;
   let releases = 0; shell.geometry.addEventListener('dispose', () => releases++);
   film.update(undefined, undefined, 0);
