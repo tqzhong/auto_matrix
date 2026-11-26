@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, ORACLE_LAST, newOracleLast, oracleLastBowl, oracleLastRoot, type OracleLastGesture } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, ORACLE_LAST, filmEntry, filmPosition, newOracleLast, oracleLastBowl, oracleLastRoot, type FilmJourney, type OracleLastGesture } from '@auto_matrix/shared';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -14,6 +15,7 @@ function setup(t: test.TestContext) {
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {},
     beginPath() {}, closePath() {}, moveTo() {}, lineTo() {}, stroke() {}, ellipse() {}, fill() {},
+    createRadialGradient: () => ({ addColorStop() {} }),
     createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
   const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
   const rigs = { oracle: models.create(world.agents.get('oracle')!), sati: models.create(world.agents.get('sati')!) };
@@ -109,4 +111,36 @@ test('the kitchen sink is visibly open rather than containing an uncut counterto
     const basin = hits.find(hit => hit.object.name === 'oracle-handwash-basin'); assert.ok(basin, 'the actual sink floor must be visible');
     assert.ok(hits.every(hit => hit.object.name === 'oracle-handwash-basin' || hit.point.y <= basin.point.y + .001), 'marble cannot cover the basin interior');
   } finally { renderer.dispose(); }
+});
+
+test('the last Oracle visit draws its four room actors while preserving earlier scenes and the world view', t => {
+  const h = setup(t), renderer = new AgentRenderer(new THREE.Scene());
+  t.after(() => renderer.dispose());
+  t.mock.method(renderer['models'], 'requestHero', () => {});
+  t.mock.method(renderer['models'], 'animate', () => {});
+  const scene = FILM_SCENE_BY_ID.m3_oracle_last, crew = [scene.actor, ...scene.cast];
+  const outside = { smith: 'film_source_corridor', merovingian: 'film_club_hel',
+    keymaker: 'film_source_corridor', agent_jones: 'film_heart_hotel' };
+  for (const id of crew) Object.assign(h.world.agents.get(id)!, {
+    position: filmEntry(scene), currentLocation: scene.set, isInMatrix: true,
+  });
+  for (const [id, location] of Object.entries(outside)) Object.assign(h.world.agents.get(id)!, {
+    position: filmPosition(location, 0, 0), currentLocation: location, isInMatrix: true,
+    ...(id === 'keymaker' ? { status: 'dead', health: 0 } : {}),
+  });
+  for (const [id, actor] of h.world.agents) renderer.updateAgent(id, actor);
+  renderer.setWorld(true); renderer.setPlayer('neo');
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: 'neo', step: 0, completed: ['m3_mobil_release'],
+    enteredAt: 0, reflections: {}, lastText: '', checkpoint: filmEntry(scene), oracleLast: newOracleLast(0, 61) };
+  const saved = JSON.stringify([...h.world.agents]);
+  for (const step of [0, 1, 2, 3, 4]) {
+    journey.step = step; renderer.update(.02, undefined, 1, 0, journey);
+    for (const id of Object.keys(outside))
+      assert.equal(renderer.getAgent(id)!.visible, false, `${id} stays in its earlier room at step ${step}`);
+    for (const id of crew) assert.equal(renderer.getAgent(id)!.visible, true, `${id} is present for the last visit`);
+    assert.equal(JSON.stringify([...h.world.agents]), saved);
+  }
+  renderer.update(.02);
+  for (const id of Object.keys(outside)) assert.equal(renderer.getAgent(id)!.visible, true);
+  assert.equal(JSON.stringify([...h.world.agents]), saved);
 });
