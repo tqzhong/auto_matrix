@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, filmPosition, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -80,4 +80,16 @@ test('dead family members cannot be silently revived to finish their answers', (
   kamala.status = 'dead'; kamala.health = 0; const before = structuredClone(kamala);
   h.command('family:ask:identity'); h.frame(18); h.command('reflect:care');
   assert.deepEqual(kamala, before); assert.equal(h.journey.step, 1);
+});
+
+test('walking to the Sati conversation marker leaves room for both bodies and still starts the dialogue', () => {
+  const h = setup(); Object.assign(h.journey, { scene: 'm2_medical', step: FILM_SCENE_BY_ID.m2_medical.steps.length });
+  h.command('next'); assert.equal(h.journey.scene, 'm3_mobil');
+  const sati = h.world.agents.get('sati')!, position = { ...sati.position };
+  h.actor.position = filmStepPosition(FILM_SCENE_BY_ID.m3_mobil, FILM_SCENE_BY_ID.m3_mobil.steps[0]);
+  assert.ok(Math.hypot(h.actor.position.x - sati.position.x, h.actor.position.z - sati.position.z) >= 2.4,
+    'the approach marker must not ask Neo to stand inside Sati');
+  h.command('act'); assert.equal(h.journey.started, h.tick());
+  h.sandbox.tick(h.tick() + 4);
+  assert.equal(h.journey.step, 1); assert.deepEqual(sati.position, position);
 });
