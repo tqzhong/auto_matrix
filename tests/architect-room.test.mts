@@ -75,6 +75,27 @@ test('the signal deadline has an actual failure and local retry retains knowledg
   assert.equal(h.journey.architect!.sourceReviewed,true);assert.equal(h.journey.architect!.trinityReviewed,true);
   assert.equal(h.journey.reflections['m2_architect:4'],'care');assert.equal(h.neo.health,37);assert.equal(h.sandbox.state.profiles.neo.inventory.medkit,0);
 });
+test('a released doorway keeps Neo’s exact paused opening gesture before anyone reconnects',()=>{
+  const h=setup();h.command('act');h.frames(.6);h.players.setRunning(false);
+  const action=structuredClone(h.neo.currentAction),room=structuredClone(h.journey.architect!.room),position={...h.neo.position};
+  assert.ok(action?.parameters.architect);h.players.release('architect-player',h.tick());
+  assert.deepEqual(h.neo.currentAction,action);assert.deepEqual(h.journey.architect!.room,room);
+  assert.deepEqual(h.neo.position,position);assert.equal(h.neo.health,37);
+});
+test('a missing Source doorway gesture is rebuilt from the saved exit without advancing its clock',()=>{
+  const h=setup();h.command('act');h.frames(.6);h.players.setRunning(false);h.world.simulationTick=h.tick();
+  const action=structuredClone(h.neo.currentAction),room=structuredClone(h.journey.architect!.room),position={...h.neo.position};
+  h.players.release('architect-player',h.tick());h.neo.currentAction=null;
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual(h.neo.currentAction,action);assert.deepEqual(h.sandbox.life.film.state!.architect!.room,room);
+  assert.deepEqual(h.neo.position,position);assert.equal(h.neo.health,37);assert.equal(h.sandbox.life.film.state!.step,5);
+});
+test('a finished Source doorway stays unlocked after release and restore without recreating the opening gesture',()=>{
+  const h=setup();h.command('act');h.frames(2);h.players.setRunning(false);h.world.simulationTick=h.tick();
+  const position={...h.neo.position};h.players.release('architect-player',h.tick());h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.equal(h.neo.currentAction?.parameters.architect,undefined);assert.deepEqual(h.neo.position,position);
+  assert.equal(h.sandbox.life.film.state!.architect!.room!.exit!.elapsed,1.8);assert.equal(h.sandbox.life.film.state!.step,5);
+});
 test('an occupied or dead Architect is not moved, revived or bypassed by door interaction',()=>{
   const h=setup();h.architect.controller='other-player';h.architect.position=filmPosition(h.neo.currentLocation,6,-6);const position={...h.architect.position};
   assert.match(h.command('act'),/另一位玩家/);h.frames(2);assert.deepEqual(h.architect.position,position);assert.equal(h.journey.architect!.room!.exit,undefined);

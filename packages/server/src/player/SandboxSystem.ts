@@ -95,6 +95,7 @@ export class SandboxSystem {
     if (journey) this.life.film.theOneFrame(this.world.agents.get(journey.actor)!, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, this.world.simulationTick);
     if (journey) this.life.film.reloaded.frame(this.world.agents.get(journey.actor)!, { x: 0, focus: false }, 0, this.world.simulationTick);
     if (journey) this.life.film.catch.frame(this.world.agents.get(journey.actor)!, { x: 0, z: 0, focus: false }, 0, this.world.simulationTick);
+    if (journey) this.life.film.architectFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey?.scene === 'm2_burly') {
       const actor = this.world.agents.get(journey.actor)!;
       this.life.film.restoreBurlyPose(actor, this.world.simulationTick);

@@ -374,6 +374,7 @@ export class PlayerController {
         || journey.scene === 'm3_neo_carried' && !journey.visiting && agent.currentAction?.parameters.finaleComa
         || savedFilmCombatAction(journey, agent.currentAction, !this.running)))) agent.currentAction = null;
       if (!restoredPose && !airbornePlayer(agent, this.sandbox?.state.structures)) agent.velocity = { x: 0, y: 0, z: 0 };
+      this.sandbox?.life.film.architectFrame(agent, 0, tick);
       this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
     this.sandbox?.life.film.freewayHandoff.frame(agent, {}, 0, tick);
     this.sandbox?.life.film.truckRoad.frame(agent, 0, tick);
