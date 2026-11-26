@@ -68,6 +68,26 @@ test('Trinity can reunite with Neo at his actual platform position instead of a 
   h.command('act'); assert.equal(h.journey.mobil!.reunion?.phase, 'embracing');
 });
 
+test('restoring a moving rescue partner keeps her saved doorway and approach velocity', () => {
+  for (const [seconds, phase] of [[5.5, 'exiting'], [6.55, 'approaching']] as const) {
+    const h = setup(); h.frame(seconds);
+    const trinity = h.world.agents.get('trinity')!;
+    const snapshot = () => structuredClone({ reunion: h.sandbox.life.film.state!.mobil!.reunion,
+      position: trinity.position, rotation: trinity.rotation, velocity: trinity.velocity, action: trinity.currentAction });
+    assert.equal(h.journey.mobil!.reunion!.phase, phase);
+    assert.ok(Math.hypot(trinity.velocity.x, trinity.velocity.z) > 1);
+    assert.equal(trinity.currentAction?.type, 'move_to');
+    const before = snapshot();
+    h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+    assert.deepEqual(snapshot(), before, `${phase}: restoring without elapsed time must retain the moving partner`);
+    h.sandbox.life.film.mobilFrame(h.actor, 0, h.tick());
+    assert.deepEqual(snapshot(), before, `${phase}: repeated reconciliation must not replace her walk with idle`);
+    h.frame(.2);
+    assert.notDeepEqual(trinity.position, before.position, 'resuming play continues the saved crossing');
+    assert.equal(trinity.health, 43);
+  }
+});
+
 test('the saved Mobil approach keeps Trinity facing the same direction through repeated zero-time restores', () => {
   const h = setup();
   h.actor.position = filmPosition('film_mobil_station', .2137, -21.908923822478);

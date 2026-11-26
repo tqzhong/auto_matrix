@@ -1636,7 +1636,7 @@ export class FilmStorySystem {
           startedAt: state.enteredAt, duration: MOBIL_REUNION.seconds, progress: reunion.elapsed / MOBIL_REUNION.seconds };
       }
     }
-    trinity.velocity = dt > 0 ? { x: (trinity.position.x - previous.x) / dt, y: 0, z: (trinity.position.z - previous.z) / dt } : { x: 0, y: 0, z: 0 };
+    if (dt > 0) trinity.velocity = { x: (trinity.position.x - previous.x) / dt, y: 0, z: (trinity.position.z - previous.z) / dt };
     trinity.targetPosition = null; trinity.currentPath = [];
     trinity.currentAction = { type: Math.hypot(trinity.velocity.x, trinity.velocity.z) > .1 ? 'move_to' : 'idle',
       parameters: { resolved: true, mobilReunion: { role: 'trinity', reunion } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
