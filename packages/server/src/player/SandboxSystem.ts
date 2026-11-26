@@ -467,7 +467,8 @@ export class SandboxSystem {
       const profile = this.state.profiles[agent.id];
       if (!profile || !agent.controller || agent.status !== 'alive') { if (profile) delete profile.job; continue; }
       if (!profile.visited.includes(agent.currentLocation)) profile.visited.push(agent.currentLocation);
-      const shelter = this.state.structures.some(s => s.kind === 'beacon' && s.matrix === agent.isInMatrix && distance(s.position, agent.position) < 15);
+      const shelter = this.state.structures.some(s => s.kind === 'beacon' && s.owner !== 'film' && s.owner !== 'matrix'
+        && s.matrix === agent.isInMatrix && distance(s.position, agent.position) < 15);
       if (tick % 4 === 0) {
         profile.trace = Math.max(0, profile.trace - (shelter ? 5 : 1));
         if (shelter) { agent.health = Math.min(agent.maxHealth, agent.health + (agent.isInMatrix || this.state.zion >= 30 ? 2 : 1) + profile.skills.survival); if (agent.mind) agent.mind.energy = Math.min(100, agent.mind.energy + 3); }

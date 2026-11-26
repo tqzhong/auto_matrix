@@ -85,6 +85,14 @@ test('built barricades affect actual movement and shelter healing survives chara
   sandbox.enter(neo); assert.equal(sandbox.state.structures.length, 2);
 });
 
+test('film and matrix route beacons do not act as player shelters', () => {
+  const { sandbox, neo } = setup();
+  neo.position = { x: 1280, y: 1, z: 1200 }; neo.isInMatrix = false; neo.health = 30;
+  for (const owner of ['film', 'matrix']) sandbox.state.structures.push({ id: `${owner}:route`, owner, kind: 'beacon', position: { ...neo.position }, matrix: false, health: 999 });
+  sandbox.tick(4);
+  assert.equal(neo.health, 30, 'film set dressing cannot heal players as if it were a built shelter');
+});
+
 test('travel and story choices require a nearby valid world object', () => {
   const { sandbox, neo } = setup();
   const original = { ...neo.position };

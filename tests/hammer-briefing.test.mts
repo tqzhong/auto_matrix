@@ -46,7 +46,7 @@ test('the ship briefing reports Bane’s uncertain identity without inventing hi
   assert.equal(h.sandbox.state.neoLife!.choices.bane_escape_route, undefined);
 });
 
-for (const id of ['m3_bane_questions', 'm3_logos_plan'] as const) test(`${id} preserves injured resting participants through ordinary world ticks without disabling recovery outside the meeting`, () => {
+for (const id of ['m3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare', 'm3_maggie_discovery', 'm3_bane'] as const) test(`${id} preserves injured resting participants through ordinary world ticks without disabling recovery outside the scene`, () => {
   const h = setup(), scene = FILM_SCENE_BY_ID[id];
   Object.assign(h.state, { scene: id, actor: scene.actor });
   const dynamics = new WorldDynamics(h.world, new MemoryManager(), new RelationshipGraph(), () => {}); dynamics.neoStory = true;
@@ -64,7 +64,7 @@ for (const id of ['m3_bane_questions', 'm3_logos_plan'] as const) test(`${id} pr
   h.state.visiting = 'm1_wake_up'; dynamics.tick(31, h.state);
   assert.deepEqual(members.map(member => member.health), injuries.map(health => health + .15));
   delete h.state.visiting;
-  const absent = members[1]; absent.currentLocation = 'film_logos_deck'; const health = absent.health;
+  const absent = members[1]; absent.currentLocation = scene.set === 'film_logos_deck' ? 'film_hammer_deck' : 'film_logos_deck'; const health = absent.health;
   dynamics.tick(32, h.state); assert.equal(absent.health, health + .15, 'a participant elsewhere is outside the current meeting');
 });
 
