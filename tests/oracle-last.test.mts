@@ -7,7 +7,9 @@ import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
-import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { MemoryManager } from '../packages/server/src/memory/MemoryManager.js';
+import { RelationshipGraph } from '../packages/server/src/agents/RelationshipGraph.js';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -39,6 +41,24 @@ test('Neo entering the kitchen begins a saved welcome instead of skipping Sati a
   const sati = h.world.agents.get('sati')!;
   assert.ok(sati.position.z > filmPosition('film_oracle_home', 0, 2).z, 'Sati physically leaves the kitchen');
   assert.equal(h.actor.health, 61); assert.equal(h.sandbox.state.profiles.neo.inventory.medkit, 0);
+});
+
+test('world ticks preserve the injured kitchen cast through the last Oracle welcome and questions', () => {
+  const h = setup(), dynamics = new WorldDynamics(h.world, new MemoryManager(), new RelationshipGraph(), () => {});
+  dynamics.neoStory = true;
+  const injured = { neo: 61, oracle: 47, sati: 15, seraph: 43 };
+  for (const [id, health] of Object.entries(injured)) {
+    const member = h.world.agents.get(id)!; member.health = health; member.mind!.stress = 0;
+  }
+  h.kitchen();
+  const check = () => assert.deepEqual(Object.fromEntries(Object.keys(injured).map(id => [id, h.world.agents.get(id)!.health])), injured);
+  for (let i = 0; i < 30; i++) { h.frame(1); dynamics.tick(i + 1, h.journey()); }
+  check(); h.question(); h.command('act');
+  for (let i = 0; i < 4; i++) { h.frame(1); dynamics.tick(i + 31, h.journey()); }
+  assert.equal(h.journey().oracleLast?.phase, 'answering'); check();
+  assert.equal(h.sandbox.state.profiles.neo.inventory.medkit, 0);
+  h.journey().visiting = 'm1_wake_up'; dynamics.tick(35, h.journey());
+  assert.equal(h.actor.health, injured.neo + .15, 'the current meeting does not disable ordinary recovery while revisiting another scene');
 });
 
 test('questions require G, run on player frames, and do not unlock a reflection while the answer is still being heard', () => {
