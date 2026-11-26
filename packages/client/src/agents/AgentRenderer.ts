@@ -700,6 +700,7 @@ export class AgentRenderer {
     const prepareRequestCast = !journey?.visiting && (!this.playerId || this.playerId === journey?.actor);
     const prepareOracleRequest = prepareRequestCast && journey?.scene === 'm3_trainman' && journey.step >= 3;
     const prepareOracleLast = prepareRequestCast && journey?.scene === 'm3_mobil_release' && journey.step >= 1;
+    const prepareDiscovery = prepareRequestCast && journey?.scene === 'm3_zion_prepare' && journey.step >= 3;
     const prepareTrainmanChase = prepareRequestCast && journey?.scene === 'm3_oracle_request' && journey.step >= 3;
     const opening = scene && scene !== 'm1_wake_up' && openingScenes.includes(scene) ? FILM_SCENE_BY_ID[scene] : undefined;
     const playerEntry = this.playerId ? this.agents.get(this.playerId) : undefined;
@@ -1087,7 +1088,7 @@ export class AgentRenderer {
       const velocity = state.status === 'alive' ? Math.hypot(state.velocity.x, state.velocity.z) : 0;
       entry.body.rotation.z = THREE.MathUtils.lerp(entry.body.rotation.z, state.status === 'dead' && !state.currentAction?.parameters.sourcePortal && !state.currentAction?.parameters.crosscut && !state.currentAction?.parameters.farewell && !state.currentAction?.parameters.dockLastStand && !state.currentAction?.parameters.upperDigger && !state.currentAction?.parameters.logosBane ? Math.PI / 2 : 0, 1 - Math.exp(-7 * delta));
       const dist = camera ? entry.group.position.distanceTo(camera.position) : 0;
-      if (camera && dist < 150 && entry.group.visible) this.models.requestHero(entry.rig);
+      if (camera && dist < 150 && entry.group.visible || prepareDiscovery && id === 'morpheus') this.models.requestHero(entry.rig);
       const floor = groundHeight(state.position, state.isInMatrix);
       const input: MotionInput = id === this.playerId && this.playerMotion ? this.playerMotion : {
         speed: clubGesture || state.currentAction?.parameters.basement || sixthRoot || entry.mirrorGuide || entry.oracleGuide || entry.ambushGuide || entry.wetwallGuide ? guideSpeed : velocity, grounded: state.currentAction?.parameters.truckRoad ? id !== 'niobe' && !(id === 'agent_johnson' && (state.currentAction.parameters.truckRoad as MotionInput['truckRoad'])?.phase === 'dropping') : dropRoot ? !basementDropPose(basement!.drop!).airborne : Boolean(state.currentAction?.parameters.riding || state.currentAction?.parameters.climbing || state.currentAction?.parameters.wetwall) || state.position.y <= floor + .12, verticalVelocity: dropRoot ? basementDropPose(basement!.drop!).verticalVelocity : state.velocity.y,
@@ -1314,6 +1315,7 @@ export class AgentRenderer {
         || prepareRequestCast && (id === 'roland' || id === 'maggie') && journey?.scene === 'm3_oracle_absorbed' && journey.step >= 3
         || prepareRequestCast && (id === 'niobe' || id === 'roland') && journey?.scene === 'm3_bane_questions' && journey.step >= 3
         || prepareRequestCast && (id === 'lock' || id === 'hamann' || id === 'west' || id === 'dillard') && journey?.scene === 'm3_logos_plan' && journey.step >= 3
+        || prepareDiscovery && (id === 'roland' || id === 'maggie' || id === 'colt' || id === 'link')
         || prepareRequestCast && id === 'kid' && journey?.scene === 'm2_meeting' && journey.step >= 4
         || prepareRequestCast && (id === 'lock' || id === 'niobe') && journey?.scene === 'm2_dock' && journey.step >= 2
         || prepareRequestCast && (id === 'lock' || id === 'niobe' || id === 'hamann') && journey?.scene === 'm2_residents' && journey.step >= 3
