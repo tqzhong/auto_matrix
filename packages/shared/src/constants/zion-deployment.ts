@@ -7,7 +7,7 @@ export const ZION_DEPLOYMENT = {
   inspection: { x: 3.2, z: 2 },
   map: { x: 7.6, z: 2, width: 1.2, depth: 4, top: 2.3 },
   screen: { x: 6.97, y: 3.45, z: 2, width: 3.4, height: 2.1 },
-  seat: { width: 2.4, depth: 2, top: 1.36 },
+  seat: { width: 2.4, depth: 1.4, z: -.2, top: .9, backTop: 3.5 },
   roots: { hamann: { x: 0, z: -12.4, yaw: 0 }, west: { x: -6, z: -10.8, yaw: .32 }, dillard: { x: 6, z: -10.8, yaw: -.32 } },
   cast: ['hamann', 'west', 'dillard'] as const,
   lineSeconds: 4.2,

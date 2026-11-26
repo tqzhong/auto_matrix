@@ -116,7 +116,7 @@ export class ZionDeploymentSystem {
   private seal(): void {
     const prefix = 'film:zion-deployment:', scene = FILM_SCENE_BY_ID.m3_zion_prepare;
     if (this.sandbox().structures.some(item => item.id === `${prefix}map`)) return;
-    const seats = Object.values(ZION_DEPLOYMENT.roots).map(root => ({ x: root.x, z: root.z, width: 2.8, depth: 2.8, height: 3.5 }));
+    const seats = Object.values(ZION_DEPLOYMENT.roots).map(root => ({ x: root.x, z: root.z, width: 2.8, depth: 2.8, height: ZION_DEPLOYMENT.seat.backTop }));
     for (const [i, shape] of [{ ...ZION_DEPLOYMENT.map, height: 4.7 }, ...ZION_DEPLOYMENT.walls, ...seats].entries()) this.sandbox().structures.push({
       id: i === 0 ? `${prefix}map` : `${prefix}obstacle:${i}`, owner: 'film', kind: 'barricade', matrix: false, health: 1e9,
       position: filmPosition(scene.set, shape.x, shape.z), film: { scene: scene.id, width: shape.width, depth: shape.depth, height: shape.height },

@@ -92,6 +92,23 @@ test('sampled council bodies avoid seat backs and armrests, and Lock stays outsi
   }
 });
 
+test('the delivered councillors sit on their cushions without sinking or floating above them', async t => {
+  const h = await setup(t), renderer = new ZionDeploymentRenderer(new THREE.Group()); renderer.root.updateMatrixWorld(true); t.after(() => renderer.dispose());
+  for (const role of ZION_DEPLOYMENT.cast) for (const phase of ['reporting', 'answering', 'hearing', 'responding'] as const) for (const elapsed of [0, 1.05, 2.1, 4.2, 8.4, 12.6, 16.8]) {
+    const rig = h.pose(role, phase, elapsed), trousers = rig.root.getObjectByName(`${role}-work-trousers`) as THREE.SkinnedMesh;
+    const cushion = renderer.root.getObjectByName(`council-seat-${role}`)!.getObjectByName('seat-cushion') as THREE.Mesh;
+    cushion.geometry.computeBoundingBox(); const box = cushion.geometry.boundingBox!;
+    let deepHits = 0, contact = Infinity;
+    for (let i = 0; i < trousers.geometry.attributes.position.count; i++) {
+      const point = cushion.worldToLocal(trousers.localToWorld(trousers.getVertexPosition(i, new THREE.Vector3())));
+      if (point.x > box.min.x + .08 && point.x < box.max.x - .08 && point.y > box.min.y + .025 && point.y < box.max.y - .025 && point.z > box.min.z + .08 && point.z < box.max.z - .08) deepHits++;
+      if (Math.abs(point.x) < .6 && Math.abs(point.z) < .3) contact = Math.min(contact, point.y - box.max.y);
+    }
+    assert.equal(deepHits, 0, `${role}/${phase}/${elapsed} sinks into the cushion`);
+    assert.ok(contact >= -.025 && contact <= .05, `${role}/${phase}/${elapsed} must rest on the cushion: ${contact}m`);
+  }
+});
+
 test('Lock’s delivered cargo pockets stay attached to the trousers during council poses and walking', async t => {
   const h = await setup(t), rig = h.rigs.lock;
   const pockets = rig.root.getObjectByName('lock-cargo-pockets') as THREE.SkinnedMesh;

@@ -52,13 +52,13 @@ export class ZionDeploymentRenderer {
     for (const [role, point] of Object.entries(ZION_DEPLOYMENT.roots)) {
       const chair = new THREE.Group(); chair.name = `council-seat-${role}`; chair.position.set(point.x, 0, point.z); chair.rotation.y = point.yaw; this.root.add(chair);
       const seat = ZION_DEPLOYMENT.seat;
-      this.box('seat-cushion', seat.width, .2, seat.depth, 0, seat.top - .1, 0, cloth, .08, chair);
-      this.box('seat-back', seat.width, 2.3, .2, 0, seat.top + 1.1, -.97, cloth, .1, chair);
+      this.box('seat-cushion', seat.width, .2, seat.depth, 0, seat.top - .1, seat.z, cloth, .08, chair);
+      this.box('seat-back', seat.width, seat.backTop - seat.top + .05, .2, 0, (seat.backTop + seat.top - .05) / 2, -.97, cloth, .1, chair);
       for (const x of [-1.1, 1.1]) {
-        this.box('', .16, 1.4, 1.8, x, .7, 0, bronze, .03, chair);
-        this.box('seat-armrest', .22, .12, 1.8, x, 1.85, .08, bronze, .04, chair);
+        this.box('', .16, seat.top + .43, 1.8, x, (seat.top + .43) / 2, 0, bronze, .03, chair);
+        this.box('seat-armrest', .22, .12, 1.8, x, seat.top + .49, .08, bronze, .04, chair);
       }
-      for (const x of [-1, 1]) for (const z of [-.8, .8]) this.box('', .17, 1.27, .17, x, .635, z, bronze, .02, chair);
+      for (const x of [-1, 1]) for (const z of [-.8, .8]) this.box('', .17, seat.top - .09, .17, x, (seat.top - .09) / 2, z, bronze, .02, chair);
     }
     for (const x of [-2.48, 2.48]) this.box('council-entry-jamb', .18, 6.2, .45, x, 3.1, 15.9, bronze);
     this.box('council-entry-lintel', 5.15, .3, .45, 0, 6.35, 15.9, bronze);

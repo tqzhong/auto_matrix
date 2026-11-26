@@ -14,7 +14,7 @@ export function poseZionDeployment(rig: CharacterRig, gesture?: ZionDeploymentGe
   }
   rig.detail.userData.zionDeploymentPose = true; rig.detail.position.set(0, 0, 0); rig.detail.rotation.set(0, 0, 0);
   const { role, elapsed, phase } = gesture, hero = rig.hero, seated = role !== 'lock';
-  const hip = seated ? ZION_DEPLOYMENT.seat.top + .27 : 1.98;
+  const hip = seated ? ZION_DEPLOYMENT.seat.top + (role === 'dillard' ? .27 : .22) : 1.98;
   if (hero) { hero.bones.get('pelvis')!.position.y = hip; hero.bones.get('spine')!.rotation.x = seated ? .035 : 0; }
   else {
     rig.torso.position.set(0, hip, 0); rig.torso.rotation.set(seated ? .025 : 0, 0, 0);
