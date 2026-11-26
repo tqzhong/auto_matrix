@@ -42,7 +42,7 @@ export class MaggieDiscoveryRenderer {
       });
       this.tube(points, .13, steel, 'infirmary-hull-rib');
       for (const side of [-1, 1]) {
-        this.box(dark, side * 11.9, 3.2, z, 2.3, 3.4, .16, 'infirmary-equipment-panel');
+        this.box(dark, side * 13.18, 3.2, z, .16, 3.4, 2.3, 'infirmary-equipment-panel');
         for (let cable = 0; cable < 4; cable++) this.tube([new THREE.Vector3(side * (12.8 - cable * .13), 1.1, z + 2.9),
           new THREE.Vector3(side * (12.9 - cable * .13), 3.5, z), new THREE.Vector3(side * (12.6 - cable * .13), 6, z - 3)], .028, dark, 'infirmary-cable');
       }

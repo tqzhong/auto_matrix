@@ -75,6 +75,26 @@ test('the dedicated infirmary has two real berths, an open entry, a physical cov
   } finally { room.dispose(); assert.equal(root.children.length, 0); }
 });
 
+test('infirmary equipment stays against the shared side walls without entering either mattress', () => {
+  const root = new THREE.Group(), room = new MaggieDiscoveryRenderer(root);
+  try {
+    root.updateMatrixWorld(true);
+    const panels = root.getObjectsByProperty('name', 'infirmary-equipment-panel'), mattresses = root.getObjectsByProperty('name', 'discovery-mattress').map(object => new THREE.Box3().setFromObject(object));
+    assert.equal(panels.length, 12); assert.equal(mattresses.length, 2);
+    const rightWall = MAGGIE_DISCOVERY.walls.find(wall => wall.x > 10)!, insideWall = rightWall.x - rightWall.width / 2;
+    let intersections = 0;
+    for (const panel of panels) {
+      const bounds = new THREE.Box3().setFromObject(panel);
+      intersections += mattresses.filter(mattress => bounds.intersectsBox(mattress)).length;
+    }
+    assert.equal(intersections, 0, 'wall equipment penetrates the physical mattresses');
+    for (const panel of panels) {
+      const bounds = new THREE.Box3().setFromObject(panel), near = Math.min(Math.abs(bounds.min.x), Math.abs(bounds.max.x)), far = Math.max(Math.abs(bounds.min.x), Math.abs(bounds.max.x));
+      assert.ok(near >= insideWall - .5 && far <= insideWall + .01, 'the panels must face into the room and remain against the shared wall bounds');
+    }
+  } finally { room.dispose(); }
+});
+
 test('the delivered Maggie geometry lies on the actual mattress immediately and remains in its saved pose', async t => {
   const h = await setup(t), body = h.renderer.getAgentBody('maggie')!;
   const points = Object.values(vertices(body)).flat(), bounds = new THREE.Box3().setFromPoints(points);
