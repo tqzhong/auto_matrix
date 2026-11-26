@@ -2915,7 +2915,7 @@ export class FilmSetRenderer {
           prepared.liveMeshes?.push(...meshes);
           if (preparePasses) {
             this.queueEntryShadows(prepared, meshes);
-            const normals = meshes.filter(mesh => mesh instanceof THREE.SkinnedMesh);
+            const normals = meshes.filter(mesh => mesh instanceof THREE.SkinnedMesh || architectEntry && id === 'architect' && Boolean(mesh.morphTargetInfluences?.length));
             if (normals.length) prepared.normalMeshes = [...(prepared.normalMeshes ?? []), ...normals];
           }
         }
