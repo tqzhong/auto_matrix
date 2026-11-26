@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, ORACLE_LAST, newOracleAbsorption, oracleAbsorptionRoot, oracleAbsorptionCookie, type OracleAbsorptionGesture } from '@auto_matrix/shared';
+import { FILM_SETS, ORACLE_LAST, newOracleAbsorption, oracleAbsorptionRoot, oracleAbsorptionCookie, oracleAbsorptionPlate, type OracleAbsorptionGesture } from '@auto_matrix/shared';
 import { RevolutionsPreludeRenderer } from '../packages/client/src/engine/RevolutionsPreludeRenderer.js';
+import { OracleAbsorptionRenderer } from '../packages/client/src/engine/OracleAbsorptionRenderer.js';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -31,6 +32,54 @@ test('the child and guard exit along the clear aisle rather than crossing the ta
         `${role} cannot walk through furniture at ${escape}`);
     }
   }
+});
+
+test('the actual spinning plate and cookies clear the table and break at the floor', t => {
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const root = new THREE.Group(), props = new OracleAbsorptionRenderer(root), state = newOracleAbsorption(3, 47), table = ORACLE_LAST.table;
+  state.phase = 'confrontation';
+  let lastClearance = Infinity, broken = false;
+  try {
+    for (let elapsed = 0; elapsed <= 2; elapsed += .005) {
+      state.invasion = 21.2 + elapsed; props.update(state); root.updateMatrixWorld(true);
+      if (!props.plate.visible) { broken = true; break; }
+      lastClearance = Infinity;
+      props.plate.traverse(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+          const point = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()));
+          const penetration = Math.min(table.width / 2 - Math.abs(point.x - table.x), table.depth / 2 - Math.abs(point.z - table.z), table.height - point.y, point.y);
+          assert.ok(penetration < .02, `plate/cookie enters the table at ${elapsed}s by ${penetration}m`);
+          lastClearance = Math.min(lastClearance, point.y);
+        }
+      });
+      assert.ok(lastClearance >= -.005, `plate/cookie enters the floor at ${elapsed}s by ${-lastClearance}m`);
+    }
+    assert.ok(broken, 'the plate must eventually hit the floor');
+    assert.ok(lastClearance < .05, `the plate cannot shatter ${lastClearance}m above the floor`);
+  } finally { props.dispose(); }
+});
+
+test('the fragments stay around the actual impact and restore from the saved invasion clock', t => {
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const root = new THREE.Group(), props = new OracleAbsorptionRenderer(root), restored = new OracleAbsorptionRenderer(root), state = newOracleAbsorption(3, 47);
+  state.phase = 'confrontation'; state.invasion = 24;
+  try {
+    props.update(state); root.updateMatrixWorld(true);
+    const impact = oracleAbsorptionPlate(state), fragments = props.root.children.find(child => child.visible && child.children.length === 14)!;
+    assert.ok(fragments, 'the landed plate exposes its fragments');
+    const positions = fragments.children.map(child => child.getWorldPosition(new THREE.Vector3()).toArray());
+    for (const [x, y, z] of positions) {
+      assert.ok(Math.hypot(x - impact.x, z - impact.z) < 1.4, 'fragments cannot appear at an unrelated point under the table');
+      assert.ok(y >= 0 && y < .12, 'fragments must rest on the kitchen floor');
+      assert.ok(Math.abs(x - ORACLE_LAST.table.x) > ORACLE_LAST.table.width / 2 || Math.abs(z - ORACLE_LAST.table.z) > ORACLE_LAST.table.depth / 2);
+    }
+    restored.update(JSON.parse(JSON.stringify(state))); root.updateMatrixWorld(true);
+    const cold = restored.root.children.find(child => child.visible && child.children.length === 14)!;
+    assert.deepEqual(cold.children.map(child => child.getWorldPosition(new THREE.Vector3()).toArray()), positions);
+    state.invasion = 44; props.update(state); root.updateMatrixWorld(true);
+    assert.deepEqual(fragments.children.map(child => child.getWorldPosition(new THREE.Vector3()).toArray()), positions, 'landed fragments cannot slide with later dialogue');
+  } finally { props.dispose(); restored.dispose(); }
 });
 
 test('Sati’s actual palm holds the departing cookie and the saved pose does not drift with render time', t => {

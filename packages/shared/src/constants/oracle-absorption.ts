@@ -87,9 +87,10 @@ export function oracleAbsorptionCookie(state: OracleAbsorption) {
     y: 2.08 - .50 * take, z: -23.15 + (child.z + Math.cos(child.yaw) * .43 + 23.15) * take };
 }
 export function oracleAbsorptionPlate(state: OracleAbsorption) {
-  const time = Math.max(0, state.invasion - 21.2), flying = time > 0;
-  return { x: -4.8 - Math.min(2.1, time) * 2.9, y: flying ? Math.max(.07, 2.12 + time * .7 - 4.9 * time * time) : 2.12,
-    z: -20.15 + Math.min(2.1, time) * .75, spin: Math.min(2.1, time) * 5.4, broken: time >= .73 };
+  const elapsed = Math.max(0, state.invasion - 21.2), time = Math.min(1.265, elapsed);
+  // Lift over the table edge; the rotating ceramic first meets the floor at 1.265s.
+  return { x: -4.8 - time * 4, y: 2.12 + time * 5 - 4.9 * time * time,
+    z: -20.15 - time * 3, spin: time * 5.4, broken: elapsed >= 1.265 };
 }
 export function oracleAbsorptionText(state?: OracleAbsorption): string {
   if (state?.paused) return `${state.paused} 正由另一位玩家控制。保留撤离、桌面与同化进度。`;

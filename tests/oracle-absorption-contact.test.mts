@@ -126,6 +126,32 @@ test('contact reaches the seated Oracle blouse and the saved hand pose stays fix
   const before = wrist.matrixWorld.elements.slice(); h.frame(state, .05); assert.deepEqual(wrist.matrixWorld.elements, before);
 });
 
+test('Smith releases the airborne plate without dragging his hand through the table', async t => {
+  const h = await setup(t), state = newOracleAbsorption(3, 47), table = ORACLE_LAST.table;
+  state.phase = 'confrontation';
+  let maximumPenetration = 0, travel = 0, previous: THREE.Vector3 | undefined;
+  for (let invasion = 21.2; invasion <= 22.4; invasion += .04) {
+    state.invasion = invasion; h.frame(state);
+    const wrist = h.rigs.smith.hero!.bones.get('wrist_R')!, point = wrist.getWorldPosition(new THREE.Vector3());
+    if (previous) travel = Math.max(travel, previous.distanceTo(point));
+    previous = point;
+    h.rigs.smith.hero!.root.traverseVisible(object => {
+      if (!(object instanceof THREE.SkinnedMesh) || (object.material as THREE.Material).name !== 'Skin') return;
+      const { skinIndex, skinWeight, position } = object.geometry.attributes;
+      for (let i = 0; i < position.count; i++) {
+        let amount = 0;
+        for (let part = 0; part < 4; part++) if (/^(wrist_R|finger[1-5]-[1-3]_R)$/.test(object.skeleton.bones[skinIndex.getComponent(i, part)].name)) amount += skinWeight.getComponent(i, part);
+        if (amount < .65) continue;
+        const vertex = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())).sub(h.origin);
+        maximumPenetration = Math.max(maximumPenetration, Math.min(table.width / 2 - Math.abs(vertex.x - table.x), table.depth / 2 - Math.abs(vertex.z - table.z), table.height - vertex.y, vertex.y));
+      }
+    });
+  }
+  t.diagnostic(JSON.stringify({ maximumPenetration, maximumTravelPer40ms: travel }));
+  assert.ok(maximumPenetration < .025, 'the released palm/fingers cannot sweep through the table');
+  assert.ok(travel < .18, 'the hand cannot snap while the plate flies away');
+});
+
 test('the actual seated Oracle and bending Smith stay outside the solid kitchen table', async t => {
   const h = await setup(t), table = ORACLE_LAST.table;
   for (const invasion of [20.7, 21.2, 21.4, 25.4, 44]) {

@@ -23,7 +23,7 @@ export class OracleAbsorptionRenderer {
     this.cookie = this.mesh(new THREE.CylinderGeometry(.13, .14, .06, 16), dough, this.root); this.cookie.name = 'sati-farewell-cookie';
     for (let i = 0; i < 14; i++) {
       const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute([0,0,0, .14 + i % 3 * .04,0,.015, .06,.012,.12],3)); geometry.computeVertexNormals();
-      const shard = this.mesh(geometry, i < 8 ? ceramic : dough, this.shards); shard.position.set(-7.25 - i % 4 * .34, .075 + i % 2 * .006, -19.2 + Math.floor(i / 4) * .24); shard.rotation.y = i * 2.4;
+      const shard = this.mesh(geometry, i < 8 ? ceramic : dough, this.shards); shard.position.set((i % 4 - 1.5) * .34, .075 + i % 2 * .006, (Math.floor(i / 4) - 1.5) * .24); shard.rotation.y = i * 2.4;
     }
     this.update(undefined);
     void this.loadCrowd().catch(error => { if (!this.disposed) console.warn('Unable to load the Oracle doorway copies', error); });
@@ -54,6 +54,7 @@ export class OracleAbsorptionRenderer {
     this.crowd.visible = state.invasion >= 14;
     this.plate.position.set(plate.x, plate.y, plate.z); this.plate.rotation.set(plate.spin, 0, plate.spin * .3);
     this.plate.visible = !plate.broken; this.shards.visible = plate.broken;
+    this.shards.position.set(plate.x, 0, plate.z);
     this.cookie.position.set(cookie.x, cookie.y, cookie.z); this.cookie.visible = state.farewell > 1 && state.escape < 24;
   }
   private release(): void { this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose()); this.textures.forEach(texture => texture.dispose()); }
