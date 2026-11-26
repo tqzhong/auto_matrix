@@ -142,6 +142,19 @@ export class HelClubPerformers {
     }
   }
 
+  private groundDancer(person: Performer): void {
+    person.root.updateWorldMatrix(true, true);
+    const orientation = person.root.getWorldQuaternion(new THREE.Quaternion());
+    for (const [i, side] of ['R', 'L'].entries()) {
+      const hip = person.bones.get('hip_' + side)!, knee = person.bones.get('knee_' + side)!, ankle = person.bones.get('ankle_' + side)!;
+      const target = person.feet[i].clone(), floorPoint = person.root.parent!.worldToLocal(person.root.localToWorld(target.clone()));
+      target.y += (helSoleFloor(floorPoint.x, floorPoint.z, person.root.rotation.y) - person.root.position.y) / .88;
+      reach(hip, knee, ankle.position.clone(), person.root.localToWorld(target), new THREE.Vector3(i ? .3 : -.3, .2, 1).applyQuaternion(orientation));
+      ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
+    }
+    person.root.updateWorldMatrix(true, true);
+  }
+
   private collect(person: Performer, disarm: HelDisarm, role: HelDisarmRole): void {
     const t = Math.min(HEL_DISARM.seconds, disarm.elapsed), at = helDisarmCollector(disarm, role);
     person.root.position.set(at.x, at.y, at.z); person.root.rotation.set(0, at.yaw, 0);
@@ -188,8 +201,10 @@ export class HelClubPerformers {
       person.root.position.set(side * (i < 6 ? 2.8 + Math.floor(i / 2) * .35 : 5.5 + Math.floor(i / 4) * 1.1)
         + (['windup', 'evade', 'counter', 'airborne', 'gunpoint'].includes(phase ?? '') ? side * 1.6 : 0),
         phase ? 0 : Math.abs(Math.sin(beat)) * .035, -6 - Math.floor(i / 2) * 4.3);
+      if (!phase) person.root.position.y += helTerraceFloor(person.root.position.x, person.root.position.z);
       person.root.rotation.y = side * .4 + Math.sin(time * .7 + i) * .12;
       this.pose(person, beat, phase ? .18 : 0, phase ? -1 : i);
+      if (!phase && person.root.visible && helTerraceFloor(person.root.position.x, person.root.position.z) > 0) this.groundDancer(person);
       if (phase) {
         const disarm = journey!.helBargain!.disarm;
         if (disarm && i < HEL_TRIO.length) {

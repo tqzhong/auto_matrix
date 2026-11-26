@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SCENE_BY_ID, FILM_SETS, HEL_COAT_COUNTERS, HEL_COATCHECK, filmEntry, helCoatcheckAllyRoot, type FilmJourney, type HelCoatcheckEncounter, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, HEL_COAT_COUNTERS, HEL_COATCHECK, filmEntry, helCoatcheckAllyRoot, helTerraceFloor, type FilmJourney, type HelCoatcheckEncounter, type SandboxState } from '@auto_matrix/shared';
 import { CharacterModels, weaponMuzzle } from '../packages/client/src/agents/CharacterModel.js';
 import { HelClubPerformers } from '../packages/client/src/engine/HelClubPerformers.js';
 import { helAttendantContact, poseHelProtection } from '../packages/client/src/agents/HelCoatcheckPerformance.js';
@@ -53,6 +53,27 @@ async function setup(t: test.TestContext, player = false) {
   }
   return { rig, performers, root, state, journey, pose, center, models, world, assets };
 }
+
+test('the entering Hel dancers keep their visible shoes and clothes above the VIP stairs', async t => {
+  const h = await setup(t); h.journey.step = 5;
+  for (const time of [0, 1, 2]) {
+    h.performers.update(h.journey, time); h.root.updateMatrixWorld(true);
+    const inverse = h.root.matrixWorld.clone().invert();
+    for (const index of [8, 9, 10, 11]) {
+      const dancer = h.root.getObjectByName(`hel-dancer-${index}`)!; assert.ok(dancer.visible);
+      let clearance = Infinity;
+      dancer.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        if (object instanceof THREE.SkinnedMesh) object.skeleton.update();
+        for (let vertex = 0; vertex < object.geometry.attributes.position.count; vertex++) {
+          const point = object.getVertexPosition(vertex, new THREE.Vector3()).applyMatrix4(object.matrixWorld).applyMatrix4(inverse);
+          clearance = Math.min(clearance, point.y - helTerraceFloor(point.x, point.z));
+        }
+      });
+      assert.ok(clearance >= -.025, `dancer ${index} enters the stair surface at ${time}: ${clearance}`);
+    }
+  }
+});
 
 test('the prepared coatcheck attendant keeps her stock rig and warmed textures through the elevator cut', async t => {
   const h = await setup(t);
