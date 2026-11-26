@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FILM_SCENE_BY_ID, filmEntry, filmPosition, type FilmJourney } from '@auto_matrix/shared';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
+
+test('the real-world Sentinel tunnel draws its own cast without changing residents or the abandoned crew', t => {
+  const previous = globalThis.document;
+  const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {}, ellipse() {},
+    createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
+  t.after(() => { globalThis.document = previous; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture({ width: 1, complete: true }));
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const renderer = new AgentRenderer(new THREE.Scene()), world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  t.after(() => renderer.dispose()); t.mock.method(renderer['models'], 'requestHero', () => {}); t.mock.method(renderer['models'], 'animate', () => {});
+  const scene = FILM_SCENE_BY_ID.m2_stop_sentinels, crew = ['neo', ...scene.cast], outside = ['cypher', 'dozer', 'tank', 'lock'];
+  for (const id of [...crew, ...outside]) {
+    const actor = world.agents.get(id)!, location = crew.includes(id) ? scene.set : id === 'lock' ? 'film_zion_temple' : 'film_neb_deck';
+    Object.assign(actor, { position: filmPosition(location, 0, 0), currentLocation: location, isInMatrix: false });
+    if (id === 'cypher' || id === 'dozer') Object.assign(actor, { status: 'dead', health: 0 });
+    if (id === 'tank') actor.health = 40;
+    if (id === 'link') Object.assign(actor, { health: 80, controller: 'another-player' });
+    renderer.updateAgent(id, actor);
+  }
+  renderer.setWorld(false); renderer.setPlayer('neo');
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: 'neo', step: 0, completed: [], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: filmEntry(scene) };
+  const saved = JSON.stringify([...world.agents]); renderer.update(.02, undefined, 1, 0, journey);
+  for (const id of outside) assert.equal(renderer.getAgent(id)!.visible, false, `${id} belongs to another real-world room`);
+  for (const id of crew) assert.equal(renderer.getAgent(id)!.visible, true);
+  assert.equal(JSON.stringify([...world.agents]), saved);
+  renderer.update(.02);
+  for (const id of outside) assert.equal(renderer.getAgent(id)!.visible, true);
+  assert.equal(JSON.stringify([...world.agents]), saved);
+});

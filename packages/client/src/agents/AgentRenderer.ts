@@ -710,7 +710,7 @@ export class AgentRenderer {
       ? filmSetAt(player.position, true) : undefined;
     const adamsStreet = adamsSet?.architecture === 'bridge' || adamsSet?.architecture === 'car' || adamsSet?.architecture === 'lafayette';
     const playerSet = player && this.playerId === journey?.actor && player.isInMatrix === this.matrix
-      && ((scene === 'm1_pod' || scene === 'm1_sentinels') && !this.matrix
+      && ((scene === 'm1_pod' || scene === 'm1_sentinels' || scene === 'm2_stop_sentinels') && !this.matrix
         || (scene === 'm1_interrogation' || scene === 'm1_construct' || scene === 'm1_truth_exit' || scene === 'm1_jump' || scene === 'm1_red_dress' || scene === 'm1_bullet_dodge'
           || scene === 'm2_meeting' && player.currentLocation === 'film_captains_meeting'
           || scene === 'm2_seraph' && player.currentLocation === 'film_seraph_teahouse'
