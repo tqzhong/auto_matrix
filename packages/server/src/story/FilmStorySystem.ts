@@ -6519,6 +6519,13 @@ export class FilmStorySystem {
     captive.currentAction = { type: Math.hypot(captive.velocity.x,captive.velocity.z)>.01 ? 'move_to' : 'idle', parameters: { resolved: true, keymakerEscort: encounter.phase }, startedAt: state.enteredAt, duration: 1, progress: 0 };
   }
   private sealKeymakerDoor(): void { this.bookDoor.seal(); }
+  private sourceCorridorPosition(position: AgentState['position']): AgentState['position'] {
+    const center = FILM_SETS.film_source_corridor.center, wall = SOURCE_PORTAL.walls[0];
+    // Keep a character radius and a small clearance inside the two long walls.
+    const limit = Math.abs(wall.x) - wall.width / 2 - 1.2, x = position.x - center.x;
+    if (Math.abs(position.z - center.z - wall.z) > wall.depth / 2 || Math.abs(x) <= limit) return position;
+    return { ...position, x: center.x + Math.max(-limit, Math.min(limit, x)) };
+  }
   private sourceDoor(): void {
     const state = this.state!;
     const former = FILM_SETS.film_backdoor_hall.center; const current = FILM_SETS.film_source_corridor.center;
@@ -6536,6 +6543,10 @@ export class FilmStorySystem {
       if (state.step >= 2) state.step = FILM_SCENE_BY_ID.m2_key_door.steps.length;
       else if (state.step === 1) { state.step = 3; delete state.started; }
       state.keyDoor = { portalOpened: state.step >= 4, keyTaken: state.step >= 5 };
+    }
+    if (state.step === 1 && state.fighting) for (const threat of this.sandbox().threats) {
+      if (threat.scene !== state.scene || threat.target !== state.actor || !threat.matrix || threat.health <= 0) continue;
+      threat.position = this.sourceCorridorPosition(threat.position);
     }
     this.sealSourceDoor();
     if (state.keyDoor.keyTaken) {
@@ -8840,6 +8851,7 @@ export class FilmStorySystem {
         ? { ...agent.position, x: agent.position.x + Math.sin(facing) * 6, z: agent.position.z + Math.cos(facing) * 6 }
         : filmPosition(this.scene!.set, step.x + Math.sin(angle) * 9, step.z + Math.cos(angle) * 9);
       if (this.state?.scene === 'm1_bathroom' && this.state.betrayal?.sixth) position = { ...this.world.agents.get('smith')!.position };
+      if (this.state?.scene === 'm2_key_door') position = this.sourceCorridorPosition(position);
       if (this.state?.scene === 'm2_trucks' && this.state.trucks?.road) position = { ...this.world.agents.get('agent_johnson')!.position };
       else if (this.state?.scene === 'm2_trucks') position = { ...filmPosition(this.scene!.set, TRUCKS.johnson.x, TRUCKS.johnson.z), y: FILM_SETS[this.scene!.set].center.y + TRUCKS.roof.height };
       if (playerBlocked(position, agent.isInMatrix)) position = filmPosition(this.scene!.set, step.x, step.z - 5 - i * 3);
