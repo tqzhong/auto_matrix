@@ -679,6 +679,8 @@ export class FilmSetRenderer {
     // Keep the prepared layout while the shaft and sixth-floor lamps are revealed.
     if (this.ambush) return AMBUSH_POINT_SLOTS;
     if (this.club) return CLUB_POINT_SLOTS;
+    // Seventeen room/objective lights plus the existing eighteen-flash gunfire cap.
+    if (this.current?.id === 'film_club_hel') return 35;
     if (this.logosBane) return LOGOS_CARGO_POINT_SLOTS;
     // Keep the cockpit program when the engine lamp goes dark in the clouds.
     if (this.logosFlight) return 2;
