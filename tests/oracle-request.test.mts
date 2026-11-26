@@ -85,6 +85,21 @@ test('an interrupted answer restores its exact clock and does not heal or take o
   assert.match(h.command('retry') as string, /无法参与/);
 });
 
+test('starting an Oracle reply stops the visitor before a paused checkpoint can retain walking velocity', () => {
+  const h = setup();
+  h.actor.position = filmPosition('film_oracle_home', ORACLE_REQUEST.question.x, ORACLE_REQUEST.question.z);
+  h.players.receiveInput('request-player', { x: .4, z: 0, yaw: Math.PI / 2, sequence: 1 }); h.frame();
+  h.players.receiveInput('request-player', { x: 0, z: 0, yaw: Math.PI / 2, sequence: 2 }); h.frame();
+  assert.ok(h.actor.velocity.x > 0, 'the player reaches the question with residual movement');
+  h.command('act');
+  assert.deepEqual(h.actor.velocity, { x: 0, y: 0, z: 0 });
+  const position = { ...h.actor.position }; h.frame(10, false);
+  assert.deepEqual(h.actor.position, position);
+  h.players.release('request-player', h.tick()); h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual(h.actor.velocity, { x: 0, y: 0, z: 0 });
+  assert.equal(h.state().oracleRequest!.elapsed, 0);
+});
+
 test('two explicit questions, Morpheus’s doubt and a saved reflection precede physical departure through the door', () => {
   const h = setup(), table = ORACLE_REQUEST.table;
   let sequence = 0;

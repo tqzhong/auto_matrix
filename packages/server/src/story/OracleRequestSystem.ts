@@ -63,6 +63,7 @@ export class OracleRequestSystem {
       member.currentAction = { type: 'idle', parameters: { resolved: true, oracleRequest: { ...state, step: journey.step, role } }, startedAt: journey.enteredAt, duration: 1e9, progress: 0 };
     }
     journey.lastText = oracleRequestText(state, journey.step);
+    if (oracleRequestLocked(state)) actor.velocity = { x: 0, y: 0, z: 0 };
     return oracleRequestLocked(state);
   }
   command(actor: AgentState, target: string, tick: number): string | undefined {
