@@ -1,4 +1,4 @@
-import { LOCATIONS, distance, locationEntrance, type AgentState, type FilmJourney, type TrainingGesture, type WorldEvent } from '@auto_matrix/shared';
+import { LOCATIONS, FILM_SCENE_BY_ID, distance, locationEntrance, type AgentState, type FilmJourney, type TrainingGesture, type WorldEvent } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import type { MemoryManager } from '../memory/MemoryManager.js';
 import type { RelationshipGraph } from '../agents/RelationshipGraph.js';
@@ -22,7 +22,8 @@ export class WorldDynamics {
       && ['breach', 'combat', 'departure_ready', 'departing'].includes(journey.reloaded?.phase ?? '') ? journey.actor : undefined;
     const helRescue = (journey?.scene === 'm3_hel_entry' || journey?.scene === 'm3_hel_bargain') && !journey.visiting;
     const mobilReunion = journey?.scene === 'm3_mobil_release' && !journey.visiting;
-    const oracleVisit = journey?.scene === 'm3_oracle_last' && !journey.visiting;
+    const oracleVisit = (journey?.scene === 'm3_oracle_last' || journey?.scene === 'm3_oracle_absorbed') && !journey.visiting
+      ? FILM_SCENE_BY_ID[journey.scene] : undefined;
     for (const agent of this.world.agents.values()) {
       const mind = agent.mind;
       if (!mind || agent.status !== 'alive') continue;
@@ -38,8 +39,8 @@ export class WorldDynamics {
       const helRescuer = helRescue && (agent.id === journey.actor
         || agent.currentLocation === 'film_club_hel' && (agent.id === 'morpheus' || agent.id === 'seraph'));
       const reuniting = mobilReunion && (agent.id === journey.actor || agent.id === 'trinity' && agent.currentLocation === 'film_mobil_station');
-      const oracleGuest = oracleVisit && (agent.id === journey.actor
-        || agent.currentLocation === 'film_oracle_home' && ['oracle', 'sati', 'seraph'].includes(agent.id));
+      const oracleGuest = oracleVisit && (agent.id === oracleVisit.actor
+        || agent.currentLocation === oracleVisit.set && oracleVisit.cast.includes(agent.id));
       if (resting && mind.stress < 20 && !jumpInjury && !tendingNeo && !helRescuer && !reuniting && !oracleGuest && agent.id !== rooftopInjuredActor && agent.id !== meetingFighter && !action.parameters.crosscut && !action.parameters.rescue
         && !action.parameters.government && !action.parameters.sourcePortal && !action.parameters.helGarage)
         agent.health = Math.min(agent.maxHealth, agent.health + 0.15);

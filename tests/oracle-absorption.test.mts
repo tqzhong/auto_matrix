@@ -7,7 +7,9 @@ import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
-import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { MemoryManager } from '../packages/server/src/memory/MemoryManager.js';
+import { RelationshipGraph } from '../packages/server/src/agents/RelationshipGraph.js';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -66,6 +68,20 @@ test('the farewell clock stops on pause, release, occupied cast and restore with
   assert.deepEqual(sati.position, position); assert.equal(sati.health, 47); assert.equal(sati.controller, 'other');
   sati.controller = null; sati.status = 'dead'; sati.health = 0; h.frame(4); h.command('retry');
   assert.equal(sati.status, 'dead'); assert.equal(sati.health, 0); assert.equal(h.journey().oracleAbsorption!.elapsed, saved.elapsed);
+});
+
+test('world ticks cannot heal the injured cast during the Oracle farewell and retreat', () => {
+  const h = setup(), dynamics = new WorldDynamics(h.world, new MemoryManager(), new RelationshipGraph(), () => {});
+  dynamics.neoStory = true; h.local(); h.command('act');
+  const injured = { oracle: 47, sati: 15, seraph: 43, smith: 47 };
+  for (const [id, health] of Object.entries(injured)) {
+    const member = h.world.agents.get(id)!; member.health = health; member.mind!.stress = 0;
+  }
+  for (let i = 0; i < 8; i++) { h.frame(1); dynamics.tick(i + 1, h.journey()); }
+  for (const [id, health] of Object.entries(injured)) assert.equal(h.world.agents.get(id)!.health, health, id);
+  h.frame(8); h.local(); h.command('act');
+  for (let i = 0; i < 8; i++) { h.frame(1); dynamics.tick(i + 9, h.journey()); }
+  for (const [id, health] of Object.entries(injured)) assert.equal(h.world.agents.get(id)!.health, health, id);
 });
 
 test('reflection cannot skip the retreat, and the kitchen invasion requires an explicit sustained choice before assimilation', () => {
