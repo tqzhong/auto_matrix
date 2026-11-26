@@ -1311,6 +1311,7 @@ export class AgentRenderer {
       input.smithProjection = id === 'bane' && state.isInMatrix && state.faction === 'machines';
       input.prepareDetailedCast = (prepareOracleRequest || prepareOracleLast) && (id === 'oracle' || id === 'seraph')
         || prepareOracleLast && id === 'sati' || prepareTrainmanChase && id === 'trainman'
+        || prepareRequestCast && (id === 'roland' || id === 'maggie') && journey?.scene === 'm3_oracle_absorbed' && journey.step >= 3
         || prepareRequestCast && id === 'kid' && journey?.scene === 'm2_meeting' && journey.step >= 4
         || prepareRequestCast && (id === 'lock' || id === 'niobe') && journey?.scene === 'm2_dock' && journey.step >= 2
         || prepareRequestCast && (id === 'lock' || id === 'niobe' || id === 'hamann') && journey?.scene === 'm2_residents' && journey.step >= 3
