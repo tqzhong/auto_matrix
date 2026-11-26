@@ -61,7 +61,7 @@ export function poseMaggieDiscovery(rig: CharacterRig, gesture?: MaggieDiscovery
     if (role === 'roland' && phase === 'covering' && i === 0) {
       const f = THREE.MathUtils.smoothstep(gesture.cover, 0, MAGGIE_DISCOVERY.coverSeconds);
       const center = FILM_SETS.film_hammer_deck.center;
-      target = new THREE.Vector3(center.x - 8.65, center.y - 1 + 1.96, center.z - 23 + THREE.MathUtils.lerp(-.25, -2.75, f));
+      target = new THREE.Vector3(center.x - 8.65, center.y - 1 + 1.96, center.z - 23 + THREE.MathUtils.lerp(-.25, -2.75, f) - .07);
       palm = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, -Math.PI / 2));
     }
     if (wrist) {

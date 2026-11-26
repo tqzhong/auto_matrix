@@ -100,6 +100,34 @@ test('the bedside palm reaches the linen at the saved cover positions', async t 
   }
 });
 
+test('Roland’s delivered hand reaches the actual moving hem without sinking beneath the sheet', async t => {
+  const h = await setup(t), hand = h.renderer.getAgentBody('roland')!.getObjectByName('roland-anatomical-body') as THREE.SkinnedMesh;
+  const sheet = h.set.getObjectByName('maggie-body-sheet') as THREE.Mesh, weights = hand.geometry.attributes.skinWeight, indices = hand.geometry.attributes.skinIndex;
+  const wrist = hand.skeleton.bones.findIndex(bone => bone.name === 'wrist_R'); assert.ok(wrist >= 0);
+  const vertices: number[] = [];
+  for (let i = 0; i < weights.count; i++) {
+    let weight = 0; for (let j = 0; j < 4; j++) if (indices.getComponent(i, j) === wrist) weight += weights.getComponent(i, j);
+    if (weight > .8) vertices.push(i);
+  }
+  assert.ok(vertices.length >= 1000, 'check the complete delivered hand, including its fingers');
+  const ray = new THREE.Raycaster(), edge = new THREE.Line3(), nearest = new THREE.Vector3(); ray.ray.direction.set(0, -1, 0);
+  for (const cover of [0, .7, 1.724, 2.7, 3.6]) {
+    h.pose({ ...h.state, cover, elapsed: cover });
+    const hem = Array.from({ length: 49 }, (_, i) => sheet.localToWorld(sheet.getVertexPosition(i, new THREE.Vector3()))), front = hem[0].z;
+    let buried = 0, contact = Infinity;
+    for (const i of vertices) {
+      const point = hand.localToWorld(hand.getVertexPosition(i, new THREE.Vector3()));
+      for (let j = 1; j < hem.length; j++) { edge.set(hem[j - 1], hem[j]); edge.closestPointToPoint(point, true, nearest); contact = Math.min(contact, nearest.distanceTo(point)); }
+      if (point.z <= front + .025) continue;
+      ray.ray.origin.set(point.x, h.center.y + 4, point.z); const hit = ray.intersectObject(sheet)[0];
+      if (hit && hit.point.y - point.y > .015) buried++;
+    }
+    t.diagnostic(`cover ${cover}: ${buried} buried hand vertices; actual hem gap ${contact}m`);
+    assert.equal(buried, 0, `cover ${cover}: the linen cuts through the delivered fingers`);
+    assert.ok(contact <= .03, `cover ${cover}: the actual hand floats ${contact}m from the hem`);
+  }
+});
+
 test('the moving cover stays above sampled delivered body surfaces throughout the saved pull', async t => {
   const h = await setup(t), center = h.center;
   const sheet = h.set.getObjectByName('maggie-body-sheet') as THREE.Mesh;
