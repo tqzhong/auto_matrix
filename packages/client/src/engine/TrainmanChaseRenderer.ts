@@ -56,17 +56,21 @@ export class TrainmanChaseRenderer {
     this.stairs(-17, floor, cream, steel, 'trainman-stairs-1'); this.stairs(17, floor, cream, steel, 'trainman-stairs-2');
     yield;
     this.box(this.fixed, glazed, -12.35, 4.4, 21.75, .45, 8.8, 55.5);
-    this.box(this.fixed, glazed, 10.55, 4.4, -28.5, .45, 8.8, 53);
+    // The upper hall must pass through the lower platform's side wall.
+    for (const [z, depth] of [[-41, 28], [-9, 14]]) this.box(this.fixed, glazed, 10.55, 4.4, z, .45, 8.8, depth);
+    this.box(this.fixed, glazed, 10.55, (TRAINMAN_CHASE.upper - .05) / 2, -21.5, .45, TRAINMAN_CHASE.upper - .05, 11);
     this.box(this.fixed, glazed, 42.25, 4.4, -28.5, .45, 8.8, 53);
     for (const [x, z, depth] of [[-12.61, 21.75, 55.5], [10.81, -28.5, 53], [42, -28.5, 53]]) {
       for (const y of [1.05, 4.45]) this.box(this.fixed, green, x, y, z, .035, .18, depth);
       this.box(this.fixed, green, x, .35, z, .07, .65, depth);
     }
-    for (const [x, z, width, depth, y] of [[-19.1, 21.75, 13, 55.5, 9], [26.4, -28.5, 32, 53, 9], [0, -21.5, 44, 11, 11.7]])
+    for (const [x, z, width, depth, y] of [[-19.1, 21.75, 13, 55.5, 9], [0, -21.5, 44, 11, 11.7], [17.7, -9, 8.6, 14, 11.7]])
       this.box(this.fixed, cream, x, y, z, width, .35, depth);
-    for (const z of [-27.15, -15.85]) {
-      this.box(this.fixed, glazed, 0, 8.6, z, 44.5, 6.8, .3);
-      this.box(this.fixed, green, 0, 6.1, z + (z < -20 ? .2 : -.2), 44, .15, .025);
+    for (const [x, z, width, depth] of [[26.4, -41, 32, 28], [32.2, -14.5, 20.4, 25], [11.9, -9, 3, 14]])
+      this.box(this.fixed, cream, x, 9, z, width, .35, depth);
+    for (const [x, z, width] of [[0, -27.15, 44.5], [-21.425, -15.85, 1.65], [0, -15.85, 26.8], [21.425, -15.85, 1.65]]) {
+      this.box(this.fixed, glazed, x, 8.6, z, width, 6.8, .3);
+      this.box(this.fixed, green, x, 6.1, z + (z < -20 ? .2 : -.2), Math.min(width, 44), .15, .025);
     }
     for (const obstacle of TRAINMAN_OBSTACLES.filter(item => item.kind === 'column')) {
       const { x, z, width, height, depth } = obstacle;
@@ -95,7 +99,7 @@ export class TrainmanChaseRenderer {
     this.sign(this.fixed, 'STELLMA', 10.85, 4.8, -37, 6.2, .85, Math.PI / 2);
     this.sign(this.fixed, 'STELLMA', -12.65, 4.8, 29, 6.2, .85, -Math.PI / 2);
     this.sign(this.fixed, 'A FRESH START', 10.83, 3.1, -15, 2.8, 3.8, Math.PI / 2, '#abada0');
-    for (const [x, z, y] of [[-18, 27, 8.5], [-18, 2, 8.5], [0, -21.5, 11.2], [17, -18, 8.5], [17, -43, 8.5]]) {
+    for (const [x, z, y] of [[-18, 27, 8.5], [-18, 2, 8.5], [0, -21.5, 11.2], [17, -18, 11.2], [17, -43, 8.5]]) {
       this.box(this.fixed, steel, x, y, z, 4.8, .25, .85, .04); this.box(this.fixed, glow, x, y - .15, z, 4.4, .055, .55);
       const lamp = new THREE.PointLight(0xe1e6c8, 65, 23, 2); lamp.position.set(x, y - .4, z); this.group.add(lamp);
     }

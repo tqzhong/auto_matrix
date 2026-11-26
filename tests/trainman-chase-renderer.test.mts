@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, FILM_SETS, TRAINMAN_CHASE, filmEntry, filmGroundHeight, newTrainmanChase, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, TRAINMAN_CHASE, filmEntry, filmGroundHeight, trainmanFloor, newTrainmanChase, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -43,6 +43,19 @@ test('the chase has an enterable carriage, brake handle, two connected stairways
       const probe = new THREE.Vector3(center.x + TRAINMAN_CHASE.cover.x, y + 3, center.z + z);
       const hits = new THREE.Raycaster(probe, new THREE.Vector3(0, -1, 0)).intersectObject(renderer.root, true).filter(hit => hit.object.userData.trainmanSupport);
       assert.ok(hits[0]); assert.ok(Math.abs(hits[0].point.y - (filmGroundHeight({ x: probe.x, y, z: probe.z }, FILM_SETS[TRAINMAN_CHASE.set]) - 1)) < .015, 'upper and lower support both match the visible decks');
+    }
+    const hall = new THREE.Raycaster(new THREE.Vector3(center.x + 3.2, center.y - 1 + TRAINMAN_CHASE.upper + 2.2, center.z - 21.5), new THREE.Vector3(1, 0, 0), 0, 13.8);
+    assert.equal(hall.intersectObject(renderer.root, true).length, 0, 'the playable upper hall cannot cross the lower platform side wall');
+    for (const x of [-17, 17]) {
+      const entrance = new THREE.Raycaster(new THREE.Vector3(center.x + x, center.y - 1 + TRAINMAN_CHASE.upper + 2.2, center.z - 13), new THREE.Vector3(0, 0, -1), 0, 7);
+      assert.equal(entrance.intersectObject(renderer.root, true).length, 0, `the stairway at ${x} needs an opening in the upper hall wall`);
+    }
+    const seam = new THREE.Raycaster(new THREE.Vector3(center.x + 10.66, center.y - 1 + TRAINMAN_CHASE.upper + .1, center.z - 21.19), new THREE.Vector3(0, -1, 0), 0, .2);
+    assert.equal(seam.intersectObject(renderer.root, true).filter(hit => Math.abs(hit.point.y - (center.y - 1 + TRAINMAN_CHASE.upper)) < .001).length, 1,
+      'the wall cap cannot overlap the hall floor and flicker through its surface');
+    for (const [x, z] of [[12, -21.5], [17, -19], [17, -18], [17, -16.1], [17, -15], [17, -13], [17, -3]]) {
+      const floor = trainmanFloor(x, z), headroom = new THREE.Raycaster(new THREE.Vector3(center.x + x, center.y - 1 + floor + .05, center.z + z), new THREE.Vector3(0, 1, 0), 0, 4.4);
+      assert.equal(headroom.intersectObject(renderer.root, true).length, 0, `the standing body needs clear headroom through the hall and stairs at ${x}/${z}`);
     }
     const escaped = new THREE.Vector3(center.x + 38, center.y + 2, center.z + TRAINMAN_CHASE.escape.runZ);
     const from = new THREE.Vector3(center.x + TRAINMAN_CHASE.exit.x, center.y + 2, center.z + TRAINMAN_CHASE.exit.z), direction = escaped.clone().sub(from);
