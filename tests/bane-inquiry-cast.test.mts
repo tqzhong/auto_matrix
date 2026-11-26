@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SCENE_BY_ID, filmEntry, filmPosition, newBaneInquiry, newHammerBriefing, newZionDeployment, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, MAGGIE_DISCOVERY, filmEntry, filmPosition, newBaneInquiry, newHammerBriefing, newZionDeployment, newMaggieDiscovery, type FilmJourney } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-for (const sceneId of ['m3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare'] as const) test(`${sceneId} draws its participants while past crews keep their saved fates`, t => {
+for (const sceneId of ['m3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare', 'm3_maggie_discovery'] as const) test(`${sceneId} draws its participants while past crews keep their saved fates`, t => {
   const previous = globalThis.document;
   const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {}, ellipse() {},
     createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }),
@@ -18,17 +18,17 @@ for (const sceneId of ['m3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare'] 
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
   const renderer = new AgentRenderer(new THREE.Scene()), world = new WorldState(); new AgentManager(world).initializeAllAgents();
   t.after(() => renderer.dispose()); t.mock.method(renderer['models'], 'requestHero', () => {}); t.mock.method(renderer['models'], 'animate', () => {});
-  const scene = FILM_SCENE_BY_ID[sceneId], crew = [scene.actor, ...scene.cast];
+  const scene = FILM_SCENE_BY_ID[sceneId], crew = sceneId === 'm3_maggie_discovery' ? [scene.actor, 'maggie', ...MAGGIE_DISCOVERY.cast] : [scene.actor, ...scene.cast];
   for (const id of crew) Object.assign(world.agents.get(id)!, { position: filmEntry(scene), currentLocation: scene.set, isInMatrix: false });
   const outside = ['neo', 'bane', 'maggie', 'tank', 'cypher', 'lock', 'deus_ex_machina'].filter(id => !crew.includes(id));
   for (const id of outside) Object.assign(world.agents.get(id)!, { position: filmPosition('film_neb_deck'), currentLocation: 'film_neb_deck', isInMatrix: false,
     ...(id === 'cypher' ? { status: 'dead', health: 0 } : id === 'tank' ? { health: 40 } : {}) });
-  Object.assign(world.agents.get(sceneId === 'm3_bane_questions' ? 'maggie' : sceneId === 'm3_logos_plan' ? 'niobe' : 'hamann')!, { health: 43, controller: 'another-player' });
+  Object.assign(world.agents.get(sceneId === 'm3_bane_questions' ? 'maggie' : sceneId === 'm3_logos_plan' ? 'niobe' : sceneId === 'm3_zion_prepare' ? 'hamann' : 'ak')!, { health: 43, controller: 'another-player' });
   for (const [id, actor] of world.agents) renderer.updateAgent(id, actor);
   renderer.setWorld(false); renderer.setPlayer(scene.actor);
   const journey: FilmJourney = { version: 1, scene: scene.id, actor: scene.actor, step: 0, completed: [], enteredAt: 0,
     reflections: {}, lastText: '', checkpoint: filmEntry(scene),
-    ...(sceneId === 'm3_bane_questions' ? { baneInquiry: newBaneInquiry(0, 100) } : sceneId === 'm3_logos_plan' ? { hammerBriefing: newHammerBriefing(0, 100) } : { zionDeployment: newZionDeployment(0, 100) }) };
+    ...(sceneId === 'm3_bane_questions' ? { baneInquiry: newBaneInquiry(0, 100) } : sceneId === 'm3_logos_plan' ? { hammerBriefing: newHammerBriefing(0, 100) } : sceneId === 'm3_zion_prepare' ? { zionDeployment: newZionDeployment(0, 100) } : { maggieDiscovery: newMaggieDiscovery(0, 100) }) };
   const saved = JSON.stringify([...world.agents]);
   for (const step of [0, 1, 3, 5]) {
     journey.step = step; renderer.update(.02, undefined, 1, 0, journey);

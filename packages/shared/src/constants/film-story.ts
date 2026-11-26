@@ -505,7 +505,7 @@ export const FILM_SCENES: FilmScene[] = [
     use('听取 Colt 的搜船报告，再听返航争论', '搜遍 Hammer 仍未找到 Bane。Morpheus 怀疑他在 Logos 上；若他掌握另一艘船的 EMP，返航救援会危及 Hammer。', MAGGIE_DISCOVERY.report.x, MAGGIE_DISCOVERY.report.z, 0),
     think('援救、风险与指挥责任', '这是 Roland 的游戏反思。船员不知道 Bane 的真实身份，也无法保证 Neo 会获胜。', MAGGIE_DISCOVERY.report.x, MAGGIE_DISCOVERY.report.z),
     walk('离开医疗舱，保留搜查与人员记录', MAGGIE_DISCOVERY.exit.x, MAGGIE_DISCOVERY.exit.z),
-  ], ['maggie', 'morpheus', 'link', 'colt']),
+  ], ['maggie', 'morpheus', 'link', 'colt', 'ak']),
   scene('m3_bane', 3, 'logos_deck', 'neo', 'Logos 上的 Bane', 'bane', 'bane', '电力故障迫使 Trinity 离开驾驶舱检查。Neo 听见货舱传来的呼喊，带上电枪走向她。这里是现实世界，肉身无法使用矩阵能力。', [
     walk('沿狭长通道寻找 Trinity', LOGOS_BANE.approach.x, LOGOS_BANE.approach.z),
     use('应对 Bane 的挟持，救出 Trinity', '先面对人质对峙，放下电枪并追问身份；断电后的近身交锋，需要实际闪避和反击。', LOGOS_BANE.approach.x, LOGOS_BANE.approach.z, 0),
