@@ -7,10 +7,15 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { WebGLRenderStates } from 'three/src/renderers/webgl/WebGLRenderStates.js';
-import { Engine } from '../packages/client/src/engine/Engine.js';
+import { Engine, usesHalfResolutionOcclusionForJourney } from '../packages/client/src/engine/Engine.js';
 import { PostProcessing, WorldOcclusionPass } from '../packages/client/src/engine/PostProcessing.js';
 import { MachineCityRenderer } from '../packages/client/src/engine/MachineCityRenderer.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
+
+test('the commuter journey uses half-resolution contact occlusion', () => {
+  assert.equal(usesHalfResolutionOcclusionForJourney('m1_commute'), true);
+  assert.equal(usesHalfResolutionOcclusionForJourney('m1_morning'), false);
+});
 
 test('changing render quality resizes both compositor buffers, occlusion and antialias sampling', () => {
   const renderer = { getPixelRatio: () => 1.5, getSize: (size: THREE.Vector2) => size.set(1280, 720) } as THREE.WebGLRenderer;

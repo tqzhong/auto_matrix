@@ -52,6 +52,10 @@ export interface FrameProfile {
   scene: string;
 }
 
+export function usesHalfResolutionOcclusionForJourney(scene?: string): boolean {
+  return scene === 'm1_commute';
+}
+
 export function rideForPlayer(journey: FilmJourney | undefined, playerId: string | null | undefined) {
   if (!journey || !playerId || journey.actor !== playerId || journey.visiting) return undefined;
   if (journey.scene === 'm2_garage' && journey.garage?.phase === 'arrived') return journey.garage;
@@ -624,7 +628,8 @@ export class Engine {
       // The trace covers the frame. Resume all passes while it still covers the first hall view.
       const covered = openingTrace !== undefined && openingTrace < OPENING_HOTEL.trace.located;
       const halfOcclusion = apartmentView || filmSet?.id === 'film_white_rabbit_club';
-      this.postProcessing.render(filmSet?.id !== 'film_extraction_car', covered, halfOcclusion ? .5 : 1);
+      this.postProcessing.render(filmSet?.id !== 'film_extraction_car', covered,
+        (halfOcclusion || usesHalfResolutionOcclusionForJourney(liveMatrixJourney?.scene)) ? .5 : 1);
       this.openingTrace.render(this.renderer, openingTrace);
     } finally {
       if (roomFar < cameraFar) { this.camera.far = cameraFar; this.camera.updateProjectionMatrix(); }
