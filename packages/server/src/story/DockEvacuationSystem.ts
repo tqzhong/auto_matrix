@@ -119,7 +119,7 @@ export class DockEvacuationSystem {
         const saved = journey.dockEvacuation!;
         saved.phase = 'running'; saved.remaining = DOCK_EVACUATION.retreatSeconds; saved.crewAge = 0; saved.elapsed = 0; saved.attempts++;
         journey.step = 2; actor.position = filmPosition('film_zion_dock_exit', DOCK_EVACUATION.delivery.x, DOCK_EVACUATION.delivery.z);
-        saved.approach = { ...DOCK_EVACUATION.delivery, yaw: Math.PI };
+        actor.rotation = Math.PI; saved.approach = { ...DOCK_EVACUATION.delivery, yaw: actor.rotation };
       } else actor.position = { ...journey.checkpoint };
       actor.velocity = { x: 0, y: 0, z: 0 }; this.frame(actor, 0, tick);
       return '已接回保存的操作位置。已搬下的补给、EMP、起爆进度与既有牺牲者保留。';

@@ -34,6 +34,7 @@ interface PlayerSession {
   impulse?: { direction: Vector3; remaining: number; speed: number; strike: boolean };
   palm?: { remaining: number; yaw: number };
   stagger: number;
+  dockEvacuationRetryYaw?: number;
 }
 const idleInput = (): PlayerInput => ({ x: 0, z: 0, yaw: 0, pitch: 0, sprint: false, jump: false, sequence: 0 });
 
@@ -427,9 +428,17 @@ export class PlayerController {
   receiveInput(socketId: string, value: unknown): void {
     const session = this.sessions.get(socketId);
     if (!session || !value || typeof value !== 'object') return;
-    const input = value as PlayerInput;
+    let input = value as PlayerInput;
     if (![input.x, input.z, input.yaw, input.sequence].every(Number.isFinite) || input.pitch !== undefined && !Number.isFinite(input.pitch) || Math.abs(input.x) > 1 || Math.abs(input.z) > 1 || input.sequence < session.input.sequence) return;
     if (input.location !== undefined && (typeof input.location !== 'string' || input.location !== this.world.agents.get(session.agentId)!.currentLocation)) return;
+    if (session.dockEvacuationRetryYaw !== undefined) {
+      const turn = Math.atan2(Math.sin(input.yaw - session.dockEvacuationRetryYaw), Math.cos(input.yaw - session.dockEvacuationRetryYaw));
+      if (Math.abs(turn) < .05) session.dockEvacuationRetryYaw = undefined;
+      else {
+        const cosine = Math.cos(-turn), sine = Math.sin(-turn);
+        input = { ...input, x: input.x * cosine + input.z * sine, z: input.z * cosine - input.x * sine, yaw: session.dockEvacuationRetryYaw };
+      }
+    }
     const drive = input.drive && Number.isFinite(input.drive.throttle) && Number.isFinite(input.drive.steer) ? { throttle: Math.max(0, Math.min(1, input.drive.throttle)), steer: Math.max(-1, Math.min(1, input.drive.steer)), brake: input.drive.brake === true,
       lift: Number.isFinite(input.drive.lift) ? Math.max(-1, Math.min(1, input.drive.lift!)) : 0,
       roll: Number.isFinite(input.drive.roll) ? Math.max(-1, Math.min(1, input.drive.roll!)) : 0 } : undefined;
@@ -1056,6 +1065,8 @@ export class PlayerController {
     if (command.kind === 'life') this.sandbox.life.film.office.phoneFrame(tick, this.world.agents);
     if (command.kind === 'transit' || command.kind === 'life') {
       const session = this.sessions.get(socketId)!;
+      if (command.kind === 'life' && command.target === 'film:retry' && this.sandbox.life.film.state?.scene === 'm3_dock_evacuation'
+        && this.sandbox.life.film.state.dockEvacuation?.phase === 'running') session.dockEvacuationRetryYaw = Math.PI;
       session.vy = 0; session.planar = { x: 0, z: 0 }; session.input = { ...idleInput(), yaw: this.getAgent(socketId)!.rotation };
       session.strike = undefined;
       session.impulse = undefined;

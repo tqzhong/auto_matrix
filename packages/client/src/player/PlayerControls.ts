@@ -82,6 +82,7 @@ export class PlayerControls {
   private consumedOfficeClimbKeys = new Set<string>();
   private yaw = 0;
   private movementYaw = 0;
+  private dockEvacuationAttempts = 0;
   private movementForward = 0;
   private movementRight = 0;
   private lastLook = -1000;
@@ -259,7 +260,7 @@ export class PlayerControls {
     this.hammerAim = false; this.hammerPilotYaw = undefined; this.motion.hammerPilot = undefined; this.hammerPreparation = undefined;
     this.logosPilotYaw = undefined; this.motion.logosPilot = undefined;
     this.elevatorAim = false; this.elevatorViewAction = undefined; this.doorAim = false; this.doorViewOpening = false;
-    this.motion.dockEvacuation = undefined; this.motion.shaftSeal = undefined;
+    this.motion.dockEvacuation = undefined; this.motion.shaftSeal = undefined; this.dockEvacuationAttempts = 0;
     this.sealAim = false; this.templeAim = false; this.ceasefireAim = false; this.primaryAim = false; this.primaryViewPhase = undefined; this.motion.primaryDemolition = undefined; this.motion.trinityRelay = undefined; this.motion.trinityTerminal = undefined; this.motion.engineering = undefined; this.motion.zionMessage = undefined; this.motion.seraphDoor = undefined; this.motion.bookDoor = undefined; this.motion.sourcePortal = undefined; this.motion.architect = undefined; this.motion.templeDefense = undefined;
     this.gardenLook = { yaw: 0, pitch: 0 };
     this.restoreMomentum(state); this.authoritative = state; this.firstPerson = false; this.enabled = true;
@@ -888,6 +889,8 @@ export class PlayerControls {
     const evacuation = state.currentAction?.parameters.dockEvacuation as MotionInput['dockEvacuation'];
     const seal = state.currentAction?.parameters.shaftSeal as MotionInput['shaftSeal'];
     if (this.motion.dockEvacuation && !dockEvacuationLocked(evacuation) || this.motion.shaftSeal && !shaftSealLocked(seal)) this.performing = false;
+    if (evacuation && evacuation.attempts > this.dockEvacuationAttempts) { this.yaw = this.movementYaw = Math.PI; this.pitch = .1; this.cameraReady = false; }
+    this.dockEvacuationAttempts = evacuation?.attempts ?? 0;
     if (dockEvacuationLocked(evacuation) || shaftSealLocked(seal)) {
       if (!dockEvacuationLocked(this.motion.dockEvacuation) && !shaftSealLocked(this.motion.shaftSeal)) { this.yaw = this.movementYaw = state.rotation; this.pitch = .1; this.cameraReady = false; this.sealAim = this.firstPerson && seal?.role === 'citizen_15'; }
       if (this.motion.dockEvacuation?.phase !== evacuation?.phase || this.motion.shaftSeal?.phase !== seal?.phase) this.cameraReady = false;

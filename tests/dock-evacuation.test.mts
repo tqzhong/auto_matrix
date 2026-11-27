@@ -133,7 +133,16 @@ test('missing the lift fails and retry preserves supplies and film consequences 
   for (let i = 0; i < 270; i++) h.frame();
   assert.equal(h.state.dockEvacuation?.phase, 'failed');
   h.command('next'); assert.equal(h.state.scene, 'm3_dock_evacuation');
+  const kid = h.players.getAgent('p')!; kid.rotation = .11;
   h.command('retry'); assert.equal(h.state.dockEvacuation?.phase, 'running'); assert.equal(h.state.step, 2);
+  assert.equal(kid.rotation, Math.PI, 'retry must restore the saved lift approach heading');
+  const retryPosition = structuredClone(kid.position);
+  for (let i = 0; i < 12; i++) { h.players.receiveInput('p', { x: -1, z: 0, yaw: 0, sequence: 1e6 + i }); h.players.step(.1, true, 11 + i); }
+  assert.equal(kid.rotation, Math.PI, 'a stale camera packet must not replace the retry heading');
+  const sidestepped = structuredClone(kid.position);
+  h.players.receiveInput('p', { x: 0, z: 1, yaw: 0, sequence: 1e6 + 12 }); h.players.step(.1, true, 23);
+  assert.ok(sidestepped.x > retryPosition.x, 'stale camera-right input must still move to the clear side of the cart');
+  assert.ok(kid.position.z < sidestepped.z, 'forward input after sidestepping must move toward the lift');
   assert.equal(h.state.dockEvacuation?.delivered, true); assert.equal(h.state.dockEvacuation?.attempts, 1);
   assert.equal(h.state.emp?.firedAt, 7); assert.equal(h.world.agents.get('charra')!.status, 'dead');
   h.board(); assert.equal(h.state.dockEvacuation?.phase, 'waiting');
