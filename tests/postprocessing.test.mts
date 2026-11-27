@@ -12,8 +12,9 @@ import { PostProcessing, WorldOcclusionPass } from '../packages/client/src/engin
 import { MachineCityRenderer } from '../packages/client/src/engine/MachineCityRenderer.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 
-test('the commuter journey uses half-resolution contact occlusion', () => {
+test('commuter and boss journeys use half-resolution contact occlusion', () => {
   assert.equal(usesHalfResolutionOcclusionForJourney('m1_commute'), true);
+  assert.equal(usesHalfResolutionOcclusionForJourney('m1_boss'), true);
   assert.equal(usesHalfResolutionOcclusionForJourney('m1_morning'), false);
 });
 
