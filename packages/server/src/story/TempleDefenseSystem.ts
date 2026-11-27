@@ -111,7 +111,7 @@ export class TempleDefenseSystem {
       if (seal.phase === 'failed' && !breach) {
         journey.templeSeal = newTempleDefense(tick, seal.attempts + 1); journey.step = 0;
         actor.status = 'alive'; actor.health = actor.maxHealth; actor.activeEffects = [];
-        actor.position = filmEntry(FILM_SCENE_BY_ID.m3_temple_defense); journey.checkpoint = { ...actor.position };
+        actor.position = filmEntry(FILM_SCENE_BY_ID.m3_temple_defense); actor.rotation = Math.PI; journey.checkpoint = { ...actor.position };
       } else if (actor.status !== 'alive') { actor.status = 'alive'; actor.health = actor.maxHealth; actor.position = { ...journey.checkpoint }; }
       this.frame(actor, 0, tick); return '已恢复入口检查点。封井、EMP、完成的情节与既有牺牲者保留。';
     }

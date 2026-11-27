@@ -209,7 +209,8 @@ test('a timed preparation failure retries only the temple and preserves the spen
   const mifune = h.world.agents.get('mifune')!, charra = h.world.agents.get('charra')!;
   mifune.status = charra.status = 'dead'; mifune.health = charra.health = 0;
   h.frame(440, false); assert.equal(state.templeSeal!.phase, 'failed'); assert.equal(h.actor.status, 'dead');
-  h.command('retry'); assert.equal(state.step, 0); assert.equal(h.actor.status, 'alive');
+  h.actor.rotation = .7; h.command('retry'); assert.equal(state.step, 0); assert.equal(h.actor.status, 'alive');
+  assert.equal(h.actor.rotation, Math.PI, 'a retry restores the entry heading with the saved checkpoint');
   assert.equal(state.templeSeal!.attempts, 1); assert.deepEqual(state.templeSeal!.turns, [0, 0]);
   h.frame(450, false); assert.equal(state.templeSeal!.phase, 'ready'); assert.equal(state.templeSeal!.remaining, TEMPLE_DEFENSE.seconds);
   h.command('act'); assert.equal(state.templeSeal!.phase, 'running');
