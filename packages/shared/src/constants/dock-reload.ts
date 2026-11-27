@@ -63,7 +63,9 @@ export function stepDockReload(encounter: DockReload, input: { focus: boolean; c
     encounter.climb = Math.max(0, Math.min(1, encounter.climb + input.climb * dt / DOCK_RELOAD.climbSeconds));
     if (encounter.climb >= 1) encounter.phase = 'jammed';
   } else if (encounter.phase === 'jammed') {
-    encounter.brace = Math.max(0, Math.min(DOCK_RELOAD.braceSeconds, encounter.brace + (input.focus ? dt : -2 * dt)));
+    // Preserve a full brace so the separately pressed kick action can reach the server.
+    if (input.focus) encounter.brace = Math.min(DOCK_RELOAD.braceSeconds, encounter.brace + dt);
+    else if (encounter.brace < DOCK_RELOAD.braceSeconds) encounter.brace = Math.max(0, encounter.brace - 2 * dt);
   } else if (encounter.phase === 'kicking') {
     encounter.elapsed = Math.min(DOCK_RELOAD.kickSeconds, encounter.elapsed + dt);
     if (encounter.elapsed >= DOCK_RELOAD.kickSeconds) encounter.phase = 'descending';
