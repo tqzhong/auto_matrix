@@ -19,6 +19,9 @@ test('a distant pill glass avoids a room-wide transmission pass while close and 
     view(16);
     assert.ok(drawn().every(material => !(material instanceof THREE.MeshPhysicalMaterial) || material.transmission === 0),
       'a tiny distant cup must not request another opaque render of the entire room');
+    view(10);
+    assert.ok(drawn().every(material => !(material instanceof THREE.MeshPhysicalMaterial) || material.transmission === 0),
+      'the small cup in the saved two-chair wide shot must not redraw the opaque room');
     view(3);
     assert.equal(drawn().filter(material => material instanceof THREE.MeshPhysicalMaterial && material.transmission > .8).length, 2,
       'both the glass and water keep refraction at drinking distance');

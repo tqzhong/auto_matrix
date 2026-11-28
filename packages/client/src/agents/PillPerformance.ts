@@ -18,9 +18,9 @@ export function createPillGlass(): THREE.Group {
     object.material = new THREE.MeshStandardMaterial({ color: source.color, roughness: source.roughness, metalness: source.metalness,
       transparent: source.transparent, opacity: source.opacity, depthWrite: source.depthWrite });
   });
-  // At this distance the cup is about 15 pixels wide in a 720p view. Keep
+  // At this distance the cup is about 22 pixels wide in a 720p view. Keep
   // close-up refraction, without redrawing the opaque room for the tiny glass.
-  const detail = new THREE.LOD(); detail.addLevel(near, 0); detail.addLevel(far, 12, .1); far.visible = false; group.add(detail);
+  const detail = new THREE.LOD(); detail.addLevel(near, 0); detail.addLevel(far, 8, .1); far.visible = false; group.add(detail);
   return group;
 }
 
