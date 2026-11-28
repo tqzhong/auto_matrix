@@ -55,7 +55,8 @@ export class PodRescueClawRenderer {
     }
     this.jointPins = this.instances(batchStaticGeometry(pins, new Set())[0], steel, 6, 'pod-rescue-joint-pins');
     this.connectors = this.instances(new THREE.CylinderGeometry(.045, .045, 1, 8), chrome, 3, 'pod-rescue-contact-links');
-    for (const [side, x, z, angle] of [['L', .367, 0, -Math.PI / 2], ['R', -.367, 0, Math.PI / 2], ['back', 0, -.107, 0]] as const) {
+    // Place the inner faces of the 12 cm pads on the delivered patient's skin.
+    for (const [side, x, z, angle] of [['L', .455, 0, -Math.PI / 2], ['R', -.455, 0, Math.PI / 2], ['back', 0, -.132, 0]] as const) {
       const pad = this.mesh(new THREE.BoxGeometry(.28, .34, .12), rubber, root); pad.name = `pod-rescue-pad-${side}`;
       this.arms.push({ pad, offset: new THREE.Vector3(x, -.15, z), angle });
     }
