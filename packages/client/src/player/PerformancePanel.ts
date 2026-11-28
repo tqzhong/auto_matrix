@@ -23,6 +23,8 @@ export class PerformancePanel {
   private passes: Record<string, number[]> = {};
   private startAt = 0;
   private fpsBeforeSampling = 0;
+  private focusedFrames = 0;
+  private hiddenFrames = 0;
   private restoreAutoReset = true;
   private restoreMatrices?: Engine['scene']['updateMatrixWorld'];
   private restoreDraw?: Engine['renderer']['renderBufferDirect'];
@@ -141,6 +143,7 @@ export class PerformancePanel {
   private status(text: string): void { this.panel.querySelector('[role="status"]')!.textContent = text; }
   private start(): void {
     this.frames = []; this.passes = {}; this.drawTotals = {}; this.meshTotals.clear(); this.startAt = performance.now(); this.fpsBeforeSampling = this.engine.fps;
+    this.focusedFrames = 0; this.hiddenFrames = 0;
     this.browserEntries = [];
     this.animationTotals.clear();
     const actors = new Map(this.engine.agentRenderer.getAgentIds().map(id => [this.engine.agentRenderer.getAgentBody(id), id]));
@@ -223,6 +226,8 @@ export class PerformancePanel {
       const draws = frameDraws; frameDraws = {};
       const meshes = frameMeshes; frameMeshes = new Map();
       if (elapsed < 3000) return;
+      if (document.hasFocus()) this.focusedFrames++;
+      if (document.visibilityState !== 'visible') this.hiddenFrames++;
       for (const [name, count] of Object.entries(draws)) {
         const total = this.drawTotals[name] ??= { calls: 0, triangles: 0 };
         total.calls += count.calls; total.triangles += count.triangles;
@@ -309,6 +314,7 @@ export class PerformancePanel {
       gpu: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) as string : 'unavailable',
       recordingActive: Boolean(this.engine.onRendered), engineFpsDisplay: this.engine.fps, fpsBeforeSampling: this.fpsBeforeSampling,
       pageVisibility: document.visibilityState, contextAntialias: gl.getContextAttributes()?.antialias, profilingDrawInstrumentation: true,
+      environmentFrames: { focused: this.focusedFrames, hidden: this.hiddenFrames },
       objects, visibleObjects,
     };
     this.meshTotals.clear();

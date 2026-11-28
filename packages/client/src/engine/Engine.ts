@@ -53,12 +53,12 @@ export interface FrameProfile {
 }
 
 export function usesHalfResolutionOcclusionForJourney(scene?: string): boolean {
-  return scene === 'm1_commute' || scene === 'm1_boss' || scene === 'm1_pills' || scene === 'm1_cabin' || scene === 'm1_jump';
+  return scene === 'm1_commute' || scene === 'm1_boss' || scene === 'm1_pills' || scene === 'm1_cabin' || scene === 'm1_jump' || scene === 'm1_sentinels';
 }
 
 export function matrixJourneyForOcclusion(matrix: boolean, journey: FilmJourney | undefined, playerId: string | null | undefined): FilmJourney | undefined {
   if (!journey || !journey.visiting && journey.actor !== playerId) return undefined;
-  if (!matrix && journey.scene !== 'm1_cabin') return undefined;
+  if (!matrix && journey.scene !== 'm1_cabin' && journey.scene !== 'm1_sentinels') return undefined;
   return journey;
 }
 

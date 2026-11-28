@@ -57,7 +57,8 @@ test('changing render quality resizes both compositor buffers, occlusion and ant
   } finally { occlusion.dispose(); antialias.dispose(); composer.dispose(); }
 });
 
-test('the jump journey reduces contact occlusion while keeping full-size colors and restores it after the cut', t => {
+for (const [scene, matrix] of [['m1_jump', true], ['m1_sentinels', false]] as const)
+test(`${scene} reduces contact occlusion while keeping full-size colors and restores it after the cut`, t => {
   const renderer = { getPixelRatio: () => 1.5, getSize: (size: THREE.Vector2) => size.set(1280, 720) } as THREE.WebGLRenderer;
   const composer = new EffectComposer(renderer), antialias = new ShaderPass(FXAAShader);
   const occlusion = new WorldOcclusionPass(new THREE.Scene(), new THREE.PerspectiveCamera(), 1920, 1080);
@@ -68,9 +69,9 @@ test('the jump journey reduces contact occlusion while keeping full-size colors 
   const resized = t.mock.method(occlusion, 'setSize');
   post.resize(1280, 720);
   const oldCalls = resized.mock.callCount();
-  const journey = { scene: 'm1_jump', actor: 'neo' } as FilmJourney;
+  const journey = { scene, actor: 'neo' } as FilmJourney;
   for (const player of ['neo', 'oracle']) {
-    const view = matrixJourneyForOcclusion(true, player === 'neo' ? journey : { ...journey, visiting: 'm1_jump' }, player);
+    const view = matrixJourneyForOcclusion(matrix, player === 'neo' ? journey : { ...journey, visiting: scene }, player);
     post.render(true, false, usesHalfResolutionOcclusionForJourney(view?.scene) ? .5 : 1);
   }
   for (const buffer of [composer.readBuffer, composer.writeBuffer]) assert.deepEqual([buffer.width, buffer.height], [1920, 1080]);
