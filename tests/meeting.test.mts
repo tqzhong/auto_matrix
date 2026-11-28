@@ -202,7 +202,7 @@ test('the implanted tracker draws a visible bridge tail; getting caught requires
   const resumed = h.sandbox.state.threats.find(threat => threat.id === 'bridge:tail')!;
   assert.ok(Math.hypot(resumed.position.x - h.neo.position.x, resumed.position.z - h.neo.position.z) >= gap - 2,
     'rejoining cannot skip the pursuer forward across the disconnected interval');
-  h.frames(12); assert.equal(h.state().bridgeTail?.phase, 'failed');
+  h.frames(17); assert.equal(h.state().bridgeTail?.phase, 'failed');
   const caught = h.sandbox.state.threats.find(threat => threat.id === 'bridge:tail')!;
   const separation = Math.hypot(caught.position.x - h.neo.position.x, caught.position.z - h.neo.position.z);
   assert.ok(separation >= 1.8 && separation <= 3.2, `the pursuer must halt at a readable distance from Neo: ${separation}`);
@@ -218,19 +218,26 @@ test('the implanted tracker draws a visible bridge tail; getting caught requires
   h.command('retry'); assert.equal(h.state().bridgeTail?.phase, 'tracking'); assert.equal(h.state().bridgeTail?.attempts, 1);
   assert.equal(h.neo.currentAction?.parameters.bridgeCaught, undefined, 'retry must release the capture shot');
   assert.deepEqual(h.neo.position, filmEntry(bridge));
+  h.frames(BRIDGE_ARRIVAL_SECONDS + .1); assert.equal(h.state().bridgeArrival?.phase, 'parked');
   assert.ok(h.walkTo(filmStepPosition(bridge, bridge.steps[0]).x, filmStepPosition(bridge, bridge.steps[0]).z));
   h.command('act'); assert.equal(h.state().meeting?.phase, 'boarding');
   assert.equal(h.sandbox.state.threats.some(threat => threat.id === 'bridge:tail'), false);
 });
 
-test('a captured bridge retry starts Neo clear of the incoming car lane and reaches the rear door', () => {
+test('a captured bridge retry keeps Neo ahead of the tail while the car arrives, then reaches the rear door', () => {
   const h = setup(), bridge = FILM_SCENE_BY_ID.m1_bridge;
   h.state().step = 0;
+  h.state().bridgeArrival = { phase: 'approaching', elapsed: BRIDGE_ARRIVAL_SECONDS - .05 };
   h.state().bridgeTail = { phase: 'failed', alert: 70, lastTick: h.tick(), attempts: 1, spawned: true };
   h.command('retry');
   const center = FILM_SETS[bridge.set].center, entry = filmEntry(bridge);
   const approach = filmStepPosition(bridge, bridge.steps[0]);
   assert.ok(entry.x - center.x >= MEETING_CAR.width / 2 + 1.1, 'Neo must start on the curb side of the arriving car');
+  assert.ok(Math.hypot(entry.x - approach.x, entry.z - approach.z) <= 5, 'the retry point must leave Neo one short run from the rear door');
+  h.frames(BRIDGE_ARRIVAL_SECONDS + .1);
+  assert.equal(h.state().bridgeTail?.phase, 'tracking', 'waiting for the car cannot let the tail catch Neo at the retry entrance');
+  assert.equal(h.state().bridgeArrival?.phase, 'parked', 'the car must reach its stopped position before Neo boards');
+  assert.equal(playerBlocked(entry, true, 1.1, h.sandbox.state.structures), false, 'the near-door curb start cannot overlap the parked car');
   assert.ok(h.walkTo(approach.x, approach.z), 'the curb-side route to the rear door must remain reachable during the tail chase');
   assert.equal(h.state().bridgeTail?.phase, 'tracking', 'taking the safe route must keep the tail chase active without capturing Neo');
   assert.equal(playerBlocked(h.neo.position, true, 1.1, h.sandbox.state.structures), false, 'the rear-door approach cannot overlap the parked car');
