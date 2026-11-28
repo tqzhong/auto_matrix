@@ -7,7 +7,8 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { WebGLRenderStates } from 'three/src/renderers/webgl/WebGLRenderStates.js';
-import { Engine, usesHalfResolutionOcclusionForJourney } from '../packages/client/src/engine/Engine.js';
+import type { FilmJourney } from '@auto_matrix/shared';
+import { Engine, matrixJourneyForOcclusion, usesHalfResolutionOcclusionForJourney } from '../packages/client/src/engine/Engine.js';
 import { PostProcessing, WorldOcclusionPass } from '../packages/client/src/engine/PostProcessing.js';
 import { MachineCityRenderer } from '../packages/client/src/engine/MachineCityRenderer.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
@@ -17,6 +18,15 @@ test('commuter, boss, and Lafayette journeys use half-resolution contact occlusi
   assert.equal(usesHalfResolutionOcclusionForJourney('m1_boss'), true);
   assert.equal(usesHalfResolutionOcclusionForJourney('m1_pills'), true);
   assert.equal(usesHalfResolutionOcclusionForJourney('m1_morning'), false);
+});
+
+test('film scene visits keep the same occlusion quality as the active journey', () => {
+  const journey = { scene: 'm1_pills', actor: 'neo', visiting: 'm1_pills' } as FilmJourney;
+  const visit = matrixJourneyForOcclusion(true, journey, 'oracle');
+  assert.equal(usesHalfResolutionOcclusionForJourney(visit?.scene), true);
+  assert.equal(matrixJourneyForOcclusion(true, { ...journey, visiting: undefined }, 'oracle'), undefined);
+  assert.equal(matrixJourneyForOcclusion(true, { ...journey, visiting: undefined }, 'neo')?.scene, 'm1_pills');
+  assert.equal(matrixJourneyForOcclusion(false, journey, 'neo'), undefined);
 });
 
 test('changing render quality resizes both compositor buffers, occlusion and antialias sampling', () => {

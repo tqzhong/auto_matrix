@@ -56,6 +56,11 @@ export function usesHalfResolutionOcclusionForJourney(scene?: string): boolean {
   return scene === 'm1_commute' || scene === 'm1_boss' || scene === 'm1_pills';
 }
 
+export function matrixJourneyForOcclusion(matrix: boolean, journey: FilmJourney | undefined, playerId: string | null | undefined): FilmJourney | undefined {
+  if (!matrix || !journey || !journey.visiting && journey.actor !== playerId) return undefined;
+  return journey;
+}
+
 export function rideForPlayer(journey: FilmJourney | undefined, playerId: string | null | undefined) {
   if (!journey || !playerId || journey.actor !== playerId || journey.visiting) return undefined;
   if (journey.scene === 'm2_garage' && journey.garage?.phase === 'arrived') return journey.garage;
@@ -257,6 +262,7 @@ export class Engine {
     const player = this.playerControls?.id ? this.agentRenderer.getAgentState(this.playerControls.id) : undefined;
     const avatarPosition = player ? this.agentRenderer.getAgent(player.id)?.position : undefined;
     const liveMatrixJourney = this.matrix && meeting && !meeting.visiting && player?.id === meeting.actor ? meeting : undefined;
+    const occlusionJourney = matrixJourneyForOcclusion(this.matrix, meeting, player?.id);
     const contactAtNight = liveMatrixJourney?.scene === 'm1_wake_up';
     const lightingTime = contactAtNight ? 22000 : this.timeOfDay;
     const lift = this.sandbox?.neoLife?.lift;
@@ -629,7 +635,7 @@ export class Engine {
       const covered = openingTrace !== undefined && openingTrace < OPENING_HOTEL.trace.located;
       const halfOcclusion = apartmentView || filmSet?.id === 'film_white_rabbit_club';
       this.postProcessing.render(filmSet?.id !== 'film_extraction_car', covered,
-        (halfOcclusion || usesHalfResolutionOcclusionForJourney(liveMatrixJourney?.scene)) ? .5 : 1);
+        (halfOcclusion || usesHalfResolutionOcclusionForJourney(occlusionJourney?.scene)) ? .5 : 1);
       this.openingTrace.render(this.renderer, openingTrace);
     } finally {
       if (roomFar < cameraFar) { this.camera.far = cameraFar; this.camera.updateProjectionMatrix(); }
