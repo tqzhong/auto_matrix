@@ -29,6 +29,15 @@ test('film scene visits keep the same occlusion quality as the active journey', 
   assert.equal(matrixJourneyForOcclusion(false, journey, 'neo'), undefined);
 });
 
+test('the real cabin uses reduced contact occlusion without applying a Matrix scene to the real world', () => {
+  const journey = { scene: 'm1_cabin', actor: 'neo' } as FilmJourney;
+  assert.equal(usesHalfResolutionOcclusionForJourney(journey.scene), true);
+  assert.equal(matrixJourneyForOcclusion(false, journey, 'neo'), journey);
+  assert.equal(matrixJourneyForOcclusion(false, journey, 'oracle'), undefined);
+  assert.equal(matrixJourneyForOcclusion(false, { ...journey, visiting: 'm1_cabin' }, 'oracle')?.scene, 'm1_cabin');
+  assert.equal(matrixJourneyForOcclusion(false, { scene: 'm1_pills', actor: 'neo' } as FilmJourney, 'neo'), undefined);
+});
+
 test('changing render quality resizes both compositor buffers, occlusion and antialias sampling', () => {
   const renderer = { getPixelRatio: () => 1.5, getSize: (size: THREE.Vector2) => size.set(1280, 720) } as THREE.WebGLRenderer;
   const composer = new EffectComposer(renderer);
