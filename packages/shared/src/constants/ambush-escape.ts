@@ -42,7 +42,8 @@ export function mouseRoomGuard(index: number, time: number) {
   return { x, y: 0, z, yaw: Math.atan2(-18 - x, -15 - z), progress: t * 8.4,
     speed: t > 0 && t < 1 ? 8.4 / duration : 0 };
 }
-const lead: Record<AmbushCompanion, number> = { apoc: 8.4, switch: 4.2, morpheus: 0, trinity: -4.2, cypher: -8.4 };
+// The front line must clear Neo's return corner instead of waiting on his route projection.
+const lead: Record<AmbushCompanion, number> = { apoc: 12.6, switch: 8.4, morpheus: 4.2, trinity: -4.2, cypher: -8.4 };
 const windowStops: Record<AmbushCompanion, number> = { apoc: 4.2, switch: 8.4, morpheus: 12.6, trinity: 16.8, cypher: 21 };
 const roomStops: Record<AmbushCompanion, { x: number; z: number }> = {
   apoc: { x: -20.4, z: -29.5 }, switch: { x: -15.4, z: -29.5 }, morpheus: { x: -15.4, z: -25 },
