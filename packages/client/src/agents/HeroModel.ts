@@ -183,6 +183,7 @@ export class HeroModels {
   private local = new THREE.Vector3();
   private segment = new THREE.Vector3();
   private closest = new THREE.Vector3();
+  private clothInverse = new THREE.Matrix4();
   private soleTransform = new THREE.Matrix4();
   private soleBase = new THREE.Vector3();
   private soleVertex = new THREE.Vector3();
@@ -1909,6 +1910,10 @@ export class HeroModels {
     for (const panel of rig.panels) {
       if (!panel.mesh.visible) continue;
       const position = panel.mesh.geometry.attributes.position;
+      if (spoonFloor !== undefined || onStairs) {
+        panel.mesh.updateWorldMatrix(true, false);
+        this.clothInverse.copy(panel.mesh.matrixWorld).invert();
+      }
       let changed = false;
       for (let i = 0; i < position.count; i++) {
         if (!fittedTails) {
@@ -1936,11 +1941,11 @@ export class HeroModels {
           }
         }
         if (spoonFloor !== undefined || onStairs) {
-          this.point.fromBufferAttribute(position, i); panel.mesh.localToWorld(this.point);
+          this.point.fromBufferAttribute(position, i).applyMatrix4(panel.mesh.matrixWorld);
           const tread = onStairs ? ambushFloor(this.point.x - ambushCenter.x, this.point.z - ambushCenter.z, origin.y - ambushCenter.y + 1) : undefined;
           const floor = spoonFloor ?? (tread === undefined ? undefined : ambushCenter.y - 1 + tread + .025);
           if (floor !== undefined && this.point.y < floor) {
-            this.point.y = floor; panel.mesh.worldToLocal(this.point); position.setXYZ(i, this.point.x, this.point.y, this.point.z);
+            this.point.y = floor; this.point.applyMatrix4(this.clothInverse); position.setXYZ(i, this.point.x, this.point.y, this.point.z);
             panel.velocity[i * 3 + 1] = 0; changed = true;
           }
         }

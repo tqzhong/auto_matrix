@@ -3,8 +3,9 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { PLAYER_WALK_SPEED, PLAYER_RUN_SPEED } from '@auto_matrix/shared';
-import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
+import { PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, FILM_SETS, ambushRouteRoot, ambushFloor } from '@auto_matrix/shared';
+import { HeroModels, type HeroRig } from '../packages/client/src/agents/HeroModel.js';
+import type { AmbushCoatTails } from '../packages/client/src/agents/AmbushCoatTails.js';
 import { advanceMotion, newMotion, type MotionInput } from '../packages/client/src/agents/CharacterMotion.js';
 
 async function model(hemFit = true) {
@@ -63,4 +64,71 @@ test('covering retains the repaired hem and leaving the garment restores its ori
   assert.deepEqual(Array.from(a.skinWeight.array), Array.from(b.skinWeight.array), 'leaving releases the original borrowed weights');
   const expected = points(original);
   assert.ok(points(shirt).every((point, i) => point.distanceTo(expected[i]) < 1e-6), 'inactive cloth agrees with the independently unrepaired donor');
+});
+
+test('tail contacts match Three skinning through saved poses without rebuilding a bone matrix per vertex', async t => {
+  const h = await model(); t.after(() => h.models.dispose());
+  const wardrobe = (h.models as unknown as { ambushWardrobes: Map<HeroRig, { tails: AmbushCoatTails }> }).ambushWardrobes.get(h.rig)!;
+  const surfaces = (wardrobe.tails as unknown as { inner: { mesh: THREE.SkinnedMesh; vertices: Uint32Array; points: Float64Array }[] }).inner;
+  const state = newMotion(), input: MotionInput = { speed: PLAYER_RUN_SPEED, grounded: true, verticalVelocity: 0, turn: -.4, ambushWardrobe: 'coat' };
+  h.rig.root.position.set(-3, 4, 2); h.rig.root.rotation.y = -.31;
+  let worst = 0;
+  for (const crouching of [false, true]) {
+    const pose = { ...input, crouching };
+    for (let frame = 0; frame < 20; frame++) h.models.animate(h.rig, advanceMotion(state, pose, 1 / 60), state, pose, 1 / 60);
+    const saved = structuredClone(state), multiply = THREE.Matrix4.prototype.multiplyMatrices;
+    let products = 0;
+    THREE.Matrix4.prototype.multiplyMatrices = function (a, b) { products++; return multiply.call(this, a, b); };
+    try { wardrobe.tails.update(saved, .15); } finally { THREE.Matrix4.prototype.multiplyMatrices = multiply; }
+    const boneCount = surfaces.reduce((sum, surface) => sum + surface.mesh.skeleton.bones.length, 0);
+    t.diagnostic(`crouch ${crouching}: ${products} matrix products / ${boneCount} bones`);
+    assert.ok(products <= boneCount * 4, 'contact skinning must build transforms per bone instead of per weighted vertex');
+    const inverse = h.rig.bones.get('pelvis')!.matrixWorld.clone().invert(), point = new THREE.Vector3();
+    for (const surface of surfaces) {
+      const transform = inverse.clone().multiply(surface.mesh.matrixWorld);
+      for (const [i, id] of surface.vertices.entries()) {
+        surface.mesh.getVertexPosition(id, point).applyMatrix4(transform);
+        worst = Math.max(worst, point.distanceTo(new THREE.Vector3().fromArray(surface.points, i * 3)));
+      }
+    }
+    assert.ok(worst < 1e-12, `actual contact surface differs from Three by ${worst}`);
+    assert.deepEqual(state, saved, 'fitting the same saved pose does not advance motion');
+  }
+  t.diagnostic(`all selected real contact vertices agree within ${worst}`);
+});
+
+test('stair cloth keeps its floor clearance without refreshing the transform for every vertex', async t => {
+  const h = await model(); t.after(() => h.models.dispose());
+  // Extend one hem corner in memory so the floor pass must correct a contact.
+  for (const panel of h.rig.panels) panel.rest[panel.rest.length - 2] -= 2;
+  const center = FILM_SETS.film_ambush_house.center, state = newMotion();
+  const input: MotionInput = { speed: PLAYER_RUN_SPEED, grounded: true, verticalVelocity: 0, turn: 0, ambushWardrobe: 'coat' };
+  for (const progress of [24.95, 48.95]) {
+    const root = ambushRouteRoot(progress, 'morpheus');
+    h.rig.root.position.set(center.x + root.x, center.y - 1 + root.y, center.z + root.z); h.rig.root.rotation.y = root.yaw;
+    let updates = 0;
+    const originals = h.rig.panels.map(({ mesh }) => mesh.updateWorldMatrix);
+    for (const { mesh } of h.rig.panels) {
+      const update = mesh.updateWorldMatrix;
+      mesh.updateWorldMatrix = function (...args) { updates++; update.apply(this, args); };
+    }
+    try { h.models.animate(h.rig, advanceMotion(state, input, 1 / 60), state, input, 1 / 60); }
+    finally { h.rig.panels.forEach(({ mesh }, i) => { mesh.updateWorldMatrix = originals[i]; }); }
+    t.diagnostic(`${progress}: ${updates} panel world updates`);
+    // Include the ordinary whole-body pose refreshes as well as the floor pass.
+    assert.ok(updates <= h.rig.panels.length * 8, 'floor fitting must share a posed panel transform across every vertex');
+    let contacts = 0;
+    for (const { mesh } of h.rig.panels) {
+      assert.ok(mesh.visible);
+      for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
+        const point = mesh.getVertexPosition(i, new THREE.Vector3()).applyMatrix4(mesh.matrixWorld);
+        const floor = ambushFloor(point.x - center.x, point.z - center.z, root.y);
+        if (floor === undefined) continue;
+        assert.ok(point.y >= center.y - 1 + floor + .025 - 1e-5, `panel vertex ${i} crosses its actual tread`);
+        if (point.y < center.y - 1 + floor + .026) contacts++;
+      }
+    }
+    t.diagnostic(`${progress}: ${contacts} cloth vertices corrected to the tread`);
+    assert.ok(contacts > 0, 'the regression must exercise actual cloth contacts with the stairs');
+  }
 });

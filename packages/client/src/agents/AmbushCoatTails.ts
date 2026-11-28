@@ -5,7 +5,7 @@ import { AmbushCoatSeam } from './AmbushCoatSeam.js';
 
 type TailPanel = HeroRig['panels'][number] & { work: Float64Array; waist: Float64Array };
 type InnerSurface = { mesh: THREE.SkinnedMesh; points: Float64Array; vertices: Uint32Array; triangles: Uint32Array; edges: Uint32Array;
-  bands: Map<number, number[]>; visits: Uint32Array };
+  matrices: THREE.Matrix4[]; bands: Map<number, number[]>; visits: Uint32Array };
 type WaistAnchor = { panel: TailPanel; vertex: number; ids: number[]; weights: THREE.Vector3; outward: number; point: THREE.Vector3 };
 
 /** Wrap the old-building tails around the actual posed lower clothes.
@@ -35,6 +35,8 @@ export class AmbushCoatTails {
   private inverse = new THREE.Matrix4();
   private transform = new THREE.Matrix4();
   private point = new THREE.Vector3();
+  private base = new THREE.Vector3();
+  private weighted = new THREE.Vector3();
 
   constructor(private rig: HeroRig, meshes: THREE.SkinnedMesh[]) {
     const uv = rig.panels[0].mesh.geometry.attributes.uv;
@@ -81,7 +83,7 @@ export class AmbushCoatTails {
         if (!visited.has(key)) { visited.add(key); edges.push(a, b); }
       }
       return { mesh, points: new Float64Array(vertices.length * 3), vertices: Uint32Array.from(vertices), triangles: Uint32Array.from(index), edges: Uint32Array.from(edges),
-        bands: new Map<number, number[]>(), visits: new Uint32Array(edges.length / 2) };
+        matrices: mesh.skeleton.bones.map(() => new THREE.Matrix4()), bands: new Map<number, number[]>(), visits: new Uint32Array(edges.length / 2) };
     });
     this.seam = new AmbushCoatSeam(rig.panels, this.columns, this.inner);
     this.waist = this.inner.find(part => part.mesh.name === 'morpheus-ambush-coat')!;
@@ -208,9 +210,18 @@ export class AmbushCoatTails {
       }
     }
     for (const part of this.inner) {
-      part.mesh.skeleton.update(); this.transform.multiplyMatrices(this.inverse, part.mesh.matrixWorld);
+      const { mesh, matrices } = part, { skinIndex, skinWeight } = mesh.geometry.attributes;
+      mesh.skeleton.update(); this.transform.multiplyMatrices(this.inverse, mesh.matrixWorld);
+      // Reuse each posed bone transform for all its weighted vertices. Keep
+      // Three's morph, bind and skinning order, including double precision.
+      matrices.forEach((matrix, i) => matrix.multiplyMatrices(mesh.skeleton.bones[i].matrixWorld, mesh.skeleton.boneInverses[i]));
       for (let i = 0; i < part.vertices.length; i++) {
-        part.mesh.getVertexPosition(part.vertices[i], this.point).applyMatrix4(this.transform); this.point.toArray(part.points, i * 3);
+        const id = part.vertices[i]; THREE.Mesh.prototype.getVertexPosition.call(mesh, id, this.base).applyMatrix4(mesh.bindMatrix); this.point.set(0, 0, 0);
+        for (let joint = 0; joint < 4; joint++) {
+          const weight = skinWeight.getComponent(id, joint);
+          if (weight) this.point.addScaledVector(this.weighted.copy(this.base).applyMatrix4(matrices[skinIndex.getComponent(id, joint)]), weight);
+        }
+        this.point.applyMatrix4(mesh.bindMatrixInverse).applyMatrix4(this.transform).toArray(part.points, i * 3);
       }
       for (const band of part.bands.values()) band.length = 0;
       part.visits.fill(0);
