@@ -199,6 +199,8 @@ sockets.getIO().on('connection', async socket => {
       const requested = data.agentId === 'neo' && sandbox.state.neoLife?.journey ? sandbox.state.neoLife.journey.actor : data.agentId;
       const result = players.possess(socket.id, requested, simLoop.getTick(), data.takeover === true);
       if (result.agentId === 'neo') sandbox.life.begin(world.agents.get('neo')!, simLoop.getTick());
+      // A paused native retry has no simulation tick to save its revived actor and story checkpoint.
+      if (result.agentId && !simLoop.isRunning()) void saveWorld().catch(error => console.error('[Save] Failed:', error));
       const delta = sync.calculateDelta(world.agents);
       // A new page cannot inherit the global delta baseline from the previous owner.
       if (result.agentId) delta.agents[result.agentId] = structuredClone(world.agents.get(result.agentId)!);
