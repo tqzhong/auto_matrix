@@ -2831,6 +2831,36 @@ test('the dojo can be completed through natural windups, a backstep and walking 
   assert.ok(h.actor().health >= health, 'Morpheus cannot hit during a successful counter');
 });
 
+test('the dojo resumes its ordered counter after a long real-time pause between each hit', t => {
+  let now = 100_000; t.mock.method(Date, 'now', () => now);
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const download = FILM_SCENE_BY_ID.m1_download;
+  Object.assign(state, { scene: download.id, actor: 'neo', step: download.steps.length, training: undefined });
+  h.command('next');
+  h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m1_dojo, FILM_SCENE_BY_ID.m1_dojo.steps[0]);
+  h.command('act'); const threat = h.sandbox.state.threats[0];
+  threat.stunUntil = h.tick(); threat.attackAt = h.tick() + 2; threat.lastStrike = h.tick();
+  h.players.act('film-player', 'dodge', h.tick());
+  for (let frame = 0; frame < 8; frame++) { now += 50; h.players.step(.05, true, h.tick(), now); }
+  h.actor().position = { ...threat.position, z: threat.position.z + DOJO_BODY_CLEARANCE };
+  h.actor().rotation = Math.PI;
+  for (let combo = 0; combo < 3; combo++) {
+    if (combo) {
+      const counterUntil = state.dojo!.counterUntil;
+      h.players.step(0, false, h.tick(), now); now += 20_000;
+      h.players.step(.05, false, h.tick(), now);
+      assert.equal(state.dojo!.counterUntil, counterUntil, 'a paused opening must not lose its remaining time');
+      h.players.setRunning(true);
+    }
+    h.players.act('film-player', 'attack', h.tick());
+    for (let frame = 0; frame < 15; frame++) { now += 50; h.players.step(.05, true, h.tick(), now); }
+    assert.equal(state.dojo!.combo, combo + 1, 'the displayed next strike must survive the real-time pause');
+    assert.equal(state.dojo!.hits, combo + 1);
+  }
+  h.advance(); assert.equal(state.step, 1); assert.equal(state.dojo!.complete, true);
+  assert.equal(h.sandbox.state.threats.length, 0);
+});
+
 test('the dojo preserves its eight-second counter opening, then returns Morpheus to guard', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   const download = FILM_SCENE_BY_ID.m1_download;

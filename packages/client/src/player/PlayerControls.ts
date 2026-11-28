@@ -72,6 +72,7 @@ const FREEWAY_DRIVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', '
 export class PlayerControls {
   id: string | null = null;
   firstPerson = false;
+  dojoCounter?: number;
   custodyBodies?: Vector3[];
   private inOfficeLift = false;
   private recoveryYaw: number | undefined;
@@ -244,6 +245,7 @@ export class PlayerControls {
     else if (this.cablePitch !== undefined) this.pitch = this.cablePitch;
     this.cablePitch = undefined;
     this.lastAttack = -1000; this.attackQueuedUntil = 0; this.attackCombo = 0;
+    this.dojoCounter = undefined;
     this.motion.hit = this.motion.impact = undefined; this.impactAge = 10;
     this.motion.cast = undefined; this.motion.skill = undefined; this.impulse = undefined;
     this.motion.shot = undefined;
@@ -525,6 +527,7 @@ export class PlayerControls {
 
   private requestAttack(guided = false, guidedCombo?: number): boolean {
     if (this.motion.officeCustody) return false;
+    guidedCombo ??= this.dojoCounter; guided ||= this.dojoCounter !== undefined;
     const chainShot = this.motion.freewayPickup?.phase === 'mounted' && this.motion.freewayPickup.chain;
     const garage = this.motion.helGarage;
     const garageCounter = garage && !garage.paused && !garage.unavailable && (garage.phase === 'counter' || garage.phase === 'combo');

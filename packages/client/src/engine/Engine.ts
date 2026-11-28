@@ -945,6 +945,8 @@ export class Engine {
     if (this.playerControls) {
       const journey = state.neoLife?.journey;
       const loadout = rescueLoadout(journey);
+      this.playerControls.dojoCounter = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dojo'
+        && journey.step === 0 && journey.fighting && journey.dojo?.dodged && !journey.dojo.complete ? journey.dojo.combo : undefined;
       this.playerControls.spoon = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_spoon'
         ? journey.oracle?.spoonLesson ? spoonLessonBend(journey.oracle.spoonLesson, 'neo', journey.oracle.spoon ?? 0) : journey.oracle?.spoon : undefined;
       this.playerControls.phone = journey?.actor === this.playerControls.id ? heldPhone(journey) : undefined;

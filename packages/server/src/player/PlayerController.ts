@@ -2,7 +2,7 @@ import { OPENING_ESCAPE, WELLS_AFTERMATH, bookDoorLocked, savedApartmentIdle } f
 import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteKnocking, lafayetteWelcomeLocked } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, PLAYER_WALK_SPEED, officeCustodyActive, windowOpening, windowCrossing } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK, type CatchGesture } from '@auto_matrix/shared';
-import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, DOJO_BODY_CLEARANCE, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId, type WorldStructure } from '@auto_matrix/shared';
+import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_BODY_CLEARANCE, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId, type WorldStructure } from '@auto_matrix/shared';
 import type { SandboxSystem } from './SandboxSystem.js';
 import type { WorldState } from '../world/WorldState.js';
 import type { ConversationEngine } from '../agents/ConversationEngine.js';
@@ -986,7 +986,7 @@ export class PlayerController {
       if (sparring) session.input.yaw = agent.rotation = Math.atan2(sparring.position.x - agent.position.x, sparring.position.z - agent.position.z);
       const elapsed = (Date.now() - session.lastAttack) / 1000;
       if (session.stagger > 0 || session.impulse || session.palm || session.strike && !session.strike.resolved || elapsed < MELEE_COMBO[session.combo].duration) return '';
-      session.combo = sparring && (session.lastAttack === 0 || elapsed < DOJO_COMBO_WINDOW) ? lesson!.dojo!.combo
+      session.combo = sparring ? lesson!.dojo!.combo
         : elapsed < COMBO_WINDOW ? (session.combo + 1) % MELEE_COMBO.length : 0;
       session.lastAttack = Date.now(); session.strike = { age: 0, resolved: false };
       agent.currentAction = { type: 'attack', parameters: { player: true, resolved: true, combo: session.combo }, startedAt: tick, duration: 1, progress: 0 };
