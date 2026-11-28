@@ -402,6 +402,10 @@ export class SandboxUI {
     const shown = journey.visiting ? FILM_SCENE_BY_ID[journey.visiting] : scene;
     this.el('sandbox-clock').textContent = `${FILM_NAMES[shown.film]} · 第 ${FILM_SCENES.findIndex(item => item.id === shown.id) + 1} 段`;
     this.el('sandbox-weather').textContent = set.world === 'real' ? '真实世界' : ({ day: '日间', night: '夜间', warm: '室内', cold: '室内', white: '程序空间', storm: '暴雨', sunrise: '日出' })[set.light];
+    if (shown.id === 'm1_desert') {
+      this.el('sandbox-weather').textContent = '程序空间 · 荒漠影像';
+      if (player.currentLocation === set.id) document.getElementById('game-world')!.textContent = 'CONSTRUCT / DESERT IMAGE';
+    }
     if (shown.id === 'm3_reset') {
       this.el('sandbox-weather').textContent = '黎明前 · 街道恢复';
       document.getElementById('game-location')!.textContent = '街边 · 重新醒来的矩阵';

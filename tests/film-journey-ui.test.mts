@@ -283,6 +283,37 @@ test('the Construct journal distinguishes self inspection from approaching the c
   assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" >触摸椅背/);
 });
 
+test('the desert reveal identifies a loaded image while the real ship keeps its world label', async t => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { SandboxUI } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const elements = new Map(), element = (id: string) => {
+    if (!elements.has(id)) elements.set(id, { textContent: '', innerHTML: '', style: {}, classList: { add() {}, remove() {}, toggle() {} } });
+    return elements.get(id);
+  };
+  const previous = globalThis.document; t.after(() => { globalThis.document = previous; });
+  globalThis.document = { getElementById: (id: string) => element(`#${id}`) } as unknown as Document;
+  const ui = Object.assign(Object.create(SandboxUI.prototype), { root: { querySelector: element }, tick: 0 });
+  const scene = FILM_SCENE_BY_ID.m1_desert;
+  const player = { id: 'neo', status: 'alive', isInMatrix: false, currentLocation: scene.set, rotation: Math.PI,
+    position: filmStepPosition(scene, scene.steps[0]) } as AgentState;
+  const sandbox = { threats: [], neoLife: { journey: { scene: scene.id, actor: 'neo', step: 0, completed: [], reflections: {}, lastText: '' } } } as SandboxState;
+  for (const visiting of [undefined, scene.id]) {
+    sandbox.neoLife!.journey!.visiting = visiting;
+    element('#game-world').textContent = 'REAL WORLD / ZION';
+    ui.updateFilm(player, sandbox);
+    assert.equal(element('#sandbox-weather').textContent, '程序空间 · 荒漠影像');
+    assert.equal(element('#game-world').textContent, 'CONSTRUCT / DESERT IMAGE');
+  }
+  player.currentLocation = 'film_neb_deck'; element('#game-world').textContent = 'REAL WORLD / ZION';
+  player.position = filmPosition('film_neb_deck', -7, -22);
+  ui.updateFilm(player, sandbox);
+  assert.equal(element('#game-world').textContent, 'REAL WORLD / ZION', 'a controlled body aboard the ship is still in the real world');
+  sandbox.neoLife!.journey!.scene = 'm1_recovery'; delete sandbox.neoLife!.journey!.visiting;
+  ui.updateFilm(player, sandbox);
+  assert.equal(element('#sandbox-weather').textContent, '真实世界');
+});
+
 test('the morning journal requires a bedside action, accepts the alarm and offers the actual on-foot commute', async () => {
   const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
     platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
