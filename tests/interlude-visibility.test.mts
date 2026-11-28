@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, interludeRoot, type InterludeGesture } from '@auto_matrix/shared';
+import { FILM_SETS, filmPosition, interludeRoot, type FilmJourney, type InterludeGesture } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import type { CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -36,4 +36,39 @@ for (const kind of ['console', 'meal'] as const) test(`first-person ${kind} reta
   neo.currentAction = null; renderer.updateAgent('neo', neo); renderer.setPlayerMotion(motion); renderer.update(0, undefined, 0, 0);
   assert.equal(body.visible, false, 'ordinary first person retains its existing visibility after leaving the interaction');
   assert.equal(rig.head.visible, true, 'the temporary head mask must not persist into later poses');
+});
+
+test('the private console conversation draws Neo and Cypher without the crew witnessing it, then restores the shared deck', t => {
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {},
+    createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  const renderer = new AgentRenderer(new THREE.Scene());
+  t.after(() => { renderer.dispose(); globalThis.document = previous; });
+  t.mock.method(renderer['models'], 'requestHero', () => {}); t.mock.method(renderer['models'], 'animate', () => {});
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actors = ['neo', 'cypher', 'apoc', 'switch', 'morpheus'].map(id => world.agents.get(id)!);
+  actors.forEach((actor, index) => {
+    Object.assign(actor, { position: filmPosition('film_neb_deck', 3.4 + index * 2, 7.2), currentLocation: 'film_neb_deck', isInMatrix: false });
+    renderer.updateAgent(actor.id, actor);
+  });
+  actors[3].health = 61;
+  const saved = structuredClone(actors), neo = actors[0];
+  renderer.setWorld(false); renderer.setPlayer('neo');
+  const journey: FilmJourney = { version: 1, scene: 'm1_cypher_console', actor: 'neo', step: 0, completed: [], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: { ...neo.position } };
+  const camera = new THREE.PerspectiveCamera(); camera.position.copy(neo.position);
+  for (const phase of ['ready', 'performing', 'accept_ready', 'accepting', 'sip_ready', 'sipping', 'returning', 'choice', 'responding', 'done'] as const) {
+    journey.interlude = { kind: 'console', phase, elapsed: 0, physicalConsole: true };
+    renderer.update(0, camera, 0, 0, journey);
+    for (const id of ['neo', 'cypher']) assert.equal(renderer.getAgent(id)?.visible, true, `${id} must remain in the private ${phase} scene`);
+    for (const id of ['apoc', 'switch', 'morpheus']) assert.equal(renderer.getAgent(id)?.visible, false, `${id} cannot witness Cypher's private ${phase} conversation`);
+  }
+  renderer.update(0, camera, 0, 0, { ...journey, scene: 'm1_meal', interlude: undefined });
+  for (const id of ['apoc', 'switch', 'morpheus']) assert.equal(renderer.getAgent(id)?.visible, true, 'leaving the conversation restores the shared deck');
+  renderer.setPlayer('switch'); renderer.update(0, camera, 0, 0, journey);
+  assert.equal(renderer.getAgent('apoc')?.visible, true, 'another player retains the ordinary deck view');
+  assert.deepEqual(actors, saved, 'shot visibility cannot move or rewrite saved crew state');
 });
