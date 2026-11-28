@@ -53,7 +53,7 @@ export interface FrameProfile {
 }
 
 export function usesHalfResolutionOcclusionForJourney(scene?: string): boolean {
-  return scene === 'm1_commute' || scene === 'm1_boss';
+  return scene === 'm1_commute' || scene === 'm1_boss' || scene === 'm1_pills';
 }
 
 export function rideForPlayer(journey: FilmJourney | undefined, playerId: string | null | undefined) {
