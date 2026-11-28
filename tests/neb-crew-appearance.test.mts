@@ -5,7 +5,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SETS, type FilmJourney } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
-import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
+import { HeroModels, type HeroRig } from '../packages/client/src/agents/HeroModel.js';
+import { ConstructSuitAppearance } from '../packages/client/src/agents/ConstructSuitAppearance.js';
 import { advanceMotion, newMotion, type MotionInput } from '../packages/client/src/agents/CharacterMotion.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -21,6 +22,26 @@ async function geometry(id: string) {
   result.writeUInt32LE(padded.length, 12); result.writeUInt32LE(0x4e4f534a, 16); padded.copy(result, 20); bin.copy(result, 20 + padded.length);
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
+
+test('Construct suit fitting does not rescan the entire torso for every collar and tie sample', async t => {
+  const asset = await geometry('morpheus');
+  const meshes = ['morpheus-hammer-sweater', 'Black_crew_neck'].map(name => asset.scene.getObjectByName(name) as THREE.SkinnedMesh);
+  let reads = 0, samplingReads = 0, samples = 0;
+  for (const mesh of meshes) {
+    const index = mesh.geometry.index!, getX = index.getX;
+    index.getX = function (i: number) { reads++; return getX.call(this, i); };
+    t.after(() => { index.getX = getX; });
+  }
+  const sample = ConstructSuitAppearance.prototype['sample'];
+  t.mock.method(ConstructSuitAppearance.prototype, 'sample', function (...args: Parameters<typeof sample>) {
+    const before = reads, result = sample.apply(this, args); samplingReads += reads - before; samples++; return result;
+  });
+  const suit = new ConstructSuitAppearance({ root: asset.scene } as HeroRig, new THREE.Texture());
+  t.after(() => suit.dispose());
+  assert.ok(samples >= 200, 'exercise the actual delivered collar, tie and pin');
+  const entireTorso = meshes.reduce((count, mesh) => count + mesh.geometry.index!.count, 0);
+  assert.ok(samplingReads < entireTorso * 20, `${samplingReads} index reads for ${samples} samples repeatedly scan ${entireTorso} torso indices`);
+});
 
 test('the first-film Sentinel crew retain their ship clothes in free play, saved phases and both player views', async t => {
   const roles = ['neo', 'morpheus', 'trinity'] as const, ids = [...roles, 'neo-office', 'neo-tracking', 'trinity-club'];

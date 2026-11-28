@@ -38,6 +38,7 @@ export class ConstructSuitAppearance {
   private vertices: Vertex[] = [];
   private shirt: THREE.SkinnedMesh;
   private shirtVertices: Vertex[] = [];
+  private bands = new Map<THREE.SkinnedMesh, Map<number, number[]>>();
   private originalShirt: THREE.BufferGeometry;
   private regularShirt: THREE.BufferGeometry;
   private jacket: THREE.SkinnedMesh;
@@ -127,7 +128,7 @@ export class ConstructSuitAppearance {
     this.make('morpheus-construct-tie', tie, tieIndices, silk);
     const pin = [[-.036, 3.23], [.036, 3.23], [.036, 3.219], [-.036, 3.219]].map(([x, y]) => this.sample(x, y, .049));
     this.make('morpheus-construct-tie-pin', pin, [0, 2, 1, 0, 3, 2], metal);
-    this.vertices = []; this.shirtVertices = [];
+    this.vertices = []; this.shirtVertices = []; this.bands.clear();
     this.shirt.geometry = this.regularShirt;
   }
 
@@ -172,9 +173,19 @@ export class ConstructSuitAppearance {
     // All new cloth is authored in the delivered bind pose. Intersect cached
     // torso triangles once, rather than reskinning the full mesh for every ray.
     const exposedShirt = y >= 3.08 && y < 3.87 && Math.abs(x) < .43 * (y - 3.08);
-    const index = (exposedShirt ? this.shirt : this.source).geometry.index!, cached = exposedShirt ? this.shirtVertices : this.vertices;
+    const mesh = exposedShirt ? this.shirt : this.source, index = mesh.geometry.index!, cached = exposedShirt ? this.shirtVertices : this.vertices;
+    let bands = this.bands.get(mesh);
+    if (!bands) {
+      bands = new Map();
+      for (let i = 0; i < index.count; i += 3) {
+        const a = cached[index.getX(i)].point, b = cached[index.getX(i + 1)].point, c = cached[index.getX(i + 2)].point;
+        const low = Math.floor(Math.min(a.y, b.y, c.y) * 20), high = Math.floor(Math.max(a.y, b.y, c.y) * 20);
+        for (let band = low; band <= high; band++) { let list = bands.get(band); if (!list) bands.set(band, list = []); list.push(i); }
+      }
+      this.bands.set(mesh, bands);
+    }
     let front = -Infinity, selected: Vertex[] = [], amounts: number[] = [];
-    for (let i = 0; i < index.count; i += 3) {
+    for (const i of bands.get(Math.floor(y * 20)) ?? []) {
       const vertices = [0, 1, 2].map(n => cached[index.getX(i + n)]), [a, b, c] = vertices.map(v => v.point);
       if (x < Math.min(a.x, b.x, c.x) || x > Math.max(a.x, b.x, c.x) || y < Math.min(a.y, b.y, c.y) || y > Math.max(a.y, b.y, c.y)) continue;
       const denominator = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y);

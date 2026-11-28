@@ -159,7 +159,8 @@ export class AgentRenderer {
       const opening = journey && !journey.visiting && openingScenes.includes(journey.scene);
       const stageShipBody = this.matrix && id.startsWith('body:');
       const rig = this.models.create(state, stageShipBody ? 'staged'
-        : opening && id !== journey.actor ? (openingCast.has(id) ? 'staged' : 'deferred') : 'eager');
+        : opening && id !== journey.actor ? (openingCast.has(id) ? 'staged' : 'deferred')
+          : journey && !journey.visiting ? 'deferred' : 'eager');
       const body = rig.root;
       body.position.y = -1;
       const shadow = new THREE.Mesh(this.shadowGeometry, this.shadowMaterial);
