@@ -53,7 +53,7 @@ export interface FrameProfile {
 }
 
 export function usesHalfResolutionOcclusionForJourney(scene?: string): boolean {
-  return scene === 'm1_commute' || scene === 'm1_boss' || scene === 'm1_pills' || scene === 'm1_cabin';
+  return scene === 'm1_commute' || scene === 'm1_boss' || scene === 'm1_pills' || scene === 'm1_cabin' || scene === 'm1_jump';
 }
 
 export function matrixJourneyForOcclusion(matrix: boolean, journey: FilmJourney | undefined, playerId: string | null | undefined): FilmJourney | undefined {
