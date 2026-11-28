@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { RED_DRESS_PLAZA } from '@auto_matrix/shared';
+import { RED_DRESS_PLAZA, redDressCrowdZ } from '@auto_matrix/shared';
 
 /** CC0 business pedestrians share baked walks, driven only by the saved clock. */
 export class RedDressCrowd {
@@ -64,11 +64,10 @@ export class RedDressCrowd {
     this.clock = clock; this.started = started;
     if (clock === this.posedClock && started === this.posedStarted) return;
     const travel = started ? clock * 2 : 0;
-    const { near, far } = RED_DRESS_PLAZA.crowd, length = far - near;
     for (const [index, group] of this.groups.entries()) {
       if (!group.userData.detailed) continue;
       const direction = index % 2 ? 1 : -1;
-      group.position.z = ((Number(group.userData.baseZ) + direction * travel - near) % length + length) % length + near;
+      group.position.z = redDressCrowdZ(Number(group.userData.baseZ), index, clock, started);
       group.rotation.set(0, direction > 0 ? 0 : Math.PI, 0); group.updateMatrix();
     }
     for (const batch of this.batches) {

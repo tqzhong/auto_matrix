@@ -2941,6 +2941,27 @@ test('restoring an older jump save preserves its progress and does not lock a fi
   }
 });
 
+test('walking through the plaza stops at its rendered pedestrians and an old overlap can be walked out of', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm1_red_dress', actor: 'neo', step: 0, training: undefined });
+  h.actor().currentLocation = 'film_red_dress_plaza'; h.actor().position = filmPosition('film_red_dress_plaza', .567114107902, 26);
+  const body = filmPosition('film_red_dress_plaza', 0, 23); let sequence = 0;
+  const walk = (x: number, z: number, frames: number, check = () => {}) => {
+    for (let i = 0; i < frames; i++) {
+      h.players.receiveInput('film-player', { x, z, yaw: Math.atan2(x, z), sequence: ++sequence });
+      h.players.step(.05, true, h.tick()); check();
+    }
+  };
+  walk(0, -1, 50, () => assert.ok(distance(h.actor().position, body) >= 1.8, 'a visible pedestrian must stop the approaching body'));
+  walk(1, 0, 30); walk(0, -1, 50);
+  assert.ok(h.actor().position.z < body.z - 2, 'walking around the person must still reach the plaza');
+  h.actor().position = filmPosition('film_red_dress_plaza', .567114107902, 23.158469572709);
+  h.players.step(0, false, h.tick()); const saved = { ...h.actor().position };
+  h.players.step(.05, false, h.tick()); assert.deepEqual(h.actor().position, saved, 'loading a paused overlap must not teleport the saved player');
+  walk(1, 0, 30); assert.ok(distance(h.actor().position, body) > 3, 'an old overlapping save must be able to walk out');
+  assert.equal(state.step, 0); assert.equal(state.training, undefined, 'separation cannot start or bypass the attention test');
+});
+
 test('the red-dress lesson cannot turn Neo, reveal Smith or pass without player attention', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   const previous = FILM_SCENE_BY_ID.m1_jump_return;

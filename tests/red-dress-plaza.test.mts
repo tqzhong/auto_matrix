@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, filmBlocked, filmGroundHeight, redDressAttention, trainingRoot, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, filmBlocked, filmGroundHeight, redDressAttention, redDressCrowdStep, trainingRoot, type FilmJourney } from '@auto_matrix/shared';
 import { TrainingSetRenderer } from '../packages/client/src/engine/TrainingSetRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightingSystem } from '../packages/client/src/engine/LightingSystem.js';
@@ -74,6 +74,23 @@ test('the full player attention route and moving crowd lanes stay clear of the n
     const ray = new THREE.Raycaster(new THREE.Vector3(set.center.x + 7, 6, set.center.z + z), new THREE.Vector3(0, -1, 0));
     const hit = ray.intersectObject(root.getObjectByName('red-dress-paving')!, true)[0];
     assert.ok(hit && Math.abs(hit.point.y + 1 - filmGroundHeight(position(7, z), set)) < .001, 'visible paving and feet plane must coincide');
+  }
+});
+
+test('all twenty visible pedestrians keep matching physical boundaries at their saved and frozen positions', t => {
+  const { root, renderer } = fixture(t);
+  for (const started of [false, true]) for (const clock of [0, 7.13, 8.4, 42]) {
+    const training = { kind: 'red_dress' as const, elapsed: 12, started, attention: { ...redDressAttention(6.2), clock } };
+    const state = { scene: 'm1_red_dress', actor: 'neo', step: 1, training } as FilmJourney;
+    renderer.update(state, 10000);
+    for (let index = 0; index < 20; index++) {
+      const figure = root.getObjectByName(`red-dress-crowd-${index}`)!; assert.ok(figure);
+      const body = figure.getWorldPosition(new THREE.Vector3());
+      const before = { x: body.x + 3, y: set.center.y, z: body.z }, after = { ...before, x: body.x, y: before.y + .5 };
+      const actual = redDressCrowdStep(before, after, set.center, training);
+      assert.ok(Math.hypot(actual.x - body.x, actual.z - body.z) >= 1.7, `rendered pedestrian ${index} has no matching boundary at ${clock}`);
+      assert.equal(actual.y, after.y, 'horizontal body contact must preserve vertical motion');
+    }
   }
 });
 

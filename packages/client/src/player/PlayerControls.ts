@@ -1,6 +1,7 @@
 import { jumpImpactPose } from '@auto_matrix/shared';
 import { logosBaneBeat, logosBaneLocked, logosBaneRoot } from '@auto_matrix/shared';
 import { downloadRoot, DOWNLOAD_SETUP_SECONDS } from '@auto_matrix/shared';
+import { redDressCrowdStep, type TrainingPerformance } from '@auto_matrix/shared';
 import { logosShipPose, logosShipPoint, logosFlightSet } from '@auto_matrix/shared';
 import { LOGOS_WRECK, LOGOS_COCKPIT } from '@auto_matrix/shared';
 import { MAGGIE_DISCOVERY, HAMMER_MEDICAL, maggieDiscoveryLocked, maggieDiscoveryRoot } from '@auto_matrix/shared';
@@ -73,6 +74,7 @@ export class PlayerControls {
   id: string | null = null;
   firstPerson = false;
   dojoCounter?: number;
+  redDressTraining?: TrainingPerformance;
   custodyBodies?: Vector3[];
   private inOfficeLift = false;
   private recoveryYaw: number | undefined;
@@ -216,6 +218,7 @@ export class PlayerControls {
     const changedActor = this.id !== state.id;
     this.recoveryLook = undefined; this.recoveryRoll = 0;
     this.custodyBodies = undefined; this.motion.officeCustody = undefined;
+    this.redDressTraining = undefined;
     this.meetingYaw = undefined; this.arrestYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
     this.openingTracePlaying = false;
     this.chairYaw = undefined;
@@ -280,6 +283,7 @@ export class PlayerControls {
     this.motion.maggieDiscovery = undefined; this.discoveryAim = false;
     this.motion.logosBane = undefined; this.logosAim = false;
     this.custodyBodies = undefined; this.motion.officeCustody = undefined;
+    this.redDressTraining = undefined;
     this.motion.truckWeapons = undefined; this.motion.truckHood = undefined;
     this.motion.trainmanChase = undefined; this.motion.helGarage = undefined; this.motion.helElevator = undefined; this.motion.helDoorPush = undefined; this.motion.helDisarm = undefined; this.motion.helBreakout = undefined;
     this.elevatorAim = false; this.elevatorViewAction = undefined; this.doorAim = false; this.doorViewOpening = false;
@@ -1411,6 +1415,10 @@ export class PlayerControls {
       if (this.custodyBodies) {
         const restrained = officeCustodyStep(previous, this.position, this.custodyBodies);
         if (restrained !== this.position) { this.position = restrained; this.planar = { x: 0, z: 0 }; this.vy = 0; }
+      }
+      if (state.currentLocation === 'film_red_dress_plaza') {
+        const restrained = redDressCrowdStep(previous, this.position, FILM_SETS.film_red_dress_plaza.center, this.redDressTraining);
+        if (restrained !== this.position) { this.position = restrained; this.planar = { x: 0, z: 0 }; }
       }
     }
     if (performance.now() - this.lastSent >= 50) {

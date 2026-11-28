@@ -1,6 +1,7 @@
 import { OPENING_ESCAPE, WELLS_AFTERMATH, bookDoorLocked, savedApartmentIdle } from '@auto_matrix/shared';
 import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteKnocking, lafayetteWelcomeLocked } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, PLAYER_WALK_SPEED, officeCustodyActive, windowOpening, windowCrossing } from '@auto_matrix/shared';
+import { redDressCrowdStep } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK, type CatchGesture } from '@auto_matrix/shared';
 import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_BODY_CLEARANCE, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId, type WorldStructure } from '@auto_matrix/shared';
 import type { SandboxSystem } from './SandboxSystem.js';
@@ -808,6 +809,11 @@ export class PlayerController {
       if (officeStep && officeStep !== agent.position) { agent.position = officeStep; session.planar = { x: 0, z: 0 }; session.vy = 0; }
       const escorted = this.sandbox?.life.film.custody.constrain(agent, previous, agent.position);
       if (escorted && escorted !== agent.position) { agent.position = escorted; session.planar = { x: 0, z: 0 }; session.vy = 0; }
+      if (agent.currentLocation === 'film_red_dress_plaza') {
+        const restrained = redDressCrowdStep(previous, agent.position, FILM_SETS.film_red_dress_plaza.center,
+          lesson?.scene === 'm1_red_dress' && !lesson.visiting ? lesson.training : undefined);
+        if (restrained !== agent.position) { agent.position = restrained; session.planar = { x: 0, z: 0 }; }
+      }
       const dojoOpponent = lesson?.scene === 'm1_dojo' && lesson.step === 0 && lesson.fighting && lesson.actor === agent.id
         ? this.sandbox?.state.threats.find(threat => threat.scene === 'm1_dojo' && threat.character === 'morpheus') : undefined;
       if (dojoOpponent) {

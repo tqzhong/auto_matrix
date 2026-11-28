@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { FilmJourney } from '@auto_matrix/shared';
-import { FILM_SETS, JUMP_STREET, JUMP_TOWERS, jumpImpactPose, RED_DRESS_PLAZA, RED_DRESS_SPILLWAY, RED_DRESS_POOL_OUTLINE, RED_DRESS_POOL_INSIDE, RED_DRESS_SPILLWAY_BODY, type PlazaPoint } from '@auto_matrix/shared';
+import { FILM_SETS, JUMP_STREET, JUMP_TOWERS, jumpImpactPose, RED_DRESS_PLAZA, RED_DRESS_CROWD, redDressCrowdZ, RED_DRESS_SPILLWAY, RED_DRESS_POOL_OUTLINE, RED_DRESS_POOL_INSIDE, RED_DRESS_SPILLWAY_BODY, type PlazaPoint } from '@auto_matrix/shared';
 import { RedDressCrowd } from './RedDressCrowd.js';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
@@ -324,7 +324,7 @@ export class TrainingSetRenderer {
 
   private mannequin(parent: THREE.Object3D, x: number, z: number, color: number, index: number): void {
     const figure = new THREE.Group(); figure.name = `red-dress-crowd-${index}`; figure.position.set(x, 0, z); figure.rotation.y = index % 2 ? 0 : Math.PI; parent.add(figure); this.crowd.push(figure);
-    figure.scale.setScalar(.86 + index % 3 * .06);
+    figure.scale.setScalar(RED_DRESS_CROWD[index].scale);
     const cloth = this.material(new THREE.MeshStandardMaterial({ color, roughness: .8 }));
     const skin = this.material(new THREE.MeshStandardMaterial({ color: index % 3 === 0 ? 0xb98265 : index % 3 === 1 ? 0xd5aa8a : 0x8a5f4a, roughness: .76 }));
     const hair = this.material(new THREE.MeshStandardMaterial({ color: index % 4 === 0 ? 0x211d1a : index % 4 === 1 ? 0x47382f : 0x181c1c, roughness: .9 }));
@@ -471,9 +471,8 @@ export class TrainingSetRenderer {
       for (let y = 4; y < 40; y += 5.5) this.box(wing, window, 0, y, -6.06, 27, 2.9, .08);
       batchStaticGeometry(wing, new Set()).forEach(geometry => this.geometries.add(geometry));
     }
-    for (let i = 0; i < 20; i++) {
-      const x = [0, 16, -6, 22][i % 4], z = -25 + Math.floor(i / 2) * 6;
-      this.mannequin(set, x, z, [0x364947, 0x585a52, 0x31363b, 0x706757][i % 4], i);
+    for (const [i, position] of RED_DRESS_CROWD.entries()) {
+      this.mannequin(set, position.x, position.z, [0x364947, 0x585a52, 0x31363b, 0x706757][i % 4], i);
     }
     this.pedestrians = new RedDressCrowd(this.crowd);
     this.plazaMatte(set);
@@ -508,7 +507,7 @@ export class TrainingSetRenderer {
     this.crowd.forEach((figure, index) => {
       if (figure.userData.detailed) return;
       const phase = Number(figure.userData.phase); const base = Number(figure.userData.baseZ);
-      figure.position.z = base + (training?.started ? Math.sin(clock * .55 + phase) * 1.4 : 0);
+      figure.position.z = redDressCrowdZ(base, index, clock, Boolean(training?.started));
       figure.rotation.z = Math.sin(clock * 1.6 + phase) * .018;
       figure.children.forEach((child, childIndex) => { if (child.userData.crowdLimb) child.rotation.x = Math.sin(clock * 3.2 + phase + childIndex) * .08; });
     });
