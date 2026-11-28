@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmStepPosition, filmPosition, filmSetAt, meetingBoardPoint, meetingCarPose, meetingDrive, meetingPose, meetingRoadContains, playerBlocked, BRIDGE_ARRIVAL_SECONDS, MEETING_DRIVE_SECONDS, MEETING_DESTINATION, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmStepPosition, filmPosition, filmSetAt, meetingBoardPoint, meetingCarPose, meetingDrive, meetingPose, meetingRoadContains, playerBlocked, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_DRIVE_SECONDS, MEETING_DESTINATION, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -221,6 +221,20 @@ test('the implanted tracker draws a visible bridge tail; getting caught requires
   assert.ok(h.walkTo(filmStepPosition(bridge, bridge.steps[0]).x, filmStepPosition(bridge, bridge.steps[0]).z));
   h.command('act'); assert.equal(h.state().meeting?.phase, 'boarding');
   assert.equal(h.sandbox.state.threats.some(threat => threat.id === 'bridge:tail'), false);
+});
+
+test('a captured bridge retry starts Neo clear of the incoming car lane and reaches the rear door', () => {
+  const h = setup(), bridge = FILM_SCENE_BY_ID.m1_bridge;
+  h.state().step = 0;
+  h.state().bridgeTail = { phase: 'failed', alert: 70, lastTick: h.tick(), attempts: 1, spawned: true };
+  h.command('retry');
+  const center = FILM_SETS[bridge.set].center, entry = filmEntry(bridge);
+  const approach = filmStepPosition(bridge, bridge.steps[0]);
+  assert.ok(entry.x - center.x >= MEETING_CAR.width / 2 + 1.1, 'Neo must start on the curb side of the arriving car');
+  assert.ok(h.walkTo(approach.x, approach.z), 'the curb-side route to the rear door must remain reachable during the tail chase');
+  assert.equal(h.state().bridgeTail?.phase, 'tracking', 'taking the safe route must keep the tail chase active without capturing Neo');
+  assert.equal(playerBlocked(h.neo.position, true, 1.1, h.sandbox.state.structures), false, 'the rear-door approach cannot overlap the parked car');
+  h.command('act'); assert.equal(h.state().meeting?.phase, 'boarding');
 });
 
 test('a clean office escape has no bridge tail, even if Neo lingers', () => {

@@ -812,6 +812,7 @@ export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: 
   return step.kind !== 'reach' && step.kind !== 'reflect' && filmStepNear(scene, step, position, matrix, journey);
 }
 export function filmEntry(scene: FilmScene): Vector3 {
+  if (scene.id === 'm1_bridge') return filmPosition(scene.set, MEETING_CAR.approach.x, FILM_SETS[scene.set].depth * .32);
   if (scene.id === 'm3_maggie_discovery') return filmPosition(scene.set, MAGGIE_DISCOVERY.entry.x, MAGGIE_DISCOVERY.entry.z);
   if (scene.id === 'm3_zion_prepare') return filmPosition(scene.set, ZION_DEPLOYMENT.entry.x, ZION_DEPLOYMENT.entry.z);
   if (scene.id === 'm3_logos_plan') return filmPosition(scene.set, HAMMER_BRIEFING.entry.x, HAMMER_BRIEFING.entry.z);
